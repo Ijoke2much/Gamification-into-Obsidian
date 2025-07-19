@@ -1,94 +1,105 @@
-# Obsidian Sample Plugin
+# Gamification into Obsidian Plugin
 
-This is a sample plugin for Obsidian (https://obsidian.md).
+## 🎮 Quickstart Guide
 
-This project uses TypeScript to provide type checking and documentation.
-The repo depends on the latest plugin API (obsidian.d.ts) in TypeScript Definition format, which contains TSDoc comments describing what it does.
+1. **Install the Plugin**
 
-This sample plugin demonstrates some of the basic functionality the plugin API can do.
-- Adds a ribbon icon, which shows a Notice when clicked.
-- Adds a command "Open Sample Modal" which opens a Modal.
-- Adds a plugin setting tab to the settings page.
-- Registers a global click event and output 'click' to the console.
-- Registers a global interval which logs 'setInterval' to the console.
+    - Place the plugin folder in your vault's `.obsidian/plugins/` directory.
+    - Enable the plugin in Obsidian's settings under "Community Plugins."
 
-## First time developing plugins?
+2. **Initial Setup**
 
-Quick starting guide for new plugin devs:
+    - On first load, a sidebar tab will appear with a custom dropdown menu for navigation.
+    - Tabs include: Player, The Slop Shop, Quest, Stats, and Achievements.
+    - Use the dropdown (with icons) to switch between tabs.
 
-- Check if [someone already developed a plugin for what you want](https://obsidian.md/plugins)! There might be an existing plugin similar enough that you can partner up with.
-- Make a copy of this repo as a template with the "Use this template" button (login to GitHub if you don't see it).
-- Clone your repo to a local development folder. For convenience, you can place this folder in your `.obsidian/plugins/your-plugin-name` folder.
-- Install NodeJS, then run `npm i` in the command line under your repo folder.
-- Run `npm run dev` to compile your plugin from `main.ts` to `main.js`.
-- Make changes to `main.ts` (or create new `.ts` files). Those changes should be automatically compiled into `main.js`.
-- Reload Obsidian to load the new version of your plugin.
-- Enable plugin in settings window.
-- For updates to the Obsidian API run `npm update` in the command line under your repo folder.
+3. **The Slop Shop (Shop Tab)**
 
-## Releasing new releases
+    - Access the in-game shop, now called **The Slop Shop**.
+    - Buy items using coins earned from quests and achievements.
+    - (More shopkeeper personality and daily deals coming soon!)
 
-- Update your `manifest.json` with your new version number, such as `1.0.1`, and the minimum Obsidian version required for your latest release.
-- Update your `versions.json` file with `"new-plugin-version": "minimum-obsidian-version"` so older versions of Obsidian can download an older version of your plugin that's compatible.
-- Create new GitHub release using your new version number as the "Tag version". Use the exact version number, don't include a prefix `v`. See here for an example: https://github.com/obsidianmd/obsidian-sample-plugin/releases
-- Upload the files `manifest.json`, `main.js`, `styles.css` as binary attachments. Note: The manifest.json file must be in two places, first the root path of your repository and also in the release.
-- Publish the release.
+4. **Quest Tab (formerly Task Tab)**
 
-> You can simplify the version bump process by running `npm version patch`, `npm version minor` or `npm version major` after updating `minAppVersion` manually in `manifest.json`.
-> The command will bump version in `manifest.json` and `package.json`, and add the entry for the new version to `versions.json`
+    - Create and manage quests (tasks) for yourself.
+    - Click the sword icon in the dropdown to access the Quest tab.
+    - Add new quests, assign skills, XP, coins, and more.
+    - (Quest list, completion, and progress tracking coming soon!)
 
-## Adding your plugin to the community plugin list
+5. **Using the Inventory**
 
-- Check the [plugin guidelines](https://docs.obsidian.md/Plugins/Releasing/Plugin+guidelines).
-- Publish an initial version.
-- Make sure you have a `README.md` file in the root of your repo.
-- Make a pull request at https://github.com/obsidianmd/obsidian-releases to add your plugin.
+    - Click the inventory button in the sidebar to open your inventory modal.
+    - Add, view, or remove items as you progress.
 
-## How to use
+6. **Skill Tree (Optional)**
 
-- Clone this repo.
-- Make sure your NodeJS is at least v16 (`node --version`).
-- `npm i` or `yarn` to install dependencies.
-- `npm run dev` to start compilation in watch mode.
+    - Create a Canvas file (e.g., `SkillTree.canvas`) to visually map your skills and stats.
+    - Link notes for each stat and skill for easy navigation.
 
-## Manually installing the plugin
+7. **Leveling Up**
 
-- Copy over `main.js`, `styles.css`, `manifest.json` to your vault `VaultFolder/.obsidian/plugins/your-plugin-id/`.
+    - Earn XP by completing quests or achievements.
+    - When you reach the XP threshold, your level increases and the progress bar resets.
 
-## Improve code quality with eslint (optional)
-- [ESLint](https://eslint.org/) is a tool that analyzes your code to quickly find problems. You can run ESLint against your plugin to find common bugs and ways to improve your code. 
-- To use eslint with this project, make sure to install eslint from terminal:
-  - `npm install -g eslint`
-- To use eslint to analyze this project use this command:
-  - `eslint main.ts`
-  - eslint will then create a report with suggestions for code improvement by file and line number.
-- If your source code is in a folder, such as `src`, you can use eslint with this command to analyze all files in that folder:
-  - `eslint .\src\`
+8. **Settings & Customization**
+    - Access plugin settings to customize XP/coin rewards, player name, and more (if available).
 
-## Funding URL
+---
 
-You can include funding URLs where people who use your plugin can financially support it.
+## 📝 How to Use the Gamified Features
 
-The simple way is to set the `fundingUrl` field to your link in your `manifest.json` file:
+-   **Custom Tab Navigation:**  
+    Use the dropdown at the top of the sidebar to switch between Player, The Slop Shop, Quest, Stats, and Achievements tabs. Each tab has its own icon (including a sword for Quest).
 
-```json
-{
-    "fundingUrl": "https://buymeacoffee.com"
-}
-```
+-   **Quest Management:**  
+    In the Quest tab, create new quests by filling out the form. Assign skills, XP, coins, and optional priority/difficulty. (Quest list and completion coming soon.)
 
-If you have multiple URLs, you can also do:
+-   **Shop (The Slop Shop):**  
+    Buy items with coins. More features and personality for the shopkeeper are planned.
 
-```json
-{
-    "fundingUrl": {
-        "Buy Me a Coffee": "https://buymeacoffee.com",
-        "GitHub Sponsor": "https://github.com/sponsors",
-        "Patreon": "https://www.patreon.com/"
-    }
-}
-```
+-   **Track Your Progress:**  
+    View your XP, coins, and level in the Player tab at any time.
 
-## API Documentation
+-   **Inventory Management:**  
+    Add items you earn or unlock. Click items for details.
 
-See https://github.com/obsidianmd/obsidian-api
+-   **Skill Tree Navigation:**  
+    Use the Canvas or linked notes to visualize and plan your skill growth.
+
+-   **Achievements:**  
+    Unlock achievements by reaching milestones (e.g., level up, mastering a skill). (Coming soon.)
+
+-   **Customization:**  
+    Adjust settings to fit your play style (XP rates, player name, etc.).
+
+---
+
+## ⚙️ Developer Notes
+
+-   **React Version:** Uses React 17 for compatibility with Obsidian’s environment.
+-   **Bundling:** `react` and `react-dom` are marked as externals in the build config.
+-   **TypeScript:** Use `@types/react@17` and `@types/react-dom@17` for type safety.
+-   **Known Issues:** React 18+ APIs (like `createRoot`) are not supported in the main plugin UI. Use `ReactDOM.render` and `ReactDOM.unmountComponentAtNode`.
+
+---
+
+## 💡 Tips
+
+-   Use tags and skills consistently for best results.
+-   Regularly check your progress and inventory to stay motivated.
+-   Expand your skill tree as you grow!
+
+---
+
+## 🚧 Feature Roadmap
+
+-   [x] Custom dropdown tab navigation with icons
+-   [x] The Slop Shop (shop tab)
+-   [x] Quest tab (task creation)
+-   [ ] Quest list, completion, and progress tracking
+-   [ ] Achievements system
+-   [ ] Shopkeeper personality and daily deals
+-   [ ] Inventory management improvements
+-   [ ] Theming and performance optimizations
+
+Feedback and contributions welcome!
