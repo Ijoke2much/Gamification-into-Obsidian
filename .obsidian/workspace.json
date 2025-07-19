@@ -1,0 +1,278 @@
+{
+  "main": {
+    "id": "62b21d266c7ead81",
+    "type": "split",
+    "children": [
+      {
+        "id": "136b20d640182483",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "d40e73ebb5ac40a4",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Notes from Xavier.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Notes from Xavier"
+            }
+          },
+          {
+            "id": "3025b82b0ed58630",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "SkillTree/PlayerData.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "PlayerData"
+            }
+          },
+          {
+            "id": "490ae3ff574c55e3",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Debugging Notes/Tasks for plugin complete.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "Tasks for plugin complete"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "b61eca4601485347",
+    "type": "split",
+    "children": [
+      {
+        "id": "6df734d401502e0d",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "dac1ca78232e7ce7",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "3489a2895b981f2b",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "New tab"
+            }
+          },
+          {
+            "id": "a06e943708120a26",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "tag:#gamified-task",
+                "matchingCase": true,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "93efdf9f47c632d6",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 230.5
+  },
+  "right": {
+    "id": "231b6e63e6dd379b",
+    "type": "split",
+    "children": [
+      {
+        "id": "8779edac55f1814b",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "ccfb75441ee48a68",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "Welcome.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks for Welcome"
+            }
+          },
+          {
+            "id": "71eaed641c863c53",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "Welcome.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links from Welcome"
+            }
+          },
+          {
+            "id": "8dca531b907a607b",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": true,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "6fa29cb2a87fb5f7",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "SkillTree/Master-Class/Stats/Charisma.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline of Charisma"
+            }
+          },
+          {
+            "id": "1361b8e6f070fe51",
+            "type": "leaf",
+            "state": {
+              "type": "gamified-player-tab",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "Player"
+            }
+          },
+          {
+            "id": "fa293eb41f0f2b8c",
+            "type": "leaf",
+            "state": {
+              "type": "comment-view",
+              "state": {},
+              "icon": "highlighter",
+              "title": "HiNote"
+            }
+          }
+        ],
+        "currentTab": 4
+      }
+    ],
+    "direction": "horizontal",
+    "width": 330.5
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "gamified-obsidian-plugin:Open Player": false,
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "hi-note:HiNote": false,
+      "periodic-notes:Open today": false,
+      "obsidian-task-progress-bar:Open Task Genius view": false
+    }
+  },
+  "active": "d40e73ebb5ac40a4",
+  "lastOpenFiles": [
+    "SkillTree/Master-Class/Stats/Charisma.md",
+    "SkillTree/Master-Class/Skills/Bodybuilder.md",
+    "SkillTree/Master-Class/Class/Physical.md",
+    "SkillTree/Master-Class/Jester 🎭.md",
+    "Notes from Xavier.md",
+    "Shop.md",
+    "GamifiedTasks.md",
+    "SkillTree/PlayerData.md",
+    "Gamified System files/Gamification main idea.md",
+    "Debugging Notes/EXP theorizing.md",
+    "Inventory.md",
+    "note to highlight.md",
+    "Debugging Notes/Debugging issues.md",
+    "Debugging Notes/Tasks for plugin complete.md",
+    "SkillTree/Master-Class/Stats/Wisdom.md",
+    "SkillTree/Master-Class/Stats/Willpower.md",
+    "SkillTree/Master-Class/Stats/Strength.md",
+    "SkillTree/Master-Class/Stats/Mindfulness.md",
+    "SkillTree/Master-Class/Stats/Intelligence.md",
+    "SkillTree/Master-Class/Stats/Ingenuity.md",
+    "SkillTree/Master-Class/Stats/Faith.md",
+    "SkillTree/Master-Class/Stats/Endurance.md",
+    "SkillTree/Master-Class/Stats/Dexterity.md",
+    "SkillTree/Master-Class/Stats/Creativity.md",
+    "SkillTree/Master-Class/Skills/Stamina.md",
+    "2025-07-13.md",
+    "Debugging Notes",
+    "SkillTree/SkillTree.canvas",
+    "SkillTree/PlayerData",
+    "Daily Notes",
+    "assets/shopkeeper.jpg",
+    "assets/Small-hands.jpg",
+    "templates",
+    "SkillTree/Master-Class/Class",
+    "SkillTree/Master-Class",
+    "SkillTree/Master-Class/Skills",
+    "SkillTree/Master-Class/Stats",
+    "SkillTree",
+    "assets/Niles Armor.jpg",
+    "Gamified System files",
+    "assets/sonic.png",
+    "assets/shadow.png"
+  ]
+}

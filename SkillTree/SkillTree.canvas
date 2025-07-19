@@ -1,0 +1,42 @@
+{
+	"nodes":[
+		{"id":"0e53672af95340ef","type":"group","x":-1320,"y":720,"width":960,"height":830,"label":"Physique"},
+		{"id":"fba2e8f049172713","x":-825,"y":-456,"width":400,"height":400,"type":"file","file":"SkillTree/Master-Class/Stats/Endurance.md"},
+		{"id":"charisma","type":"text","text":"","x":1400,"y":840,"width":160,"height":70},
+		{"id":"persuasion","type":"text","text":"","x":1320,"y":1140,"width":140,"height":60},
+		{"id":"programming","type":"text","text":"","x":720,"y":1175,"width":140,"height":60},
+		{"id":"intelligence","type":"text","text":"# Charisma\n","x":820,"y":840,"width":260,"height":70},
+		{"id":"juggling","type":"text","text":"","x":200,"y":1210,"width":140,"height":60},
+		{"id":"561eb195ff085b6f","type":"file","file":"SkillTree/Master-Class/Jester 🎭.md","x":270,"y":-120,"width":400,"height":400},
+		{"id":"negotiation","type":"text","text":"","x":1760,"y":1140,"width":140,"height":60},
+		{"id":"performance","type":"text","text":"","x":1560,"y":1145,"width":140,"height":60},
+		{"id":"research","type":"text","text":"","x":1080,"y":1170,"width":140,"height":60},
+		{"id":"business","type":"text","text":"","x":880,"y":1160,"width":140,"height":60},
+		{"id":"dexterity","type":"text","text":"# Intelligence","x":280,"y":910,"width":220,"height":70},
+		{"id":"sleight-of-hand","type":"text","text":"","x":500,"y":1145,"width":140,"height":60},
+		{"id":"solving-puzzles","type":"text","text":"","x":360,"y":1295,"width":140,"height":60},
+		{"id":"physical","type":"text","text":"# Physical","x":-820,"y":740,"width":220,"height":225},
+		{"id":"b497f78489d976f6","type":"file","file":"SkillTree/Master-Class/Skills/Bodybuilder.md","x":-1300,"y":1130,"width":400,"height":400},
+		{"id":"endurance","type":"text","text":"","x":-520,"y":1130,"width":140,"height":60},
+		{"id":"acrobatics","type":"text","text":"","x":-800,"y":1130,"width":140,"height":60}
+	],
+	"edges":[
+		{"id":"physical-acrobatics","fromNode":"physical","fromSide":"bottom","toNode":"acrobatics","toSide":"top"},
+		{"id":"physical-endurance","fromNode":"physical","fromSide":"bottom","toNode":"endurance","toSide":"top"},
+		{"id":"dexterity-juggling","fromNode":"dexterity","fromSide":"bottom","toNode":"juggling","toSide":"top"},
+		{"id":"dexterity-solving-puzzles","fromNode":"dexterity","fromSide":"bottom","toNode":"solving-puzzles","toSide":"top"},
+		{"id":"dexterity-sleight-of-hand","fromNode":"dexterity","fromSide":"bottom","toNode":"sleight-of-hand","toSide":"top"},
+		{"id":"intelligence-programming","fromNode":"intelligence","fromSide":"bottom","toNode":"programming","toSide":"top"},
+		{"id":"intelligence-business","fromNode":"intelligence","fromSide":"bottom","toNode":"business","toSide":"top"},
+		{"id":"intelligence-research","fromNode":"intelligence","fromSide":"bottom","toNode":"research","toSide":"top"},
+		{"id":"charisma-persuasion","fromNode":"charisma","fromSide":"bottom","toNode":"persuasion","toSide":"top"},
+		{"id":"charisma-performance","fromNode":"charisma","fromSide":"bottom","toNode":"performance","toSide":"top"},
+		{"id":"charisma-negotiation","fromNode":"charisma","fromSide":"bottom","toNode":"negotiation","toSide":"top"},
+		{"id":"f217f48bc7389146","fromNode":"physical","fromSide":"top","toNode":"561eb195ff085b6f","toSide":"bottom"},
+		{"id":"fcd525327956688b","fromNode":"dexterity","fromSide":"top","toNode":"561eb195ff085b6f","toSide":"bottom"},
+		{"id":"3c0b8b650bd809df","fromNode":"intelligence","fromSide":"top","toNode":"561eb195ff085b6f","toSide":"bottom"},
+		{"id":"a66a4aae741de136","fromNode":"charisma","fromSide":"top","toNode":"561eb195ff085b6f","toSide":"bottom"},
+		{"id":"a89b1b4f0bdaa5e9","fromNode":"b497f78489d976f6","fromSide":"top","toNode":"physical","toSide":"bottom"}
+	],
+	"version":"1.0.0"
+}
