@@ -3,6 +3,8 @@ import { PlayerTab, PLAYER_TAB_VIEW_TYPE } from "./views/tabs/PlayerTab";
 import { Player } from "./data/PlayerData";
 import { GamificationPluginSettings, DEFAULT_SETTINGS } from "./settings";
 import { TaskTabView, GAMIFIED_TASK_TAB_VIEW_TYPE } from './views/tabs/TaskTabView';
+import { SidebarQuestBoardView, SIDEBAR_QUEST_VIEW_TYPE } from './views/SidebarQuestBoardView';
+import { DatacoreTaskBoardView, DATACORE_TASK_VIEW_TYPE } from './views/DatacoreTaskBoardView';
 
 export const TASK_VIEW_TYPE = "gamified-task-view";
 
@@ -71,6 +73,54 @@ export default class GamifiedObsidianPlugin extends Plugin {
 				});
 			},
 		});
+
+		// Register Sidebar Quest Board View
+		if (this.settings.enableSidebarQuestBoard) {
+			this.registerView(
+				SIDEBAR_QUEST_VIEW_TYPE,
+				(leaf) => new SidebarQuestBoardView(leaf, this)
+			);
+			
+			this.addCommand({
+				id: 'open-sidebar-quest-board',
+				name: 'Open Sidebar Quest Board',
+				callback: () => {
+					this.app.workspace.onLayoutReady(async () => {
+						const leaf = this.app.workspace.getRightLeaf(false);
+						if (leaf) {
+							leaf.setViewState({
+								type: SIDEBAR_QUEST_VIEW_TYPE,
+								active: true,
+							});
+						}
+					});
+				},
+			});
+		}
+
+		// Register Datacore Task Analytics View
+		if (this.settings.enableDatacoreIntegration) {
+			this.registerView(
+				DATACORE_TASK_VIEW_TYPE,
+				(leaf) => new DatacoreTaskBoardView(leaf, this)
+			);
+			
+			this.addCommand({
+				id: 'open-datacore-task-analytics',
+				name: 'Open Task Analytics (Datacore)',
+				callback: () => {
+					this.app.workspace.onLayoutReady(async () => {
+						const leaf = this.app.workspace.getRightLeaf(false);
+						if (leaf) {
+							leaf.setViewState({
+								type: DATACORE_TASK_VIEW_TYPE,
+								active: true,
+							});
+						}
+					});
+				},
+			});
+		}
 	}
 
 	async loadSettings() {
@@ -177,6 +227,66 @@ class GamificationSettingTab extends PluginSettingTab {
 					.setValue(this.plugin.settings.levelingFormula)
 					.onChange(async (value) => {
 						this.plugin.settings.levelingFormula = value;
+						await this.plugin.saveSettings();
+					})
+			);
+
+		// Quest Board Settings Section
+		containerEl.createEl("h3", { text: "Quest Board Settings" });
+
+		new Setting(containerEl)
+			.setName("Enable Sidebar Quest Board")
+			.setDesc("Show a compact quest board in the sidebar with drag & drop functionality.")
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.enableSidebarQuestBoard)
+					.onChange(async (value) => {
+						this.plugin.settings.enableSidebarQuestBoard = value;
+						await this.plugin.saveSettings();
+						// Reload plugin to register/unregister views
+						// @ts-ignore
+						new window.Notice("Restart Obsidian to apply quest board changes.");
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Quest Board Position")
+			.setDesc("Choose which sidebar to show the quest board in.")
+			.addDropdown((dropdown) =>
+				dropdown
+					.addOption("left", "Left Sidebar")
+					.addOption("right", "Right Sidebar")
+					.setValue(this.plugin.settings.questBoardPosition)
+					.onChange(async (value) => {
+						this.plugin.settings.questBoardPosition = value as 'left' | 'right';
+						await this.plugin.saveSettings();
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Enable Datacore Integration")
+			.setDesc("Enable advanced task analytics and queries using the Datacore plugin. Requires Datacore plugin to be installed.")
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.enableDatacoreIntegration)
+					.onChange(async (value) => {
+						this.plugin.settings.enableDatacoreIntegration = value;
+						await this.plugin.saveSettings();
+						if (value) {
+							// @ts-ignore
+							new window.Notice("Restart Obsidian to apply Datacore integration. Make sure Datacore plugin is installed.");
+						}
+					})
+			);
+
+		new Setting(containerEl)
+			.setName("Auto-refresh Tasks")
+			.setDesc("Automatically refresh quest board when task files are modified.")
+			.addToggle((toggle) =>
+				toggle
+					.setValue(this.plugin.settings.autoRefreshTasks)
+					.onChange(async (value) => {
+						this.plugin.settings.autoRefreshTasks = value;
 						await this.plugin.saveSettings();
 					})
 			);

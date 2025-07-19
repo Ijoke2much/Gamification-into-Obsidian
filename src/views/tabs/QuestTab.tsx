@@ -1203,7 +1203,7 @@ const CreateQuestModal: React.FC<CreateQuestModalProps> = ({
 										{skill.stats
 											? Object.keys(skill.stats).join(
 													", "
-											  )
+											)
 											: "No stats"}
 									</li>
 								))}
@@ -2060,36 +2060,308 @@ const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
 		}
 	};
 
+	// View mode state
+	const [viewMode, setViewMode] = useState<"classic" | "timeline">("timeline");
+	const [draggedQuest, setDraggedQuest] = useState<Quest | null>(null);
+
+	// Group quests by timeline (Today/Tomorrow/Missed) for timeline view
+	const groupQuestsByTimeline = () => {
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+		const tomorrow = new Date(today);
+		tomorrow.setDate(tomorrow.getDate() + 1);
+
+		const timelineGroups = {
+			today: [] as Quest[],
+			tomorrow: [] as Quest[],
+			missed: [] as Quest[],
+		};
+
+		quests.filter(q => !q.completed).forEach(quest => {
+			if (quest.due) {
+				const dueDate = new Date(quest.due);
+				dueDate.setHours(0, 0, 0, 0);
+
+				if (dueDate.getTime() === today.getTime()) {
+					timelineGroups.today.push(quest);
+				} else if (dueDate.getTime() === tomorrow.getTime()) {
+					timelineGroups.tomorrow.push(quest);
+				} else if (dueDate < today) {
+					timelineGroups.missed.push(quest);
+				}
+			} else if (quest.today) {
+				timelineGroups.today.push(quest);
+			}
+		});
+
+		return timelineGroups;
+	};
+
+	// Timeline drag and drop handlers  
+	const handleTimelineDragStart = (e: React.DragEvent, quest: Quest) => {
+		setDraggedQuest(quest);
+		e.dataTransfer.effectAllowed = "move";
+	};
+
+	const handleTimelineDragOver = (e: React.DragEvent) => {
+		e.preventDefault();
+		e.dataTransfer.dropEffect = "move";
+	};
+
+	const handleTimelineDrop = async (
+		e: React.DragEvent,
+		targetStatus: "today" | "tomorrow" | "missed"
+	) => {
+		e.preventDefault();
+		if (!draggedQuest) return;
+
+		const today = new Date();
+		const tomorrow = new Date(today);
+		tomorrow.setDate(tomorrow.getDate() + 1);
+		const yesterday = new Date(today);
+		yesterday.setDate(yesterday.getDate() - 1);
+
+		let newDueDate: string;
+		switch (targetStatus) {
+			case "today":
+				newDueDate = today.toISOString().split("T")[0];
+				break;
+			case "tomorrow":
+				newDueDate = tomorrow.toISOString().split("T")[0];
+				break;
+			case "missed":
+				newDueDate = yesterday.toISOString().split("T")[0];
+				break;
+		}
+
+		try {
+			const file = plugin.app.vault.getAbstractFileByPath("GamifiedTasks.md");
+			if (file && file instanceof TFile) {
+				const content = await plugin.app.vault.read(file);
+				const lines = content.split("\n");
+
+				const taskLineIndex = lines.findIndex(
+					(line) =>
+						line.includes(draggedQuest.title) &&
+						line.includes("#gamified-task")
+				);
+
+				if (taskLineIndex !== -1) {
+					let line = lines[taskLineIndex];
+
+					if (line.includes("due:")) {
+						line = line.replace(/due:\S+/, `due:${newDueDate}`);
+					} else if (line.includes("📅")) {
+						line = line.replace(/📅\S+/, `📅${newDueDate}`);
+					} else {
+						line = line.replace("#gamified-task", `due:${newDueDate} #gamified-task`);
+					}
+
+					lines[taskLineIndex] = line;
+					await plugin.app.vault.modify(file, lines.join("\n"));
+					loadQuests(); // Refresh the quests
+				}
+			}
+		} catch (error) {
+			console.error("Error updating quest:", error);
+		}
+
+		setDraggedQuest(null);
+	};
+
+	const handleTimelineDragEnd = () => {
+		setDraggedQuest(null);
+	};
+
+	// Render timeline section
+	const renderTimelineSection = (
+		title: string,
+		quests: Quest[],
+		status: "today" | "tomorrow" | "missed"
+	) => {
+		const sectionColors = {
+			today: "#4ecdc4",
+			tomorrow: "#45b7d1", 
+			missed: "#ff6b6b"
+		};
+
+		return (
+			<div style={{ marginBottom: 32 }} key={status}>
+				<h3
+					style={{
+						color: "#fff",
+						fontSize: 20,
+						fontWeight: 600,
+						marginBottom: 16,
+						borderBottom: `2px solid ${sectionColors[status]}`,
+						paddingBottom: 8,
+					}}
+				>
+					{title} ({quests.length})
+				</h3>
+				<div
+					onDragOver={handleTimelineDragOver}
+					onDrop={(e) => handleTimelineDrop(e, status)}
+					style={{
+						minHeight: quests.length === 0 ? 80 : "auto",
+						background: quests.length === 0 ? "rgba(255,255,255,0.05)" : "transparent",
+						borderRadius: 12,
+						padding: quests.length === 0 ? 20 : 0,
+						border: quests.length === 0 ? `2px dashed ${sectionColors[status]}` : "none",
+						display: "flex",
+						alignItems: quests.length === 0 ? "center" : "flex-start",
+						justifyContent: quests.length === 0 ? "center" : "flex-start",
+						flexDirection: "column",
+					}}
+				>
+					{quests.length === 0 ? (
+						<span style={{ color: "#888", fontSize: 16 }}>
+							Drop quests here
+						</span>
+					) : (
+						<div style={{ display: "flex", flexDirection: "column", gap: 12, width: "100%" }}>
+							{quests.map((quest) => (
+								<div
+									key={quest.id}
+									draggable
+									onDragStart={(e) => handleTimelineDragStart(e, quest)}
+									onDragEnd={handleTimelineDragEnd}
+									style={{
+										background: sectionColors[status],
+										borderRadius: 12,
+										padding: 16,
+										cursor: "grab",
+										border: draggedQuest?.id === quest.id ? "2px solid #fff" : "none",
+										opacity: draggedQuest?.id === quest.id ? 0.5 : 1,
+										display: "flex",
+										justifyContent: "space-between",
+										alignItems: "center",
+									}}
+								>
+									<div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+										<span style={{ fontSize: 18 }}>
+											{quest.skills?.[0] ? (
+												quest.skills[0].toLowerCase() === "wisdom" ? "🦉" :
+												quest.skills[0].toLowerCase() === "muscle" ? "💪" :
+												quest.skills[0].toLowerCase() === "intellect" ? "💡" :
+												quest.skills[0].toLowerCase() === "faith" ? "🙏" :
+												"⚔️"
+											) : "⚔️"}
+										</span>
+										<div>
+											<div
+												style={{
+													color: "#fff",
+													fontWeight: 600,
+													fontSize: 16,
+													lineHeight: 1.2,
+												}}
+											>
+												{quest.title}
+											</div>
+											<div
+												style={{
+													color: "rgba(255,255,255,0.8)",
+													fontSize: 14,
+													display: "flex",
+													gap: 8,
+													marginTop: 4,
+												}}
+											>
+												{quest.xp && <span>⭐{quest.xp}</span>}
+												{quest.coins && <span>🪙{quest.coins}</span>}
+												{quest.className && <span>🛠️{quest.className}</span>}
+											</div>
+										</div>
+									</div>
+									<div style={{ display: "flex", gap: 8 }}>
+										<button
+											onClick={() => setEditingQuest(quest)}
+											style={{
+												background: "rgba(255,255,255,0.2)",
+												border: "none",
+												borderRadius: 6,
+												color: "#fff",
+												padding: "6px 10px",
+												fontSize: 12,
+												cursor: "pointer",
+											}}
+										>
+											Edit
+										</button>
+									</div>
+								</div>
+							))}
+						</div>
+					)}
+				</div>
+			</div>
+		);
+	};
+
 	return (
 		<div style={{ padding: 24 }}>
-			{/* Add Quest button outside the Quest Board card */}
-			<button
-				style={{
-					background: "#8ecae6",
-					color: "#222",
-					border: "none",
-					borderRadius: 6,
-					padding: "8px 16px",
-					fontWeight: 600,
-					fontSize: 16,
-					cursor: "pointer",
-					marginBottom: 16,
-					boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-					display: "block",
-					marginLeft: "auto",
-				}}
-				onClick={() => setCreateModalOpen(true)}
-			>
-				+ Add Quest
-			</button>
+			{/* Add Quest button and View Toggle */}
+			<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+				<div style={{ display: "flex", gap: 8 }}>
+					<button
+						onClick={() => setViewMode("timeline")}
+						style={{
+							background: viewMode === "timeline" ? "#4ecdc4" : "#333",
+							color: viewMode === "timeline" ? "#222" : "#fff",
+							border: "none",
+							borderRadius: 6,
+							padding: "6px 12px",
+							fontSize: 14,
+							cursor: "pointer",
+							fontWeight: viewMode === "timeline" ? 600 : 400,
+						}}
+					>
+						📅 Timeline View
+					</button>
+					<button
+						onClick={() => setViewMode("classic")}
+						style={{
+							background: viewMode === "classic" ? "#4ecdc4" : "#333",
+							color: viewMode === "classic" ? "#222" : "#fff",
+							border: "none",
+							borderRadius: 6,
+							padding: "6px 12px",
+							fontSize: 14,
+							cursor: "pointer",
+							fontWeight: viewMode === "classic" ? 600 : 400,
+						}}
+					>
+						📋 Classic View
+					</button>
+				</div>
+				<button
+					style={{
+						background: "#8ecae6",
+						color: "#222",
+						border: "none",
+						borderRadius: 6,
+						padding: "8px 16px",
+						fontWeight: 600,
+						fontSize: 16,
+						cursor: "pointer",
+						boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+					}}
+					onClick={() => setCreateModalOpen(true)}
+				>
+					+ Add Quest
+				</button>
+			</div>
+
 			<QuestBoardHeader onAddQuest={() => setCreateModalOpen(true)} />
+			
 			<CreateQuestModal
 				isOpen={isCreateModalOpen}
 				onClose={() => setCreateModalOpen(false)}
 				onQuestCreated={refreshQuests}
 				plugin={plugin}
 			/>
-			{/* Move EditQuestModal here, outside the QuestBoardHeader area */}
+			
 			<EditQuestModal
 				isOpen={!!editingQuest}
 				onClose={() => setEditingQuest(null)}
@@ -2097,22 +2369,40 @@ const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
 				plugin={plugin}
 				onQuestEdited={refreshQuests}
 			/>
-			<QuestFilters
-				status={status}
-				setStatus={setStatus}
-				className={className}
-				setClassName={setClassName}
-				classOptions={classOptions}
-				sortBy={sortBy}
-				setSortBy={setSortBy}
-			/>
-			<QuestGallery
-				quests={filteredQuests}
-				plugin={plugin}
-				refreshQuests={refreshQuests}
-				onEditQuest={setEditingQuest}
-				onQuestReorder={handleQuestReorder}
-			/>
+
+			{viewMode === "classic" ? (
+				<>
+					<QuestFilters
+						status={status}
+						setStatus={setStatus}
+						className={className}
+						setClassName={setClassName}
+						classOptions={classOptions}
+						sortBy={sortBy}
+						setSortBy={setSortBy}
+					/>
+					<QuestGallery
+						quests={filteredQuests}
+						plugin={plugin}
+						refreshQuests={refreshQuests}
+						onEditQuest={setEditingQuest}
+						onQuestReorder={handleQuestReorder}
+					/>
+				</>
+			) : (
+				<div style={{ marginTop: 24 }}>
+					{(() => {
+						const timelineGroups = groupQuestsByTimeline();
+						return (
+							<>
+								{renderTimelineSection("📅 Due Today", timelineGroups.today, "today")}
+								{renderTimelineSection("⏰ Due Tomorrow", timelineGroups.tomorrow, "tomorrow")}
+								{renderTimelineSection("⚠️ Overdue Tasks", timelineGroups.missed, "missed")}
+							</>
+						);
+					})()}
+				</div>
+			)}
 		</div>
 	);
 };

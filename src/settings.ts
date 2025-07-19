@@ -9,6 +9,12 @@ export interface GamificationPluginSettings {
   classFolder: string; // Folder for class files
   skillFolder: string; // Folder for skill files
   statFolder: string; // Folder for stat files
+  
+  // Quest Board Settings
+  enableSidebarQuestBoard: boolean; // Enable compact sidebar quest board
+  enableDatacoreIntegration: boolean; // Enable advanced Datacore analytics
+  questBoardPosition: 'left' | 'right'; // Position of the quest board in sidebar
+  autoRefreshTasks: boolean; // Auto-refresh tasks when files change
 }
 
 export const DEFAULT_SETTINGS: GamificationPluginSettings = {
@@ -22,4 +28,10 @@ export const DEFAULT_SETTINGS: GamificationPluginSettings = {
   classFolder: 'SkillTree/Master-Class/Class',
   skillFolder: 'SkillTree/Master-Class/Class/Skills',
   statFolder: 'SkillTree/Master-Class/Class/Stat',
+  
+  // Quest Board Default Settings
+  enableSidebarQuestBoard: true,
+  enableDatacoreIntegration: false, // Disabled by default until user enables
+  questBoardPosition: 'right',
+  autoRefreshTasks: true,
 }; 

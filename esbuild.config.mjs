@@ -34,7 +34,7 @@ const context = await esbuild.context({
 		...builtins],
 	format: "cjs",
 	target: "es2018",
-	logLevel: "info",
+	logLevel: prod ? "info" : "verbose",
 	sourcemap: prod ? false : "inline",
 	treeShaking: true,
 	outfile: "main.js",
@@ -43,6 +43,7 @@ const context = await esbuild.context({
 
 if (prod) {
 	await context.rebuild();
+	console.log("✅ Production build completed successfully!");
 	process.exit(0);
 } else {
 	await context.watch();
