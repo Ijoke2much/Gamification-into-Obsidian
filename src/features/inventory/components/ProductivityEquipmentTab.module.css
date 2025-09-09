@@ -1,0 +1,406 @@
+/* Productivity Equipment Tab Styles */
+
+.productivityEquipmentTab {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    border-radius: 16px;
+    color: #ffffff;
+}
+
+.sectionTitle {
+    margin: 0 0 16px 0;
+    color: #ffd700;
+    font-size: 20px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Equipped Gear Section */
+.equippedGearSection {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.equipmentSlots {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.equipmentSlot {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.slotHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.slotName {
+    color: #cbd5e1;
+    font-size: 14px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.unequipButton {
+    background: rgba(239, 68, 68, 0.2);
+    border: 1px solid #ef4444;
+    border-radius: 4px;
+    color: #ef4444;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s ease;
+}
+
+.unequipButton:hover {
+    background: rgba(239, 68, 68, 0.3);
+}
+
+.equippedItem {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px;
+    border-radius: 6px;
+    border: 2px solid;
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.itemIcon {
+    font-size: 24px;
+    width: 32px;
+    text-align: center;
+}
+
+.itemInfo {
+    flex: 1;
+}
+
+.itemName {
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: bold;
+    margin: 0 0 4px 0;
+}
+
+.itemRarity {
+    font-size: 10px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.emptySlot {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    border: 2px dashed rgba(255, 255, 255, 0.3);
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.emptySlotIcon {
+    font-size: 32px;
+    margin-bottom: 8px;
+    opacity: 0.5;
+}
+
+.emptySlotText {
+    color: #64748b;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Equipment List Section */
+.equipmentListSection {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sectionHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.categoryFilters {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.categoryButton {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    color: #cbd5e1;
+    padding: 8px 12px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.categoryButton:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+}
+
+.categoryButton.active {
+    background: #10b981;
+    border-color: #10b981;
+    color: #ffffff;
+}
+
+.equipmentGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 16px;
+}
+
+.equipmentCard {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 16px;
+    border: 2px solid;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.equipmentCard:hover {
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.equipmentCard.equipped {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: #10b981;
+}
+
+.equipmentCard.equipped::before {
+    content: '✅ EQUIPPED';
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: #10b981;
+    color: #ffffff;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: bold;
+}
+
+.cardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.cardContent {
+    margin-bottom: 16px;
+}
+
+.itemName {
+    color: #ffd700;
+    font-size: 16px;
+    font-weight: bold;
+    margin: 0 0 8px 0;
+}
+
+.itemDescription {
+    color: #cbd5e1;
+    font-size: 14px;
+    line-height: 1.4;
+    margin: 0 0 12px 0;
+}
+
+.itemEffects {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+    padding: 8px;
+}
+
+.effectsTitle {
+    color: #10b981;
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.effectItem {
+    color: #cbd5e1;
+    font-size: 11px;
+    margin-bottom: 2px;
+}
+
+.cardFooter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.itemQuantity {
+    color: #64748b;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.itemActions {
+    display: flex;
+    gap: 8px;
+}
+
+.equipButton,
+.useButton,
+.craftButton {
+    background: #10b981;
+    border: 1px solid #10b981;
+    border-radius: 4px;
+    color: #ffffff;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+    transition: all 0.2s ease;
+}
+
+.equipButton:hover,
+.useButton:hover,
+.craftButton:hover {
+    background: #059669;
+    border-color: #059669;
+}
+
+.equipButton:disabled,
+.useButton:disabled,
+.craftButton:disabled {
+    background: rgba(100, 116, 139, 0.3);
+    border-color: rgba(100, 116, 139, 0.3);
+    color: #64748b;
+    cursor: not-allowed;
+}
+
+.craftButton {
+    background: #8b5cf6;
+    border-color: #8b5cf6;
+}
+
+.craftButton:hover {
+    background: #7c3aed;
+    border-color: #7c3aed;
+}
+
+/* Crafting Section */
+.craftingSection {
+    background: rgba(139, 92, 246, 0.1);
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.craftingInfo {
+    color: #cbd5e1;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+.craftingInfo p {
+    margin: 0 0 8px 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .equipmentSlots {
+        grid-template-columns: 1fr;
+    }
+
+    .equipmentGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .sectionHeader {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .categoryFilters {
+        justify-content: center;
+    }
+
+    .itemActions {
+        flex-direction: column;
+    }
+
+    .equipButton,
+    .useButton,
+    .craftButton {
+        width: 100%;
+    }
+}
+
+/* Animation for equipment changes */
+.equipmentCard {
+    animation: equipmentAppear 0.3s ease-out;
+}
+
+@keyframes equipmentAppear {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Rarity-specific glow effects */
+.equipmentCard[style*="#ffd700"] {
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+}
+
+.equipmentCard[style*="#8b5cf6"] {
+    box-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
+}
+
+.equipmentCard[style*="#3b82f6"] {
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+}
+
+.equipmentCard[style*="#10b981"] {
+    box-shadow: 0 0 10px rgba(16, 185, 129, 0.3);
+}

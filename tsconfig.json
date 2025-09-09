@@ -2,22 +2,25 @@
   "compilerOptions": {
     "baseUrl": "./",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": [
+        "src/*"
+      ]
     },
     "jsx": "react-jsx",
     "module": "ESNext",
     "target": "ESNext",
-    "moduleResolution": "node",   // <---- change this
+    "moduleResolution": "node", // <---- change this
     "allowJs": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "importHelpers": true,
-    "isolatedModules": false,
+    "isolatedModules": true,
     "noImplicitAny": true,
+    "strict": true,
     "strictNullChecks": true,
     "inlineSourceMap": true,
     "inlineSources": true,
-    "skipLibCheck": true,
+    "skipLibCheck": false,
     "lib": [
       "DOM",
       "ES2020"
@@ -26,5 +29,5 @@
   "include": [
     "src/**/*.ts",
     "src/**/*.tsx"
-, "src/main.ts"  ]
+  ]
 }

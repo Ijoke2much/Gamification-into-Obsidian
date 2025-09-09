@@ -1,0 +1,766 @@
+/* ============================================================================
+   SETTINGS UI STYLES
+   ============================================================================ */
+
+.settingsContainer {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--background-primary);
+    min-height: 100vh;
+    color: var(--text-normal);
+}
+
+/* ============================================================================
+   HEADER STYLES
+   ============================================================================ */
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding: 20px;
+    background: var(--background-secondary);
+    border-radius: 15px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--background-modifier-border);
+}
+
+.headerLeft {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text-normal);
+}
+
+.breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.breadcrumbLink {
+    color: var(--text-accent);
+    cursor: pointer;
+    text-decoration: underline;
+    transition: color 0.2s ease;
+}
+
+.breadcrumbLink:hover {
+    color: var(--text-accent-hover);
+}
+
+.breadcrumbSeparator {
+    color: var(--text-muted);
+}
+
+.breadcrumbCurrent {
+    font-weight: 600;
+    color: var(--text-normal);
+}
+
+.headerActions {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.presetButton,
+.saveButton {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 25px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.presetButton {
+    background: var(--interactive-normal);
+    color: var(--text-normal);
+}
+
+.presetButton:hover {
+    background: var(--interactive-hover);
+    transform: translateY(-1px);
+}
+
+.saveButton {
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+}
+
+.saveButton:hover:not(:disabled) {
+    background: var(--interactive-accent-hover);
+    transform: translateY(-1px);
+}
+
+.saveButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.saving {
+    background: linear-gradient(135deg, #ffecd2, #fcb69f) !important;
+    color: #8b4513 !important;
+}
+
+/* ============================================================================
+   SEARCH BAR
+   ============================================================================ */
+
+.searchContainer {
+    margin-bottom: 30px;
+}
+
+.searchInput {
+    width: 100%;
+    padding: 15px 20px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 25px;
+    font-size: 1.1rem;
+    background: var(--background-primary);
+    color: var(--text-normal);
+    transition: all 0.2s ease;
+}
+
+.searchInput:focus {
+    outline: none;
+    border-color: var(--interactive-accent);
+    box-shadow: 0 0 0 2px var(--interactive-accent);
+}
+
+.searchInput::placeholder {
+    color: var(--text-muted);
+}
+
+/* ============================================================================
+   VALIDATION MESSAGES
+   ============================================================================ */
+
+.validationErrors,
+.validationWarnings {
+    margin-bottom: 20px;
+    padding: 15px 20px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.validationErrors {
+    border-left: 4px solid #ff4757;
+    background: linear-gradient(135deg, rgba(255, 71, 87, 0.1), rgba(255, 71, 87, 0.05));
+}
+
+.validationWarnings {
+    border-left: 4px solid #ffa502;
+    background: linear-gradient(135deg, rgba(255, 165, 2, 0.1), rgba(255, 165, 2, 0.05));
+}
+
+.validationErrors h3,
+.validationWarnings h3 {
+    margin: 0 0 10px 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.validationErrors ul,
+.validationWarnings ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.validationErrors li,
+.validationWarnings li {
+    margin-bottom: 5px;
+    font-size: 0.95rem;
+}
+
+/* ============================================================================
+   PRESETS MODAL
+   ============================================================================ */
+
+.presetsModal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(5px);
+}
+
+.presetsContent {
+    background: var(--background-primary);
+    border-radius: 20px;
+    padding: 30px;
+    max-width: 800px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: modalSlideIn 0.3s ease;
+    border: 1px solid var(--background-modifier-border);
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-50px) scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.presetsContent h3 {
+    margin: 0 0 10px 0;
+    font-size: 1.5rem;
+    color: var(--text-normal);
+}
+
+.presetsContent p {
+    margin: 0 0 20px 0;
+    color: var(--text-muted);
+}
+
+.presetsList {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 20px;
+}
+
+.presetCard {
+    padding: 20px;
+    border-radius: 15px;
+    background: var(--background-secondary);
+    color: var(--text-normal);
+    border: 1px solid var(--background-modifier-border);
+    transition: all 0.2s ease;
+}
+
+.presetCard:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    background: var(--background-secondary-alt);
+}
+
+.presetHeader {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.presetIcon {
+    font-size: 1.5rem;
+}
+
+.presetHeader h4 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.presetCard p {
+    margin: 0 0 15px 0;
+    font-size: 0.9rem;
+    color: var(--text-muted);
+}
+
+.applyPresetButton {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 20px;
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.applyPresetButton:hover {
+    background: var(--interactive-accent-hover);
+    transform: translateY(-1px);
+}
+
+.presetModalActions {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.closePresetsButton {
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 25px;
+    background: var(--interactive-normal);
+    color: var(--text-normal);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.exitPresetsButton {
+    width: 50px;
+    height: 50px;
+    border: none;
+    border-radius: 50%;
+    background: var(--text-error);
+    color: var(--text-on-accent);
+    font-size: 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.closePresetsButton:hover {
+    background: var(--interactive-hover);
+    transform: translateY(-1px);
+}
+
+.exitPresetsButton:hover {
+    background: var(--text-error-hover);
+    transform: translateY(-1px) scale(1.02);
+}
+
+/* ============================================================================
+   MAIN CONTENT
+   ============================================================================ */
+
+.mainContent {
+    min-height: 400px;
+}
+
+/* ============================================================================
+   CATEGORY CARDS
+   ============================================================================ */
+
+.cardsContainer {
+    margin-bottom: 30px;
+}
+
+.cardsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 25px;
+}
+
+.categoryCard {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid var(--background-modifier-border);
+    background: var(--background-secondary);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.categoryCard:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    background: var(--background-secondary-alt);
+}
+
+.cardHeader {
+    display: flex;
+    align-items: center;
+    padding: 25px;
+    border-left: 6px solid;
+    gap: 20px;
+    transition: all 0.3s ease;
+}
+
+.cardIcon {
+    font-size: 2.5rem;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 15px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+    backdrop-filter: blur(10px);
+}
+
+.cardContent {
+    flex: 1;
+}
+
+.cardTitle {
+    margin: 0 0 8px 0;
+    font-size: 1.3rem;
+    font-weight: 700;
+    color: var(--text-normal);
+}
+
+.cardDescription {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+    line-height: 1.4;
+}
+
+.cardArrow {
+    font-size: 1.5rem;
+    color: var(--text-muted);
+    transition: all 0.2s ease;
+}
+
+.categoryCard:hover .cardArrow {
+    color: var(--text-accent);
+    transform: translateX(3px);
+}
+
+/* ============================================================================
+   CATEGORY SETTINGS
+   ============================================================================ */
+
+.categorySettings {
+    background: var(--background-secondary);
+    border-radius: 20px;
+    padding: 30px;
+    border: 1px solid var(--background-modifier-border);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.categoryHeader {
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.backButton {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 20px;
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 20px;
+}
+
+.backButton:hover {
+    background: var(--interactive-accent-hover);
+    transform: translateY(-1px);
+}
+
+.categoryTitle {
+    margin: 0 0 10px 0;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-normal);
+}
+
+.categoryDescription {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 1.1rem;
+    line-height: 1.5;
+}
+
+.settingsContent {
+    display: flex;
+    flex-direction: column;
+    gap: 25px;
+}
+
+/* ============================================================================
+   SETTINGS SECTIONS
+   ============================================================================ */
+
+.settingsSection {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.settingsCard {
+    padding: 25px;
+    border-radius: 15px;
+    background: var(--background-primary);
+    color: var(--text-normal);
+    border: 1px solid var(--background-modifier-border);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.settingsCard h3 {
+    margin: 0 0 20px 0;
+    font-size: 1.4rem;
+    font-weight: 700;
+}
+
+.settingsCard h4 {
+    margin: 20px 0 15px 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #495057;
+}
+
+.settingsCard h5 {
+    margin: 15px 0 10px 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #6c757d;
+}
+
+.settingGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.settingGroup label {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    font-weight: 600;
+    color: #495057;
+}
+
+.settingGroup input,
+.settingGroup select {
+    padding: 12px 15px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 10px;
+    font-size: 1rem;
+    background: var(--background-primary);
+    color: var(--text-normal);
+    transition: all 0.2s ease;
+}
+
+.settingGroup input:focus,
+.settingGroup select:focus {
+    outline: none;
+    border-color: var(--interactive-accent);
+    box-shadow: 0 0 0 2px var(--interactive-accent);
+}
+
+.settingGroup input::placeholder {
+    color: var(--text-muted);
+}
+
+.checkboxLabel {
+    flex-direction: row !important;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+}
+
+.checkboxLabel input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+    margin: 0;
+    cursor: pointer;
+}
+
+.advancedNote {
+    margin: 0 0 20px 0;
+    padding: 15px;
+    background: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 10px;
+    font-size: 0.95rem;
+    line-height: 1.5;
+    color: var(--text-muted);
+}
+
+/* ============================================================================
+   RESPONSIVE DESIGN
+   ============================================================================ */
+
+@media (max-width: 768px) {
+    .settingsContainer {
+        padding: 15px;
+    }
+
+    .header {
+        flex-direction: column;
+        gap: 20px;
+        text-align: center;
+    }
+
+    .title {
+        font-size: 2rem;
+    }
+
+    .headerActions {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .cardsGrid {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .cardHeader {
+        padding: 20px;
+        gap: 15px;
+    }
+
+    .cardIcon {
+        width: 50px;
+        height: 50px;
+        font-size: 2rem;
+    }
+
+    .categorySettings {
+        padding: 20px;
+    }
+
+    .categoryTitle {
+        font-size: 1.5rem;
+    }
+
+    .presetsList {
+        grid-template-columns: 1fr;
+    }
+
+    .presetsContent {
+        margin: 20px;
+        padding: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .settingsContainer {
+        padding: 10px;
+    }
+
+    .title {
+        font-size: 1.5rem;
+    }
+
+    .cardHeader {
+        padding: 15px;
+        gap: 10px;
+    }
+
+    .cardIcon {
+        width: 40px;
+        height: 40px;
+        font-size: 1.5rem;
+    }
+
+    .cardTitle {
+        font-size: 1.1rem;
+    }
+
+    .cardDescription {
+        font-size: 0.9rem;
+    }
+
+    .categorySettings {
+        padding: 15px;
+    }
+
+    .settingsCard {
+        padding: 20px;
+    }
+
+    .settingsCard h3 {
+        font-size: 1.2rem;
+    }
+}
+
+/* ============================================================================
+   ANIMATIONS
+   ============================================================================ */
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.categoryCard {
+    animation: fadeInUp 0.6s ease;
+}
+
+.categoryCard:nth-child(1) {
+    animation-delay: 0.1s;
+}
+
+.categoryCard:nth-child(2) {
+    animation-delay: 0.2s;
+}
+
+.categoryCard:nth-child(3) {
+    animation-delay: 0.3s;
+}
+
+.categoryCard:nth-child(4) {
+    animation-delay: 0.4s;
+}
+
+.categoryCard:nth-child(5) {
+    animation-delay: 0.5s;
+}
+
+.categoryCard:nth-child(6) {
+    animation-delay: 0.6s;
+}
+
+.categoryCard:nth-child(7) {
+    animation-delay: 0.7s;
+}
+
+.categoryCard:nth-child(8) {
+    animation-delay: 0.8s;
+}
+
+/* ============================================================================
+   SCROLLBAR STYLING
+   ============================================================================ */
+
+.presetsContent::-webkit-scrollbar {
+    width: 8px;
+}
+
+.presetsContent::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 10px;
+}
+
+.presetsContent::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border-radius: 10px;
+}
+
+.presetsContent::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(135deg, #5a6fd8, #6a4190);
+}

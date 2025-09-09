@@ -1,0 +1,747 @@
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    backdrop-filter: blur(10px);
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.modal {
+    background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+    border-radius: 25px;
+    padding: 30px;
+    max-width: 1000px;
+    width: 95%;
+    max-height: 95vh;
+    overflow-y: auto;
+    box-shadow:
+        0 25px 50px rgba(0, 0, 0, 0.8),
+        0 0 0 2px #4a90e2,
+        0 0 20px rgba(74, 144, 226, 0.3);
+    border: 2px solid #4a90e2;
+    position: relative;
+    animation: slideIn 0.4s ease-out;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateY(50px) scale(0.9);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+.modalHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #4a90e2;
+    position: relative;
+}
+
+.modalHeader::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #4a90e2, #4ecdc4, #4a90e2);
+    animation: shimmer 2s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+}
+
+.modalHeader h2 {
+    color: #ffffff;
+    margin: 0;
+    font-size: 28px;
+    text-shadow: 0 0 15px #4a90e2;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+.closeButton {
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+    font-size: 24px;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 50%;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+.closeButton:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: scale(1.1);
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
+}
+
+.battleArea {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    margin-bottom: 30px;
+}
+
+.bossSection,
+.playerSection {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 20px;
+    padding: 25px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+}
+
+.bossSection:hover,
+.playerSection:hover {
+    border-color: rgba(74, 144, 226, 0.5);
+    box-shadow: 0 0 30px rgba(74, 144, 226, 0.2);
+}
+
+.bossImage {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.bossAvatar {
+    font-size: 100px;
+    filter: drop-shadow(0 0 30px #ff6b6b);
+    animation: bossGlow 3s ease-in-out infinite alternate;
+    margin-bottom: 10px;
+}
+
+@keyframes bossGlow {
+    from {
+        filter: drop-shadow(0 0 30px #ff6b6b);
+        transform: scale(1);
+    }
+
+    to {
+        filter: drop-shadow(0 0 50px #ff6b6b);
+        transform: scale(1.05);
+    }
+}
+
+.bossType {
+    background: linear-gradient(45deg, #ff6b6b, #ff8e8e);
+    color: white;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    display: inline-block;
+    box-shadow: 0 0 15px rgba(255, 107, 107, 0.5);
+}
+
+.bossInfo h3 {
+    color: #ffffff;
+    margin: 0 0 20px 0;
+    text-align: center;
+    font-size: 26px;
+    text-shadow: 0 0 10px #ff6b6b;
+}
+
+.bossHP {
+    margin-bottom: 20px;
+}
+
+.hpBar {
+    width: 100%;
+    height: 25px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 15px;
+    overflow: hidden;
+    margin-bottom: 8px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    position: relative;
+}
+
+.hpFill {
+    height: 100%;
+    background: linear-gradient(90deg, #4ecdc4 0%, #44a08d 100%);
+    transition: width 0.8s ease, background-color 0.3s ease;
+    border-radius: 13px;
+    position: relative;
+}
+
+.hpFill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: hpShine 2s ease-in-out infinite;
+}
+
+@keyframes hpShine {
+    0% {
+        transform: translateX(-100%);
+    }
+
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+.hpText {
+    color: #ffffff;
+    font-size: 16px;
+    text-align: center;
+    display: block;
+    font-weight: bold;
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.5);
+}
+
+.bossPhase {
+    color: #4ecdc4;
+    text-align: center;
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 15px;
+    text-shadow: 0 0 10px #4ecdc4;
+}
+
+.bossDescription {
+    color: #cccccc;
+    text-align: center;
+    font-size: 14px;
+    line-height: 1.4;
+    font-style: italic;
+}
+
+.playerStats h4 {
+    color: #ffffff;
+    margin: 0 0 20px 0;
+    text-align: center;
+    font-size: 22px;
+    text-shadow: 0 0 10px #4a90e2;
+}
+
+.statGrid {
+    display: grid;
+    gap: 15px;
+}
+
+.statItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #ffffff;
+    font-size: 16px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.playerHP {
+    width: 120px;
+    height: 18px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.playerHP .hpFill {
+    background: linear-gradient(90deg, #4a90e2 0%, #357abd 100%);
+}
+
+.battleControls {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 20px;
+    padding: 25px;
+    margin-bottom: 30px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.battleControls h4 {
+    color: #ffffff;
+    margin: 0 0 25px 0;
+    text-align: center;
+    font-size: 24px;
+    text-shadow: 0 0 10px #4ecdc4;
+}
+
+.moveGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.moveButton {
+    background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%);
+    border: none;
+    border-radius: 15px;
+    padding: 20px;
+    color: #ffffff;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: left;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 5px 15px rgba(74, 144, 226, 0.3);
+}
+
+.moveButton::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s ease;
+}
+
+.moveButton:hover::before {
+    left: 100%;
+}
+
+.moveButton:hover:not(:disabled) {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(74, 144, 226, 0.5);
+}
+
+.moveButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.moveButton.selected {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ff8e8e 100%);
+    transform: scale(1.05);
+    box-shadow: 0 0 30px rgba(255, 107, 107, 0.5);
+}
+
+.moveName {
+    font-weight: bold;
+    font-size: 18px;
+    margin-bottom: 8px;
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
+}
+
+.moveDescription {
+    font-size: 14px;
+    opacity: 0.9;
+    margin-bottom: 8px;
+    line-height: 1.3;
+}
+
+.movePower {
+    font-size: 12px;
+    opacity: 0.7;
+    font-weight: bold;
+}
+
+.battleLog {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 20px;
+    padding: 25px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.battleLog h4 {
+    color: #ffffff;
+    margin: 0 0 20px 0;
+    font-size: 22px;
+    text-shadow: 0 0 10px #4ecdc4;
+}
+
+.logContainer {
+    max-height: 250px;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+.logContainer::-webkit-scrollbar {
+    width: 8px;
+}
+
+.logContainer::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+.logContainer::-webkit-scrollbar-thumb {
+    background: rgba(74, 144, 226, 0.5);
+    border-radius: 4px;
+}
+
+.logEntry {
+    padding: 12px 16px;
+    margin-bottom: 12px;
+    border-radius: 12px;
+    font-size: 14px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    transition: all 0.3s ease;
+    border-left: 4px solid transparent;
+}
+
+.logEntry.player {
+    background: rgba(74, 144, 226, 0.15);
+    border-left-color: #4a90e2;
+    box-shadow: 0 0 15px rgba(74, 144, 226, 0.2);
+}
+
+.logEntry.boss {
+    background: rgba(255, 107, 107, 0.15);
+    border-left-color: #ff6b6b;
+    box-shadow: 0 0 15px rgba(255, 107, 107, 0.2);
+}
+
+.turnNumber {
+    color: #888;
+    font-weight: bold;
+    min-width: 70px;
+    font-size: 12px;
+}
+
+.action {
+    color: #ffffff;
+    flex: 1;
+    font-weight: 500;
+}
+
+.damage {
+    color: #ff6b6b;
+    font-weight: bold;
+    font-size: 16px;
+    text-shadow: 0 0 5px rgba(255, 107, 107, 0.5);
+}
+
+.effect {
+    color: #4ecdc4;
+    font-style: italic;
+    font-size: 13px;
+}
+
+.gameOver {
+    text-align: center;
+    padding: 40px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 20px;
+    margin-top: 30px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.gameOver h2 {
+    color: #4ecdc4;
+    font-size: 42px;
+    margin-bottom: 30px;
+    text-shadow: 0 0 25px #4ecdc4;
+    animation: victoryPulse 2s ease-in-out infinite;
+}
+
+@keyframes victoryPulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+.victoryRewards h3 {
+    color: #ffffff;
+    margin-bottom: 25px;
+    font-size: 28px;
+    text-shadow: 0 0 15px #4ecdc4;
+}
+
+.rewardsList {
+    display: grid;
+    gap: 15px;
+    text-align: left;
+    max-width: 500px;
+    margin: 0 auto 30px auto;
+}
+
+.rewardItem {
+    color: #ffffff;
+    padding: 15px 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    border-left: 4px solid #4ecdc4;
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    transition: all 0.3s ease;
+}
+
+.rewardItem:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateX(5px);
+}
+
+.rewardIcon {
+    font-size: 24px;
+    min-width: 30px;
+}
+
+.rewardText {
+    font-size: 16px;
+    line-height: 1.4;
+}
+
+.achievements {
+    text-align: center;
+}
+
+.achievements h4 {
+    color: #ffffff;
+    margin-bottom: 20px;
+    font-size: 22px;
+    text-shadow: 0 0 10px #ffd700;
+}
+
+.achievement {
+    color: #ffd700;
+    font-size: 18px;
+    margin-bottom: 10px;
+    text-shadow: 0 0 10px #ffd700;
+    animation: achievementGlow 2s ease-in-out infinite alternate;
+}
+
+@keyframes achievementGlow {
+    from {
+        text-shadow: 0 0 10px #ffd700;
+    }
+
+    to {
+        text-shadow: 0 0 20px #ffd700, 0 0 30px #ffd700;
+    }
+}
+
+.defeatMessage p {
+    color: #ffffff;
+    font-size: 20px;
+    line-height: 1.5;
+    margin-bottom: 25px;
+}
+
+.retryButton {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ff8e8e 100%);
+    border: none;
+    color: white;
+    padding: 15px 30px;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 5px 15px rgba(255, 107, 107, 0.3);
+}
+
+.retryButton:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(255, 107, 107, 0.5);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .modal {
+        padding: 20px;
+        width: 98%;
+        margin: 10px;
+    }
+
+    .battleArea {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .moveGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .modalHeader h2 {
+        font-size: 22px;
+    }
+
+    .bossAvatar {
+        font-size: 80px;
+    }
+
+    .gameOver h2 {
+        font-size: 32px;
+    }
+
+    .rewardsList {
+        max-width: 100%;
+    }
+}
+
+@media (max-width: 480px) {
+    .modal {
+        padding: 15px;
+    }
+
+    .bossSection,
+    .playerSection {
+        padding: 20px;
+    }
+
+    .moveButton {
+        padding: 15px;
+    }
+
+    .logEntry {
+        padding: 10px 12px;
+        font-size: 13px;
+    }
+}
+
+/* Enhanced Rewards Styles */
+.multiplier {
+    font-size: 0.8em;
+    color: var(--text-accent);
+    font-weight: bold;
+    background: var(--background-modifier-success);
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: 8px;
+}
+
+.bonusRewards {
+    margin: 16px 0;
+    padding: 12px;
+    background: linear-gradient(135deg, rgba(0, 255, 0, 0.1) 0%, transparent 100%);
+    border-radius: 8px;
+    border: 2px solid var(--interactive-accent);
+}
+
+.bonusItem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px;
+    margin: 4px 0;
+    background: var(--background-primary);
+    border-radius: 6px;
+}
+
+.bonusIcon {
+    font-size: 1.1em;
+}
+
+.bonusText {
+    font-weight: 500;
+    color: var(--text-accent);
+}
+
+.materialsSection,
+.lifeItemsSection {
+    margin: 16px 0;
+    padding: 12px;
+    background: var(--background-secondary);
+    border-radius: 8px;
+    border: 1px solid var(--background-modifier-border);
+}
+
+.unlockedFeatures {
+    margin: 16px 0;
+    padding: 12px;
+    background: linear-gradient(135deg, rgba(0, 0, 255, 0.1) 0%, transparent 100%);
+    border-radius: 8px;
+    border: 2px solid var(--interactive-accent);
+}
+
+.feature {
+    padding: 6px 12px;
+    margin: 4px 0;
+    background: var(--background-primary);
+    border-radius: 6px;
+    color: var(--text-accent);
+    font-size: 0.9em;
+    font-weight: 500;
+}
+
+.seasonalBonuses {
+    margin: 16px 0;
+    padding: 12px;
+    background: linear-gradient(135deg, rgba(255, 165, 0, 0.1) 0%, transparent 100%);
+    border-radius: 8px;
+    border: 2px solid #ff9800;
+}
+
+.seasonalItem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px;
+    margin: 4px 0;
+    background: var(--background-primary);
+    border-radius: 6px;
+}
+
+.seasonalIcon {
+    font-size: 1.1em;
+}
+
+.seasonalText {
+    font-weight: 500;
+    color: #ff9800;
+}
+
+.victoryRewards {
+    max-height: 400px;
+    overflow-y: auto;
+    padding: 16px;
+}
+
+.rewardText {
+    flex: 1;
+}

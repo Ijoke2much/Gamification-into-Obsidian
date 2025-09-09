@@ -1,0 +1,366 @@
+.questProgressTracker {
+    padding: 20px;
+    background: var(--background-primary);
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+    gap: 16px;
+}
+
+.header h2 {
+    margin: 0;
+    color: var(--text-normal);
+    font-size: 24px;
+    font-weight: 600;
+}
+
+.controls {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.timeframeSelector,
+.viewSelector {
+    display: flex;
+    background: var(--background-secondary);
+    border-radius: 6px;
+    padding: 2px;
+    border: 1px solid var(--border-color);
+}
+
+.timeframeButton,
+.viewButton {
+    padding: 8px 16px;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.timeframeButton:hover,
+.viewButton:hover {
+    background: var(--background-modifier-hover);
+    color: var(--text-normal);
+}
+
+.timeframeButton.active,
+.viewButton.active {
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+}
+
+.content {
+    min-height: 300px;
+}
+
+.statsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.statCard {
+    background: var(--background-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+    text-align: center;
+    position: relative;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.statCard:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.statValue {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-normal);
+    margin-bottom: 4px;
+}
+
+.statLabel {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 600;
+}
+
+.warningIndicator {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 20px;
+    height: 20px;
+    background: var(--color-red);
+    color: white;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.progressSection {
+    background: var(--background-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 24px;
+}
+
+.progressHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    font-weight: 600;
+    color: var(--text-normal);
+}
+
+.progressBar {
+    width: 100%;
+    height: 12px;
+    background: var(--background-primary);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.progressFill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--color-green), var(--color-blue));
+    border-radius: 6px;
+    transition: width 0.5s ease;
+}
+
+.progressDetails {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.recentSection {
+    background: var(--background-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.recentSection h3 {
+    margin: 0 0 16px 0;
+    color: var(--text-normal);
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.emptyState {
+    text-align: center;
+    color: var(--text-muted);
+    font-style: italic;
+    padding: 20px;
+}
+
+.completionsList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.completionItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px;
+    background: var(--background-primary);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.completionItem:hover {
+    border-color: var(--border-color);
+    transform: translateX(4px);
+}
+
+.completionTitle {
+    font-weight: 500;
+    color: var(--text-normal);
+    margin-bottom: 4px;
+}
+
+.completionMeta {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.xpBadge,
+.difficultyBadge {
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.xpBadge {
+    background: rgba(76, 175, 80, 0.2);
+    color: var(--color-green);
+}
+
+.difficultyBadge {
+    background: rgba(33, 150, 243, 0.2);
+    color: var(--color-blue);
+}
+
+.breakdownSection {
+    margin-top: 24px;
+}
+
+.breakdownGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+}
+
+.breakdownCard {
+    background: var(--background-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 20px;
+}
+
+.breakdownCard h4 {
+    margin: 0 0 16px 0;
+    color: var(--text-normal);
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.breakdownList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.breakdownItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.breakdownItem:last-child {
+    border-bottom: none;
+}
+
+.breakdownLabel {
+    color: var(--text-normal);
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+.breakdownValue {
+    color: var(--text-muted);
+    font-weight: 600;
+    background: var(--background-primary);
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+}
+
+.timelineView {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 300px;
+}
+
+.comingSoon {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 18px;
+    padding: 40px;
+}
+
+.comingSoonDesc {
+    font-size: 14px;
+    margin-top: 8px;
+    opacity: 0.7;
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .questProgressTracker {
+        padding: 16px;
+    }
+
+    .header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .controls {
+        justify-content: center;
+    }
+
+    .statsGrid {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 12px;
+    }
+
+    .statCard {
+        padding: 16px;
+    }
+
+    .statValue {
+        font-size: 24px;
+    }
+
+    .completionItem {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .breakdownGrid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Dark theme adjustments */
+.theme-dark .statCard:hover {
+    box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+}
+
+.theme-dark .progressFill {
+    background: linear-gradient(90deg, #4CAF50, #2196F3);
+}
+
+/* Color variables for better theming */
+:root {
+    --color-green: #4CAF50;
+    --color-blue: #2196F3;
+    --color-red: #f44336;
+}

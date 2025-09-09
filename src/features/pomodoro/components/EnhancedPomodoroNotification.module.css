@@ -1,0 +1,457 @@
+.notificationContainer {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 400px;
+}
+
+.notification {
+    background: linear-gradient(135deg, #2c3e50, #34495e);
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    border-left: 4px solid #3498db;
+    transform: translateX(100%);
+    opacity: 0;
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.notification.visible {
+    transform: translateX(0);
+    opacity: 1;
+}
+
+.notification.closing {
+    transform: translateX(100%);
+    opacity: 0;
+}
+
+.notificationHeader {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.iconContainer {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.icon {
+    font-size: 20px;
+    animation: bounce 0.6s ease-in-out;
+}
+
+.content {
+    flex: 1;
+    min-width: 0;
+}
+
+.title {
+    font-size: 16px;
+    font-weight: bold;
+    color: #fff;
+    margin-bottom: 4px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.message {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.9);
+    line-height: 1.4;
+}
+
+.closeButton {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+}
+
+.closeButton:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #fff;
+}
+
+/* Progress Bar */
+.progressContainer {
+    margin-top: 12px;
+}
+
+.progressBar {
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 6px;
+}
+
+.progressFill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.8s ease;
+    background: linear-gradient(90deg, #4CAF50, #66BB6A);
+    box-shadow: 0 0 10px rgba(76, 175, 80, 0.5);
+}
+
+.progressText {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.8);
+    text-align: center;
+    font-weight: 500;
+}
+
+/* Rewards Display */
+.rewardsContainer {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.rewardsTitle {
+    font-size: 14px;
+    font-weight: bold;
+    color: #fff;
+    margin-bottom: 8px;
+    text-align: center;
+}
+
+.rewardsGrid {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.rewardItem {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.rewardIcon {
+    font-size: 16px;
+    animation: pulse 2s infinite;
+}
+
+.rewardValue {
+    font-size: 12px;
+    font-weight: bold;
+    color: #fff;
+}
+
+/* Materials Section */
+.materialsSection {
+    margin-top: 10px;
+}
+
+.materialsTitle {
+    font-size: 12px;
+    font-weight: bold;
+    color: #fff;
+    margin-bottom: 6px;
+    text-align: center;
+}
+
+.materialsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 6px;
+}
+
+.materialItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 6px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.materialIcon {
+    font-size: 18px;
+    margin-bottom: 2px;
+    animation: bounce 1s ease-in-out;
+}
+
+.materialName {
+    font-size: 10px;
+    color: #fff;
+    text-align: center;
+    margin-bottom: 2px;
+    font-weight: 500;
+}
+
+.materialQuality {
+    font-size: 8px;
+    padding: 1px 4px;
+    border-radius: 8px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Quality styles */
+.fresh {
+    background: linear-gradient(45deg, #4CAF50, #66BB6A);
+    color: white;
+}
+
+.normal {
+    background: linear-gradient(45deg, #2196F3, #42A5F5);
+    color: white;
+}
+
+.refined {
+    background: linear-gradient(45deg, #9C27B0, #BA68C8);
+    color: white;
+}
+
+.masterwork {
+    background: linear-gradient(45deg, #FF9800, #FFB74D);
+    color: white;
+}
+
+.dried {
+    background: linear-gradient(45deg, #795548, #A1887F);
+    color: white;
+}
+
+/* Notification Types */
+.subtaskComplete {
+    border-left-color: #4CAF50;
+}
+
+.subtaskComplete .iconContainer {
+    background: linear-gradient(135deg, #4CAF50, #66BB6A);
+}
+
+.questProgress {
+    border-left-color: #2196F3;
+}
+
+.questProgress .iconContainer {
+    background: linear-gradient(135deg, #2196F3, #42A5F5);
+}
+
+.sessionComplete {
+    border-left-color: #FF9800;
+}
+
+.sessionComplete .iconContainer {
+    background: linear-gradient(135deg, #FF9800, #FFB74D);
+}
+
+.achievement {
+    border-left-color: #9C27B0;
+}
+
+.achievement .iconContainer {
+    background: linear-gradient(135deg, #9C27B0, #BA68C8);
+}
+
+.materialReward {
+    border-left-color: #00BCD4;
+}
+
+.materialReward .iconContainer {
+    background: linear-gradient(135deg, #00BCD4, #26C6DA);
+}
+
+/* Confetti Animation */
+.confettiContainer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: hidden;
+    border-radius: 12px;
+}
+
+.confetti {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: linear-gradient(45deg, #FFD700, #FFA500);
+    border-radius: 50%;
+    animation: confettiFall linear infinite;
+    box-shadow: 0 0 6px rgba(255, 215, 0, 0.8);
+}
+
+.confetti:nth-child(even) {
+    background: linear-gradient(45deg, #FF69B4, #FF1493);
+    box-shadow: 0 0 6px rgba(255, 105, 180, 0.8);
+}
+
+.confetti:nth-child(3n) {
+    background: linear-gradient(45deg, #00CED1, #20B2AA);
+    box-shadow: 0 0 6px rgba(0, 206, 209, 0.8);
+}
+
+/* Animations */
+@keyframes bounce {
+
+    0%,
+    20%,
+    50%,
+    80%,
+    100% {
+        transform: translateY(0);
+    }
+
+    40% {
+        transform: translateY(-8px);
+    }
+
+    60% {
+        transform: translateY(-4px);
+    }
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+@keyframes confettiFall {
+    0% {
+        transform: translateY(-100px) rotate(0deg);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translateY(400px) rotate(720deg);
+        opacity: 0;
+    }
+}
+
+/* Mobile responsiveness */
+@media (max-width: 768px) {
+    .notificationContainer {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        max-width: none;
+    }
+
+    .notification {
+        padding: 12px;
+    }
+
+    .iconContainer {
+        width: 32px;
+        height: 32px;
+    }
+
+    .icon {
+        font-size: 16px;
+    }
+
+    .title {
+        font-size: 14px;
+    }
+
+    .message {
+        font-size: 12px;
+    }
+
+    .rewardsGrid {
+        gap: 6px;
+    }
+
+    .rewardItem {
+        padding: 4px 8px;
+    }
+
+    .rewardIcon {
+        font-size: 14px;
+    }
+
+    .rewardValue {
+        font-size: 11px;
+    }
+
+    .materialsGrid {
+        grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+        gap: 4px;
+    }
+
+    .materialItem {
+        padding: 4px;
+    }
+
+    .materialIcon {
+        font-size: 16px;
+    }
+
+    .materialName {
+        font-size: 9px;
+    }
+
+    .materialQuality {
+        font-size: 7px;
+        padding: 1px 3px;
+    }
+}
+
+/* Dark theme adjustments */
+@media (prefers-color-scheme: dark) {
+    .notification {
+        background: linear-gradient(135deg, #1a1a1a, #2d2d2d);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .iconContainer {
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    .rewardItem {
+        background: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .materialItem {
+        background: rgba(255, 255, 255, 0.03);
+        border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+}

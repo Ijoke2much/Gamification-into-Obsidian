@@ -1,0 +1,168 @@
+.statsRoot {
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 24px 0 0 0;
+    background: var(--background-primary, #23243a);
+    border-radius: 18px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
+}
+
+.codesRow {
+    font-size: 13px;
+    color: #aaa;
+    margin-bottom: 12px;
+    margin-left: 8px;
+    font-weight: 600;
+}
+
+.statsGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.statRow {
+    display: flex;
+    flex-direction: column;
+    padding: 12px 0 8px 0;
+    border-bottom: 1.5px solid #222;
+    min-height: 54px;
+    justify-content: center;
+    background: none;
+}
+
+.statHeader {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.statIcon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    font-size: 22px;
+    margin-right: 8px;
+    box-shadow: 0 2px 8px #0002;
+}
+
+.icon {
+    font-size: 22px;
+}
+
+/* Unique backgrounds for each stat */
+.iconCHA {
+    background: #d0e6ff;
+}
+
+.iconCRE {
+    background: #ffe0e6;
+}
+
+.iconDEX {
+    background: #d0f0ff;
+}
+
+.iconEND {
+    background: #e0ffe0;
+}
+
+.iconFAI {
+    background: #e6d0ff;
+}
+
+.iconING {
+    background: #ffe6f0;
+}
+
+.iconINT {
+    background: #e0f0ff;
+}
+
+.iconMIN {
+    background: #fff9d0;
+}
+
+.iconSTR {
+    background: #ffe6d0;
+}
+
+.iconWIL {
+    background: #ffd0d0;
+}
+
+.iconWIS {
+    background: #e6e6e6;
+}
+
+.statName {
+    font-weight: 700;
+    color: #fff;
+    font-size: 15px;
+    margin-right: 2px;
+}
+
+.statCode {
+    color: #aaa;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.spacer {
+    flex: 1;
+}
+
+.statValueHigh {
+    font-size: 18px;
+    font-weight: 700;
+    color: #4caf50;
+    min-width: 32px;
+    text-align: right;
+}
+
+.statValueMed {
+    font-size: 18px;
+    font-weight: 700;
+    color: #ffc107;
+    min-width: 32px;
+    text-align: right;
+}
+
+.statValueLow {
+    font-size: 18px;
+    font-weight: 700;
+    color: #f44336;
+    min-width: 32px;
+    text-align: right;
+    margin-right: 35px;
+}
+
+.statLevel {
+    color: #aaa;
+    font-size: 13px;
+    margin-left: 4px;
+    font-weight: 600;
+}
+
+.statBarBg {
+    width: 100%;
+    height: 4px;
+    background: #222;
+    border-radius: 3px;
+    margin-top: 6px;
+    overflow: hidden;
+}
+
+.statBarFg {
+    height: 100%;
+    background: linear-gradient(90deg, #4caf50, #ffc107, #f44336);
+    border-radius: 3px;
+    transition: width 0.7s cubic-bezier(.4, 2, .3, 1);
+}
+
+.testDebugBg {
+    background: magenta !important;
+}

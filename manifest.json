@@ -3,10 +3,10 @@
 	"name": "Gamified Obsidian Plugin",
 	"version": "1.0.0",
 	"main": "main.js",
-	"css": "styles.css",
+	"css": "main.css",
 	"minAppVersion": "0.15.0",
-	"description": "Gamify your Obsidian Vault",
-	"author": "YourName",
-	"authorUrl": "https://your-site.com",
-	"isDesktopOnly": true
+	"description": "Gamify your Obsidian vault with quests, achievements, boss battles, and RPG-style progression",
+	"author": "IJoke2much",
+	"authorUrl": "https://github.com/nilesloverso",
+	"isDesktopOnly": false
 }

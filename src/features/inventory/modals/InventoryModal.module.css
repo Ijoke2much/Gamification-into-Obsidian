@@ -1,0 +1,143 @@
+/* ========================================
+   INVENTORY MODAL SPECIFIC STYLES
+   ======================================== */
+
+.inventoryModal {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: transparent;
+}
+
+/* Target ONLY the inventory modal - using Obsidian's modal structure */
+:global(.modal-container .modal.gamify-inventory-modal) {
+    /* Make the modal much wider */
+    width: 1400px !important;
+    min-width: 1000px !important;
+    max-width: 98vw !important;
+    height: 800px !important;
+    min-height: 600px !important;
+    max-height: 95vh !important;
+
+    /* Blue theme background */
+    background: linear-gradient(135deg, #1a1d29 0%, #2d3748 100%) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Target the modal title specifically for inventory */
+:global(.modal-container .modal.gamify-inventory-modal .modal-title),
+:global(.modal-container .modal.gamify-inventory-modal .modal-title-bar) {
+    background: linear-gradient(135deg, #8ecae6 0%, #219ebc 100%) !important;
+    color: #ffffff !important;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+    border-bottom: 2px solid #4a90e2 !important;
+    font-weight: bold !important;
+    text-align: center !important;
+    padding: 16px !important;
+    border-radius: 16px 16px 0 0 !important;
+    position: relative !important;
+}
+
+/* Target the modal content area */
+:global(.modal-container .modal.gamify-inventory-modal .modal-content) {
+    background: transparent !important;
+    border-radius: 0 0 16px 16px !important;
+    padding: 0 !important;
+}
+
+/* Override Obsidian's default modal constraints - ONLY for inventory */
+:global(.modal-container .modal.gamify-inventory-modal) {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    /* Center the modal */
+    transform: translate(-50%, -50%) !important;
+    margin: 0 !important;
+    z-index: 1000 !important;
+    /* Avoid forcing extra layers which can cause flicker on some GPUs */
+}
+
+/* we now inject a native button into the title bar via JS with class .gamify-close-btn */
+.gamify-close-btn:hover {
+    filter: brightness(1.05);
+}
+
+.gamify-close-btn:active {
+    transform: scale(0.95);
+}
+
+/* removed secondary inline header */
+
+/* Disable expensive shimmer to reduce flicker */
+.inventoryModalHeader::before {
+    display: none;
+}
+
+@keyframes shimmer {
+    0% {
+        left: -100%;
+    }
+
+    100% {
+        left: 100%;
+    }
+}
+
+/* Mobile responsiveness for inventory modal */
+@media (max-width: 768px) {
+    :global(.modal-container .modal.gamify-inventory-modal) {
+        width: 95vw !important;
+        min-width: 320px !important;
+        height: 90vh !important;
+        min-height: 500px !important;
+    }
+
+    .closeBtn {
+        top: 8px;
+        right: 12px;
+        width: 28px;
+        height: 28px;
+        font-size: 18px;
+    }
+
+    .inventoryModalHeader {
+        padding: 12px 16px;
+        font-size: 16px;
+    }
+}
+
+/* Reduce heavy effects on smaller/laptop screens to avoid flicker */
+@media (max-width: 1280px) {
+    :global(.modal-container .modal:has(.inventoryModal)) {
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35) !important;
+    }
+
+    .inventoryModalHeader::before {
+        animation: none;
+    }
+
+    /* Disable expensive filters and transitions inside the inventory modal */
+    [data-inventory-modal="true"],
+    [data-inventory-modal="true"] * {
+        backdrop-filter: none !important;
+        filter: none !important;
+    }
+
+    /* Tone down animations and hover transforms */
+    [data-inventory-modal="true"] * {
+        animation-duration: 0s !important;
+    }
+}
+
+/* Tablet responsiveness */
+@media (min-width: 769px) and (max-width: 1024px) {
+    :global(.modal-container .modal:has(.inventoryModal)) {
+        width: 90vw !important;
+        min-width: 800px !important;
+        height: 85vh !important;
+    }
+}

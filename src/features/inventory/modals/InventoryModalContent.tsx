@@ -1,0 +1,1233 @@
+import React, { useState, useMemo, useEffect } from "react";
+import { useInventoryModalContext } from "./InventoryModalContext";
+import {
+    getRarityColor,
+    getRarityDisplayName,
+} from "../../../features/quests/utils/questRewardsSystem";
+import type { InventoryItem } from "../utils/updateInventoryFile";
+import { dropItem, useItem, equipItem, sellItem } from "../utils/updateInventoryFile";
+import type { ShopItemEffect } from "../../shop/utils/ShopParser";
+import { MaterialUtils } from "../../../shared/utils/materialUtils";
+import { EnhancedInventoryItem, InventoryFilter, InventorySortOptions, BulkOperation, InventoryState } from "../types/EnhancedInventoryTypes";
+import { InventoryOperations } from "../utils/inventoryOperations";
+
+// Import CSS modules
+import inventoryStyles from '../../../shared/components/ui/Inventory.module.css';
+
+// Enhanced BotW-style category mapping with better organization
+const CATEGORIES = {
+    equipment: { name: "Equipment", icon: "⚔️", color: "#FF6B35" },
+    potion: { name: "Food", icon: "🍖", color: "#4ECDC4" },
+    material: { name: "Materials", icon: "💎", color: "#45B7D1" },
+    artifact: { name: "Key Items", icon: "🗝️", color: "#F9CA24" },
+    consumable: { name: "Consumables", icon: "🧪", color: "#A55EEA" },
+    tool: { name: "Tools", icon: "🔧", color: "#26C281" },
+    treasure: { name: "Treasures", icon: "💰", color: "#FD79A8" },
+    misc: { name: "Misc", icon: "📦", color: "#6C5CE7" },
+};
+
+// Enhanced item icons based on category and name
+const getItemIcon = (itemName: string): string => {
+    const name = itemName.toLowerCase();
+    
+    // Specific item icons
+    if (name.includes("crystal")) return "💎";
+    if (name.includes("potion")) return "🧪";
+    if (name.includes("sword") || name.includes("blade")) return "⚔️";
+    if (name.includes("shield")) return "🛡️";
+    if (name.includes("bow")) return "🏹";
+    if (name.includes("staff") || name.includes("wand")) return "🪄";
+    if (name.includes("crown")) return "👑";
+    if (name.includes("ring")) return "💍";
+    if (name.includes("amulet") || name.includes("necklace")) return "📿";
+    if (name.includes("key")) return "🗝️";
+    if (name.includes("gem") || name.includes("jewel")) return "💎";
+    if (name.includes("scroll")) return "📜";
+    if (name.includes("book")) return "📚";
+    if (name.includes("coin") || name.includes("gold")) return "🪙";
+    if (name.includes("food") || name.includes("bread") || name.includes("meat")) return "🍖";
+    if (name.includes("health") || name.includes("healing")) return "❤️";
+    if (name.includes("mana") || name.includes("magic")) return "💙";
+    if (name.includes("arrow")) return "🏹";
+    if (name.includes("hammer")) return "🔨";
+    if (name.includes("pickaxe")) return "⛏️";
+    if (name.includes("axe")) return "🪓";
+    
+    // Category fallback icons
+    return CATEGORIES[itemName as keyof typeof CATEGORIES]?.icon || "📦";
+};
+
+// Generate dynamic item descriptions
+const getItemDescription = (item: InventoryItem): string => {
+    const name = item.name.toLowerCase();
+    const rarity = item.rarity || "common";
+    
+    // Specific item descriptions
+    if (name.includes("crystal")) {
+        return "A fragment of pure magical crystal that radiates with mystical energy. Its surface shimmers with otherworldly light.";
+    }
+    if (name.includes("potion")) {
+        return "A carefully brewed concoction with mysterious properties. The liquid inside swirls with magical essence.";
+    }
+    if (name.includes("crown")) {
+        return "An ornate crown that once belonged to royalty. Its golden surface is adorned with precious gems.";
+    }
+    if (name.includes("scroll")) {
+        return "An ancient scroll inscribed with arcane knowledge. The parchment feels warm to the touch.";
+    }
+    if (name.includes("key")) {
+        return "A mysterious key that opens doors to unknown secrets. Its metal gleams with an unusual luster.";
+    }
+    
+    // Generic descriptions based on rarity
+    const rarityDescriptions = {
+        common: "A basic item with simple properties. Commonly found throughout the realm.",
+        uncommon: "An item of moderate quality with useful attributes. Not easily found by ordinary means.",
+        rare: "A precious item imbued with special properties. Highly sought after by adventurers.",
+        epic: "An extraordinary item of remarkable power. Legends speak of its incredible abilities.",
+        legendary: "A mythical artifact of unparalleled might. Few have witnessed its true potential."
+    };
+    
+    return rarityDescriptions[rarity as keyof typeof rarityDescriptions] || 
+           "A mysterious item with unknown properties. Its true nature remains to be discovered.";
+};
+
+// Generate dynamic item lore
+const getItemLore = (item: InventoryItem): string => {
+    const name = item.name.toLowerCase();
+    const category = item.category?.toLowerCase() || "";
+    
+    // Specific item lore
+    if (name.includes("crystal")) {
+        return "Ancient texts speak of crystals that fell from the celestial realm, carrying within them the essence of creation itself. Scholars believe these fragments hold the key to understanding the fundamental forces of magic.";
+    }
+    if (name.includes("crown")) {
+        return "Forged in the golden age of the realm, this crown has witnessed the rise and fall of kingdoms. It is said that those who wear it are blessed with wisdom and cursed with the weight of responsibility.";
+    }
+    if (name.includes("sword") || name.includes("blade")) {
+        return "Tempered in the fires of Mount Valor, this blade has tasted the blood of countless foes. Its edge remains forever sharp, and its spirit forever hungry for battle.";
+    }
+    if (name.includes("potion")) {
+        return "Brewed by the master alchemists of the Arcane Tower, this elixir contains the distilled essence of rare herbs and magical components. Handle with care, for its power is not to be underestimated.";
+    }
+    
+    // Category-based lore
+    if (category.includes("weapon")) {
+        return "Crafted by master smiths in the great forges of the realm. This weapon has seen many battles and carries the spirit of warriors past.";
+    }
+    if (category.includes("material")) {
+        return "A valuable resource gathered from the far reaches of the world. Its potential is limited only by the imagination of those who wield it.";
+    }
+    if (category.includes("consumable")) {
+        return "Prepared with care and imbued with beneficial properties. A wise adventurer always keeps such items close at hand.";
+    }
+    if (category.includes("key item")) {
+        return "An item of great significance that plays a crucial role in the unfolding of destiny. Guard it well, for its loss could spell doom.";
+    }
+    
+    // Generic lore
+    return "Though its origins may be humble, every item in an adventurer's possession tells a story. This one awaits the chance to add its chapter to your legend.";
+};
+
+// Material-specific icons for better visual identification
+const getMaterialIcon = (itemName: string): string => {
+    const name = itemName.toLowerCase();
+    
+    // Specific material icons
+    if (name.includes("wood")) return "🪵";
+    if (name.includes("stone")) return "🪨";
+    if (name.includes("iron")) return "⛏️";
+    if (name.includes("silver")) return "🥈";
+    if (name.includes("gold")) return "🥇";
+    if (name.includes("crystal")) return "💎";
+    if (name.includes("diamond")) return "💎";
+    if (name.includes("herb")) return "🌿";
+    if (name.includes("essence")) return "✨";
+    if (name.includes("phoenix")) return "🔥";
+    if (name.includes("dragon")) return "🐉";
+    if (name.includes("star")) return "⭐";
+    if (name.includes("void")) return "🌌";
+    if (name.includes("time")) return "⏰";
+    
+    // Default material icon
+    return "💎";
+};
+
+const InventoryModalContent: React.FC = () => {
+    const { app, inventory, reloadInventory } = useInventoryModalContext();
+    const [selectedItem, setSelectedItem] = useState<string | null>(null);
+    const [hoveredItem, setHoveredItem] = useState<string | null>(null);
+    const [searchTerm, setSearchTerm] = useState("");
+    const [selectedCategory, setSelectedCategory] = useState<string>("all");
+    const [activeTab, setActiveTab] = useState<"all" | "materials" | "crafting">("all");
+    const [sortMethod, setSortMethod] = useState<"name" | "rarity" | "quantity" | "value">("name");
+    const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
+    const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+    const [showFilters, setShowFilters] = useState(false);
+    
+    // Enhanced modal state
+    const [enhancedState, setEnhancedState] = useState<InventoryState>({
+        selectedItems: new Set(),
+        viewMode: 'grid',
+        filter: {},
+        sort: { field: 'name', order: 'asc' },
+        showBulkActions: false,
+        showIconPicker: false,
+    });
+
+    // Get currency settings
+    const obsidianApp = app as { plugins?: { plugins?: Record<string, { settings?: { currencyName?: string; currencySymbol?: string } }> } };
+    const plugin = obsidianApp?.plugins?.plugins?.["gamified-obsidian-plugin"]
+        || obsidianApp?.plugins?.plugins?.["Gamification-into-Obsidian"];
+    const currencyName = plugin?.settings?.currencyName || "Coins";
+    const currencySymbol = plugin?.settings?.currencySymbol || "🪙";
+
+    // Get all available categories from inventory
+    const availableCategories = useMemo(() => {
+        return [...new Set(inventory.map((item: InventoryItem) => item.category).filter(Boolean))];
+    }, [inventory]);
+
+    // Process inventory based on selected tab and category
+    const processedInventory = useMemo(() => {
+        let filtered = inventory;
+
+        // Filter by tab
+        if (activeTab === "materials") {
+            filtered = inventory.filter(item => MaterialUtils.isCraftingMaterial(item));
+        } else if (activeTab === "crafting") {
+            // Show materials and items that can be used in crafting
+            filtered = inventory.filter(item => 
+                MaterialUtils.isCraftingMaterial(item) || 
+                item.tags?.includes("craftable") ||
+                item.tags?.includes("generated")
+            );
+        }
+
+        // Filter by category (if not in materials tab)
+        if (activeTab !== "materials" && selectedCategory !== "all") {
+            filtered = filtered.filter(item => item.category === selectedCategory);
+        }
+
+        // Filter by search term
+        if (searchTerm) {
+            filtered = filtered.filter(item =>
+                item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                item.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                item.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+            );
+        }
+
+        // Sort inventory based on selected method
+        const rarityOrder = { common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5, mythic: 6 };
+        
+        filtered.sort((a, b) => {
+            let comparison = 0;
+            
+            switch (sortMethod) {
+                case "name":
+                    comparison = a.name.localeCompare(b.name);
+                    break;
+                case "rarity":
+                    const rarityA = rarityOrder[a.rarity as keyof typeof rarityOrder] || 0;
+                    const rarityB = rarityOrder[b.rarity as keyof typeof rarityOrder] || 0;
+                    comparison = rarityA - rarityB;
+                    break;
+                case "quantity":
+                    comparison = (Number(a.quantity) || 1) - (Number(b.quantity) || 1);
+                    break;
+                case "value":
+                    comparison = (Number(a.value) || 0) - (Number(b.value) || 0);
+                    break;
+                default:
+                    comparison = a.name.localeCompare(b.name);
+            }
+            
+            return sortOrder === "desc" ? -comparison : comparison;
+        });
+
+        return filtered;
+    }, [inventory, activeTab, selectedCategory, searchTerm, sortMethod, sortOrder]);
+
+    // Get materials with quality information
+    const materials = useMemo(() => {
+        return MaterialUtils.filterCraftingMaterials(inventory);
+    }, [inventory]);
+
+    // Group materials by quality for better organization
+    const materialsByQuality = useMemo(() => {
+        return MaterialUtils.groupMaterialsByQuality(materials);
+    }, [materials]);
+
+    // Get selected item data
+    const selectedItemData = useMemo(() => {
+        if (!selectedItem || !Array.isArray(inventory)) return null;
+        return inventory.find((item: InventoryItem) => item.name === selectedItem);
+    }, [selectedItem, inventory]);
+
+    // Show empty state if no inventory
+    if (!Array.isArray(inventory) || inventory.length === 0) {
+        return (
+            <div className={inventoryStyles.emptyState}>
+                <div className={inventoryStyles.emptyStateIcon}>🎒</div>
+                <div className={inventoryStyles.emptyStateTitle}>
+                    Your inventory is empty
+                </div>
+                <div className={inventoryStyles.emptyStateSubtitle}>
+                    Complete quests to discover amazing treasures!
+                </div>
+            </div>
+        );
+    }
+
+    const handleItemClick = (itemName: string) => {
+        setSelectedItem(itemName);
+    };
+
+    return (
+        <div className={inventoryStyles.inventoryModalContent}>
+            {/* Left Panel - Categories & Items Grid */}
+            <div
+                style={{
+                    flex: selectedItemData ? "0 0 55%" : "1",
+                    display: "flex",
+                    flexDirection: "column",
+                    borderRight: selectedItemData
+                        ? "2px solid rgba(232, 244, 253, 0.1)"
+                        : "none",
+                }}
+            >
+                {/* Tab Navigation */}
+                <div className={inventoryStyles.tabNavigation}>
+                    <button
+                        className={`${inventoryStyles.tabButton} ${activeTab === "all" ? inventoryStyles.activeTab : ""}`}
+                        onClick={() => setActiveTab("all")}
+                    >
+                        <span className={inventoryStyles.tabIcon}>📦</span>
+                        All Items
+                    </button>
+                    <button
+                        className={`${inventoryStyles.tabButton} ${activeTab === "materials" ? inventoryStyles.activeTab : ""}`}
+                        onClick={() => setActiveTab("materials")}
+                    >
+                        <span className={inventoryStyles.tabIcon}>💎</span>
+                        Materials
+                        {materials.length > 0 && (
+                            <span className={inventoryStyles.tabBadge}>{materials.length}</span>
+                        )}
+                    </button>
+                    <button
+                        className={`${inventoryStyles.tabButton} ${activeTab === "crafting" ? inventoryStyles.activeTab : ""}`}
+                        onClick={() => setActiveTab("crafting")}
+                    >
+                        <span className={inventoryStyles.tabIcon}>🔨</span>
+                        Crafting
+                    </button>
+                    
+                    {/* Refresh Button */}
+                    <button
+                        className={inventoryStyles.tabButton}
+                        onClick={async () => {
+                            console.log('🎒 [Inventory] Manual refresh triggered');
+                            await reloadInventory();
+                        }}
+                        style={{ marginLeft: 'auto' }}
+                        title="Refresh Inventory"
+                    >
+                        <span className={inventoryStyles.tabIcon}>🔄</span>
+                        Refresh
+                    </button>
+                </div>
+
+                {/* Category Filter (only show for All Items tab) */}
+                {activeTab === "all" && (
+                    <div className={inventoryStyles.categoryTabs}>
+                        <button
+                            className={`${inventoryStyles.categoryTab} ${
+                                selectedCategory === "all" ? inventoryStyles.active : ""
+                            }`}
+                            onClick={() => setSelectedCategory("all")}
+                            style={{
+                                background: selectedCategory === "all" 
+                                    ? "linear-gradient(135deg, rgba(142, 202, 230, 0.2) 0%, rgba(33, 158, 188, 0.1) 100%)"
+                                    : "rgba(255, 255, 255, 0.05)",
+                                borderColor: selectedCategory === "all" 
+                                    ? "#8ecae6" 
+                                    : "rgba(255, 255, 255, 0.1)"
+                            }}
+                        >
+                            <span className={inventoryStyles.categoryIcon}>📦</span>
+                            <span className={inventoryStyles.categoryName}>All</span>
+                        </button>
+                        {availableCategories.map((category) => {
+                            const categoryInfo = CATEGORIES[category as keyof typeof CATEGORIES] || {
+                                name: category,
+                                icon: "📦",
+                                color: "#6C5CE7"
+                            };
+                            return (
+                                <button
+                                    key={category}
+                                    className={`${inventoryStyles.categoryTab} ${
+                                        selectedCategory === category ? inventoryStyles.active : ""
+                                    }`}
+                                    onClick={() => category && setSelectedCategory(category)}
+                                    style={{
+                                        background: selectedCategory === category 
+                                            ? `linear-gradient(135deg, ${categoryInfo.color}22, ${categoryInfo.color}11)`
+                                            : "rgba(255, 255, 255, 0.05)",
+                                        borderColor: selectedCategory === category 
+                                            ? categoryInfo.color 
+                                            : "rgba(255, 255, 255, 0.1)"
+                                    }}
+                                >
+                                    <span className={inventoryStyles.categoryIcon}>
+                                        {categoryInfo.icon}
+                                    </span>
+                                    <span className={inventoryStyles.categoryName}>
+                                        {categoryInfo.name}
+                                    </span>
+                                </button>
+                            );
+                        })}
+                    </div>
+                )}
+
+                {/* Materials Quality Filter (only show for Materials tab) */}
+                {activeTab === "materials" && (
+                    <div className={inventoryStyles.qualityFilter}>
+                        <div className={inventoryStyles.qualityTitle}>Quality Filter:</div>
+                        <div className={inventoryStyles.qualityButtons}>
+                            {Object.entries(materialsByQuality).map(([quality, items]) => (
+                                items.length > 0 && (
+                                    <button
+                                        key={quality}
+                                        className={inventoryStyles.qualityButton}
+                                        onClick={() => setSelectedCategory(quality)}
+                                        style={{
+                                            background: selectedCategory === quality 
+                                                ? "rgba(69, 183, 209, 0.3)" 
+                                                : "rgba(255, 255, 255, 0.05)",
+                                            borderColor: selectedCategory === quality 
+                                                ? "#45B7D1" 
+                                                : "rgba(255, 255, 255, 0.1)"
+                                        }}
+                                    >
+                                        <span className={inventoryStyles.qualityIcon}>
+                                            {quality === 'masterwork' ? '⭐' : 
+                                             quality === 'refined' ? '✨' : 
+                                             quality === 'normal' ? '⚪' : 
+                                             quality === 'fresh' ? '🌱' : '🍂'}
+                                        </span>
+                                        <span className={inventoryStyles.qualityName}>
+                                            {quality.charAt(0).toUpperCase() + quality.slice(1)}
+                                        </span>
+                                        <span className={inventoryStyles.qualityCount}>
+                                            {items.length}
+                                        </span>
+                                    </button>
+                                )
+                            ))}
+                        </div>
+                        
+                        {/* Materials Summary */}
+                        <div className={inventoryStyles.materialsSummary}>
+                            <div className={inventoryStyles.summaryItem}>
+                                <span className={inventoryStyles.summaryIcon}>💎</span>
+                                <span className={inventoryStyles.summaryLabel}>Total Materials:</span>
+                                <span className={inventoryStyles.summaryValue}>{materials.length}</span>
+                            </div>
+                            <div className={inventoryStyles.summaryItem}>
+                                <span className={inventoryStyles.summaryIcon}>💰</span>
+                                <span className={inventoryStyles.summaryLabel}>Total Value:</span>
+                                <span className={inventoryStyles.summaryValue}>
+                                    {currencySymbol} {materials.reduce((total, item) => total + (item.value || 0), 0)}
+                                </span>
+                            </div>
+                            <div className={inventoryStyles.summaryItem}>
+                                <span className={inventoryStyles.summaryIcon}>⭐</span>
+                                <span className={inventoryStyles.summaryLabel}>Masterwork:</span>
+                                <span className={inventoryStyles.summaryValue}>
+                                    {materialsByQuality.masterwork.length}
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Enhanced Search Bar */}
+                <div className={inventoryStyles.searchContainer}>
+                    <input
+                        type="text"
+                        placeholder="🔍 Search items, descriptions, tags..."
+                        value={enhancedState.filter.search || searchTerm}
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                            const value = e.target.value;
+                            setSearchTerm(value);
+                            setEnhancedState(prev => ({
+                                ...prev,
+                                filter: { ...prev.filter, search: value }
+                            }));
+                        }}
+                        className={inventoryStyles.searchBar}
+                    />
+                </div>
+
+                {/* Enhanced Filtering Controls */}
+                <div className={inventoryStyles.filterControls}>
+                    <div className={inventoryStyles.filterSection}>
+                        <button
+                            className={`${inventoryStyles.filterToggle} ${showFilters ? inventoryStyles.active : ''}`}
+                            onClick={() => setShowFilters(!showFilters)}
+                        >
+                            🔽 Filters & Sort
+                        </button>
+                    </div>
+                    
+                    {showFilters && (
+                        <div className={inventoryStyles.filterOptions}>
+                            {/* Enhanced Filter Bar */}
+                            <div className={inventoryStyles.enhancedFilterBar}>
+                                {/* Category filter */}
+                                <select
+                                    value={enhancedState.filter.category || 'all'}
+                                    onChange={(e) => setEnhancedState(prev => ({
+                                        ...prev,
+                                        filter: { ...prev.filter, category: e.target.value === 'all' ? undefined : e.target.value }
+                                    }))}
+                                    className={inventoryStyles.filterSelect}
+                                >
+                                    <option value="all">All Categories</option>
+                                    <option value="equipment">Equipment</option>
+                                    <option value="material">Materials</option>
+                                    <option value="consumable">Consumables</option>
+                                    <option value="artifact">Artifacts</option>
+                                    <option value="tool">Tools</option>
+                                    <option value="treasure">Treasures</option>
+                                </select>
+
+                                {/* Rarity filter */}
+                                <select
+                                    value={enhancedState.filter.rarity || 'all'}
+                                    onChange={(e) => setEnhancedState(prev => ({
+                                        ...prev,
+                                        filter: { ...prev.filter, rarity: e.target.value === 'all' ? undefined : e.target.value }
+                                    }))}
+                                    className={inventoryStyles.filterSelect}
+                                >
+                                    <option value="all">All Rarities</option>
+                                    <option value="common">Common</option>
+                                    <option value="uncommon">Uncommon</option>
+                                    <option value="rare">Rare</option>
+                                    <option value="epic">Epic</option>
+                                    <option value="legendary">Legendary</option>
+                                </select>
+
+                                {/* Special filters */}
+                                <div className={inventoryStyles.toggleFilters}>
+                                    <label className={inventoryStyles.toggleFilter}>
+                                        <input
+                                            type="checkbox"
+                                            checked={enhancedState.filter.equipped === true}
+                                            onChange={(e) => setEnhancedState(prev => ({
+                                                ...prev,
+                                                filter: { ...prev.filter, equipped: e.target.checked ? true : undefined }
+                                            }))}
+                                        />
+                                        Equipped Only
+                                    </label>
+                                    <label className={inventoryStyles.toggleFilter}>
+                                        <input
+                                            type="checkbox"
+                                            checked={enhancedState.filter.favorite === true}
+                                            onChange={(e) => setEnhancedState(prev => ({
+                                                ...prev,
+                                                filter: { ...prev.filter, favorite: e.target.checked ? true : undefined }
+                                            }))}
+                                        />
+                                        Favorites Only
+                                    </label>
+                                    <label className={inventoryStyles.toggleFilter}>
+                                        <input
+                                            type="checkbox"
+                                            checked={enhancedState.filter.hasEffects === true}
+                                            onChange={(e) => setEnhancedState(prev => ({
+                                                ...prev,
+                                                filter: { ...prev.filter, hasEffects: e.target.checked ? true : undefined }
+                                            }))}
+                                        />
+                                        Has Effects
+                                    </label>
+                                </div>
+                            </div>
+
+                            {/* Enhanced Sort controls */}
+                            <div className={inventoryStyles.enhancedSortBar}>
+                                <label>Sort by:</label>
+                                <select
+                                    value={enhancedState.sort.field}
+                                    onChange={(e) => setEnhancedState(prev => ({
+                                        ...prev,
+                                        sort: { ...prev.sort, field: e.target.value as InventorySortOptions['field'] }
+                                    }))}
+                                    className={inventoryStyles.sortSelect}
+                                >
+                                    <option value="name">Name</option>
+                                    <option value="rarity">Rarity</option>
+                                    <option value="quantity">Quantity</option>
+                                    <option value="value">Value</option>
+                                    <option value="acquiredDate">Acquired Date</option>
+                                    <option value="lastUsed">Last Used</option>
+                                    <option value="category">Category</option>
+                                </select>
+                                <button
+                                    className={`${inventoryStyles.sortOrderButton} ${enhancedState.sort.order === 'desc' ? inventoryStyles.active : ''}`}
+                                    onClick={() => setEnhancedState(prev => ({
+                                        ...prev,
+                                        sort: { ...prev.sort, order: prev.sort.order === 'asc' ? 'desc' : 'asc' }
+                                    }))}
+                                >
+                                    {enhancedState.sort.order === 'asc' ? '↑' : '↓'}
+                                </button>
+                            </div>
+
+                            {/* Original Sort Method */}
+                            <div className={inventoryStyles.filterGroup}>
+                                <label className={inventoryStyles.filterLabel}>Sort by:</label>
+                                <select
+                                    value={sortMethod}
+                                    onChange={(e) => setSortMethod(e.target.value as any)}
+                                    className={inventoryStyles.filterSelect}
+                                >
+                                    <option value="name">Name</option>
+                                    <option value="rarity">Rarity</option>
+                                    <option value="quantity">Quantity</option>
+                                    <option value="value">Value</option>
+                                </select>
+                            </div>
+
+                            {/* Sort Order */}
+                            <div className={inventoryStyles.filterGroup}>
+                                <label className={inventoryStyles.filterLabel}>Order:</label>
+                                <select
+                                    value={sortOrder}
+                                    onChange={(e) => setSortOrder(e.target.value as any)}
+                                    className={inventoryStyles.filterSelect}
+                                >
+                                    <option value="asc">Ascending</option>
+                                    <option value="desc">Descending</option>
+                                </select>
+                            </div>
+
+                            {/* View Mode */}
+                            <div className={inventoryStyles.filterGroup}>
+                                <label className={inventoryStyles.filterLabel}>View:</label>
+                                <div className={inventoryStyles.viewModeButtons}>
+                                    <button
+                                        className={`${inventoryStyles.viewModeButton} ${viewMode === 'grid' ? inventoryStyles.active : ''}`}
+                                        onClick={() => setViewMode('grid')}
+                                    >
+                                        ⊞ Grid
+                                    </button>
+                                    <button
+                                        className={`${inventoryStyles.viewModeButton} ${viewMode === 'list' ? inventoryStyles.active : ''}`}
+                                        onClick={() => setViewMode('list')}
+                                    >
+                                        ≡ List
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Enhanced Selection Controls */}
+                {enhancedState.selectedItems.size > 0 && (
+                    <div className={inventoryStyles.selectionBar}>
+                        <div className={inventoryStyles.selectionInfo}>
+                            {enhancedState.selectedItems.size} item(s) selected
+                        </div>
+                        <div className={inventoryStyles.selectionActions}>
+                            <button 
+                                onClick={() => {
+                                    const allVisible = new Set(processedInventory.map(item => item.name));
+                                    setEnhancedState(prev => ({ 
+                                        ...prev, 
+                                        selectedItems: allVisible,
+                                        showBulkActions: allVisible.size > 0 
+                                    }));
+                                }} 
+                                className={inventoryStyles.selectionButton}
+                            >
+                                Select All Visible
+                            </button>
+                            <button 
+                                onClick={() => setEnhancedState(prev => ({ 
+                                    ...prev, 
+                                    selectedItems: new Set(),
+                                    showBulkActions: false 
+                                }))} 
+                                className={inventoryStyles.selectionButton}
+                            >
+                                Clear Selection
+                            </button>
+                        </div>
+                    </div>
+                )}
+
+                {/* Bulk Actions */}
+                {enhancedState.showBulkActions && (
+                    <div className={inventoryStyles.bulkActions}>
+                        <button 
+                            onClick={async () => {
+                                const selectedItemNames = Array.from(enhancedState.selectedItems);
+                                if (selectedItemNames.length === 0) return;
+                                
+                                try {
+                                    await InventoryOperations.performBulkOperation(app, {
+                                        action: 'favorite',
+                                        items: selectedItemNames
+                                    });
+                                    await reloadInventory();
+                                    setEnhancedState(prev => ({ 
+                                        ...prev, 
+                                        selectedItems: new Set(),
+                                        showBulkActions: false 
+                                    }));
+                                } catch (error) {
+                                    console.error('Bulk operation failed:', error);
+                                }
+                            }}
+                            className={inventoryStyles.bulkActionButton}
+                        >
+                            ⭐ Favorite
+                        </button>
+                        <button 
+                            onClick={async () => {
+                                const selectedItemNames = Array.from(enhancedState.selectedItems);
+                                if (selectedItemNames.length === 0) return;
+                                
+                                try {
+                                    await InventoryOperations.performBulkOperation(app, {
+                                        action: 'sell',
+                                        items: selectedItemNames
+                                    });
+                                    await reloadInventory();
+                                    setEnhancedState(prev => ({ 
+                                        ...prev, 
+                                        selectedItems: new Set(),
+                                        showBulkActions: false 
+                                    }));
+                                } catch (error) {
+                                    console.error('Bulk operation failed:', error);
+                                }
+                            }}
+                            className={inventoryStyles.bulkActionButton}
+                        >
+                            💰 Sell
+                        </button>
+                        <button 
+                            onClick={async () => {
+                                const selectedItemNames = Array.from(enhancedState.selectedItems);
+                                if (selectedItemNames.length === 0) return;
+                                
+                                try {
+                                    await InventoryOperations.performBulkOperation(app, {
+                                        action: 'drop',
+                                        items: selectedItemNames
+                                    });
+                                    await reloadInventory();
+                                    setEnhancedState(prev => ({ 
+                                        ...prev, 
+                                        selectedItems: new Set(),
+                                        showBulkActions: false 
+                                    }));
+                                } catch (error) {
+                                    console.error('Bulk operation failed:', error);
+                                }
+                            }}
+                            className={inventoryStyles.bulkActionButton}
+                        >
+                            🗑️ Drop
+                        </button>
+                        <button 
+                            onClick={async () => {
+                                const selectedItemNames = Array.from(enhancedState.selectedItems);
+                                if (selectedItemNames.length === 0) return;
+                                
+                                try {
+                                    await InventoryOperations.performBulkOperation(app, {
+                                        action: 'use',
+                                        items: selectedItemNames
+                                    });
+                                    await reloadInventory();
+                                    setEnhancedState(prev => ({ 
+                                        ...prev, 
+                                        selectedItems: new Set(),
+                                        showBulkActions: false 
+                                    }));
+                                } catch (error) {
+                                    console.error('Bulk operation failed:', error);
+                                }
+                            }}
+                            className={inventoryStyles.bulkActionButton}
+                        >
+                            ⚡ Use
+                        </button>
+                    </div>
+                )}
+
+                {/* Items Grid - Enhanced Layout */}
+                <div className={inventoryStyles.inventoryContent}>
+                    {processedInventory.length === 0 ? (
+                        <div className={inventoryStyles.emptyState}>
+                            <div className={inventoryStyles.emptyStateIcon}>
+                                {activeTab === "materials" ? "💎" : activeTab === "crafting" ? "🔨" : "📦"}
+                            </div>
+                            <div className={inventoryStyles.emptyStateText}>
+                                {activeTab === "materials" ? "No Materials Found" : 
+                                 activeTab === "crafting" ? "No Crafting Items Found" : "No Items Found"}
+                            </div>
+                            <div className={inventoryStyles.emptyStateSubtext}>
+                                {searchTerm ? "Try adjusting your search terms" : 
+                                 activeTab === "materials" ? "Complete quests, habits, and pomodoros to earn materials!" :
+                                 activeTab === "crafting" ? "Gather materials and craftable items to see them here!" :
+                                 "Your inventory is empty"}
+                            </div>
+                        </div>
+                    ) : (
+                        <div className={inventoryStyles.inventoryGrid}>
+                            {processedInventory.map((item: InventoryItem) => {
+                                const isSelected = selectedItem === item.name;
+                                const isHovered = hoveredItem === item.name;
+                                const isEnhancedSelected = enhancedState.selectedItems.has(item.name);
+                                const rarityColor = getRarityColor(item.rarity || "common");
+                                const isMaterial = item.category === "material";
+                                const isEquipped = item.tags?.includes('equipped') || false;
+                                const isFavorite = false; // Will be populated from enhanced data
+
+                                return (
+                                    <div
+                                        key={item.name}
+                                        className={`${inventoryStyles.inventorySlot} ${
+                                            isSelected ? inventoryStyles.selected : ""
+                                        } ${isMaterial ? inventoryStyles.materialSlot : ""} ${
+                                            isEnhancedSelected ? inventoryStyles.enhancedSelected : ""
+                                        } ${isFavorite ? inventoryStyles.favorite : ""} ${
+                                            isEquipped ? inventoryStyles.equipped : ""
+                                        }`}
+                                        onClick={() => handleItemClick(item.name)}
+                                        onMouseEnter={() => setHoveredItem(item.name)}
+                                        onMouseLeave={() => setHoveredItem("")}
+                                        style={{
+                                            borderColor: isSelected || isHovered || isEnhancedSelected
+                                                ? rarityColor 
+                                                : "rgba(255, 255, 255, 0.15)"
+                                        }}
+                                    >
+                                        {/* Enhanced Selection Checkbox */}
+                                        <div className={inventoryStyles.itemCheckbox}>
+                                            <input
+                                                type="checkbox"
+                                                checked={isEnhancedSelected}
+                                                onChange={(e) => {
+                                                    e.stopPropagation();
+                                                    const newSelected = new Set(enhancedState.selectedItems);
+                                                    if (newSelected.has(item.name)) {
+                                                        newSelected.delete(item.name);
+                                                    } else {
+                                                        newSelected.add(item.name);
+                                                    }
+                                                    setEnhancedState(prev => ({ 
+                                                        ...prev, 
+                                                        selectedItems: newSelected,
+                                                        showBulkActions: newSelected.size > 0 
+                                                    }));
+                                                }}
+                                            />
+                                        </div>
+
+                                        {/* Favorite Indicator */}
+                                        {isFavorite && (
+                                            <div className={inventoryStyles.favoriteIndicator}>⭐</div>
+                                        )}
+
+                                        {/* Equipped Indicator */}
+                                        {isEquipped && (
+                                            <div className={inventoryStyles.equippedIndicator}>🛡️</div>
+                                        )}
+
+                                        {/* Quantity Badge */}
+                                        {item.quantity && item.quantity > 1 && (
+                                            <div className={inventoryStyles.quantityBadge}>
+                                                {item.quantity}
+                                            </div>
+                                        )}
+
+                                        {/* Quality Badge for Materials */}
+                                        {isMaterial && (
+                                            <div className={inventoryStyles.qualityBadge}>
+                                                {item.tags?.some(tag => tag.includes('masterwork')) ? '⭐' :
+                                                 item.tags?.some(tag => tag.includes('refined')) ? '✨' :
+                                                 item.tags?.some(tag => tag.includes('fresh')) ? '🌱' :
+                                                 item.tags?.some(tag => tag.includes('dried')) ? '🍂' : '⚪'}
+                                            </div>
+                                        )}
+
+                                        {/* Rarity Indicator */}
+                                        <div 
+                                            className={inventoryStyles.rarityIndicator}
+                                            style={{ color: rarityColor }}
+                                        />
+
+                                        {/* Item Icon - Smart detection with click to edit */}
+                                        <div 
+                                            className={inventoryStyles.itemIcon}
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setEnhancedState(prev => ({ 
+                                                    ...prev, 
+                                                    showIconPicker: true, 
+                                                    iconPickerItem: item.name 
+                                                }));
+                                            }}
+                                            title="Click to change icon"
+                                        >
+                                            {item.icon || (isMaterial ? getMaterialIcon(item.name) : getItemIcon(item.name))}
+                                        </div>
+
+                                        {/* Item Name */}
+                                        <div className={inventoryStyles.itemName}>
+                                            {item.name}
+                                        </div>
+
+                                        {/* Item Rarity */}
+                                        <div 
+                                            className={inventoryStyles.itemRarity}
+                                            style={{ color: rarityColor }}
+                                        >
+                                            {getRarityDisplayName(item.rarity || "common")}
+                                        </div>
+
+                                        {/* Material Category for Materials */}
+                                        {isMaterial && (
+                                            <div className={inventoryStyles.materialCategory}>
+                                                {item.tags?.find(tag => ['organic', 'mineral', 'crystal', 'essence', 'mystical'].includes(tag)) || 'material'}
+                                            </div>
+                                        )}
+
+
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Right Panel - Enhanced Item Details */}
+            {selectedItemData && (
+                <div className={inventoryStyles.itemDetailsPanel}>
+                    {/* Enhanced Item Header with Close Button */}
+                    <div className={inventoryStyles.selectedItemHeader}>
+                        <div className={inventoryStyles.selectedItemIcon}>
+                            {selectedItemData.icon || getItemIcon(selectedItemData.name)}
+                        </div>
+                        
+                        <div className={inventoryStyles.selectedItemName}>
+                            {selectedItemData.name}
+                        </div>
+                        
+                        <div 
+                            className={inventoryStyles.selectedItemRarity}
+                            style={{ 
+                                color: getRarityColor(selectedItemData.rarity || "common"),
+                                borderColor: getRarityColor(selectedItemData.rarity || "common") + "40"
+                            }}
+                        >
+                            ✦ {getRarityDisplayName(selectedItemData.rarity || "common")} ✦
+                        </div>
+
+                        {/* Close Button */}
+                        <button 
+                            className={inventoryStyles.closeItemButton}
+                            onClick={() => setSelectedItem(null)}
+                            title="Close item details"
+                        >
+                            ✕
+                        </button>
+                    </div>
+
+                    {/* Item Description */}
+                    <div className={inventoryStyles.itemDescription}>
+                        {selectedItemData.description || getItemDescription(selectedItemData)}
+                    </div>
+
+                    {/* Enhanced Item Stats */}
+                    <div className={inventoryStyles.selectedItemDetails}>
+                        {/* Effects/Boosts */}
+                        {(selectedItemData.effects && selectedItemData.effects.length > 0) && (
+                            <div className={inventoryStyles.detailItem}>
+                                <div className={inventoryStyles.detailLabel}>
+                                    <span className={inventoryStyles.detailIcon}>✨</span>
+                                    Effects
+                                </div>
+                                <div className={inventoryStyles.detailValue}>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                        {selectedItemData.effects.map((eff, idx) => (
+                                            <span key={idx} style={{
+                                                background: '#1f3b4d',
+                                                color: '#cbe9ff',
+                                                border: '1px solid #2c5b73',
+                                                borderRadius: 9999,
+                                                padding: '2px 8px',
+                                                fontSize: '0.8em'
+                                            }}>
+                                                {renderInventoryEffect(eff, currencyName)}
+                                            </span>
+                                        ))}
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                        {/* Quantity */}
+                        {selectedItemData.quantity && (
+                            <div className={inventoryStyles.detailItem}>
+                                <div className={inventoryStyles.detailLabel}>
+                                    <span className={inventoryStyles.detailIcon}>📦</span>
+                                    Quantity
+                                </div>
+                                <div className={inventoryStyles.detailValue}>
+                                    {selectedItemData.quantity}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Category */}
+                        <div className={inventoryStyles.detailItem}>
+                            <div className={inventoryStyles.detailLabel}>
+                                <span className={inventoryStyles.detailIcon}>🏷️</span>
+                                Category
+                            </div>
+                            <div className={inventoryStyles.detailValue}>
+                                {CATEGORIES[selectedItemData.category as keyof typeof CATEGORIES]?.name || selectedItemData.category || "Miscellaneous"}
+                            </div>
+                        </div>
+
+                        {/* Rarity Details */}
+                        <div className={inventoryStyles.detailItem}>
+                            <div className={inventoryStyles.detailLabel}>
+                                <span className={inventoryStyles.detailIcon}>⭐</span>
+                                Rarity Level
+                            </div>
+                            <div 
+                                className={inventoryStyles.detailValue}
+                                style={{ color: getRarityColor(selectedItemData.rarity || "common") }}
+                            >
+                                {getRarityDisplayName(selectedItemData.rarity || "common")}
+                            </div>
+                        </div>
+
+                        {/* Item Tags (if available) */}
+                        {selectedItemData.tags && selectedItemData.tags.length > 0 && (
+                            <div className={inventoryStyles.detailItem}>
+                                <div className={inventoryStyles.detailLabel}>
+                                    <span className={inventoryStyles.detailIcon}>🏷️</span>
+                                    Tags
+                                </div>
+                                <div className={inventoryStyles.detailValue}>
+                                    {selectedItemData.tags.join(", ")}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Item Value (if available) */}
+                        {typeof selectedItemData.value === 'number' && (
+                            <div className={inventoryStyles.detailItem}>
+                                <div className={inventoryStyles.detailLabel}>
+                                    <span className={inventoryStyles.detailIcon}>💰</span>
+                                    Value (Sell Price)
+                                </div>
+                                <div className={inventoryStyles.detailValue}>
+                                    {currencySymbol} {selectedItemData.value} {currencyName.toLowerCase()}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Action Buttons */}
+                    <div className={inventoryStyles.itemActions}>
+                        <button 
+                            className={inventoryStyles.actionButton}
+                            onClick={async () => {
+                                await useItem(app, selectedItemData.name);
+                                await reloadInventory();
+                            }}
+                        >
+                            <span>⚡</span>
+                            Use Item
+                        </button>
+                        
+                        <button 
+                            className={inventoryStyles.actionButton}
+                            onClick={async () => {
+                                await dropItem(app, selectedItemData.name);
+                                await reloadInventory();
+                                setSelectedItem(null);
+                            }}
+                        >
+                            <span>🗑️</span>
+                            Drop
+                        </button>
+
+                        <button 
+                            className={inventoryStyles.actionButton}
+                            onClick={async () => {
+                                await equipItem(app, selectedItemData.name);
+                                await reloadInventory();
+                            }}
+                        >
+                            <span>🛡️</span>
+                            {selectedItemData.tags?.includes('equipped') ? 'Unequip' : 'Equip'}
+                        </button>
+
+                        <button 
+                            className={inventoryStyles.actionButton}
+                            onClick={async () => {
+                                const saleValue = Math.max(0, Number(selectedItemData.value ?? 0));
+                                const confirmMsg = saleValue > 0
+                                  ? `Sell ${selectedItemData.name} for ${saleValue} ${currencyName.toLowerCase()}?`
+                                  : `Sell ${selectedItemData.name}?`;
+                                const confirmed = confirm(confirmMsg);
+                                if (!confirmed) return;
+                                await sellItem(app, selectedItemData.name);
+                                await reloadInventory();
+                                setSelectedItem(null);
+                            }}
+                        >
+                            <span>💰</span>
+                            Sell
+                        </button>
+
+                        {/* Favorite Button */}
+                        <button 
+                            className={`${inventoryStyles.actionButton} ${inventoryStyles.favoriteActionButton}`}
+                            onClick={async () => {
+                                // Toggle favorite functionality
+                                console.log('Toggle favorite for:', selectedItemData.name);
+                                // TODO: Implement favorite toggle
+                            }}
+                            title="Toggle favorite"
+                        >
+                            <span>⭐</span>
+                            Favorite
+                        </button>
+                    </div>
+
+                    {/* Item Lore/Flavor Text */}
+                    <div className={inventoryStyles.itemLore}>
+                        <div className={inventoryStyles.loreTitle}>✨ Item Lore</div>
+                        <div className={inventoryStyles.loreText}>
+                            {getItemLore(selectedItemData)}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Icon Picker Modal */}
+            {enhancedState.showIconPicker && enhancedState.iconPickerItem && (
+                <div className={inventoryStyles.iconPickerOverlay} onClick={() => setEnhancedState(prev => ({ ...prev, showIconPicker: false, iconPickerItem: undefined }))}>
+                    <div className={inventoryStyles.iconPickerModal} onClick={(e) => e.stopPropagation()}>
+                        <div className={inventoryStyles.iconPickerHeader}>
+                            <h3>Choose Icon for {enhancedState.iconPickerItem}</h3>
+                            <button 
+                                onClick={() => setEnhancedState(prev => ({ ...prev, showIconPicker: false, iconPickerItem: undefined }))} 
+                                className={inventoryStyles.iconPickerClose}
+                            >
+                                ✕
+                            </button>
+                        </div>
+
+                        <div className={inventoryStyles.iconPickerContent}>
+                            <div className={inventoryStyles.iconPickerSearch}>
+                                <input
+                                    type="text"
+                                    placeholder="Search icons..."
+                                    className={inventoryStyles.iconSearchInput}
+                                />
+                            </div>
+
+                            <div className={inventoryStyles.iconGrid}>
+                                {/* Popular icons */}
+                                {['⚔️', '🛡️', '🏹', '🪄', '💎', '🧪', '🍖', '🗝️', '📜', '📚', '🪙', '❤️', '💙', '🏆', '👑', '💍', '📿', '🔨', '⛏️', '🪓'].map(icon => {
+                                    const currentItem = inventory.find(item => item.name === enhancedState.iconPickerItem);
+                                    const isCurrentIcon = currentItem?.icon === icon;
+                                    
+                                    return (
+                                        <button
+                                            key={icon}
+                                            className={`${inventoryStyles.iconButton} ${isCurrentIcon ? inventoryStyles.current : ''}`}
+                                                                                    onClick={async () => {
+                                            try {
+                                                // Update the item icon
+                                                await InventoryOperations.updateItemIcon(app, enhancedState.iconPickerItem!, icon);
+                                                // Reload inventory to show the updated icon
+                                                await reloadInventory();
+                                                // Close the icon picker
+                                                setEnhancedState(prev => ({ ...prev, showIconPicker: false, iconPickerItem: undefined }));
+                                            } catch (error) {
+                                                console.error('Failed to update item icon:', error);
+                                            }
+                                        }}
+                                        >
+                                            {icon}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
+        </div>
+    );
+};
+
+export default InventoryModalContent;
+
+function renderInventoryEffect(raw: string | ShopItemEffect, currencyName: string): string {
+    if (typeof raw !== 'string') {
+        switch (raw.type) {
+            case 'xp': return `+${raw.amount} XP`;
+            case 'coins': return `+${raw.amount} ${currencyName}`;
+            case 'stat': return `+${raw.amount} ${raw.stat}`;
+            case 'unlock': return `Unlocks: ${raw.skill}`;
+            case 'meta': return raw.description;
+            default: return 'Effect';
+        }
+    }
+    const mBuff = raw.match(/^buff:([a-z]+);mult=([0-9.]+);dur=([0-9smhdw]+)/i);
+    if (mBuff) {
+        const kind = mBuff[1];
+        const mult = parseFloat(mBuff[2]);
+        const dur = mBuff[3];
+        const label = kind === 'rewards' ? 'All rewards' : kind === 'trade' ? 'Sell value' : kind.toUpperCase();
+        const pct = Math.round((mult - 1) * 100);
+        return `+${pct}% ${label} for ${dur}`;
+    }
+    const mDebuff = raw.match(/^debuff:([a-z]+);mult=([0-9.]+);dur=([0-9smhdw]+)/i);
+    if (mDebuff) {
+        const kind = mDebuff[1];
+        const mult = parseFloat(mDebuff[2]);
+        const dur = mDebuff[3];
+        const label = kind === 'rewards' ? 'All rewards' : kind === 'trade' ? 'Sell value' : kind.toUpperCase();
+        const pct = Math.round((1 - mult) * 100);
+        return `-${pct}% ${label} for ${dur}`;
+    }
+    const mSimple = raw.match(/^(xp|coins):\+?(\d+)/i);
+    if (mSimple) {
+        const type = mSimple[1].toLowerCase();
+        const amt = parseInt(mSimple[2], 10);
+        return type === 'xp' ? `+${amt} XP` : `+${amt} ${currencyName}`;
+    }
+    return raw;
+}

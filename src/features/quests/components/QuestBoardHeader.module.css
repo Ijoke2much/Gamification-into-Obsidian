@@ -1,0 +1,177 @@
+/* Quest Board Header Styles */
+.headerContainer {
+    margin-bottom: 16px;
+    width: 100%;
+}
+
+.header {
+    min-height: 60px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    color: #fff;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    box-sizing: border-box;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.titleSection {
+    display: flex;
+    flex-direction: column;
+}
+
+.title {
+    font-size: 18px;
+    font-weight: 700;
+    margin: 0;
+}
+
+.subtitle {
+    font-size: 12px;
+    opacity: 0.8;
+    font-style: italic;
+    margin: 0;
+}
+
+.buttonContainer {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+/* Button Base Styles */
+.headerButton {
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
+    border-radius: 6px;
+    color: #fff;
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    backdrop-filter: blur(10px);
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    min-height: 36px;
+    min-width: 80px;
+    justify-content: center;
+    text-align: center;
+}
+
+.headerButton:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.headerButton:active {
+    transform: translateY(0);
+}
+
+/* Advanced Button */
+.advancedButton {
+    composes: headerButton;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.advancedButton:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+/* Boss Arena Button */
+.bossButton {
+    composes: headerButton;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.bossButton:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+/* Progress Button */
+.progressButton {
+    composes: headerButton;
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.progressButton:hover {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.progressButton.active {
+    background: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Add Quest Button */
+.addQuestButton {
+    composes: headerButton;
+    background: rgba(255, 255, 255, 0.2);
+    font-size: 14px;
+}
+
+.addQuestButton:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+    .header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        padding: 16px;
+    }
+
+    .titleSection {
+        text-align: center;
+    }
+
+    .buttonContainer {
+        justify-content: center;
+        gap: 12px;
+    }
+
+    .headerButton {
+        min-height: 44px;
+        font-size: 14px;
+        padding: 12px 16px;
+        flex: 1;
+        min-width: 120px;
+    }
+}
+
+/* Touch Device Optimizations */
+@media (pointer: coarse) {
+    .headerButton {
+        min-height: 48px;
+        min-width: 48px;
+        padding: 12px 16px;
+    }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+    .headerButton {
+        border: 2px solid currentColor;
+    }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+    .headerButton {
+        transition: none;
+    }
+
+    .headerButton:hover {
+        transform: none;
+    }
+}

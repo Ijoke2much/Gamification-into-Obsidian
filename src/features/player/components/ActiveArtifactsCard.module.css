@@ -1,0 +1,151 @@
+/* ActiveArtifactsCard.module.css */
+
+.statusCard {
+    background: linear-gradient(135deg,
+            var(--background-primary) 0%,
+            var(--background-secondary) 100%);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: all 0.2s ease;
+}
+
+.statusCard:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+    transform: translateY(-1px);
+}
+
+.statusHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.statusTitle {
+    color: var(--text-normal);
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.statusContent {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.artifactItem {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: var(--background-secondary);
+    border-radius: 8px;
+    border: 1px solid var(--background-modifier-border);
+    transition: all 0.2s ease;
+}
+
+.artifactItem:hover {
+    background: var(--background-modifier-hover);
+    transform: translateX(2px);
+}
+
+.artifactIcon {
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: var(--background-primary);
+    border-radius: 50%;
+    border: 2px solid var(--background-modifier-border);
+}
+
+.artifactInfo {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.artifactName {
+    font-weight: 600;
+    color: var(--text-normal);
+    font-size: 14px;
+}
+
+.artifactActivity {
+    color: var(--text-accent);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+.artifactDescription {
+    color: var(--text-muted);
+    font-size: 12px;
+    margin-top: 2px;
+}
+
+.artifactTime {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    min-width: 60px;
+}
+
+.timeRemaining {
+    font-weight: 600;
+    color: var(--text-accent);
+    font-size: 14px;
+}
+
+.timeLabel {
+    color: var(--text-muted);
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.artifactsTip {
+    text-align: center;
+    padding: 8px;
+    background: var(--background-primary);
+    border-radius: 6px;
+    border: 1px solid var(--background-modifier-border);
+    margin-top: 8px;
+}
+
+.artifactsTip small {
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+/* Responsive design */
+@media (max-width: 600px) {
+    .artifactItem {
+        flex-direction: column;
+        text-align: center;
+        gap: 8px;
+    }
+
+    .artifactInfo {
+        align-items: center;
+        text-align: center;
+    }
+
+    .artifactTime {
+        flex-direction: row;
+        gap: 4px;
+        justify-content: center;
+    }
+}
