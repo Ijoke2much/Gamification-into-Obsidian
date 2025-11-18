@@ -1,0 +1,83 @@
+.testContainer {
+    background: var(--background-secondary);
+    border-radius: 8px;
+    padding: 16px;
+    margin: 16px 0;
+    border: 1px solid var(--background-modifier-border);
+}
+
+.testContainer h3 {
+    margin: 0 0 16px 0;
+    color: var(--text-normal);
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.buttonRow {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.testButton {
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.testButton:hover:not(:disabled) {
+    background: var(--interactive-accent-hover);
+}
+
+.testButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.resetButton {
+    background: var(--background-modifier-border);
+    color: var(--text-normal);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.resetButton:hover:not(:disabled) {
+    background: var(--background-modifier-border-hover);
+    border-color: var(--background-modifier-border-hover);
+}
+
+.resetButton:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.resultArea {
+    background: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    padding: 12px;
+    min-height: 120px;
+    font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+    font-size: 12px;
+    line-height: 1.4;
+    overflow-y: auto;
+    max-height: 300px;
+}
+
+.resultArea pre {
+    margin: 0;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    color: var(--text-normal);
+}

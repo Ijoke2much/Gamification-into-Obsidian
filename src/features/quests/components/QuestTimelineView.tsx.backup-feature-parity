@@ -1,0 +1,1115 @@
+import React, { useMemo, useRef, useState, useEffect } from 'react';
+import type GamificationObsidianPlugin from '../../../core/main';
+import type { Quest } from '../utils/taskParser';
+import styles from './QuestTimelineView.module.css';
+
+interface QuestTimelineViewProps {
+  quests: Quest[];
+  plugin: GamificationObsidianPlugin;
+  currentEnergy: number;
+  onQuestSelect: (quest: Quest) => void;
+  onQuestComplete: (questTitle: string) => void;
+  onQuestEdit: (quest: Quest) => void;
+  onQuestMove: (questId: string, newDateIso: string) => void;
+  date?: Date;
+  onQuestResize?: (questId: string, newDurationMinutes: number) => void;
+}
+
+type TimelineViewMode = 'day' | 'week' | 'workweek';
+
+type PlacedQuest = {
+  quest: Quest;
+  startMinutes: number;
+  duration: number;
+};
+
+type DayColumn = {
+  date: Date;
+  quests: Quest[];
+  scheduled: PlacedQuest[];
+  allDay: Quest[];
+  energyRequired: number;
+  isToday: boolean;
+};
+
+function pad(n: number) { return n < 10 ? `0${n}` : `${n}`; }
+function toISODate(d: Date) { return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`; }
+
+function parseDurationToMin(s?: string): number {
+  if (!s) return 30;
+  const str = s.toLowerCase();
+  const mm = str.match(/(\d+)\s*m/);
+  const hh = str.match(/(\d+)\s*h/);
+  if (hh && mm) return parseInt(hh[1])*60 + parseInt(mm[1]);
+  if (hh) return parseInt(hh[1]) * 60;
+  if (mm) return parseInt(mm[1]);
+  const num = parseInt(str);
+  return Number.isFinite(num) ? num : 30;
+}
+
+function parseStartMinutes(quest: Quest): number | null {
+  if (quest.due && quest.due.includes('T')) {
+    const t = quest.due.split('T')[1];
+    const [hh, mm] = t.split(':').map(Number);
+    if (Number.isFinite(hh) && Number.isFinite(mm)) return hh*60 + mm;
+  }
+  return null;
+}
+
+function getTaskIcon(quest: Quest): string {
+  const title = quest.title.toLowerCase();
+  if (title.includes('workout') || title.includes('exercise') || title.includes('gym')) return '💪';
+  if (title.includes('meeting') || title.includes('call') || title.includes('zoom')) return '👥';
+  if (title.includes('read') || title.includes('study') || title.includes('book')) return '📚';
+  if (title.includes('write') || title.includes('blog') || title.includes('journal')) return '✍️';
+  if (title.includes('cook') || title.includes('eat') || title.includes('meal')) return '🍽️';
+  if (title.includes('clean') || title.includes('chore')) return '🧹';
+  if (title.includes('code') || title.includes('dev')) return '💻';
+  if (title.includes('pray') || title.includes('meditat') || title.includes('bible')) return '🙏';
+  if (title.includes('bike') || title.includes('commute')) return '🚴';
+  if (quest.difficulty === 'hard') return '🔥';
+  if (quest.difficulty === 'easy') return '🌱';
+  return '📋';
+}
+
+function getEnergyIcon(cost: number): string {
+  if (cost <= 15) return '🟢';
+  if (cost <= 30) return '🟡';
+  if (cost <= 50) return '🟠';
+  return '🔴';
+}
+
+function getEnergyMatchClass(questEnergy: number, currentEnergy: number): string {
+  if (questEnergy <= currentEnergy * 0.3) return 'low';
+  if (questEnergy <= currentEnergy * 0.6) return 'medium';
+  return 'high';
+}
+
+export const QuestTimelineView: React.FC<QuestTimelineViewProps> = ({
+  quests,
+  plugin,
+  currentEnergy,
+  onQuestSelect,
+  onQuestComplete,
+  onQuestEdit,
+  onQuestMove,
+  date,
+  onQuestResize
+}) => {
+
+  const [viewMode, setViewMode] = useState<TimelineViewMode>('day');
+  const [currentWeek, setCurrentWeek] = useState(() => {
+    const d = date || new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  });
+
+  // Local visible date for day view navigation
+  const [visibleDate, setVisibleDate] = useState<Date>(() => {
+    const d = date ? new Date(date) : new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  });
+  useEffect(() => {
+    if (date) {
+      const d = new Date(date);
+      d.setHours(0, 0, 0, 0);
+      setVisibleDate(d);
+    }
+  }, [date]);
+
+  const [collapseEarly, setCollapseEarly] = useState(true);
+  const [collapseLate, setCollapseLate] = useState(true);
+  const [showEnergyOverview, setShowEnergyOverview] = useState(true);
+  const [showUnscheduled, setShowUnscheduled] = useState(true);
+  
+  // Expanded quest blocks state
+  const [expandedBlocks, setExpandedBlocks] = useState<Set<string>>(new Set());
+  
+  // Dropdown menu state
+  const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  
+  // Toggle quest block expansion
+  const toggleBlockExpansion = (questId: string) => {
+    setExpandedBlocks(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(questId)) {
+        newSet.delete(questId);
+      } else {
+        newSet.add(questId);
+      }
+      return newSet;
+    });
+  };
+  
+  // Toggle dropdown menu
+  const toggleDropdown = (questId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setOpenDropdown(prev => prev === questId ? null : questId);
+  };
+  
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = () => setOpenDropdown(null);
+    if (openDropdown) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [openDropdown]);
+
+  const baseStartHour = collapseEarly ? 6 : 0;
+  const baseEndHourExclusive = collapseLate ? 22 : 24;
+  const [dragging, setDragging] = useState<PlacedQuest | null>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const [nowTop, setNowTop] = useState<number | null>(null);
+
+  // Now line updater
+  useEffect(() => {
+    const isToday = (() => {
+      const t = new Date(); t.setHours(0,0,0,0);
+      return t.getTime() === visibleDate.getTime();
+    })();
+    if (!isToday) { setNowTop(null); return; }
+    const update = () => {
+      const now = new Date();
+      const mins = now.getHours() * 60 + now.getMinutes();
+      setNowTop((mins/60) * hourHeight - (baseStartHour * hourHeight));
+    };
+    update();
+    const id = window.setInterval(update, 30_000);
+    return () => window.clearInterval(id);
+  }, [visibleDate, baseStartHour]);
+
+  // Calculate day data for single day or week
+  const dayColumns = useMemo(() => {
+    const columns: DayColumn[] = [];
+    
+    console.log('[Timeline] Total quests received:', quests.length);
+    console.log('[Timeline] View mode:', viewMode);
+    console.log('[Timeline] Visible date:', visibleDate.toISOString());
+    
+    if (viewMode === 'day') {
+      columns.push(calculateDayData(visibleDate, quests));
+    } else {
+      // Week or workweek view
+      const startOfWeek = new Date(currentWeek);
+      startOfWeek.setDate(startOfWeek.getDate() - startOfWeek.getDay());
+      
+      const numDays = viewMode === 'workweek' ? 5 : 7;
+      for (let i = 0; i < numDays; i++) {
+        const day = new Date(startOfWeek);
+        day.setDate(day.getDate() + (viewMode === 'workweek' ? i + 1 : i)); // workweek starts Monday
+        columns.push(calculateDayData(day, quests));
+      }
+    }
+    
+    console.log('[Timeline] Day columns calculated:', columns.length);
+    columns.forEach((col, idx) => {
+      console.log(`[Timeline] Day ${idx}:`, {
+        date: col.date.toISOString(),
+        totalQuests: col.quests.length,
+        scheduled: col.scheduled.length,
+        allDay: col.allDay.length,
+        energyRequired: col.energyRequired
+      });
+    });
+    
+    return columns;
+  }, [viewMode, currentWeek, visibleDate, quests]);
+
+  function calculateDayData(date: Date, allQuests: Quest[]): DayColumn {
+    const dayISO = toISODate(date);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    console.log('[Timeline] ═══════════════════════════════════════');
+    console.log('[Timeline] calculateDayData for:', dayISO);
+    console.log('[Timeline] Today is:', today.toISOString());
+    console.log('[Timeline] View mode:', viewMode);
+    console.log('[Timeline] Total quests received:', allQuests.length);
+    console.log('[Timeline] All quests:', allQuests.map(q => ({ 
+      title: q.title, 
+      due: q.due, 
+      today: q.today,
+      completed: q.completed
+    })));
+    
+    // Filter quests for this day - improved date matching
+    const dayQuests = allQuests.filter(q => {
+      // Skip completed quests
+      if (q.completed) {
+        console.log(`[Timeline] ❌ Skipping "${q.title}" - completed`);
+        return false;
+      }
+      
+      // Match by today flag
+      if (q.today && date.getTime() === today.getTime()) {
+        console.log(`[Timeline] ✅ Including "${q.title}" - marked as today`);
+        return true;
+      }
+      
+      // No due date - skip
+      if (!q.due) {
+        console.log(`[Timeline] ❌ Skipping "${q.title}" - no due date`);
+        return false;
+      }
+      
+      // Extract date part from due (handles both YYYY-MM-DD and YYYY-MM-DDTHH:MM)
+      const questDateStr = q.due.includes('T') ? q.due.split('T')[0] : q.due;
+      
+      console.log(`[Timeline] Checking "${q.title}": questDate=${questDateStr}, dayISO=${dayISO}`);
+      
+      // Direct date match
+      if (questDateStr === dayISO) {
+        console.log(`[Timeline] ✅ Including "${q.title}" - exact date match`);
+        return true;
+      }
+      
+      // In day view, also show overdue quests that need attention
+      if (viewMode === 'day') {
+        try {
+          const questDate = new Date(questDateStr + 'T00:00:00');
+          const viewDate = new Date(dayISO + 'T00:00:00');
+          const isOverdue = questDate.getTime() < viewDate.getTime();
+          console.log(`[Timeline] Overdue check for "${q.title}": questDate=${questDate.toISOString()}, viewDate=${viewDate.toISOString()}, isOverdue=${isOverdue}`);
+          if (isOverdue) {
+            console.log(`[Timeline] ✅ Including "${q.title}" - overdue quest`);
+            return true;
+          }
+        } catch (e) {
+          console.warn('[Timeline] Invalid date format:', q.due);
+        }
+      }
+      
+      console.log(`[Timeline] ❌ Skipping "${q.title}" - no match`);
+      return false;
+    });
+    
+    console.log('[Timeline] Filtered dayQuests:', dayQuests.length, dayQuests.map(q => q.title));
+
+    // Separate scheduled (with time) and all-day (date only) quests
+    const scheduled: PlacedQuest[] = [];
+    const allDay: Quest[] = [];
+    
+    console.log('[Timeline] ====== Separating quests into scheduled/all-day ======');
+    for (const q of dayQuests) {
+      const start = parseStartMinutes(q);
+      const dur = parseDurationToMin(q.estimatedTime);
+      console.log(`[Timeline] Quest: "${q.title}"`, {
+        due: q.due,
+        hasT: q.due?.includes('T'),
+        startMinutes: start,
+        duration: dur,
+        willBeScheduled: start !== null
+      });
+      if (start !== null) {
+        scheduled.push({ quest: q, startMinutes: start, duration: Math.max(30, Math.min(240, dur)) });
+        console.log(`[Timeline] ✅ SCHEDULED at ${Math.floor(start/60)}:${(start%60).toString().padStart(2,'0')}`);
+      } else {
+        allDay.push(q);
+        console.log(`[Timeline] ✅ ALL DAY (no time found in due date)`);
+      }
+    }
+    console.log('[Timeline] ====== Final counts ======');
+    console.log(`[Timeline] Scheduled: ${scheduled.length}, All Day: ${allDay.length}`);
+
+    // Calculate total energy required
+    const energyRequired = dayQuests.reduce((sum, q) => sum + (q.energyCost || 10), 0);
+
+    return {
+      date,
+      quests: dayQuests,
+      scheduled,
+      allDay,
+      energyRequired,
+      isToday: date.getTime() === today.getTime()
+    };
+  }
+
+  const hourHeight = viewMode === 'day' ? 60 : 40; // More space in day view
+  const minutesToTop = (mins: number) => (mins/60) * hourHeight;
+  const durationToHeight = (mins: number) => Math.max(16, (mins/60) * hourHeight);
+
+
+  // Resize state
+  const [resizing, setResizing] = useState<{
+    type: 'start' | 'end';
+    block: PlacedQuest;
+    startY: number;
+    originalStart: number;
+    originalDuration: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!resizing) return;
+    const onMove = (e: MouseEvent) => {
+      const dy = e.clientY - resizing.startY;
+      const minutesDelta = Math.round((dy / hourHeight) * 60 / 5) * 5;
+      if (resizing.type === 'end') {
+        resizing.block.duration = Math.max(5, resizing.originalDuration + minutesDelta);
+      } else {
+        const newStart = Math.max(0, resizing.originalStart + minutesDelta);
+        const newEnd = resizing.originalStart + resizing.originalDuration;
+        resizing.block.startMinutes = Math.min(newStart, newEnd - 5);
+        resizing.block.duration = Math.max(5, newEnd - resizing.block.startMinutes);
+      }
+      setDragging(d => d);
+    };
+    const onUp = () => {
+      const newStart = resizing.block.startMinutes;
+      const newDur = Math.round(resizing.block.duration);
+      const isoDay = toISODate(visibleDate);
+      const startH = Math.floor(newStart / 60);
+      const startM = Math.round((newStart % 60) / 5) * 5;
+      const newIso = `${isoDay}T${pad(startH)}:${pad(startM)}`;
+      onQuestMove(resizing.block.quest.id, newIso);
+      if (onQuestResize) onQuestResize(resizing.block.quest.id, newDur);
+      setResizing(null);
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+    return () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+    };
+  }, [resizing, hourHeight, onQuestMove, onQuestResize, visibleDate]);
+
+  // Note: Drop is handled per day via handleDropForDay within each day column
+
+  const navigateWeek = (direction: number) => {
+    const newWeek = new Date(currentWeek);
+    newWeek.setDate(newWeek.getDate() + (direction * 7));
+    setCurrentWeek(newWeek);
+  };
+
+  const formatWeekRange = (week: Date) => {
+    const start = new Date(week);
+    start.setDate(start.getDate() - start.getDay());
+    const end = new Date(start);
+    end.setDate(end.getDate() + 6);
+    return `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+  };
+
+  const totalScheduledEnergy = dayColumns.reduce((sum, col) => sum + col.energyRequired, 0);
+  const isOvercommitted = viewMode === 'day' ? totalScheduledEnergy > currentEnergy : false;
+
+  // Get unscheduled quests (quests with due date but no time) - show all active date-only quests
+  const unscheduledQuests = useMemo(() => {
+    const filtered = quests.filter(q => {
+      if (!q.due || q.completed) return false;
+      // Include both date-only quests and overdue quests needing scheduling
+      const isDateOnly = !q.due.includes('T');
+      return isDateOnly;
+    });
+    console.log('[Timeline] Unscheduled quests:', filtered.length, filtered.map(q => ({ 
+      title: q.title, 
+      due: q.due 
+    })));
+    return filtered;
+  }, [quests]);
+
+  // Show helpful message when no quests are scheduled
+  const hasUnscheduled = unscheduledQuests.length > 0;
+
+  return (
+    <div className={styles.wrapper}>
+      {/* View Mode Selector */}
+      <div className={styles.viewModeSelector}>
+        <button 
+          className={`${styles.viewModeBtn} ${viewMode === 'day' ? styles.active : ''}`}
+          onClick={() => setViewMode('day')}
+        >
+          📅 Day
+        </button>
+        <button 
+          className={`${styles.viewModeBtn} ${viewMode === 'workweek' ? styles.active : ''}`}
+          onClick={() => setViewMode('workweek')}
+        >
+          📊 Work Week
+        </button>
+        <button 
+          className={`${styles.viewModeBtn} ${viewMode === 'week' ? styles.active : ''}`}
+          onClick={() => setViewMode('week')}
+        >
+          📆 Full Week
+        </button>
+      </div>
+
+      {/* Navigation Header */}
+      {viewMode !== 'day' ? (
+        <div className={styles.weekNavigation}>
+          <button className={styles.navButton} onClick={() => navigateWeek(-1)}>← Previous Week</button>
+          <h3 className={styles.weekTitle}>{formatWeekRange(currentWeek)}</h3>
+          <button className={styles.navButton} onClick={() => navigateWeek(1)}>Next Week →</button>
+        </div>
+      ) : (
+        <div className={styles.dayNavigation}>
+          <button className={styles.navButton} onClick={() => {
+            const prev = new Date(visibleDate);
+            prev.setDate(prev.getDate() - 1);
+            setVisibleDate(prev);
+          }}>← Previous Day</button>
+          <h3 className={styles.dayTitle}>
+            {visibleDate.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+          </h3>
+          <button className={styles.navButton} onClick={() => {
+            const next = new Date(visibleDate);
+            next.setDate(next.getDate() + 1);
+            setVisibleDate(next);
+          }}>Next Day →</button>
+        </div>
+      )}
+
+      {/* Energy Bar and Controls */}
+      <div className={styles.energyHeader}>
+        <div className={styles.energyIndicator}>
+          <div className={styles.energyBar}>
+            <div 
+              className={styles.energyFill}
+              style={{ width: `${Math.min(currentEnergy, 100)}%` }}
+            />
+          </div>
+          <span className={styles.energyText}>⚡ Energy: {currentEnergy}/100</span>
+        </div>
+
+        {viewMode === 'day' && isOvercommitted && (
+          <div className={styles.overcommitmentWarning}>
+            ⚠️ Scheduled tasks require {totalScheduledEnergy} energy (you have {currentEnergy})
+          </div>
+        )}
+
+        {currentEnergy >= 70 && viewMode === 'day' && (
+          <div className={styles.hyperfocusAvailable}>
+            ✨ Hyperfocus available! Perfect for challenging tasks.
+          </div>
+        )}
+
+        <div className={styles.controls}>
+          <button
+            className={`${styles.controlBtn} ${showEnergyOverview ? styles.active : ''}`}
+            onClick={() => setShowEnergyOverview(!showEnergyOverview)}
+            title="Toggle Energy Overview"
+          >
+            ⚡ Energy View
+          </button>
+          <button
+            className={`${styles.controlBtn} ${showUnscheduled ? styles.active : ''}`}
+            onClick={() => setShowUnscheduled(!showUnscheduled)}
+            title="Toggle Unscheduled Quests"
+          >
+            📋 Unscheduled ({unscheduledQuests.length})
+          </button>
+        </div>
+      </div>
+
+      {/* Weekly Energy Overview */}
+      {viewMode !== 'day' && showEnergyOverview && (
+        <div className={styles.weeklyEnergyOverview}>
+          <div className={styles.energyOverviewTitle}>Weekly Energy Distribution</div>
+          <div className={styles.energyColumns}>
+            {dayColumns.map((col, idx) => (
+              <div key={idx} className={styles.energyColumn}>
+                <div className={styles.dayLabel}>
+                  {col.date.toLocaleDateString('en-US', { weekday: 'short' })}
+                </div>
+                <div className={styles.energyBarVertical}>
+                  <div 
+                    className={`${styles.energyFillVertical} ${col.energyRequired > 100 ? styles.overcommit : ''}`}
+                    style={{ height: `${Math.min(col.energyRequired, 150)}%` }}
+                    title={`${col.energyRequired} energy required`}
+                  />
+                </div>
+                <div className={styles.energyValue}>{col.energyRequired}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Unscheduled Quests Section */}
+      {showUnscheduled && unscheduledQuests.length > 0 && (
+        <div className={styles.unscheduledSection}>
+          <div className={styles.unscheduledHeader}>
+            <h4>📋 Unscheduled Quests ({unscheduledQuests.length})</h4>
+            <p className={styles.hint}>Drag quests to the timeline to schedule them</p>
+          </div>
+          <div className={styles.unscheduledQuests}>
+            {unscheduledQuests.slice(0, 5).map(quest => (
+              <div
+                key={quest.id}
+                className={styles.unscheduledQuest}
+                draggable
+                onDragStart={() => {
+                  const dur = parseDurationToMin(quest.estimatedTime);
+                  setDragging({ quest, startMinutes: 540, duration: dur }); // Default 9am
+                }}
+              >
+                <div className={styles.energyBadge}>
+                  {getEnergyIcon(quest.energyCost || 10)} {quest.energyCost || 10}
+                </div>
+                <div className={styles.questInfo}>
+                  <div className={styles.questTitle}>{quest.title}</div>
+                  <div className={styles.questMeta}>
+                    {quest.estimatedTime && `⏱️ ${quest.estimatedTime}`}
+                    {quest.priority && ` • ${quest.priority}`}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Collapse Controls */}
+      <div className={styles.headerRow}>
+        <button className={styles.collapseBtn} onClick={() => setCollapseEarly(v => !v)}>
+          {collapseEarly ? `Show 0–5am` : `Hide 0–5am`}
+        </button>
+        <div className={styles.spacer} />
+        <button className={styles.collapseBtn} onClick={() => setCollapseLate(v => !v)}>
+          {collapseLate ? `Show 10pm–12am` : `Hide 10pm–12am`}
+        </button>
+      </div>
+
+      {/* Timeline Grid */}
+      <div className={`${styles.timelineContainer} ${viewMode !== 'day' ? styles.weekView : ''}`}>
+        {dayColumns.map((dayCol, dayIdx) => (
+          <div key={dayIdx} className={styles.dayColumn}>
+            {/* Day Header (for week views) */}
+            {viewMode !== 'day' && (
+              <div className={`${styles.dayHeader} ${dayCol.isToday ? styles.today : ''}`}>
+                <div className={styles.dayName}>
+                  {dayCol.date.toLocaleDateString('en-US', { weekday: 'short' })}
+                </div>
+                <div className={styles.dayDate}>
+                  {dayCol.date.getDate()}
+                </div>
+                <div className={styles.questCount}>
+                  {dayCol.quests.length} {dayCol.quests.length === 1 ? 'quest' : 'quests'}
+                </div>
+              </div>
+            )}
+
+            {/* All-Day Quests Section */}
+            {dayCol.allDay.length > 0 && (
+              <div className={styles.allDaySection}>
+                <div className={styles.allDayLabel}>All Day</div>
+                {dayCol.allDay.map(quest => (
+                  <div
+                    key={quest.id}
+                    className={`${styles.allDayQuest} ${styles[getEnergyMatchClass(quest.energyCost || 10, currentEnergy)]}`}
+                    onClick={() => onQuestSelect(quest)}
+                    onDoubleClick={() => onQuestEdit(quest)}
+                  >
+                    <div className={styles.energyBadge}>
+                      {getEnergyIcon(quest.energyCost || 10)} {quest.energyCost || 10}
+                    </div>
+                    <div className={styles.questContent}>
+                      <div className={styles.questTitle}>
+                        {quest.completed && '✅ '}
+                        {quest.title}
+                      </div>
+                      {quest.estimatedTime && (
+                        <div className={styles.questMeta}>⏱️ {quest.estimatedTime}</div>
+                      )}
+                    </div>
+                    {!quest.completed && (
+                      <button
+                        className={styles.completeBtn}
+                        onClick={(e) => { e.stopPropagation(); onQuestComplete(quest.title); }}
+                        title="Complete"
+                      >✓</button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Hourly Timeline */}
+            <div className={styles.timeline}>
+              {viewMode === 'day' && (() => {
+                // Determine visible hour window per day (auto-expand if tasks fall outside)
+                let dayStartHour = baseStartHour;
+                let dayEndHourExclusive = baseEndHourExclusive;
+                if (dayCol.scheduled.some(b => b.startMinutes < baseStartHour * 60)) dayStartHour = 0;
+                if (dayCol.scheduled.some(b => (b.startMinutes + b.duration) > baseEndHourExclusive * 60)) dayEndHourExclusive = 24;
+                const hours = Array.from({ length: dayEndHourExclusive - dayStartHour }, (_, i) => i + dayStartHour);
+                return (
+                  <div className={styles.hours}>
+                    {hours.map(h => (
+                      <div key={h} className={styles.hourRow}>
+                        <span className={styles.hourLabel}>
+                          {h === 0 ? '12a' : h < 12 ? `${h}a` : h === 12 ? '12p' : `${h-12}p`}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+
+              {(() => {
+                // Same hour window calc as hours column
+                let dayStartHour = baseStartHour;
+                let dayEndHourExclusive = baseEndHourExclusive;
+                if (dayCol.scheduled.some(b => b.startMinutes < baseStartHour * 60)) dayStartHour = 0;
+                if (dayCol.scheduled.some(b => (b.startMinutes + b.duration) > baseEndHourExclusive * 60)) dayEndHourExclusive = 24;
+                const hours = Array.from({ length: dayEndHourExclusive - dayStartHour }, (_, i) => i + dayStartHour);
+                const handleDropForDay = (e: React.DragEvent) => {
+                  e.preventDefault();
+                  if (!gridRef.current || !dragging) return;
+                  const rect = gridRef.current.getBoundingClientRect();
+                  const y = e.clientY - rect.top + (dayStartHour * hourHeight);
+                  const mins = Math.max(0, Math.min(24*60-5, Math.round((y / hourHeight) * 60)));
+                  const startH = Math.floor(mins / 60);
+                  const startM = Math.round((mins % 60) / 5) * 5;
+                  const isoDay = toISODate(dayCol.date);
+                  const newIso = `${isoDay}T${pad(startH)}:${pad(startM)}`;
+                  onQuestMove(dragging.quest.id, newIso);
+                  setDragging(null);
+                };
+                return (
+                  <div
+                    className={styles.grid}
+                    ref={viewMode === 'day' ? gridRef : undefined}
+                    onDragOver={(e) => e.preventDefault()}
+                    onDrop={handleDropForDay}
+                  >
+                    {hours.map(h => (
+                      <div key={h} className={styles.gridHour} />
+                    ))}
+
+                    {/* Now line (only for today) */}
+                    {dayCol.isToday && nowTop !== null && viewMode === 'day' && (
+                      <div className={styles.nowLine} style={{ top: nowTop }} />
+                    )}
+
+                {/* Empty state message */}
+                {dayCol.scheduled.length === 0 && dayCol.allDay.length === 0 && (
+                  <div className={styles.emptyTimeline}>
+                    <div className={styles.emptyMessage}>
+                      <div className={styles.emptyIcon}>📅</div>
+                      <div className={styles.emptyTitle}>No quests scheduled</div>
+                      <div className={styles.emptySubtitle}>
+                        {hasUnscheduled 
+                          ? "Drag quests from the Unscheduled section above to schedule them"
+                          : "Add due dates to your quests to see them here"
+                        }
+                      </div>
+                      {hasUnscheduled && (
+                        <div className={styles.emptyHint}>
+                          💡 Tip: Drag "Read the Bible" to 9am to schedule it!
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                    {/* Scheduled Quest Blocks */}
+                    {dayCol.scheduled.map((block, blockIdx) => {
+                  const energy = block.quest.energyCost ?? 10;
+                  const energyMatch = getEnergyMatchClass(energy, currentEnergy);
+                  const isHyperfocusOptimal = block.quest.difficulty === 'hard' && currentEnergy >= 70;
+                  const isExpanded = expandedBlocks.has(block.quest.id);
+                  const isDropdownOpen = openDropdown === block.quest.id;
+                  
+                  const topPos = minutesToTop(block.startMinutes - dayStartHour*60);
+                  const heightVal = durationToHeight(block.duration);
+                  const isSmallBlock = heightVal < 80; // Small blocks get special treatment
+                  
+                  console.log('[Timeline] Rendering quest block:', block.quest.title, 'at top:', topPos, 'height:', heightVal);
+                  
+                  const startHour = Math.floor(block.startMinutes / 60);
+                  const startMin = block.startMinutes % 60;
+                  
+                  
+  const endMinutes = block.startMinutes + block.duration;
+  const endHour = Math.floor(endMinutes / 60);
+  const endMin = endMinutes % 60;
+  
+  const timeRangeStr = `${startHour % 12 || 12}:${startMin.toString().padStart(2, '0')} - ${endHour % 12 || 12}:${endMin.toString().padStart(2, '0')}${endHour >= 12 ? 'PM' : 'AM'}`;
+  
+  // Check if this is the current active task
+  const now = new Date();
+  const currentMinutes = now.getHours() * 60 + now.getMinutes();
+  const isCurrentTask = dayCol.isToday && 
+    currentMinutes >= block.startMinutes && 
+    currentMinutes < (block.startMinutes + block.duration);
+  const timeRemaining = isCurrentTask 
+    ? (block.startMinutes + block.duration) - currentMinutes 
+    : null;
+  
+  // Calculate free time gap
+  const prevBlock = blockIdx > 0 ? dayCol.scheduled[blockIdx - 1] : null;
+  const freeTimeGap = prevBlock 
+    ? block.startMinutes - (prevBlock.startMinutes + prevBlock.duration) 
+    : null;
+  const showFreeTime = freeTimeGap && freeTimeGap >= 15;
+  
+  // Get task icon
+  const taskIcon = getTaskIcon(block.quest);
+  
+  // Calculate connector line to next task
+  const nextBlock = blockIdx < dayCol.scheduled.length - 1 ? dayCol.scheduled[blockIdx + 1] : null;
+  const connectorHeight = nextBlock 
+    ? (nextBlock.startMinutes - (block.startMinutes + block.duration)) 
+    : 0;
+  const hasConnector = connectorHeight > 0 && connectorHeight < 180; // Max 3 hours
+  
+  // Get energy color for connector
+  const getEnergyColor = (match: string) => {
+    if (match === 'low') return 'rgba(134, 239, 172, 0.6)';
+    if (match === 'medium') return 'rgba(252, 211, 77, 0.6)';
+    if (match === 'high') return 'rgba(252, 165, 165, 0.6)';
+    return 'rgba(196, 181, 253, 0.6)';
+  };
+  
+  const nextEnergyMatch = nextBlock ? getEnergyMatchClass(nextBlock.quest.energyCost ?? 10, currentEnergy) : energyMatch;
+
+
+                  return (
+                    <React.Fragment key={block.quest.id}>
+                      {/* Free Time Gap Indicator */}
+                      {showFreeTime && prevBlock && (
+                        <div
+                          className={styles.freeTimeGap}
+                          style={{
+                            position: 'absolute',
+                            top: `${minutesToTop((prevBlock.startMinutes + prevBlock.duration) - dayStartHour*60)}px`,
+                            height: `${durationToHeight(freeTimeGap)}px`,
+                            left: '6px',
+                            right: '6px',
+                            zIndex: 1
+                          }}
+                        >
+                          <div className={styles.freeTimeContent}>
+                            <span className={styles.freeTimeIcon}>⏱️</span>
+                            <span className={styles.freeTimeText}>{freeTimeGap} min free</span>
+                          </div>
+                        </div>
+                      )}
+                      
+                      <div
+                        key={`block-${block.quest.id}`}
+                      className={`
+                        ${styles.block} 
+                        ${styles[`energy_${energyMatch}`]}
+                        ${isHyperfocusOptimal ? styles.hyperfocusOptimal : ''}
+                        ${block.quest.completed ? styles.completed : ''}
+                        ${isExpanded ? styles.expanded : ''}
+                        ${isSmallBlock ? styles.smallBlock : ''}
+                        ${isCurrentTask ? styles.currentTask : ''}
+                      `}
+                      style={{ 
+                        position: 'absolute',
+                        top: `${topPos}px`, 
+                        height: isExpanded ? 'auto' : `${heightVal}px`,
+                        minHeight: isExpanded ? `${heightVal}px` : undefined,
+                        left: '6px',
+                        right: '6px',
+                        zIndex: isExpanded || isDropdownOpen ? 100 : 2,
+                      }}
+                      draggable={!isExpanded && !isDropdownOpen}
+                      onDragStart={() => !isExpanded && !isDropdownOpen && setDragging(block)}
+                      onDoubleClick={() => onQuestEdit(block.quest)}
+                      onClick={() => !isDropdownOpen && onQuestSelect(block.quest)}
+                      title={block.quest.title}
+                    >
+                      {/* Task Icon Circle (Left Side) */}
+                      <div className={`${styles.taskIconCircle} ${block.quest.completed ? styles.completedIcon : ''}`}>
+                        {taskIcon}
+                      </div>
+                      
+                      {/* Timeline Connector Line */}
+                      {hasConnector && (
+                        <div 
+                          className={styles.timelineConnector}
+                          style={{
+                            position: 'absolute',
+                            left: '-26px',
+                            top: '100%',
+                            width: '4px',
+                            height: `${durationToHeight(connectorHeight)}px`,
+                            background: freeTimeGap && freeTimeGap >= 15
+                              ? `repeating-linear-gradient(180deg, ${getEnergyColor(energyMatch)} 0px, ${getEnergyColor(energyMatch)} 6px, transparent 6px, transparent 12px)`
+                              : `linear-gradient(180deg, ${getEnergyColor(energyMatch)} 0%, rgba(200, 200, 200, 0.3) 50%, ${getEnergyColor(nextEnergyMatch)} 100%)`,
+                            zIndex: 1,
+                            borderRadius: '2px',
+                            transition: 'all 0.3s ease'
+                          }}
+                        />
+                      )}
+                      
+                      {/* Action Menu Dropdown Button */}
+                      <div 
+                        className={styles.menuButton}
+                        onClick={(e) => toggleDropdown(block.quest.id, e)}
+                        title="Actions"
+                      >
+                        ⋮
+                      </div>
+
+                      {/* Dropdown Menu */}
+                      {isDropdownOpen && (
+                        <div className={styles.dropdownMenu} onClick={(e) => e.stopPropagation()}>
+                          <button
+                            className={styles.dropdownItem}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleBlockExpansion(block.quest.id);
+                              setOpenDropdown(null);
+                            }}
+                          >
+                            <span className={styles.dropdownIcon}>{isExpanded ? '📖' : '📋'}</span>
+                            <span>{isExpanded ? 'Collapse' : 'View Details'}</span>
+                          </button>
+                          <button
+                            className={styles.dropdownItem}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onQuestEdit(block.quest);
+                              setOpenDropdown(null);
+                            }}
+                          >
+                            <span className={styles.dropdownIcon}>✏️</span>
+                            <span>Edit Quest</span>
+                          </button>
+                          {!block.quest.completed && (
+                            <button
+                              className={styles.dropdownItem}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onQuestComplete(block.quest.title);
+                                setOpenDropdown(null);
+                              }}
+                            >
+                              <span className={styles.dropdownIcon}>✅</span>
+                              <span>Complete</span>
+                            </button>
+                          )}
+                          <div className={styles.dropdownDivider} />
+                          <button
+                            className={styles.dropdownItem}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // Schedule for tomorrow
+                              const tomorrow = new Date(dayCol.date);
+                              tomorrow.setDate(tomorrow.getDate() + 1);
+                              const newIso = `${toISODate(tomorrow)}T${pad(startHour)}:${pad(startMin)}`;
+                              onQuestMove(block.quest.id, newIso);
+                              setOpenDropdown(null);
+                            }}
+                          >
+                            <span className={styles.dropdownIcon}>➡️</span>
+                            <span>Move to Tomorrow</span>
+                          </button>
+                          <button
+                            className={`${styles.dropdownItem} ${styles.danger}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              // Remove time (convert to all-day)
+                              const dateOnly = block.quest.due?.split('T')[0];
+                              if (dateOnly) {
+                                onQuestMove(block.quest.id, dateOnly);
+                              }
+                              setOpenDropdown(null);
+                            }}
+                          >
+                            <span className={styles.dropdownIcon}>🗑️</span>
+                            <span>Unschedule</span>
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Time Range Header */}
+                      <div className={styles.blockTimeRange}>
+                        {timeRangeStr} <span className={styles.durationBadge}>({block.duration}m)</span>
+                      </div>
+
+                      {/* Quest Title - Better visibility */}
+                      <div className={styles.blockTitle} style={{ 
+                        paddingLeft: '4px',
+                        paddingRight: '44px', // Room for completion circle
+                        marginTop: '28px',
+                        lineHeight: '1.4',
+                        overflow: isSmallBlock ? 'hidden' : 'visible',
+                        textOverflow: isSmallBlock ? 'ellipsis' : 'unset',
+                        whiteSpace: isSmallBlock ? 'nowrap' : 'normal'
+                      }}>
+                        {block.quest.title}
+                      </div>
+                      
+                      {/* Subtitle/Description */}
+                      {!isSmallBlock && (block.quest.description || block.quest.notes) && (
+                        <div className={styles.blockSubtitle}>
+                          {block.quest.description || block.quest.notes}
+                        </div>
+                      )}
+                      
+                      {/* Structured-style Stat Badges */}
+                      {!isSmallBlock && (
+                        <div className={styles.statBadges}>
+                          {/* Difficulty Badge */}
+                          {block.quest.difficulty && (
+                            <div className={`${styles.statBadge} ${styles.difficultyBadge}`}>
+                              <span className={styles.statLabel}>Difficulty:</span>
+                              <span className={styles.statValue}>
+                                {block.quest.difficulty === 'easy' ? '🌱 Easy' :
+                                 block.quest.difficulty === 'medium' ? '⚖️ Medium' :
+                                 block.quest.difficulty === 'hard' ? '🔥 Hard' : 
+                                 '⭐ Epic'}
+                              </span>
+                            </div>
+                          )}
+                          
+                          {/* XP Reward Badge */}
+                          {block.quest.xp && block.quest.xp > 0 && (
+                            <div className={`${styles.statBadge} ${styles.xpBadge}`}>
+                              <span className={styles.statLabel}>Reward XP:</span>
+                              <span className={styles.statValue}>✨ +{block.quest.xp}</span>
+                            </div>
+                          )}
+                          
+                          {/* Coins Badge */}
+                          {block.quest.coins && block.quest.coins > 0 && (
+                            <div className={`${styles.statBadge} ${styles.coinsBadge}`}>
+                              <span className={styles.statLabel}>Coins:</span>
+                              <span className={styles.statValue}>🪙 {block.quest.coins}</span>
+                            </div>
+                          )}
+                          
+                          {/* Skills Tags */}
+                          {block.quest.skills && block.quest.skills.length > 0 && (
+                            <div className={`${styles.statBadge} ${styles.skillsBadge}`}>
+                              <span className={styles.statLabel}>Skills:</span>
+                              <span className={styles.statValue}>
+                                {block.quest.skills.map((skill, idx) => (
+                                  <span key={idx} className={styles.skillTag}>
+                                    🛠️ {skill}
+                                  </span>
+                                ))}
+                              </span>
+                            </div>
+                          )}
+                          
+                          {/* Energy Cost Badge (if not shown elsewhere) */}
+                          <div className={`${styles.statBadge} ${styles.energyBadge}`}>
+                            <span className={styles.statLabel}>Energy:</span>
+                            <span className={styles.statValue}>{getEnergyIcon(energy)} {energy}</span>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Time Remaining Badge (Current Task) */}
+                      {isCurrentTask && timeRemaining && timeRemaining > 0 && (
+                        <div className={styles.timeRemainingBadge}>
+                          ⏱️ {timeRemaining} min left
+                        </div>
+                      )}
+
+                      {/* Completion Circle (Right Side) */}
+                      <div 
+                        className={`${styles.completionCircle} ${block.quest.completed ? styles.completedCircle : ''}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (!block.quest.completed) onQuestComplete(block.quest.title);
+                        }}
+                        title={block.quest.completed ? "Completed" : "Mark complete"}
+                      >
+                        {block.quest.completed && <span className={styles.checkmark}>✓</span>}
+                      </div>
+
+                      {/* Expanded Content */}
+                      {isExpanded && (
+                        <div className={styles.expandedContent} style={{ marginTop: '12px' }}>
+                          {/* Quest Description */}
+                          {block.quest.description && (
+                            <div className={styles.questDescription}>
+                              {block.quest.description}
+                            </div>
+                          )}
+
+                          {/* Detailed Stats in a more game-like layout */}
+                          <div className={styles.questStats}>
+                            <div className={styles.statItem}>
+                              <span className={styles.statLabel}>Difficulty:</span>
+                              <span className={styles.statValue}>
+                                {block.quest.difficulty === 'easy' ? '🌱 Easy' :
+                                 block.quest.difficulty === 'medium' ? '⚖️ Medium' :
+                                 block.quest.difficulty === 'hard' ? '🔥 Hard' : '❓ Unknown'}
+                              </span>
+                            </div>
+                            
+                            {block.quest.xp && (
+                              <div className={styles.statItem}>
+                                <span className={styles.statLabel}>Reward XP:</span>
+                                <span className={styles.statValue}>✨ {block.quest.xp}</span>
+                              </div>
+                            )}
+                            
+                            {block.quest.coins && (
+                              <div className={styles.statItem}>
+                                <span className={styles.statLabel}>Coins:</span>
+                                <span className={styles.statValue}>🪙 {block.quest.coins}</span>
+                              </div>
+                            )}
+                            
+                            {block.quest.skills && block.quest.skills.length > 0 && (
+                              <div className={styles.statItem} style={{ gridColumn: '1 / -1' }}>
+                                <span className={styles.statLabel}>Skills:</span>
+                                <span className={styles.statValue}>🛠️ {block.quest.skills.join(', ')}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Resize Handles (only when not expanded or dropdown open) */}
+                      {viewMode === 'day' && !isExpanded && !isDropdownOpen && (
+                        <>
+                          <div
+                            className={styles.resizeHandleTop}
+                            onMouseDown={(e) => {
+                              e.stopPropagation();
+                              setResizing({ 
+                                type: 'start', 
+                                block, 
+                                startY: e.clientY, 
+                                originalStart: block.startMinutes, 
+                                originalDuration: block.duration 
+                              });
+                            }}
+                            title="Drag to adjust start time"
+                          />
+                          <div
+                            className={styles.resizeHandleBottom}
+                            onMouseDown={(e) => {
+                              e.stopPropagation();
+                              setResizing({ 
+                                type: 'end', 
+                                block, 
+                                startY: e.clientY, 
+                                originalStart: block.startMinutes, 
+                                originalDuration: block.duration 
+                              });
+                            }}
+                            title="Drag to adjust duration"
+                          />
+                        </>
+                      )}                      </div>
+                    </React.Fragment>
+                  );
+                })}
+                  </div>
+                );
+              })()}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default QuestTimelineView;

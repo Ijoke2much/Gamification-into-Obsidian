@@ -1,0 +1,740 @@
+.mobileSkillTree {
+    height: 100vh;
+    width: 100vw;
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    transform-origin: center center;
+    transition: transform 0.3s ease;
+}
+
+/* Mobile Header */
+.mobileHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.3);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
+}
+
+.backButton {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 8px 12px;
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 60px;
+}
+
+.backButton:active {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(0.95);
+}
+
+.title {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #fff;
+    text-align: center;
+    flex: 1;
+}
+
+.zoomButton {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 8px;
+    color: #fff;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-width: 40px;
+}
+
+.zoomButton:active {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(0.95);
+}
+
+/* Search and Filter Bar */
+.searchFilterBar {
+    display: flex;
+    gap: 8px;
+    padding: 12px 16px;
+    background: rgba(0, 0, 0, 0.2);
+    flex-shrink: 0;
+}
+
+.searchInput {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: #fff;
+    font-size: 14px;
+    outline: none;
+}
+
+.searchInput::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.classFilter {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 10px 12px;
+    color: #fff;
+    font-size: 14px;
+    outline: none;
+    min-width: 120px;
+}
+
+/* View Mode Toggle */
+.viewModeToggle {
+    display: flex;
+    padding: 8px 16px;
+    gap: 4px;
+    background: rgba(0, 0, 0, 0.2);
+    flex-shrink: 0;
+}
+
+.viewButton {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    padding: 8px 4px;
+    color: #fff;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.viewButton.active {
+    background: rgba(74, 222, 128, 0.3);
+    border-color: rgba(74, 222, 128, 0.5);
+    color: #4ade80;
+}
+
+.viewButton:active {
+    transform: scale(0.95);
+}
+
+/* Skills Container */
+.skillsContainer {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Grid View */
+.skillsContainer.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+    padding: 16px;
+}
+
+/* List View */
+.skillsContainer.list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 16px;
+}
+
+.skillsContainer.list .skillCard {
+    display: flex;
+    align-items: center;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.skillsContainer.list .skillCard:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateX(4px);
+}
+
+.skillsContainer.list .skillCard .skillIcon {
+    font-size: 20px;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+.skillsContainer.list .skillCard .skillInfo {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.skillsContainer.list .skillCard .skillName {
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+    margin: 0;
+}
+
+.skillsContainer.list .skillCard .skillClass {
+    font-size: 12px;
+    color: #888;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 2px 8px;
+    border-radius: 12px;
+    align-self: flex-start;
+}
+
+.skillsContainer.list .skillCard .progressContainer {
+    margin: 0;
+    min-width: 200px;
+}
+
+.skillsContainer.list .skillCard .progressBar {
+    height: 6px;
+    margin-bottom: 4px;
+}
+
+.skillsContainer.list .skillCard .progressText {
+    font-size: 11px;
+    color: #ccc;
+}
+
+/* Tree View */
+.skillsContainer.tree {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+}
+
+.treeClassGroup {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.treeClassHeader {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 12px 16px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.treeClassHeader:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.treeClassTitle {
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.treeClassIcon {
+    font-size: 18px;
+}
+
+.treeClassCount {
+    background: rgba(74, 222, 128, 0.2);
+    color: #4ade80;
+    padding: 2px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.treeClassToggle {
+    color: #888;
+    font-size: 14px;
+    transition: transform 0.2s ease;
+}
+
+.treeClassToggle.expanded {
+    transform: rotate(90deg);
+}
+
+.treeSkillsContainer {
+    padding: 8px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 8px;
+}
+
+.treeSkillsContainer.collapsed {
+    display: none;
+}
+
+.treeSkillCard {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 12px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.treeSkillCard:hover {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+}
+
+.treeSkillCard .skillIcon {
+    font-size: 20px;
+    margin-bottom: 8px;
+}
+
+.treeSkillCard .skillName {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    margin: 0 0 6px 0;
+}
+
+.treeSkillCard .levelInfo {
+    font-size: 11px;
+    color: #888;
+    margin-bottom: 8px;
+}
+
+.treeSkillCard .progressBar {
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 4px;
+}
+
+.treeSkillCard .progressFill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.5s ease;
+}
+
+.treeSkillCard .progressText {
+    font-size: 10px;
+    color: #ccc;
+}
+
+.skillCard {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.skillCard:active {
+    transform: scale(0.98);
+}
+
+.skillClass {
+    font-size: 10px;
+    color: #888;
+    text-align: center;
+    padding: 4px;
+    background: rgba(0, 0, 0, 0.2);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Empty State */
+.emptyState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    text-align: center;
+    color: #888;
+}
+
+.emptyIcon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.emptyState h3 {
+    margin: 0 0 8px 0;
+    font-size: 18px;
+    color: #ccc;
+}
+
+.emptyState p {
+    margin: 0;
+    font-size: 14px;
+}
+
+/* Zoom Controls */
+.zoomControls {
+    position: fixed;
+    bottom: 80px;
+    right: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 1000;
+}
+
+.zoomControls .zoomButton {
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+}
+
+.zoomLevel {
+    background: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    text-align: center;
+    backdrop-filter: blur(10px);
+}
+
+/* Quick Actions */
+.quickActions {
+    position: fixed;
+    bottom: 16px;
+    left: 16px;
+    right: 16px;
+    display: flex;
+    gap: 8px;
+    z-index: 1000;
+}
+
+.actionButton {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 12px 8px;
+    color: #fff;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+}
+
+.actionButton:active {
+    background: rgba(255, 255, 255, 0.1);
+    transform: scale(0.95);
+}
+
+/* Touch-friendly interactions */
+@media (hover: none) and (pointer: coarse) {
+    .mobileSkillTree {
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .skillCard {
+        min-height: 60px;
+    }
+
+    .viewButton,
+    .actionButton,
+    .backButton,
+    .zoomButton {
+        min-height: 44px;
+    }
+
+    .searchInput,
+    .classFilter {
+        min-height: 44px;
+        font-size: 16px;
+        /* Prevent zoom on iOS */
+    }
+}
+
+/* Landscape orientation adjustments */
+@media (orientation: landscape) {
+    .mobileHeader {
+        padding: 12px 16px;
+    }
+
+    .searchFilterBar {
+        padding: 8px 16px;
+    }
+
+    .viewModeToggle {
+        padding: 6px 16px;
+    }
+
+    .skillsContainer {
+        padding: 12px 16px;
+    }
+
+    .skillsContainer.grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 8px;
+    }
+}
+
+/* High DPI displays */
+@media (-webkit-min-device-pixel-ratio: 2),
+(min-resolution: 192dpi) {
+    .mobileSkillTree {
+        font-smooth: antialiased;
+        -webkit-font-smoothing: antialiased;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .mobileSkillTree {
+        background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #2a2a2a 100%);
+    }
+}
+
+/* Desktop-specific improvements */
+@media (min-width: 1024px) {
+    .mobileSkillTree {
+        height: 100%;
+        width: 100%;
+        max-height: 80vh;
+    }
+
+    .mobileHeader {
+        padding: 12px 20px;
+    }
+
+    .searchFilterBar {
+        padding: 10px 20px;
+    }
+
+    .viewModeToggle {
+        padding: 8px 20px;
+    }
+
+    .skillsContainer {
+        padding: 20px;
+    }
+
+    /* Enhanced grid layout for desktop */
+    .skillsContainer.grid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 8px;
+    }
+
+    /* Ultra-wide desktop support */
+    @media (min-width: 1440px) {
+        .skillsContainer.grid {
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 6px;
+        }
+    }
+
+    /* Desktop-specific view modes */
+    .skillsContainer.compact {
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+        gap: 4px;
+    }
+
+    .skillsContainer.detailed {
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+        gap: 16px;
+    }
+
+    .skillsContainer.card {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+        gap: 16px;
+    }
+
+    /* Desktop zoom controls */
+    .desktopZoomControls {
+        position: fixed;
+        top: 50%;
+        right: 20px;
+        transform: translateY(-50%);
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        z-index: 1000;
+    }
+
+    .zoomSlider {
+        writing-mode: bt-lr;
+        writing-mode: vertical-lr;
+        width: 20px;
+        height: 120px;
+        background: rgba(0, 0, 0, 0.8);
+        border-radius: 10px;
+        padding: 8px 0;
+        border: none;
+        outline: none;
+        cursor: pointer;
+    }
+
+    .zoomSlider::-webkit-slider-thumb {
+        appearance: none;
+        width: 16px;
+        height: 16px;
+        background: #4ade80;
+        border-radius: 50%;
+        cursor: pointer;
+    }
+
+    .zoomLevelIndicator {
+        background: rgba(255, 255, 255, 0.8);
+        color: #000;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        text-align: center;
+        margin-top: 8px;
+    }
+
+    .keyboardShortcuts {
+        background: rgba(0, 0, 0, 0.8);
+        color: #fff;
+        padding: 8px;
+        border-radius: 8px;
+        font-size: 10px;
+        text-align: center;
+        margin-top: 8px;
+        backdrop-filter: blur(10px);
+    }
+
+    .shortcutHint {
+        margin-bottom: 4px;
+    }
+
+    .shortcutHint:last-child {
+        margin-bottom: 0;
+    }
+
+    .shortcutHint kbd {
+        background: rgba(255, 255, 255, 0.2);
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        border-radius: 3px;
+        padding: 2px 4px;
+        font-size: 9px;
+        font-family: monospace;
+        color: #fff;
+    }
+
+    /* Desktop-specific controls */
+    .desktopControls {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 12px 20px;
+        background: rgba(0, 0, 0, 0.2);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .viewModeSelector {
+        display: flex;
+        gap: 4px;
+    }
+
+    .viewModeButton {
+        padding: 8px 12px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 6px;
+        color: #fff;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-size: 12px;
+    }
+
+    .viewModeButton:hover {
+        background: rgba(255, 255, 255, 0.2);
+    }
+
+    .viewModeButton.active {
+        background: rgba(74, 222, 128, 0.3);
+        border-color: rgba(74, 222, 128, 0.5);
+        color: #4ade80;
+    }
+
+    /* Desktop skill card variants */
+    .skillCard.compact {
+        padding: 6px;
+        font-size: 11px;
+    }
+
+    .skillCard.compact .skillIcon {
+        font-size: 16px;
+    }
+
+    .skillCard.compact .skillName {
+        font-size: 12px;
+    }
+
+    .skillCard.detailed {
+        padding: 16px;
+        font-size: 14px;
+    }
+
+    .skillCard.detailed .skillIcon {
+        font-size: 28px;
+    }
+
+    /* Hide mobile-specific elements on desktop */
+    .quickActions {
+        display: none;
+    }
+
+    .zoomControls {
+        display: none;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+
+    .mobileSkillTree,
+    .skillCard,
+    .viewButton,
+    .actionButton,
+    .backButton,
+    .zoomButton {
+        transition: none;
+    }
+
+    .skillCard:active,
+    .viewButton:active,
+    .actionButton:active,
+    .backButton:active,
+    .zoomButton:active {
+        transform: none;
+    }
+}

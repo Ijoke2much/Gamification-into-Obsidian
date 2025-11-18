@@ -1,0 +1,145 @@
+/* Skill Tree Button Styles */
+
+.skillTreeButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    font-family: inherit;
+    white-space: nowrap;
+}
+
+.skillTreeButton:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.skillTreeButton:active {
+    transform: translateY(0);
+}
+
+/* Variants */
+.primary {
+    background: var(--interactive-accent);
+    color: white;
+    border: 1px solid var(--interactive-accent);
+}
+
+.primary:hover {
+    background: var(--interactive-accent-hover);
+    border-color: var(--interactive-accent-hover);
+}
+
+.secondary {
+    background: var(--background-secondary);
+    color: var(--text-normal);
+    border: 1px solid var(--background-modifier-border);
+}
+
+.secondary:hover {
+    background: var(--background-modifier-hover);
+    border-color: var(--text-accent);
+    color: var(--text-accent);
+}
+
+.icon {
+    background: transparent;
+    color: var(--text-muted);
+    border: 1px solid transparent;
+    border-radius: 50%;
+    aspect-ratio: 1;
+}
+
+.icon:hover {
+    background: var(--background-modifier-hover);
+    color: var(--text-accent);
+    border-color: var(--background-modifier-border);
+}
+
+/* Sizes */
+.small {
+    padding: 6px 12px;
+    font-size: 12px;
+    min-height: 28px;
+}
+
+.small.icon {
+    padding: 6px;
+    width: 28px;
+    height: 28px;
+    font-size: 14px;
+}
+
+.medium {
+    padding: 8px 16px;
+    font-size: 14px;
+    min-height: 32px;
+}
+
+.medium.icon {
+    padding: 8px;
+    width: 32px;
+    height: 32px;
+    font-size: 16px;
+}
+
+.large {
+    padding: 12px 24px;
+    font-size: 16px;
+    min-height: 40px;
+}
+
+.large.icon {
+    padding: 12px;
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+}
+
+/* Focus states */
+.skillTreeButton:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--text-accent-rgb), 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Disabled state */
+.skillTreeButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+/* Loading state */
+.skillTreeButton.loading {
+    position: relative;
+    color: transparent;
+}
+
+.skillTreeButton.loading::after {
+    content: '';
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    border: 2px solid transparent;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    color: inherit;
+}
+
+@keyframes spin {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
+}

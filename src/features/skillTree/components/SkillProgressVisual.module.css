@@ -1,0 +1,377 @@
+.skillProgress {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 12px;
+    margin: 8px 0;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.skillProgress:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Size variants */
+.small {
+    padding: 8px;
+    font-size: 12px;
+}
+
+.medium {
+    padding: 12px;
+    font-size: 14px;
+}
+
+.large {
+    padding: 16px;
+    font-size: 16px;
+}
+
+.compact {
+    padding: 4px;
+    font-size: 10px;
+    margin: 2px 0;
+}
+
+.compact .skillHeader {
+    gap: 6px;
+    margin-bottom: 6px;
+}
+
+.compact .skillIcon {
+    font-size: 16px;
+}
+
+.compact .skillName {
+    font-size: 11px;
+}
+
+.compact .levelInfo {
+    font-size: 9px;
+}
+
+.compact .progressBar {
+    height: 4px;
+    margin-bottom: 4px;
+}
+
+.compact .progressText {
+    font-size: 9px;
+}
+
+.compact .skillDetails {
+    display: none;
+}
+
+.detailed {
+    padding: 20px;
+    font-size: 16px;
+}
+
+.detailed .skillHeader {
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.detailed .skillIcon {
+    font-size: 32px;
+}
+
+.detailed .skillName {
+    font-size: 20px;
+}
+
+.detailed .levelInfo {
+    font-size: 16px;
+}
+
+.detailed .progressBar {
+    height: 12px;
+    margin-bottom: 8px;
+}
+
+.detailed .progressText {
+    font-size: 14px;
+}
+
+.detailed .statRow {
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+/* Skill Header */
+.skillHeader {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.skillIcon {
+    font-size: 24px;
+    flex-shrink: 0;
+}
+
+.skillInfo {
+    flex: 1;
+    min-width: 0;
+}
+
+.skillName {
+    margin: 0 0 4px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #fff;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.levelInfo {
+    font-size: 12px;
+    color: #888;
+    font-weight: 500;
+}
+
+.masteryBadge {
+    background: linear-gradient(135deg, #ffd700, #ffed4e);
+    color: #000;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 4px 8px;
+    border-radius: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    animation: masteryGlow 2s ease-in-out infinite alternate;
+}
+
+/* Progress Bar */
+.progressContainer {
+    margin-bottom: 12px;
+}
+
+.progressBar {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 6px;
+}
+
+.progressFill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.5s ease, background-color 0.3s ease;
+    position: relative;
+}
+
+.progressFill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: shimmer 2s infinite;
+}
+
+.progressText {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: #ccc;
+}
+
+.progressPercent {
+    color: #888;
+    font-style: italic;
+}
+
+/* Skill Details */
+.skillDetails {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 12px;
+}
+
+.statRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 6px;
+    font-size: 12px;
+}
+
+.statRow:last-child {
+    margin-bottom: 0;
+}
+
+.statValue {
+    font-weight: 600;
+    color: #4ade80;
+}
+
+.nextLevelPreview {
+    background: rgba(74, 222, 128, 0.1);
+    border: 1px solid rgba(74, 222, 128, 0.3);
+    border-radius: 6px;
+    padding: 8px;
+    margin-top: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+}
+
+.bonusText {
+    color: #4ade80;
+    font-weight: 600;
+}
+
+/* Visual Effects */
+.locked {
+    opacity: 0.6;
+    background: rgba(0, 0, 0, 0.3);
+}
+
+.locked .skillName {
+    color: #666;
+}
+
+.pulsing {
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.glowing {
+    box-shadow: 0 0 20px rgba(74, 222, 128, 0.3);
+    animation: glow 2s ease-in-out infinite alternate;
+}
+
+.mastered {
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 215, 0, 0.05));
+    border-color: rgba(255, 215, 0, 0.5);
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.2);
+}
+
+.masteryOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.masterySparkles {
+    font-size: 20px;
+    animation: sparkle 3s ease-in-out infinite;
+}
+
+/* Animations */
+@keyframes pulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.02);
+    }
+}
+
+@keyframes glow {
+    0% {
+        box-shadow: 0 0 20px rgba(74, 222, 128, 0.3);
+    }
+
+    100% {
+        box-shadow: 0 0 30px rgba(74, 222, 128, 0.6);
+    }
+}
+
+@keyframes masteryGlow {
+    0% {
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    }
+
+    100% {
+        box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        transform: translateX(-100%);
+    }
+
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+@keyframes sparkle {
+
+    0%,
+    100% {
+        opacity: 0.3;
+        transform: scale(0.8);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scale(1.2);
+    }
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+    .skillProgress {
+        padding: 10px;
+        margin: 6px 0;
+    }
+
+    .skillHeader {
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+
+    .skillIcon {
+        font-size: 20px;
+    }
+
+    .skillName {
+        font-size: 14px;
+    }
+
+    .progressBar {
+        height: 6px;
+    }
+
+    .statRow {
+        font-size: 11px;
+    }
+}
+
+/* Touch-friendly interactions */
+@media (hover: none) and (pointer: coarse) {
+    .skillProgress {
+        min-height: 60px;
+    }
+
+    .skillProgress:active {
+        transform: scale(0.98);
+        background: rgba(255, 255, 255, 0.1);
+    }
+}

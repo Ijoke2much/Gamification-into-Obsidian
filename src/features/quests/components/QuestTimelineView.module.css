@@ -1,0 +1,4218 @@
+.nextUpBanner {
+  position: sticky;
+  top: 0;
+  margin: 8px 44px;
+  padding: 6px 10px;
+  background: rgba(59, 130, 246, 0.15);
+  border: 1px solid rgba(59, 130, 246, 0.35);
+  border-radius: 8px;
+  color: var(--text-normal);
+  font-size: 12px;
+  font-weight: 700;
+  backdrop-filter: blur(3px);
+  z-index: 6;
+}
+
+.gapBlock {
+  border: 1px dashed var(--background-modifier-border);
+  background: rgba(139, 92, 246, 0.08);
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  color: var(--text-muted);
+}
+
+.palettePopover {
+  position: absolute;
+  top: 6px;
+  right: 44px;
+  display: flex;
+  gap: 6px;
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 10px;
+  padding: 6px;
+  z-index: 120;
+}
+
+.paletteSwatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.wrapper {
+  width: 100%;
+  padding: 12px;
+  background: var(--background-primary);
+}
+
+/* Full width wrapper for week views */
+.wrapper.weekView {
+  padding: 0;
+  overflow: visible;
+  max-width: none;
+  width: 100%;
+  height: 100%;
+}
+
+/* View Mode Selector */
+.viewModeSelector {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  justify-content: center;
+}
+
+.viewModeBtn {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 2px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: var(--text-normal);
+}
+
+.viewModeBtn:hover {
+  background: var(--background-modifier-hover);
+  border-color: var(--interactive-accent);
+}
+
+.viewModeBtn.active {
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  border-color: #3b82f6;
+  color: white;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+/* Navigation */
+.weekNavigation,
+.dayNavigation {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: rgba(30, 41, 59, 0.5);
+  border-radius: 8px;
+  border: 1px solid var(--background-modifier-border);
+}
+
+.weekTitle,
+.dayTitle {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-normal);
+}
+
+.navButton {
+  padding: 8px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-normal);
+  transition: all 0.2s ease;
+}
+
+.navButton:hover {
+  background: var(--interactive-accent);
+  color: white;
+  border-color: var(--interactive-accent);
+}
+
+/* Energy Header */
+.energyHeader {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding: 12px;
+  background: rgba(30, 41, 59, 0.5);
+  border-radius: 8px;
+  border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.energyIndicator {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.energyBar {
+  flex: 1;
+  height: 12px;
+  background: rgba(75, 85, 99, 0.3);
+  border-radius: 6px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.energyFill {
+  height: 100%;
+  background: linear-gradient(90deg, #ef4444 0%, #f59e0b 50%, #10b981 100%);
+  border-radius: 6px;
+  transition: width 0.3s ease;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+}
+
+.energyText {
+  font-size: 13px;
+  font-weight: 700;
+  color: #d1d5db;
+  min-width: 120px;
+  text-align: right;
+}
+
+.overcommitmentWarning {
+  padding: 8px 12px;
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 6px;
+  color: #fca5a5;
+  font-size: 12px;
+  font-weight: 600;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.hyperfocusAvailable {
+  padding: 8px 12px;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(59, 130, 246, 0.2));
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  border-radius: 6px;
+  color: #c4b5fd;
+  font-size: 12px;
+  font-weight: 600;
+  animation: glow 2s ease-in-out infinite;
+}
+
+@keyframes glow {
+
+  0%,
+  100% {
+    box-shadow: 0 0 5px rgba(139, 92, 246, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.6);
+  }
+}
+
+.controls {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.controlBtn {
+  padding: 6px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all 0.2s ease;
+}
+
+.controlBtn:hover {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.controlBtn.active {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  border-color: #8b5cf6;
+  color: white;
+}
+
+/* Weekly Energy Overview */
+.weeklyEnergyOverview {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: rgba(30, 41, 59, 0.5);
+  border-radius: 8px;
+  border: 1px solid var(--background-modifier-border);
+}
+
+.energyOverviewTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-normal);
+  margin-bottom: 16px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  text-align: center;
+}
+
+.energyColumns {
+  display: flex;
+  gap: 12px;
+  justify-content: space-around;
+  align-items: flex-end;
+}
+
+.energyColumn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  min-width: 60px;
+}
+
+.dayLabel {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-normal);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.energyBarVertical {
+  width: 32px;
+  height: 100px;
+  background: rgba(75, 85, 99, 0.2);
+  border-radius: 6px;
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(75, 85, 99, 0.3);
+}
+
+.energyFillVertical {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  background: linear-gradient(180deg, #10b981 0%, #f59e0b 50%, #ef4444 100%);
+  border-radius: 6px;
+  transition: height 0.3s ease;
+  min-height: 2px;
+}
+
+.energyFillVertical.overcommit {
+  background: #ef4444;
+  animation: warningPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes warningPulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.6;
+  }
+}
+
+.energyValue {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-normal);
+}
+
+/* Unscheduled Quests Section */
+.unscheduledSection {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: rgba(30, 41, 59, 0.3);
+  border-radius: 8px;
+  border: 1px dashed rgba(139, 92, 246, 0.4);
+}
+
+.unscheduledHeader {
+  margin-bottom: 12px;
+}
+
+.unscheduledHeader h4 {
+  margin: 0 0 4px 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-normal);
+}
+
+.hint {
+  margin: 0;
+  font-size: 11px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.unscheduledQuests {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.unscheduledQuest {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.unscheduledQuest:hover {
+  background: var(--background-modifier-hover);
+  border-color: rgba(139, 92, 246, 0.5);
+  transform: translateX(4px);
+}
+
+.unscheduledQuest:active {
+  transform: scale(0.98);
+}
+
+/* Collapse Controls */
+.headerRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.collapseBtn {
+  font-size: 11px;
+  padding: 6px 12px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--text-muted);
+  transition: all 0.2s ease;
+}
+
+.collapseBtn:hover {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.spacer {
+  flex: 1;
+}
+
+/* Timeline Container */
+.timelineContainer {
+  position: relative;
+  display: flex;
+  gap: 12px;
+  flex-wrap: nowrap;
+}
+
+/* Focused single-column layout like Structured for Day view */
+.dayView {
+  width: 100%;
+  margin: 0;
+}
+
+.dayView .timeline {
+  grid-template-columns: 60px 1fr;
+}
+
+.dayView .hourLabel {
+  font-size: 11px;
+}
+
+.dayView .grid {
+  min-height: calc(60px * 16);
+}
+
+.timelineContainer.weekView {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 20px;
+  padding: 24px;
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  background: rgba(0, 0, 0, 0.02);
+  border-radius: 12px;
+}
+
+.dayColumn {
+  flex: 1;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Wider day columns in week view for better readability */
+.weekView .dayColumn {
+  min-width: 520px !important;
+  flex: 0 0 520px;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 8px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Week view specific adjustments */
+.weekView .timeline {
+  grid-template-columns: 40px 1fr;
+  gap: 4px;
+}
+
+.weekView .hours {
+  width: 40px;
+}
+
+.weekView .hourRow {
+  height: 50px;
+}
+
+.weekView .hourLabel {
+  font-size: 9px;
+  opacity: 0.7;
+}
+
+.weekView .grid {
+  min-height: calc(50px * 16);
+}
+
+.weekView .gridHour {
+  height: 50px;
+}
+
+/* Day Header (Week View) */
+.dayHeader {
+  padding: 12px;
+  background: rgba(30, 41, 59, 0.6);
+  border-radius: 8px;
+  border: 1px solid var(--background-modifier-border);
+  text-align: center;
+  transition: all 0.2s ease;
+  margin-bottom: 12px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.dayHeader.today {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(139, 92, 246, 0.2));
+  border-color: #3b82f6;
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.3);
+}
+
+.dayName {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-normal);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dayDate {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-normal);
+  margin: 4px 0;
+}
+
+.questCount {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+/* All-Day Section */
+.allDaySection {
+  padding: 8px;
+  background: rgba(30, 41, 59, 0.3);
+  border-radius: 6px;
+  border: 1px solid var(--background-modifier-border);
+  margin-bottom: 8px;
+}
+
+.allDayLabel {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+  letter-spacing: 0.5px;
+}
+
+.allDayQuest {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  margin-bottom: 6px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.allDayQuest:last-child {
+  margin-bottom: 0;
+}
+
+.allDayQuest.low {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.3);
+}
+
+.allDayQuest.medium {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.allDayQuest.high {
+  background: rgba(239, 68, 68, 0.15);
+  border-color: rgba(239, 68, 68, 0.3);
+}
+
+.allDayQuest:hover {
+  transform: translateX(2px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.questContent {
+  flex: 1;
+}
+
+/* Timeline Grid */
+.timeline {
+  position: relative;
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 6px;
+}
+
+.hours {
+  position: relative;
+}
+
+.hourRow {
+  height: 64px;
+  /* crisper spacing */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  display: flex;
+  align-items: flex-start;
+}
+
+/* Vertical timeline vibe: stronger major labels (every 2 rows), subtle minor labels */
+.hours .hourRow:nth-child(odd) .hourLabel {
+  opacity: 0.45;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+.hours .hourRow:nth-child(even) .hourLabel {
+  opacity: 0.9;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+}
+
+.hourLabel {
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 600;
+  margin-top: -4px;
+}
+
+.grid {
+  position: relative;
+  background: var(--background-secondary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  overflow-x: visible;
+  overflow-y: auto;
+  min-height: 400px;
+}
+
+.gridHour {
+  height: 64px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+/* Alternating bands for easier scanning */
+.gridHour:nth-child(even) {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0.012));
+}
+
+.gridHour:nth-child(odd) {
+  background: transparent;
+}
+
+/* Performance: collapse offscreen content for faster initial load */
+.expandedContent {
+  content-visibility: auto !important;
+  contain-intrinsic-size: 600px !important;
+}
+
+.block {
+  content-visibility: auto !important;
+  contain-intrinsic-size: 120px !important;
+}
+
+.nowLine {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, transparent, #ef4444, transparent);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
+  z-index: 5;
+  animation: nowLinePulse 2s ease-in-out infinite;
+}
+
+@keyframes nowLinePulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.6;
+  }
+}
+
+/* Quest Blocks - Clean Structured-Inspired Design */
+.block {
+  position: absolute;
+  left: 36px;
+  /* closer to spine; left border becomes the pill */
+  right: 6px;
+  min-height: 48px;
+  border-radius: 8px;
+  padding: 10px 16px 12px 16px;
+  /* breathing room from the border */
+  color: var(--text-normal);
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  overflow: visible;
+  border-left: 10px solid transparent;
+  border-top-left-radius: 6px;
+  border-bottom-left-radius: 6px;
+  /* color applied via energy variants */
+}
+
+/* Pleasant, flat pastel block background (no gradients) */
+.block,
+.block.energy_low,
+.block.energy_medium,
+.block.energy_high,
+.block.hyperfocusOptimal {
+  background: var(--background-secondary) !important;
+}
+
+/* Calm palette variants selectable per block */
+.calmMint {
+  background: rgba(209, 250, 229, 0.9) !important;
+  color: rgb(5, 46, 22);
+  border-color: rgba(16, 185, 129, 0.35);
+}
+
+.calmBlue {
+  background: rgba(219, 234, 254, 0.9) !important;
+  color: rgb(23, 37, 84);
+  border-color: rgba(59, 130, 246, 0.35);
+}
+
+.calmLavender {
+  background: rgba(237, 233, 254, 0.9) !important;
+  color: rgb(49, 46, 129);
+  border-color: rgba(139, 92, 246, 0.35);
+}
+
+.calmPeach {
+  background: rgba(255, 237, 213, 0.9) !important;
+  color: rgb(80, 35, 10);
+  border-color: rgba(251, 146, 60, 0.35);
+}
+
+.calmGray {
+  background: rgba(243, 244, 246, 0.9) !important;
+  color: rgb(31, 41, 55);
+  border-color: rgba(107, 114, 128, 0.35);
+}
+
+/* New calmRose theme */
+.calmRose {
+  background: rgba(254, 226, 226, 0.9) !important;
+  color: rgb(127, 29, 29);
+  border-color: rgba(244, 63, 94, 0.35);
+}
+
+/* Stronger calm overrides against energy variants */
+.block.energy_low.calmMint,
+.block.energy_medium.calmMint,
+.block.energy_high.calmMint {
+  background: rgba(209, 250, 229, 0.9) !important;
+}
+
+.block.energy_low.calmBlue,
+.block.energy_medium.calmBlue,
+.block.energy_high.calmBlue {
+  background: rgba(219, 234, 254, 0.9) !important;
+}
+
+.block.energy_low.calmLavender,
+.block.energy_medium.calmLavender,
+.block.energy_high.calmLavender {
+  background: rgba(237, 233, 254, 0.9) !important;
+}
+
+.block.energy_low.calmPeach,
+.block.energy_medium.calmPeach,
+.block.energy_high.calmPeach {
+  background: rgba(255, 237, 213, 0.9) !important;
+}
+
+.block.energy_low.calmGray,
+.block.energy_medium.calmGray,
+.block.energy_high.calmGray {
+  background: rgba(243, 244, 246, 0.9) !important;
+}
+
+.block.energy_low.calmRose,
+.block.energy_medium.calmRose,
+.block.energy_high.calmRose {
+  background: rgba(254, 226, 226, 0.9) !important;
+}
+
+.block:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.2);
+  z-index: 50;
+  border-color: var(--interactive-accent);
+}
+
+/* Ephemeral gap info badge */
+.gapInfoBadge {
+  position: absolute;
+  right: 12px;
+  bottom: 8px;
+  padding: 4px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-normal);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 10px;
+  backdrop-filter: blur(2px);
+}
+
+/* Priority color accents */
+.priority_high .gapInfoBadge,
+.gapInfoBadge.priority_high {
+  border-color: rgba(239, 68, 68, 0.5);
+}
+
+.priority_medium .gapInfoBadge,
+.gapInfoBadge.priority_medium {
+  border-color: rgba(245, 158, 11, 0.5);
+}
+
+.priority_low .gapInfoBadge,
+.gapInfoBadge.priority_low {
+  border-color: rgba(34, 197, 94, 0.5);
+}
+
+/* Energy tint background */
+.gapEnergy_low {
+  background: rgba(167, 243, 208, 0.9);
+}
+
+.gapEnergy_medium {
+  background: rgba(253, 230, 138, 0.9);
+}
+
+.gapEnergy_high {
+  background: rgba(254, 202, 202, 0.9);
+}
+
+.block.smallBlock {
+  min-height: 40px;
+  padding: 6px 8px;
+}
+
+.block.smallBlock .blockTitle {
+  font-size: 11px;
+  margin-top: 24px;
+  font-weight: 700;
+}
+
+.block.smallBlock .timeBadge {
+  font-size: 9px;
+  padding: 2px 6px;
+}
+
+.block:active {
+  transform: scale(0.98);
+}
+
+/* Structured header inside each block */
+.structuredBlock {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0;
+  height: 100%;
+}
+
+.structuredIcon {
+  display: none;
+}
+
+.structuredContent {
+  flex: 1;
+  min-width: 0;
+}
+
+.structuredTime {
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.85;
+  margin-bottom: 2px;
+  letter-spacing: 0.2px;
+}
+
+.structuredTitle {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Objective line under title in minimal mode */
+.structuredObjective {
+  margin-top: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.7);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.structuredActions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  height: 40px;
+}
+
+/* Smaller controls by default; scale up on hover/focus */
+.structuredActions .menuButton,
+.structuredActions .chevronButton {
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  min-height: 36px !important;
+  font-size: 12px !important;
+  padding: 0 !important;
+}
+
+.block:hover .structuredActions .menuButton,
+.block:hover .structuredActions .chevronButton,
+.structuredActions .menuButton:focus-visible,
+.structuredActions .chevronButton:focus-visible {
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  min-height: 36px !important;
+}
+
+.completionCircle {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  transition: all 0.2s ease;
+  opacity: 0.7;
+  flex-shrink: 0;
+}
+
+.completionCircle:hover {
+  opacity: 1;
+  transform: scale(1.1);
+}
+
+.completionCircle.completed {
+  background: currentColor;
+  color: white;
+  opacity: 1;
+}
+
+/* Clean Header Layout */
+.blockHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+
+.blockIcon {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, currentColor 0%, currentColor 100%);
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  transition: all 0.2s ease;
+}
+
+.blockIcon.completedIcon {
+  opacity: 0.6;
+  filter: grayscale(0.4);
+}
+
+.blockHeaderContent {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.blockTime {
+  font-size: 10px;
+  font-weight: 600;
+  opacity: 0.7;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.blockTitleCompact {
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.blockDescription {
+  font-size: 11px;
+  opacity: 0.8;
+  margin-top: 6px;
+  padding: 0 6px;
+  line-height: 1.4;
+}
+
+/* Energy-based colors - Soft Pastel Fills */
+.block.energy_low {
+  background: linear-gradient(135deg,
+      rgba(167, 243, 208, 0.85) 0%,
+      rgba(134, 239, 172, 0.75) 100%);
+  border-left-color: #34D399;
+  /* mint pill */
+  border-color: rgba(74, 222, 128, 0.4);
+  color: rgba(20, 83, 45, 0.95);
+}
+
+.block.energy_medium {
+  background: linear-gradient(135deg,
+      rgba(254, 215, 170, 0.85) 0%,
+      rgba(253, 186, 116, 0.75) 100%);
+  border-left-color: #F59E0B;
+  /* peach pill */
+  border-color: rgba(251, 146, 60, 0.4);
+  color: rgba(124, 45, 18, 0.95);
+}
+
+.block.energy_high {
+  background: linear-gradient(135deg,
+      rgba(254, 205, 211, 0.85) 0%,
+      rgba(252, 165, 165, 0.75) 100%);
+  border-left-color: #EF4444;
+  /* red pill */
+  border-color: rgba(248, 113, 113, 0.4);
+  color: rgba(127, 29, 29, 0.95);
+}
+
+.block.hyperfocusOptimal {
+  background: linear-gradient(135deg,
+      rgba(196, 181, 253, 0.85) 0%,
+      rgba(167, 139, 250, 0.75) 100%);
+  border-color: rgba(139, 92, 246, 0.4);
+  color: rgba(76, 29, 149, 0.95);
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.2);
+}
+
+@keyframes hyperfocusGlow {
+
+  0%,
+  100% {
+    box-shadow: 0 6px 20px rgba(139, 92, 246, 0.5), 0 0 20px rgba(139, 92, 246, 0.4);
+  }
+
+  50% {
+    box-shadow: 0 8px 30px rgba(139, 92, 246, 0.7), 0 0 40px rgba(139, 92, 246, 0.6);
+  }
+}
+
+.block.completed {
+  opacity: 0.6;
+  border-style: dashed;
+}
+
+.block.completed .blockTitle {
+  text-decoration: line-through;
+}
+
+/* Resize Handles */
+.resizeHandleTop,
+.resizeHandleBottom {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  height: 8px;
+  cursor: ns-resize;
+  z-index: 10;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.block:hover .resizeHandleTop,
+.block:hover .resizeHandleBottom {
+  opacity: 1;
+}
+
+.resizeHandleTop {
+  top: -4px;
+  background: linear-gradient(180deg, rgba(139, 92, 246, 0.8), transparent);
+  border-radius: 6px 6px 0 0;
+}
+
+.resizeHandleBottom {
+  bottom: -4px;
+  background: linear-gradient(0deg, rgba(139, 92, 246, 0.8), transparent);
+  border-radius: 0 0 6px 6px;
+}
+
+/* Menu Button - 3-dot menu for actions (in header) */
+.menuButton {
+  flex-shrink: 0;
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  min-height: 36px !important;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px !important;
+  font-weight: bold;
+  color: white;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  letter-spacing: -1px;
+  opacity: 0.8;
+  padding: 0 !important;
+}
+
+.menuButton:hover {
+  background: rgba(0, 0, 0, 0.9);
+  border-color: rgba(255, 255, 255, 0.5);
+  transform: scale(1.05);
+  opacity: 1;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+
+/* Dropdown Menu */
+.dropdownMenu {
+  position: absolute;
+  top: 40px;
+  right: 8px;
+  min-width: 180px;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.98), rgba(15, 23, 42, 0.98));
+  border: 2px solid rgba(139, 92, 246, 0.5);
+  border-radius: 10px;
+  box-shadow:
+    0 10px 40px rgba(0, 0, 0, 0.8),
+    0 0 20px rgba(139, 92, 246, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  z-index: 1000;
+  padding: 6px;
+  animation: dropdownFadeIn 0.2s ease-out;
+  backdrop-filter: blur(10px);
+}
+
+/* Dropdown compact info rows */
+.dropdownSectionTitle {
+  padding: 6px 8px;
+  font-size: 11px;
+  font-weight: 800;
+  color: rgba(255, 255, 255, 0.75);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.dropdownInfo {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.04);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 12px;
+  margin: 4px 0;
+}
+
+.dropdownInfo span:first-child {
+  opacity: 0.75;
+}
+
+@keyframes dropdownFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.dropdownItem {
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+}
+
+.dropdownItem:hover {
+  background: rgba(139, 92, 246, 0.3);
+  color: white;
+  transform: translateX(2px);
+}
+
+.dropdownItem.danger:hover {
+  background: rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+}
+
+.dropdownIcon {
+  font-size: 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+}
+
+.dropdownDivider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.1);
+  margin: 6px 0;
+}
+
+/* Time Badge - Prominent display */
+.timeBadge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 4px 10px;
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.7));
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  color: white;
+  backdrop-filter: blur(4px);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  z-index: 10;
+  letter-spacing: 0.5px;
+}
+
+/* Energy Badge */
+.energyCostBadge {
+  position: absolute;
+  top: 8px;
+  right: 6px;
+  padding: 4px 10px;
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.9), rgba(0, 0, 0, 0.7));
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  color: white;
+  backdrop-filter: blur(4px);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  z-index: 10;
+}
+
+.energyBadge {
+  padding: 4px 8px;
+  background: rgba(0, 0, 0, 0.4);
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: white;
+  white-space: nowrap;
+}
+
+/* Block Content - Enhanced Visibility */
+.blockTitle {
+  font-weight: 700;
+  font-size: 14px;
+  line-height: 1.4;
+  margin-bottom: 4px;
+  color: var(--text-normal);
+  letter-spacing: 0.2px;
+}
+
+.blockMeta {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.95);
+  font-weight: 600;
+  text-shadow:
+    0 2px 3px rgba(0, 0, 0, 0.7),
+    0 1px 2px rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.questInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.questTitle {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-normal);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.questMeta {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* ADHD Badges */
+.adhdBadges {
+  position: absolute;
+  bottom: 6px;
+  left: 10px;
+  display: flex;
+  gap: 4px;
+}
+
+.hyperfocusBadge,
+.urgentBadge {
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 700;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.hyperfocusBadge {
+  color: #c4b5fd;
+  animation: sparkle 2s ease-in-out infinite;
+}
+
+@keyframes sparkle {
+
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+
+  50% {
+    transform: scale(1.1);
+    opacity: 0.8;
+  }
+}
+
+.urgentBadge {
+  color: #fca5a5;
+}
+
+/* Quick Complete Button - Bottom right badge style (deprecated, using dropdown now) */
+.actionBtn,
+.completeBtn {
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.actionBtn:hover,
+.completeBtn:hover {
+  background: rgba(139, 92, 246, 0.9);
+  transform: scale(1.15);
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.completeBtn {
+  background: rgba(34, 197, 94, 0.8);
+}
+
+.completeBtn:hover {
+  background: rgb(34, 197, 94);
+}
+
+/* Empty Timeline State */
+.emptyTimeline {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  padding: 40px 20px;
+  max-width: 300px;
+}
+
+.emptyMessage {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.emptyIcon {
+  font-size: 48px;
+  opacity: 0.6;
+}
+
+.emptyTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-normal);
+}
+
+.emptySubtitle {
+  font-size: 14px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.emptyHint {
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 6px;
+  font-size: 12px;
+  color: #c4b5fd;
+  font-style: italic;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .wrapper {
+    padding: 8px;
+  }
+
+  .viewModeBtn {
+    font-size: 11px;
+    padding: 6px 12px;
+  }
+
+  .timelineContainer.weekView .dayColumn {
+    min-width: 480px !important;
+    flex: 0 0 480px;
+  }
+
+  .blockTitle {
+    font-size: 13px;
+  }
+
+  .blockMeta {
+    font-size: 10px;
+  }
+
+  .hourLabel {
+    font-size: 9px;
+  }
+
+  /* Make menu button always visible on mobile */
+  .menuButton {
+    width: 36px !important;
+    height: 36px !important;
+    font-size: 12px !important;
+  }
+
+  /* Adjust dropdown position for mobile */
+  .dropdownMenu {
+    right: 4px;
+    min-width: 160px;
+  }
+
+  /* Larger touch targets on mobile */
+  .dropdownItem {
+    padding: 12px 14px;
+    font-size: 14px;
+  }
+
+  .timeBadge {
+    font-size: 10px;
+    padding: 3px 8px;
+  }
+
+  .energyCostBadge {
+    font-size: 10px;
+    padding: 3px 8px;
+  }
+}
+
+/* Scrollbar Styling */
+.unscheduledQuests::-webkit-scrollbar,
+.timelineContainer::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.unscheduledQuests::-webkit-scrollbar-track,
+.timelineContainer::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.unscheduledQuests::-webkit-scrollbar-thumb,
+.timelineContainer::-webkit-scrollbar-thumb {
+  background: rgba(139, 92, 246, 0.5);
+  border-radius: 4px;
+}
+
+.unscheduledQuests::-webkit-scrollbar-thumb:hover,
+.timelineContainer::-webkit-scrollbar-thumb:hover {
+  background: rgba(139, 92, 246, 0.7);
+}
+
+/* Expanded Quest Block Styles */
+.block.expanded {
+  box-shadow:
+    0 20px 50px rgba(0, 0, 0, 0.8),
+    inset 0 3px 0 rgba(255, 255, 255, 0.4),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.3),
+    0 0 80px currentColor;
+  transform: scale(1.03);
+  border-width: 4px;
+  padding: 14px;
+  overflow: visible;
+}
+
+.block.expanded:hover {
+  transform: scale(1.03);
+}
+
+.expandedContent {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  animation: expandIn 0.3s ease-out;
+}
+
+@keyframes expandIn {
+  from {
+    opacity: 0;
+    max-height: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    max-height: 200px;
+    transform: translateY(0);
+  }
+}
+
+.questDescription {
+  margin-bottom: 12px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.9);
+  font-style: italic;
+}
+
+.questStats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.statItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 8px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.statLabel {
+  color: rgba(255, 255, 255, 0.7);
+  font-weight: 500;
+}
+
+.statValue {
+  color: white;
+  font-weight: 600;
+}
+
+.expandedActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+/* Sticky footer action bar for expanded cards */
+.expandedFooter {
+  position: static !important;
+  z-index: 0 !important;
+  background: transparent !important;
+  margin-top: 12px !important;
+  padding: 0 !important;
+  display: flex !important;
+  gap: 8px !important;
+  width: 100% !important;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.expandedContentPadding {
+  padding-bottom: 0 !important;
+}
+
+/* ADHD Actions Panel - appears when energy badge is clicked */
+.adhdActionsPanel {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: linear-gradient(to top, rgba(0, 0, 0, 0.95), rgba(0, 0, 0, 0.8));
+  backdrop-filter: blur(10px);
+  border-radius: 0 0 8px 8px;
+  padding: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  z-index: 999 !important;
+  animation: slideUp 0.3s ease-out;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.adhdActionsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-normal);
+}
+
+.closeButton {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.closeButton:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-normal);
+}
+
+.adhdActionButtons {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-start;
+}
+
+.adhdButton {
+  padding: 8px 12px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  flex: 1;
+}
+
+.adhdButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+.adhdButton.primary {
+  background: linear-gradient(135deg, #10b981, #059669);
+  border-color: #10b981;
+  color: white;
+}
+
+.adhdButton.hyperfocus {
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+  border-color: #8b5cf6;
+  color: white;
+}
+
+.adhdButton.save {
+  background: linear-gradient(135deg, #6b7280, #4b5563);
+  border-color: #6b7280;
+  color: white;
+}
+
+.actionButton {
+  flex: 1;
+  padding: 8px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.actionButton:hover {
+  background: rgba(0, 0, 0, 0.5);
+  border-color: rgba(255, 255, 255, 0.4);
+  transform: translateY(-1px);
+}
+
+/* Adjust energy badge position when expanded */
+.block.expanded .energyCostBadge {
+  top: 8px;
+  right: 8px;
+}
+
+/* Hide quick actions when expanded */
+.block.expanded .quickActions {
+  display: none;
+}
+
+/* Hide resize handles when expanded */
+.block.expanded .resizeHandleTop,
+.block.expanded .resizeHandleBottom {
+  display: none;
+}
+
+/* ========================================
+   PHASE 1 & 2: STRUCTURED APP INSPIRED STYLES
+   ======================================== */
+
+/* Task Icon Circle & Connector (Old External Styles - Hidden) */
+.taskIconCircle,
+.timelineConnector {
+  display: none !important;
+}
+
+.block:hover .taskIconCircle {
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+}
+
+/* Old completion circle removed - using structuredActions version */
+
+/* Old hover rule removed */
+
+.completionCircle.completedCircle {
+  background: linear-gradient(135deg, rgb(34, 197, 94), rgb(21, 128, 61));
+  border-color: rgb(21, 128, 61);
+}
+
+.checkmark {
+  color: white;
+  font-size: 18px;
+  font-weight: bold;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Time Range Header */
+.blockTimeRange {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 50px;
+  font-size: 9px;
+  font-weight: 800;
+  color: rgba(0, 0, 0, 0.6);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.3);
+}
+
+.durationBadge {
+  opacity: 0.6;
+  font-weight: 500;
+  font-size: 9px;
+}
+
+/* Block Subtitle (Description) */
+.blockSubtitle {
+  margin-top: 6px;
+  padding-left: 4px;
+  font-size: 10px;
+  color: rgba(0, 0, 0, 0.5);
+  font-style: italic;
+  line-height: 1.3;
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.2);
+}
+
+.blockSubtitle::before {
+  content: '✎';
+  font-size: 10px;
+  opacity: 0.6;
+  font-style: normal;
+  flex-shrink: 0;
+}
+
+/* Time Remaining Badge (Current Task) */
+.timeRemainingBadge {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  padding: 4px 10px;
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(139, 92, 246, 0.15));
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  color: rgb(109, 40, 217);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  animation: timePulse 2s ease-in-out infinite;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.2);
+  z-index: 10;
+}
+
+@keyframes timePulse {
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.85;
+    transform: scale(1.02);
+  }
+}
+
+/* Current Task Indicator */
+.block.currentTask {
+  border-width: 4px;
+  box-shadow:
+    0 8px 24px rgba(139, 92, 246, 0.4),
+    inset 0 2px 0 rgba(255, 255, 255, 0.4),
+    0 0 0 2px rgba(139, 92, 246, 0.2);
+  animation: currentTaskGlow 3s ease-in-out infinite;
+}
+
+@keyframes currentTaskGlow {
+
+  0%,
+  100% {
+    box-shadow:
+      0 8px 24px rgba(139, 92, 246, 0.4),
+      inset 0 2px 0 rgba(255, 255, 255, 0.4),
+      0 0 0 2px rgba(139, 92, 246, 0.2);
+  }
+
+  50% {
+    box-shadow:
+      0 12px 32px rgba(139, 92, 246, 0.6),
+      inset 0 2px 0 rgba(255, 255, 255, 0.5),
+      0 0 0 3px rgba(139, 92, 246, 0.4);
+  }
+}
+
+/* Free Time Gap Indicator */
+.freeTimeGap {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.freeTimeContent {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  background: rgba(139, 92, 246, 0.06);
+  border: 1px dashed rgba(139, 92, 246, 0.25);
+  border-radius: 16px;
+  font-size: 10px;
+  color: var(--text-muted);
+  font-weight: 600;
+  backdrop-filter: blur(2px);
+}
+
+.freeTimeIcon {
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+.freeTimeText {
+  letter-spacing: 0.3px;
+}
+
+/* ========================================
+   PASTEL COLOR PALETTE (STRUCTURED STYLE)
+   ======================================== */
+
+/* Replace harsh gradients with soft pastels */
+.block.energy_low {
+  background: linear-gradient(135deg,
+      rgba(167, 243, 208, 0.95) 0%,
+      rgba(134, 239, 172, 0.92) 100%);
+  border-color: rgb(134, 239, 172);
+  border-left-color: #10B981 !important;
+  border-left-width: 10px !important;
+  color: var(--text-normal) !important;
+}
+
+.block.energy_low .blockTitle,
+.block.energy_low .blockMeta,
+.block.energy_low .blockSubtitle,
+.block.energy_low .blockTimeRange {
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
+}
+
+.block.energy_medium {
+  background: linear-gradient(135deg,
+      rgba(253, 230, 138, 0.95) 0%,
+      rgba(252, 211, 77, 0.92) 100%);
+  border-color: rgb(252, 211, 77);
+  border-left-color: #F59E0B !important;
+  border-left-width: 10px !important;
+  color: var(--text-normal) !important;
+}
+
+.block.energy_medium .blockTitle,
+.block.energy_medium .blockMeta,
+.block.energy_medium .blockSubtitle,
+.block.energy_medium .blockTimeRange {
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
+}
+
+.block.energy_high {
+  background: linear-gradient(135deg,
+      rgba(254, 202, 202, 0.95) 0%,
+      rgba(252, 165, 165, 0.92) 100%);
+  border-color: rgb(252, 165, 165);
+  border-left-color: #EF4444 !important;
+  border-left-width: 10px !important;
+  color: var(--text-normal) !important;
+}
+
+.block.energy_high .blockTitle,
+.block.energy_high .blockMeta,
+.block.energy_high .blockSubtitle,
+.block.energy_high .blockTimeRange {
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.5);
+}
+
+/* Hyperfocus stays vibrant but softer */
+.block.hyperfocusOptimal {
+  background: linear-gradient(135deg,
+      rgba(221, 214, 254, 0.95) 0%,
+      rgba(196, 181, 253, 0.92) 100%);
+  border-color: rgb(196, 181, 253);
+  color: rgb(55, 48, 163);
+  box-shadow:
+    0 6px 20px rgba(139, 92, 246, 0.4),
+    inset 0 2px 0 rgba(255, 255, 255, 0.4);
+  animation: hyperfocusGlowSoft 2s ease-in-out infinite;
+}
+
+@keyframes hyperfocusGlowSoft {
+
+  0%,
+  100% {
+    box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4), 0 0 20px rgba(139, 92, 246, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 8px 30px rgba(139, 92, 246, 0.6), 0 0 40px rgba(139, 92, 246, 0.5);
+  }
+}
+
+.block.hyperfocusOptimal .blockTitle,
+.block.hyperfocusOptimal .blockMeta,
+.block.hyperfocusOptimal .blockSubtitle,
+.block.hyperfocusOptimal .blockTimeRange {
+  text-shadow: 0 1px 2px rgba(255, 255, 255, 0.4);
+}
+
+/* Completed blocks - softer look */
+.block.completed {
+  opacity: 0.5;
+  border-style: dashed;
+  filter: grayscale(0.4);
+}
+
+/* ========================================
+   GRID LAYOUT ADJUSTMENT FOR ICONS
+   ======================================== */
+
+/* Reduced margin since outside elements removed */
+.grid {
+  margin-left: 36px;
+  /* tighter to remove visible gap */
+  /* Space for spine and left border pills */
+}
+
+/* Structured-style vertical spine behind icons */
+.timelineSpine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 28px;
+  /* neutral spine */
+  width: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.10);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Spine pill segments (Structured-like) */
+.spinePill {
+  display: none;
+}
+
+.spinePillIcon {
+  display: none;
+}
+
+/* Energy-tinted defaults for pills */
+.pill_low {
+  background: rgba(16, 185, 129, 0.75);
+}
+
+.pill_medium {
+  background: rgba(251, 146, 60, 0.75);
+}
+
+.pill_high {
+  background: rgba(239, 68, 68, 0.75);
+}
+
+/* Spine node dots removed */
+.spineNode {
+  display: none !important;
+}
+
+.spineNodeActive {
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.35);
+}
+
+.spineNode.energy_low {
+  border-color: #16A34A;
+}
+
+.spineNode.energy_medium {
+  border-color: #D97706;
+}
+
+.spineNode.energy_high {
+  border-color: #DC2626;
+}
+
+/* Chevron expand button */
+.chevronButton {
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  min-height: 36px !important;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-primary);
+  border-radius: 6px;
+  color: var(--text-normal);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform .15s ease, background .15s ease;
+  font-size: 12px !important;
+  padding: 0 !important;
+}
+
+.chevronButton:hover {
+  background: var(--background-modifier-hover);
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+/* Now spine node */
+.nowSpineNode {
+  position: absolute;
+  left: 20px;
+  /* Align with new spine center */
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #ef4444;
+  /* red center */
+  border: 3px solid #ffffff;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.35);
+  z-index: 6;
+}
+
+/* High-contrast pill colors for calm themes */
+.spinePill.calmMint {
+  background: rgba(52, 211, 153, 0.8) !important;
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.spinePill.calmBlue {
+  background: rgba(96, 165, 250, 0.8) !important;
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.spinePill.calmLavender {
+  background: rgba(167, 139, 250, 0.8) !important;
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+.spinePill.calmPeach {
+  background: rgba(245, 158, 11, 0.8) !important;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.spinePill.calmGray {
+  background: rgba(156, 163, 175, 0.8) !important;
+  border-color: rgba(107, 114, 128, 0.3);
+}
+
+/* ========================================
+   MOBILE RESPONSIVE
+   ======================================== */
+
+@media (max-width: 768px) {
+  .taskIconCircle {
+    left: -40px;
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+  }
+
+  .completionCircle {
+    width: 36px;
+    height: 36px;
+    right: 8px;
+  }
+
+  .blockTimeRange {
+    font-size: 8px;
+  }
+
+  .blockSubtitle {
+    font-size: 9px;
+  }
+
+  .timeRemainingBadge {
+    font-size: 9px;
+    padding: 3px 8px;
+  }
+
+  .freeTimeContent {
+    font-size: 9px;
+    padding: 3px 10px;
+  }
+
+  .grid {
+    margin-left: 48px;
+  }
+}
+
+/* ========================================
+   PHASE 3: TIMELINE CONNECTORS & ENHANCEMENTS
+   ======================================== */
+
+/* Timeline Connector Lines */
+.timelineConnector {
+  position: absolute;
+  left: -24px;
+  top: 100%;
+  width: 4px;
+  border-radius: 2px;
+  transition: all 0.3s ease;
+  z-index: 1;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
+}
+
+.block:hover .timelineConnector {
+  width: 5px;
+  box-shadow: 0 0 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Enhanced Block Hover - More pronounced */
+.block {
+  will-change: transform;
+}
+
+.block:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow:
+    0 16px 32px rgba(0, 0, 0, 0.7),
+    inset 0 3px 0 rgba(255, 255, 255, 0.5),
+    0 0 30px currentColor;
+  z-index: 60;
+  border-width: 4px;
+}
+
+/* Icon Circle - Enhanced animations */
+.taskIconCircle {
+  will-change: transform;
+  animation: iconFloat 3s ease-in-out infinite;
+}
+
+@keyframes iconFloat {
+
+  0%,
+  100% {
+    transform: translateY(-50%) translateX(0);
+  }
+
+  50% {
+    transform: translateY(-50%) translateX(2px);
+  }
+}
+
+.block:hover .taskIconCircle {
+  transform: translateY(-50%) scale(1.15) rotate(5deg);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5);
+  animation: none;
+}
+
+/* Completion Circle - Enhanced feedback */
+.completionCircle {
+  will-change: transform, background;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.completionCircle:hover {
+  background: radial-gradient(circle, rgba(34, 197, 94, 0.3), rgba(34, 197, 94, 0.1));
+  border-color: rgb(34, 197, 94);
+  border-width: 4px;
+  transform: translateY(-50%) scale(1.2);
+  box-shadow: 0 0 20px rgba(34, 197, 94, 0.4);
+}
+
+.completionCircle.completedCircle {
+  animation: completionPulse 2s ease-in-out infinite;
+}
+
+@keyframes completionPulse {
+
+  0%,
+  100% {
+    box-shadow: 0 0 10px rgba(34, 197, 94, 0.4);
+  }
+
+  50% {
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.7);
+  }
+}
+
+/* Block Time Range - More prominent on hover */
+.blockTimeRange {
+  transition: all 0.2s ease;
+}
+
+.block:hover .blockTimeRange {
+  font-size: 10px;
+  font-weight: 900;
+  color: rgba(0, 0, 0, 0.8);
+  transform: translateY(-1px);
+}
+
+/* Block Title - Subtle scale on hover */
+.blockTitle {
+  transition: all 0.2s ease;
+}
+
+.block:hover .blockTitle {
+  transform: scale(1.01);
+  letter-spacing: 0.3px;
+}
+
+/* Block Subtitle - Fade in effect */
+.blockSubtitle {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.block:hover .blockSubtitle {
+  opacity: 1;
+  transform: translateX(2px);
+}
+
+/* Time Remaining Badge - Enhanced pulse */
+.timeRemainingBadge {
+  will-change: transform;
+}
+
+@keyframes timePulse {
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.2);
+  }
+
+  50% {
+    opacity: 0.9;
+    transform: scale(1.05);
+    box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4);
+  }
+}
+
+/* Free Time Gap - Enhanced visibility */
+.freeTimeGap {
+  transition: all 0.3s ease;
+}
+
+.freeTimeContent {
+  transition: all 0.3s ease;
+}
+
+.freeTimeGap:hover .freeTimeContent {
+  background: rgba(139, 92, 246, 0.12);
+  border-color: rgba(139, 92, 246, 0.4);
+  transform: scale(1.05);
+  box-shadow: 0 2px 12px rgba(139, 92, 246, 0.2);
+}
+
+/* Menu Button - Enhanced interaction */
+.menuButton {
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+
+.menuButton:hover {
+  background: rgba(0, 0, 0, 0.95);
+  border-color: rgba(255, 255, 255, 0.8);
+  transform: scale(1.2) rotate(90deg);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.7);
+}
+
+/* Dropdown Menu - Slide in animation */
+.dropdownMenu {
+  animation: dropdownSlideIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes dropdownSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-15px) scale(0.9);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Dropdown Item - Wave effect */
+.dropdownItem {
+  position: relative;
+  overflow: hidden;
+}
+
+.dropdownItem::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(139, 92, 246, 0.3);
+  transform: translate(-50%, -50%);
+  transition: width 0.4s ease, height 0.4s ease;
+}
+
+.dropdownItem:hover::before {
+  width: 300px;
+  height: 300px;
+}
+
+.dropdownItem span {
+  position: relative;
+  z-index: 1;
+}
+
+/* Resize Handles - More visible */
+.resizeHandleTop,
+.resizeHandleBottom {
+  transition: all 0.3s ease;
+}
+
+.block:hover .resizeHandleTop,
+.block:hover .resizeHandleBottom {
+  opacity: 1;
+  background: linear-gradient(180deg, rgba(139, 92, 246, 1), transparent);
+}
+
+.block:hover .resizeHandleBottom {
+  background: linear-gradient(0deg, rgba(139, 92, 246, 1), transparent);
+}
+
+.resizeHandleTop:hover,
+.resizeHandleBottom:hover {
+  height: 12px;
+  box-shadow: 0 0 15px rgba(139, 92, 246, 0.6);
+}
+
+/* Expanded Block - Smoother transition */
+.block.expanded {
+  animation: blockExpand 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes blockExpand {
+  from {
+    transform: scale(0.98);
+    opacity: 0.9;
+  }
+
+  to {
+    transform: scale(1.03);
+    opacity: 1;
+  }
+}
+
+/* Current Task - Enhanced glow */
+.block.currentTask {
+  animation: currentTaskGlowEnhanced 2s ease-in-out infinite;
+}
+
+@keyframes currentTaskGlowEnhanced {
+
+  0%,
+  100% {
+    box-shadow:
+      0 8px 24px rgba(139, 92, 246, 0.5),
+      inset 0 2px 0 rgba(255, 255, 255, 0.4),
+      0 0 0 2px rgba(139, 92, 246, 0.3),
+      0 0 40px rgba(139, 92, 246, 0.2);
+  }
+
+  50% {
+    box-shadow:
+      0 12px 32px rgba(139, 92, 246, 0.7),
+      inset 0 2px 0 rgba(255, 255, 255, 0.5),
+      0 0 0 3px rgba(139, 92, 246, 0.5),
+      0 0 60px rgba(139, 92, 246, 0.4);
+  }
+}
+
+/* Pastel Colors - Slight shimmer on hover */
+.block.energy_low:hover,
+.block.energy_medium:hover,
+.block.energy_high:hover,
+.block.hyperfocusOptimal:hover {
+  background-size: 200% 200%;
+  animation: gradientShift 3s ease infinite;
+}
+
+@keyframes gradientShift {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  50% {
+    background-position: 100% 50%;
+  }
+
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+/* Grid enhancement - smoother scroll */
+.grid {
+  scroll-behavior: smooth;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(139, 92, 246, 0.5) rgba(0, 0, 0, 0.1);
+}
+
+.grid::-webkit-scrollbar {
+  width: 10px;
+}
+
+.grid::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 5px;
+}
+
+.grid::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(139, 92, 246, 0.6), rgba(139, 92, 246, 0.4));
+  border-radius: 5px;
+  transition: all 0.3s ease;
+}
+
+.grid::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(139, 92, 246, 0.8), rgba(139, 92, 246, 0.6));
+}
+
+/* Click feedback - Clean visual */
+.block:active {
+  transform: scale(0.98);
+  opacity: 0.95;
+}
+
+/* Week View - Compact horizontal layout */
+.weekView .block {
+  transition: all 0.2s ease;
+  padding: 12px 16px;
+  left: 40px;
+  right: 8px;
+  border-left-width: 4px !important;
+  min-height: 60px !important;
+  height: auto !important;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.weekView .block:hover {
+  transform: translateY(-1px);
+}
+
+.weekView .structuredBlock {
+  gap: 12px;
+  height: auto !important;
+  align-items: flex-start !important;
+  flex-direction: column !important;
+  padding: 4px 0;
+}
+
+.weekView .structuredTime {
+  font-size: 10px;
+  margin-bottom: 4px;
+  width: 100%;
+  font-weight: 600;
+}
+
+.weekView .structuredTitle {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.3;
+  width: 100%;
+  white-space: normal;
+  word-wrap: break-word;
+  margin-bottom: 6px;
+}
+
+.weekView .structuredContent {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.weekView .structuredObjective {
+  display: none;
+  /* Hide objective in week view to save space */
+}
+
+.weekView .structuredRewards {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  gap: 4px;
+  margin: 0;
+  align-items: center;
+}
+
+/* Super compact inline badges for week view */
+.weekView .rewardItem {
+  min-width: auto !important;
+  padding: 3px 6px !important;
+  font-size: 9px !important;
+  gap: 3px !important;
+  flex: 0 0 auto !important;
+  flex-direction: row !important;
+  border-radius: 4px !important;
+}
+
+.weekView .rewardIcon {
+  font-size: 11px !important;
+}
+
+.weekView .rewardValue {
+  font-size: 10px !important;
+  font-weight: 700 !important;
+}
+
+.weekView .rewardLabel {
+  display: none !important;
+  /* Hide labels, just show icon + value */
+}
+
+/* Compact inline metadata for week view - ALL IN ONE ROW */
+.weekView .questMeta {
+  display: flex !important;
+  flex-direction: row !important;
+  flex-wrap: nowrap !important;
+  gap: 8px !important;
+  font-size: 9px !important;
+  margin: 4px 0;
+  align-items: center !important;
+}
+
+.weekView .difficultyPriorityRow {
+  display: contents !important;
+  /* Makes children appear directly in parent flex */
+  gap: 0 !important;
+  margin: 0 !important;
+}
+
+.weekView .difficultyTag,
+.weekView .priorityTag {
+  font-size: 8px !important;
+  padding: 2px 6px !important;
+  white-space: nowrap;
+  border-radius: 3px !important;
+}
+
+.weekView .skillTag {
+  font-size: 8px !important;
+  padding: 2px 6px !important;
+  white-space: nowrap;
+  border-radius: 3px !important;
+}
+
+.weekView .structuredActions {
+  width: 100%;
+  margin-top: 6px;
+  display: flex !important;
+  gap: 8px !important;
+  justify-content: flex-start !important;
+  align-items: center !important;
+}
+
+.weekView .structuredActions .menuButton,
+.weekView .structuredActions .chevronButton {
+  width: 28px !important;
+  height: 28px !important;
+  min-width: 28px !important;
+  min-height: 28px !important;
+  font-size: 10px !important;
+  margin: 0 !important;
+}
+
+.weekView .taskIconCircle {
+  width: 36px;
+  height: 36px;
+  font-size: 18px;
+  left: -44px;
+}
+
+.weekView .completionCircle {
+  width: 24px;
+  height: 24px;
+  right: 6px;
+}
+
+.weekView .timelineConnector {
+  width: 3px;
+  left: -26px;
+}
+
+.weekView .timelineSpine {
+  left: 28px;
+  width: 3px;
+}
+
+.weekView .allDaySection {
+  padding: 6px;
+}
+
+.weekView .allDayQuest {
+  padding: 6px;
+  margin-bottom: 4px;
+}
+
+.weekView .allDayQuest .questTitle {
+  font-size: 11px;
+}
+
+/* Stacking Context - Proper z-index management */
+.block {
+  isolation: isolate;
+}
+
+/* Accessibility - Focus states */
+.block:focus-visible {
+  outline: 3px solid rgba(139, 92, 246, 0.6);
+  outline-offset: 2px;
+}
+
+.completionCircle:focus-visible,
+.menuButton:focus-visible {
+  outline: 2px solid rgba(139, 92, 246, 0.8);
+  outline-offset: 2px;
+}
+
+/* Performance optimization - Hardware acceleration */
+.block,
+.taskIconCircle,
+.completionCircle,
+.timelineConnector,
+.menuButton {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Mobile enhancements */
+@media (max-width: 768px) {
+  .timelineConnector {
+    width: 3px;
+    left: -20px;
+  }
+
+  .block:hover {
+    transform: translateY(-2px) scale(1.01);
+  }
+
+  .block:active {
+    transform: scale(1.02);
+  }
+
+  /* Touch feedback */
+  .block:active::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0.1);
+    pointer-events: none;
+    animation: touchRipple 0.6s ease;
+  }
+
+  @keyframes touchRipple {
+    0% {
+      opacity: 1;
+      transform: scale(0.8);
+    }
+
+    100% {
+      opacity: 0;
+      transform: scale(1.2);
+    }
+  }
+}
+
+/* Dark mode support (if Obsidian theme is dark) */
+@media (prefers-color-scheme: dark) {
+  .timelineConnector {
+    box-shadow: 0 0 12px rgba(255, 255, 255, 0.1);
+  }
+
+  .freeTimeContent {
+    background: rgba(139, 92, 246, 0.15);
+    border-color: rgba(139, 92, 246, 0.3);
+  }
+}
+
+/* Print styles - Clean timeline for printing */
+@media print {
+
+  .menuButton,
+  .completionCircle,
+  .timeRemainingBadge,
+  .resizeHandleTop,
+  .resizeHandleBottom {
+    display: none;
+  }
+
+  .block {
+    break-inside: avoid;
+    box-shadow: none;
+    border: 1px solid #000;
+  }
+
+  .taskIconCircle {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}
+
+/* ========================================
+   STRUCTURED-STYLE STAT BADGES
+   ======================================== */
+
+/* Stat Badges Container */
+.statBadges {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 10px;
+  margin-top: 8px;
+  padding: 0 4px;
+}
+
+/* Individual Stat Badge Row */
+.statBadge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 10px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  font-size: 11px;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.statBadge:hover {
+  background: rgba(0, 0, 0, 0.2);
+  border-color: rgba(255, 255, 255, 0.2);
+  transform: translateX(2px);
+}
+
+/* Stat Label (left side) */
+.statLabel {
+  color: rgba(0, 0, 0, 0.6);
+  font-weight: 700;
+  text-transform: capitalize;
+  letter-spacing: 0.3px;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.3);
+  flex-shrink: 0;
+}
+
+/* Stat Value (right side) */
+.statValue {
+  color: rgba(0, 0, 0, 0.85);
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.2);
+}
+
+/* Difficulty Badge - Specific styling */
+.difficultyBadge {
+  background: rgba(0, 0, 0, 0.12);
+  border-color: rgba(0, 0, 0, 0.15);
+}
+
+.difficultyBadge .statValue {
+  font-weight: 800;
+}
+
+/* XP Badge - Gold shimmer */
+.xpBadge {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.15), rgba(245, 158, 11, 0.1));
+  border-color: rgba(251, 191, 36, 0.3);
+}
+
+.xpBadge:hover {
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(245, 158, 11, 0.15));
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.2);
+}
+
+.xpBadge .statValue {
+  color: rgb(120, 53, 15);
+  font-weight: 800;
+}
+
+/* Coins Badge - Metallic look */
+.coinsBadge {
+  background: linear-gradient(135deg, rgba(217, 119, 6, 0.12), rgba(245, 158, 11, 0.08));
+  border-color: rgba(217, 119, 6, 0.25);
+}
+
+.coinsBadge:hover {
+  background: linear-gradient(135deg, rgba(217, 119, 6, 0.18), rgba(245, 158, 11, 0.12));
+  box-shadow: 0 0 8px rgba(217, 119, 6, 0.15);
+}
+
+.coinsBadge .statValue {
+  color: rgb(120, 53, 15);
+  font-weight: 800;
+}
+
+/* Skills Badge - Tool theme */
+.skillsBadge {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.1), rgba(124, 58, 237, 0.08));
+  border-color: rgba(139, 92, 246, 0.25);
+}
+
+.skillsBadge:hover {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.15), rgba(124, 58, 237, 0.12));
+  box-shadow: 0 0 8px rgba(139, 92, 246, 0.15);
+}
+
+.skillsBadge .statValue {
+  color: rgb(76, 29, 149);
+  font-weight: 700;
+}
+
+/* Energy Badge - Electric look */
+.energyBadge {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(37, 99, 235, 0.08));
+  border-color: rgba(59, 130, 246, 0.25);
+}
+
+.energyBadge:hover {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(37, 99, 235, 0.12));
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.15);
+}
+
+/* Clickable energy badge with visual hint */
+.clickableEnergyBadge {
+  cursor: pointer !important;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.clickableEnergyBadge:hover {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(37, 99, 235, 0.2)) !important;
+  box-shadow: 0 0 16px rgba(59, 130, 246, 0.5) !important;
+  transform: scale(1.1);
+  border-color: rgba(59, 130, 246, 0.6) !important;
+}
+
+.energyClickHint {
+  font-size: 8px;
+  opacity: 0.6;
+  margin-left: 4px;
+  transition: all 0.2s ease;
+}
+
+.clickableEnergyBadge:hover .energyClickHint {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+.energyBadge .statValue {
+  color: rgb(29, 78, 216);
+  font-weight: 800;
+}
+
+/* Skill Tag (multiple skills) */
+.skillTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  background: rgba(139, 92, 246, 0.15);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 700;
+  color: rgb(76, 29, 149);
+  white-space: nowrap;
+  transition: all 0.2s ease;
+}
+
+.skillTag:hover {
+  background: rgba(139, 92, 246, 0.25);
+  border-color: rgba(139, 92, 246, 0.5);
+  transform: scale(1.05);
+}
+
+/* Small block - show stat badges (force override) */
+.smallBlock .statBadges {
+  display: none !important;
+}
+
+.expanded .statBadges {
+  display: grid !important;
+}
+
+/* Expanded view - show all badges */
+.expanded .statBadges {
+  margin-top: 14px;
+  gap: 8px;
+}
+
+.expanded .statBadge {
+  padding: 8px 12px;
+  font-size: 12px;
+}
+
+.expanded .skillTag {
+  font-size: 11px;
+  padding: 4px 10px;
+}
+
+/* Week view - more compact */
+.weekView .statBadges {
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.weekView .statBadge {
+  padding: 4px 8px;
+  font-size: 10px;
+}
+
+.weekView .statLabel {
+  font-size: 9px;
+}
+
+.weekView .statValue {
+  font-size: 10px;
+}
+
+.weekView .skillTag {
+  padding: 2px 6px;
+  font-size: 9px;
+}
+
+/* Animation when stat badges appear */
+.statBadges {
+  animation: statBadgesFadeIn 0.4s ease-out;
+}
+
+@keyframes statBadgesFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Individual badge entrance stagger */
+.statBadge:nth-child(1) {
+  animation: badgeSlideIn 0.3s ease-out 0.05s both;
+}
+
+.statBadge:nth-child(2) {
+  animation: badgeSlideIn 0.3s ease-out 0.1s both;
+}
+
+.statBadge:nth-child(3) {
+  animation: badgeSlideIn 0.3s ease-out 0.15s both;
+}
+
+.statBadge:nth-child(4) {
+  animation: badgeSlideIn 0.3s ease-out 0.2s both;
+}
+
+.statBadge:nth-child(5) {
+  animation: badgeSlideIn 0.3s ease-out 0.25s both;
+}
+
+@keyframes badgeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Hover effect - glow based on badge type */
+.xpBadge:hover .statValue,
+.coinsBadge:hover .statValue,
+.skillsBadge:hover .statValue,
+.energyBadge:hover .statValue {
+  text-shadow: 0 0 8px currentColor;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .statBadges {
+    gap: 5px;
+    margin-top: 8px;
+  }
+
+  .statBadge {
+    padding: 5px 8px;
+    font-size: 10px;
+  }
+
+  .statLabel {
+    font-size: 10px;
+  }
+
+  .statValue {
+    font-size: 10px;
+  }
+
+  .skillTag {
+    font-size: 9px;
+    padding: 2px 6px;
+  }
+}
+
+/* Print styles - simplify for printing */
+@media print {
+  .statBadges {
+    gap: 4px;
+    margin-top: 8px;
+  }
+
+  .statBadge {
+    background: none;
+    border: 1px solid #000;
+    padding: 4px 6px;
+  }
+
+  .statLabel,
+  .statValue {
+    color: #000;
+    text-shadow: none;
+  }
+
+  .skillTag {
+    background: none;
+    border: 1px solid #000;
+  }
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .statLabel {
+    color: rgba(255, 255, 255, 0.7);
+    text-shadow: 0 1px 1px rgba(0, 0, 0, 0.5);
+  }
+
+  .statValue {
+    color: rgba(255, 255, 255, 0.95);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+  }
+
+  .statBadge {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.15);
+  }
+
+  .xpBadge .statValue,
+  .coinsBadge .statValue,
+  .energyBadge .statValue {
+    color: rgba(255, 255, 255, 0.95);
+  }
+
+  .skillsBadge .statValue {
+    color: rgba(196, 181, 253, 0.95);
+  }
+
+  .skillTag {
+    color: rgba(196, 181, 253, 0.95);
+  }
+}
+
+
+/* ========================================
+   MINIMAL STRUCTURED-LIKE MODE
+   ======================================== */
+.minimal .grid {
+  background: transparent !important;
+  border: none !important;
+}
+
+.minimal .block {
+  background: #F8FAFC !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  border-left-width: 6px !important;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06) !important;
+  color: #1f2937 !important;
+  transform: none !important;
+}
+
+.minimal .block,
+.minimal .grid {
+  overflow: visible !important;
+}
+
+/* Flat pastel energy fills */
+.minimal .block.energy_low {
+  background: #E8FBF2 !important;
+  border-left-color: #34D399 !important;
+  color: #14532d !important;
+}
+
+.minimal .block.energy_medium {
+  background: #FEF3C7 !important;
+  border-left-color: #F59E0B !important;
+  color: #7c2d12 !important;
+}
+
+.minimal .block.energy_high {
+  background: #FEE2E2 !important;
+  border-left-color: #EF4444 !important;
+  color: #7f1d1d !important;
+}
+
+/* Optional calm themes */
+.minimal .calmMint {
+  background: #D1FAE5 !important;
+  color: #052e16 !important;
+  border-color: rgba(16, 185, 129, .25) !important;
+}
+
+.minimal .calmBlue {
+  background: #DBEAFE !important;
+  color: #172554 !important;
+  border-color: rgba(59, 130, 246, .25) !important;
+}
+
+.minimal .calmLavender {
+  background: #EDE9FE !important;
+  color: #312e81 !important;
+  border-color: rgba(139, 92, 246, .25) !important;
+}
+
+.minimal .calmPeach {
+  background: #FFEDD5 !important;
+  color: #4f230a !important;
+  border-color: rgba(251, 146, 60, .25) !important;
+}
+
+.minimal .calmGray {
+  background: #F3F4F6 !important;
+  color: #1f2937 !important;
+  border-color: rgba(107, 114, 128, .25) !important;
+}
+
+/* Minimal mode: ensure calm overrides energy variants completely */
+.minimal .block.energy_low.calmMint,
+.minimal .block.energy_medium.calmMint,
+.minimal .block.energy_high.calmMint {
+  background: #D1FAE5 !important;
+  color: #052e16 !important;
+  border-color: rgba(16, 185, 129, .25) !important;
+}
+
+.minimal .block.energy_low.calmBlue,
+.minimal .block.energy_medium.calmBlue,
+.minimal .block.energy_high.calmBlue {
+  background: #DBEAFE !important;
+  color: #172554 !important;
+  border-color: rgba(59, 130, 246, .25) !important;
+}
+
+.minimal .block.energy_low.calmLavender,
+.minimal .block.energy_medium.calmLavender,
+.minimal .block.energy_high.calmLavender {
+  background: #EDE9FE !important;
+  color: #312e81 !important;
+  border-color: rgba(139, 92, 246, .25) !important;
+}
+
+.minimal .block.energy_low.calmPeach,
+.minimal .block.energy_medium.calmPeach,
+.minimal .block.energy_high.calmPeach {
+  background: #FFEDD5 !important;
+  color: #4f230a !important;
+  border-color: rgba(251, 146, 60, .25) !important;
+}
+
+.minimal .block.energy_low.calmGray,
+.minimal .block.energy_medium.calmGray,
+.minimal .block.energy_high.calmGray {
+  background: #F3F4F6 !important;
+  color: #1f2937 !important;
+  border-color: rgba(107, 114, 128, .25) !important;
+}
+
+.minimal .block.energy_low.calmRose,
+.minimal .block.energy_medium.calmRose,
+.minimal .block.energy_high.calmRose {
+  background: #FFE4E6 !important;
+  /* rose-100 */
+  color: #7f1d1d !important;
+  /* rose-900 */
+  border-color: rgba(244, 63, 94, .25) !important;
+  /* rose-500 */
+}
+
+/* Clean default: hide chrome until expanded */
+.minimal .timeBadge,
+.minimal .energyCostBadge,
+.minimal .adhdActionsPanel,
+.minimal .gapInfoBadge,
+.minimal .compactBadges,
+.minimal .statBadges {
+  display: none !important;
+}
+
+/* Show the block menu in minimal mode (top-right) */
+.minimal .menuButton {
+  display: inline-flex !important;
+  opacity: 0.9;
+}
+
+/* Wider footer action buttons */
+.expandedFooter .menuButton {
+  min-width: 140px;
+  justify-content: center;
+  padding: 10px 14px;
+  border-radius: 10px;
+  flex: 1 1 0;
+  white-space: nowrap;
+}
+
+.expandedFooter .menuButton:hover {
+  transform: none !important;
+}
+
+.minimal .structuredTime {
+  color: #334155 !important;
+  opacity: .9 !important;
+}
+
+.minimal .structuredTitle {
+  color: #0f172a !important;
+}
+
+.minimal .block:hover {
+  transform: none !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06) !important;
+  border-color: rgba(0, 0, 0, 0.12) !important;
+}
+
+.minimal .resizeHandleTop,
+.minimal .resizeHandleBottom {
+  opacity: 0.15 !important;
+}
+
+.minimal .chevronButton {
+  background: transparent !important;
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  color: #334155 !important;
+}
+
+/* ========================================
+   TIMELINE CONNECTOR VISIBILITY FIX
+   ======================================== */
+
+/* Make timeline connector more visible */
+.timelineConnector {
+  box-shadow:
+    0 0 8px rgba(0, 0, 0, 0.2),
+    inset 1px 0 0 rgba(255, 255, 255, 0.3);
+  opacity: 0.9;
+}
+
+.block:hover+.timelineConnector,
+.timelineConnector:hover {
+  opacity: 1;
+  width: 6px;
+  left: -27px;
+  box-shadow:
+    0 0 12px rgba(0, 0, 0, 0.3),
+    inset 1px 0 0 rgba(255, 255, 255, 0.5);
+}
+
+/* Ensure connector is above grid but below blocks */
+.timelineConnector {
+  z-index: 5 !important;
+}
+
+/* Make description more prominent */
+.blockSubtitle {
+  margin-top: 8px;
+  margin-bottom: 4px;
+  padding: 6px 8px;
+  background: rgba(0, 0, 0, 0.08);
+  border-left: 3px solid rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+}
+
+.blockSubtitle::before {
+  content: '📝 ';
+  opacity: 0.7;
+}
+
+/* Show description even on medium blocks */
+.block:not(.smallBlock) .blockSubtitle {
+  display: block;
+}
+
+/* ========================================
+   FEATURE PARITY STYLES - Timeline & Calendar
+   ======================================== */
+
+/* CP Badge - Character Points */
+.cpBadge {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(139, 92, 246, 0.1));
+  border-color: rgba(168, 85, 247, 0.3);
+}
+
+.cpBadge:hover {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(139, 92, 246, 0.15));
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.2);
+}
+
+.cpBadge .statValue {
+  color: rgb(107, 33, 168);
+  font-weight: 800;
+}
+
+/* Priority Badge - High/Medium/Low */
+.priorityBadge {
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.08));
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+.priorityBadge:hover {
+  background: linear-gradient(135deg, rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.12));
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.15);
+}
+
+.priorityBadge .statValue {
+  color: rgba(0, 0, 0, 0.85);
+  font-weight: 700;
+}
+
+/* Subtasks Badge - Progress tracker */
+.subtasksBadge {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(37, 99, 235, 0.08));
+  border-color: rgba(59, 130, 246, 0.25);
+}
+
+.subtasksBadge:hover {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.18), rgba(37, 99, 235, 0.12));
+  box-shadow: 0 0 10px rgba(59, 130, 246, 0.15);
+}
+
+.subtasksBadge .statValue {
+  color: rgb(29, 78, 216);
+  font-weight: 700;
+}
+
+/* Recurrence Badge - Repeating tasks */
+.recurrenceBadge {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(5, 150, 105, 0.08));
+  border-color: rgba(16, 185, 129, 0.25);
+}
+
+.recurrenceBadge:hover {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.18), rgba(5, 150, 105, 0.12));
+  box-shadow: 0 0 8px rgba(16, 185, 129, 0.15);
+}
+
+.recurrenceBadge .statValue {
+  color: rgb(5, 120, 85);
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+/* ========================================
+   CALENDAR VIEW ENHANCEMENTS
+   ======================================== */
+
+/* Quest item enhancements in calendar view */
+.questSubtasks {
+  margin-top: 6px;
+  padding: 4px 8px;
+  background: rgba(59, 130, 246, 0.08);
+  border-left: 3px solid rgba(59, 130, 246, 0.3);
+  border-radius: 4px;
+  font-size: 11px;
+  color: rgb(29, 78, 216);
+  font-weight: 600;
+}
+
+.questCp {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: rgba(168, 85, 247, 0.15);
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: rgb(107, 33, 168);
+}
+
+.questPriorityLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.questPriorityLabel.high {
+  background: rgba(239, 68, 68, 0.15);
+  color: rgb(185, 28, 28);
+}
+
+.questPriorityLabel.medium {
+  background: rgba(245, 158, 11, 0.15);
+  color: rgb(180, 83, 9);
+}
+
+.questPriorityLabel.low {
+  background: rgba(34, 197, 94, 0.15);
+  color: rgb(21, 128, 61);
+}
+
+.questRecurrence {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: rgba(16, 185, 129, 0.12);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgb(5, 120, 85);
+  text-transform: capitalize;
+}
+
+.questCoins {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: rgba(217, 119, 6, 0.12);
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  color: rgb(120, 53, 15);
+}
+
+.questSkills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.questSkillTag {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 6px;
+  background: rgba(139, 92, 246, 0.2);
+  border: 1px solid rgba(139, 92, 246, 0.4);
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #5b21b6;
+}
+
+.questDifficulty {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  background: rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* Enhanced quest meta layout for calendar */
+.questMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.questMetaRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+  width: 100%;
+  margin-top: 4px;
+}
+
+/* Subtasks progress bar for calendar view */
+.subtasksProgress {
+  margin-top: 6px;
+  padding: 6px 8px;
+  background: rgba(59, 130, 246, 0.06);
+  border-radius: 6px;
+}
+
+.subtasksProgressLabel {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgb(29, 78, 216);
+  margin-bottom: 4px;
+}
+
+.subtasksProgressBar {
+  height: 6px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.subtasksProgressFill {
+  height: 100%;
+  background: linear-gradient(90deg, rgb(59, 130, 246), rgb(37, 99, 235));
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.subtasksProgressFill.complete {
+  background: linear-gradient(90deg, rgb(34, 197, 94), rgb(21, 128, 61));
+}
+
+/* Mobile responsiveness for new badges */
+@media (max-width: 768px) {
+
+  .cpBadge,
+  .priorityBadge,
+  .subtasksBadge,
+  .recurrenceBadge {
+    font-size: 10px;
+  }
+
+  .questCp,
+  .questPriorityLabel,
+  .questRecurrence,
+  .questCoins,
+  .questDifficulty {
+    font-size: 10px;
+    padding: 2px 6px;
+  }
+
+  .questSkillTag {
+    font-size: 9px;
+    padding: 2px 5px;
+  }
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+  .cpBadge .statValue {
+    color: rgba(196, 181, 253, 0.95);
+  }
+
+  .priorityBadge .statValue {
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .subtasksBadge .statValue {
+    color: rgba(147, 197, 253, 0.95);
+  }
+
+  .recurrenceBadge .statValue {
+    color: rgba(167, 243, 208, 0.95);
+  }
+
+  .questPriorityLabel.high {
+    color: rgba(252, 165, 165, 0.95);
+  }
+
+  .questPriorityLabel.medium {
+    color: rgba(253, 224, 155, 0.95);
+  }
+
+  .questPriorityLabel.low {
+    color: rgba(167, 243, 208, 0.95);
+  }
+}
+
+/* Animation for badge appearance */
+.statBadge:nth-child(6) {
+  animation: badgeSlideIn 0.3s ease-out 0.3s both;
+}
+
+.statBadge:nth-child(7) {
+  animation: badgeSlideIn 0.3s ease-out 0.35s both;
+}
+
+.statBadge:nth-child(8) {
+  animation: badgeSlideIn 0.3s ease-out 0.4s both;
+}
+
+.statBadge:nth-child(9) {
+  animation: badgeSlideIn 0.3s ease-out 0.45s both;
+}
+
+
+/* ========================================
+   COMPACT BADGES FOR SMALL BLOCKS
+   ======================================== */
+
+.compactBadges {
+  display: none;
+}
+
+.compactBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 2px 6px;
+  background: rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(0, 0, 0, 0.85);
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.compactBadge:hover {
+  background: rgba(255, 255, 255, 0.35);
+  transform: scale(1.05);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+}
+
+/* Small block adjustments */
+.smallBlock .compactBadges {
+  margin-top: 4px;
+}
+
+.smallBlock .blockTitle {
+  font-size: 12px;
+  margin-top: 24px !important;
+}
+
+/* Mobile responsive for compact badges */
+@media (max-width: 768px) {
+  .compactBadge {
+    font-size: 9px;
+    padding: 2px 5px;
+  }
+}
+
+/* Dark mode for compact badges */
+@media (prefers-color-scheme: dark) {
+  .compactBadge {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.95);
+  }
+
+  .compactBadge:hover {
+    background: rgba(255, 255, 255, 0.25);
+  }
+}
+
+/* METADATA ROW (Unified labels/badges) */
+.metaRow {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.metaBadge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.5);
+  gap: 4px;
+}
+
+.metaLabel {
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(0, 0, 0, 0.5);
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.metaValue {
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(0, 0, 0, 0.9);
+}
+
+/* Badge personality */
+.metaBadge:nth-child(1) {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: rgba(16, 185, 129, 0.3);
+}
+
+.metaBadge:nth-child(1) .metaLabel {
+  color: rgba(5, 120, 85, 0.7);
+}
+
+.metaBadge:nth-child(1) .metaValue {
+  color: rgb(5, 120, 85);
+}
+
+.metaBadge:nth-child(2) {
+  background: rgba(59, 130, 246, 0.15);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+.metaBadge:nth-child(2) .metaLabel {
+  color: rgba(29, 78, 216, 0.7);
+}
+
+.metaBadge:nth-child(2) .metaValue {
+  color: rgb(29, 78, 216);
+}
+
+.metaBadge:nth-child(3) {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.metaBadge:nth-child(3) .metaLabel {
+  color: rgba(180, 83, 9, 0.7);
+}
+
+.metaBadge:nth-child(3) .metaValue {
+  color: rgb(180, 83, 9);
+}
+
+.metaBadge:nth-child(4) {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+.metaBadge:nth-child(4) .metaLabel {
+  color: rgba(109, 40, 217, 0.7);
+}
+
+.metaBadge:nth-child(4) .metaValue {
+  color: rgb(109, 40, 217);
+}
+
+.metaBadge:nth-child(5) {
+  background: #f1f5f9;
+  border-color: rgba(100, 116, 139, .22);
+}
+
+.metaBadge:nth-child(6) {
+  background: #f1f5f9;
+  border-color: rgba(100, 116, 139, .22);
+}
+
+/* Subtasks styling */
+.subtasksContainer {
+  margin: 8px 0 4px;
+  padding: 8px 10px;
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 8px;
+}
+
+.subtaskRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 11px;
+}
+
+.subtaskRow input {
+  cursor: pointer;
+}
+
+.subtaskText {
+  flex: 1;
+  color: #334155;
+}
+
+.subtaskTime {
+  color: #475569;
+  font-weight: 700;
+}
+
+/* Rewards row (calendar-style chips) */
+.rewardsRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.rewardChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 14px;
+  font-size: 11px;
+  font-weight: 800;
+  border: 1px solid transparent;
+}
+
+.xpChip {
+  background: rgba(251, 191, 36, .2);
+  border-color: rgba(251, 191, 36, .4);
+  color: #92400e;
+  font-weight: 700;
+}
+
+.cpChip {
+  background: rgba(168, 85, 247, .2);
+  border-color: rgba(168, 85, 247, .4);
+  color: #581c87;
+  font-weight: 700;
+}
+
+.coinsChip {
+  background: rgba(217, 119, 6, .2);
+  border-color: rgba(217, 119, 6, .4);
+  color: #92400e;
+  font-weight: 700;
+}
+
+.recurChip {
+  background: rgba(16, 185, 129, .2);
+  border-color: rgba(16, 185, 129, .4);
+  color: #065f46;
+  font-weight: 700;
+}
+
+.skillChip {
+  background: rgba(139, 92, 246, .2);
+  border-color: rgba(139, 92, 246, .4);
+  color: #5b21b6;
+  font-weight: 700;
+}
+
+.subtasksHeader {
+  font-size: 12px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 6px;
+}
+
+/* Compact behavior for small blocks */
+.smallBlock .metaRow {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.smallBlock .metaBadge {
+  padding: 4px 6px;
+}
+
+/* Minimal mode visibility: hidden by default, show on hover or when expanded */
+.minimal .metaRow {
+  display: none;
+}
+
+.minimal .block:hover .metaRow,
+.minimal .expanded .metaRow {
+  display: grid;
+}
+
+/* ========================================
+   CAROUSEL SCROLL - Week View Horizontal Scrolling
+   ======================================== */
+
+/* Smooth horizontal scrollbar for timeline container only */
+.timelineContainer.weekView::-webkit-scrollbar {
+  height: 10px;
+}
+
+.timelineContainer.weekView::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 5px;
+  margin: 0 10px;
+}
+
+.timelineContainer.weekView::-webkit-scrollbar-thumb {
+  background: linear-gradient(90deg, rgba(139, 92, 246, 0.6), rgba(59, 130, 246, 0.6));
+  border-radius: 5px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+.timelineContainer.weekView::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(90deg, rgba(139, 92, 246, 0.8), rgba(59, 130, 246, 0.8));
+  background-clip: content-box;
+}
+
+/* Firefox scrollbar */
+.timelineContainer.weekView {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(139, 92, 246, 0.6) rgba(0, 0, 0, 0.1);
+}
+
+/* ========================================
+   INLINE EDITING STYLES
+   ======================================== */
+
+/* Editable Badge Styles */
+.editableBadge {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.editableBadge:hover {
+  transform: scale(1.05);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.editableBadge.editing {
+  opacity: 0.7;
+}
+
+/* Quick Add Button for Subtasks */
+.quickAddButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  border-radius: 50%;
+  color: #059669;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-left: 8px;
+}
+
+.quickAddButton:hover {
+  background: rgba(34, 197, 94, 0.2);
+  border-color: rgba(34, 197, 94, 0.5);
+  transform: scale(1.1);
+}
+
+/* Editable Subtask Row */
+.editableSubtaskRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 11px;
+  position: relative;
+}
+
+.editableSubtaskText {
+  flex: 1;
+  color: #334155;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: 3px;
+  transition: background-color 0.2s ease;
+}
+
+.editableSubtaskText:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+.editableSubtaskText.editing {
+  background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* Subtask Action Buttons */
+.subtaskActions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.editableSubtaskRow:hover .subtaskActions {
+  opacity: 1;
+}
+
+.subtaskActionButton {
+  width: 16px;
+  height: 16px;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.editButton {
+  background: rgba(59, 130, 246, 0.1);
+  color: #3b82f6;
+}
+
+.editButton:hover {
+  background: rgba(59, 130, 246, 0.2);
+}
+
+.deleteButton {
+  background: rgba(239, 68, 68, 0.1);
+  color: #ef4444;
+}
+
+.deleteButton:hover {
+  background: rgba(239, 68, 68, 0.2);
+}
+
+/* Inline Editor Styles */
+.inlineSelect,
+.inlineInput {
+  background: var(--background-primary);
+  border: 2px solid var(--interactive-accent);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-normal);
+  outline: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  position: relative;
+  min-width: 80px;
+}
+
+.inlineSelect {
+  cursor: pointer;
+}
+
+.inlineInput {
+  cursor: text;
+}
+
+.inlineSelect:focus,
+.inlineInput:focus {
+  border-color: var(--interactive-accent-hover);
+  box-shadow: 0 0 0 3px rgba(var(--interactive-accent-rgb), 0.1);
+}
+
+/* Dark mode adjustments for inline editing */
+@media (prefers-color-scheme: dark) {
+  .editableSubtaskText {
+    color: var(--text-normal);
+  }
+
+  .editableSubtaskText:hover {
+    background-color: rgba(59, 130, 246, 0.2);
+  }
+
+  .inlineSelect,
+  .inlineInput {
+    background: var(--background-secondary);
+    color: var(--text-normal);
+    border-color: var(--interactive-accent);
+  }
+}

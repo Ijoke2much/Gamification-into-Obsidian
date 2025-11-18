@@ -1,0 +1,737 @@
+/* Real-Time Analytics Dashboard Styles */
+
+.dashboard {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    border-radius: 16px;
+    color: #ffffff;
+    padding: 24px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Dashboard Header */
+.dashboardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 2px solid rgba(255, 215, 0, 0.2);
+}
+
+.dashboardTitle {
+    color: #ffd700;
+    font-size: 28px;
+    font-weight: bold;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.liveIndicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid #10b981;
+    border-radius: 20px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: bold;
+    color: #10b981;
+}
+
+.liveDot {
+    width: 8px;
+    height: 8px;
+    background: #10b981;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.5;
+        transform: scale(0.8);
+    }
+}
+
+/* Loading State */
+.loadingState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px;
+    text-align: center;
+}
+
+.loadingSpinner {
+    font-size: 48px;
+    margin-bottom: 16px;
+    animation: spin 2s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.loadingText {
+    color: #cbd5e1;
+    font-size: 18px;
+}
+
+/* Tab Navigation */
+.tabNavigation {
+    display: flex;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 4px;
+    margin-bottom: 24px;
+    gap: 4px;
+}
+
+.tabButton {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #cbd5e1;
+    padding: 12px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+
+.tabButton:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+}
+
+.tabButton.active {
+    background: #ffd700;
+    color: #1a1a2e;
+    font-weight: bold;
+}
+
+.tabIcon {
+    font-size: 16px;
+}
+
+.tabLabel {
+    font-size: 14px;
+}
+
+/* Tab Content */
+.tabContent {
+    min-height: 400px;
+}
+
+/* Section Styling */
+.section {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sectionTitle {
+    color: #ffd700;
+    font-size: 18px;
+    font-weight: bold;
+    margin: 0 0 16px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Overview Tab */
+.overviewTab {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.metricsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.metricCard {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.metricCard:hover {
+    background: rgba(255, 255, 255, 0.12);
+    transform: translateY(-2px);
+}
+
+.metricIcon {
+    font-size: 24px;
+    width: 40px;
+    text-align: center;
+}
+
+.metricContent {
+    flex: 1;
+}
+
+.metricValue {
+    font-size: 20px;
+    font-weight: bold;
+    color: #10b981;
+    margin-bottom: 4px;
+}
+
+.metricLabel {
+    font-size: 12px;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.dailySummary {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.summaryRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.summaryLabel {
+    color: #cbd5e1;
+    font-size: 14px;
+}
+
+.summaryValue {
+    color: #10b981;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.liveStatus {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+}
+
+.statusItem {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.statusIcon {
+    font-size: 20px;
+}
+
+.statusContent {
+    flex: 1;
+}
+
+.statusLabel {
+    font-size: 12px;
+    color: #64748b;
+    margin-bottom: 2px;
+}
+
+.statusValue {
+    font-size: 14px;
+    color: #cbd5e1;
+    font-weight: 500;
+}
+
+/* Performance Tab */
+.performanceTab {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.overallScore {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+}
+
+.scoreCircle {
+    background: conic-gradient(from 0deg, #10b981 0%, #ffd700 50%, #ef4444 100%);
+    border-radius: 50%;
+    width: 120px;
+    height: 120px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.scoreCircle::before {
+    content: '';
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    background: #1a1a2e;
+    border-radius: 50%;
+}
+
+.scoreValue {
+    font-size: 24px;
+    font-weight: bold;
+    color: #ffffff;
+    z-index: 1;
+}
+
+.scoreLabel {
+    font-size: 12px;
+    color: #cbd5e1;
+    z-index: 1;
+}
+
+.performanceGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+}
+
+.performanceCard {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.performanceHeader {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.performanceIcon {
+    font-size: 18px;
+}
+
+.performanceName {
+    font-size: 14px;
+    font-weight: bold;
+    color: #cbd5e1;
+}
+
+.performanceBar {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    height: 8px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.performanceFill {
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.5s ease;
+}
+
+.performanceValue {
+    text-align: right;
+    font-size: 14px;
+    font-weight: bold;
+    color: #10b981;
+}
+
+.strengthsGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.strengthsCard,
+.improvementCard {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.cardTitle {
+    font-size: 16px;
+    font-weight: bold;
+    margin: 0 0 12px 0;
+    color: #ffd700;
+}
+
+.itemsList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.strengthItem,
+.improvementItem {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    padding: 8px;
+    font-size: 14px;
+    color: #cbd5e1;
+}
+
+.emptyState {
+    color: #64748b;
+    font-style: italic;
+    text-align: center;
+    padding: 16px;
+}
+
+/* Insights Tab */
+.insightsTab {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.tipsList,
+.recommendationsList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.tipItem,
+.recommendationItem {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tipIcon,
+.recommendationIcon {
+    font-size: 20px;
+    margin-top: 2px;
+}
+
+.tipText,
+.recommendationText {
+    flex: 1;
+    color: #cbd5e1;
+    line-height: 1.4;
+    font-size: 14px;
+}
+
+.emptyTips,
+.emptyRecommendations {
+    text-align: center;
+    padding: 40px;
+}
+
+.emptyIcon {
+    font-size: 48px;
+    margin-bottom: 16px;
+}
+
+.emptyText {
+    color: #64748b;
+    font-size: 16px;
+}
+
+.patternsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+}
+
+.patternCard {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.hoursList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.hourBadge {
+    background: #10b981;
+    color: #ffffff;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.distractionsList,
+.motivationList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.distractionItem,
+.motivationItem {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 4px;
+    padding: 8px;
+    font-size: 12px;
+    color: #cbd5e1;
+}
+
+/* Battles Tab */
+.battlesTab {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.battleStatsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+}
+
+.battleStatCard {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 16px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.battleStatCard:hover {
+    background: rgba(255, 255, 255, 0.12);
+    transform: translateY(-2px);
+}
+
+.statIcon {
+    font-size: 24px;
+    margin-bottom: 8px;
+}
+
+.statValue {
+    font-size: 20px;
+    font-weight: bold;
+    color: #10b981;
+    margin-bottom: 4px;
+}
+
+.statLabel {
+    font-size: 12px;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.battleDetailsGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.battleDetailCard {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.equipmentInfo,
+.rewardsInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.equipmentItem,
+.rewardItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.equipmentLabel,
+.rewardLabel {
+    color: #64748b;
+    font-size: 12px;
+}
+
+.equipmentValue,
+.rewardValue {
+    color: #cbd5e1;
+    font-weight: 500;
+    font-size: 12px;
+}
+
+.progressCards {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.progressCard {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.progressHeader {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.progressIcon {
+    font-size: 18px;
+}
+
+.progressTitle {
+    font-size: 14px;
+    font-weight: bold;
+    color: #cbd5e1;
+}
+
+.progressBar {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    height: 8px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.progressFill {
+    background: linear-gradient(90deg, #10b981, #ffd700);
+    height: 100%;
+    border-radius: 6px;
+    transition: width 0.5s ease;
+}
+
+.progressText {
+    text-align: center;
+    font-size: 12px;
+    color: #64748b;
+    font-style: italic;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .dashboard {
+        padding: 16px;
+    }
+
+    .dashboardHeader {
+        flex-direction: column;
+        gap: 12px;
+        align-items: stretch;
+    }
+
+    .tabNavigation {
+        flex-direction: column;
+    }
+
+    .metricsGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .strengthsGrid,
+    .battleDetailsGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .patternsGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .battleStatsGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .dashboard {
+        padding: 12px;
+        border-radius: 8px;
+    }
+
+    .dashboardTitle {
+        font-size: 20px;
+    }
+
+    .tabButton {
+        padding: 8px 12px;
+        font-size: 12px;
+    }
+
+    .battleStatsGrid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Animation for dashboard appearance */
+.dashboard {
+    animation: dashboardAppear 0.5s ease-out;
+}
+
+@keyframes dashboardAppear {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}

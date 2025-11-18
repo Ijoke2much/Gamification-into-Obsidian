@@ -1,0 +1,628 @@
+.penaltyCard {
+    background: linear-gradient(135deg, #2a2d35 0%, #1f2228 100%);
+    border-radius: 8px;
+    padding: 20px;
+    margin: 15px 0;
+    color: #e8eaed;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.header h3 {
+    margin: 0;
+    font-size: 1.3em;
+    font-weight: 600;
+    color: #e8eaed;
+    letter-spacing: 0.3px;
+}
+
+.statusIndicators {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.statusIndicators span {
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.75em;
+    font-weight: 500;
+    border: 1px solid;
+}
+
+.warning {
+    background: rgba(139, 58, 58, 0.2);
+    border-color: rgba(139, 58, 58, 0.4);
+    color: #d4a5a5;
+}
+
+.insight {
+    background: rgba(66, 99, 128, 0.2);
+    border-color: rgba(66, 99, 128, 0.4);
+    color: #a8c5d9;
+}
+
+.forgiveness {
+    background: rgba(76, 106, 78, 0.2);
+    border-color: rgba(76, 106, 78, 0.4);
+    color: #b0c9b1;
+}
+
+.quickStatus {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.statusItem {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.label {
+    font-size: 0.85em;
+    color: #9aa0a6;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.value {
+    font-size: 1.05em;
+    font-weight: 600;
+    color: #e8eaed;
+}
+
+.debt {
+    color: #d4a5a5;
+    background: rgba(139, 58, 58, 0.25);
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 0.9em;
+    border: 1px solid rgba(139, 58, 58, 0.3);
+}
+
+.clean {
+    color: #b0c9b1;
+    background: rgba(76, 106, 78, 0.25);
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 0.9em;
+    border: 1px solid rgba(76, 106, 78, 0.3);
+}
+
+.buff {
+    color: #b0c9b1;
+    background: rgba(76, 106, 78, 0.25);
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 0.9em;
+    border: 1px solid rgba(76, 106, 78, 0.3);
+}
+
+.debuff {
+    color: #d4a5a5;
+    background: rgba(139, 58, 58, 0.25);
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 0.9em;
+    border: 1px solid rgba(139, 58, 58, 0.3);
+}
+
+.actionButtons {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.actionButton {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #c4c7cc;
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85em;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.actionButton:hover:not(:disabled) {
+    background: rgba(0, 0, 0, 0.4);
+    border-color: rgba(255, 255, 255, 0.15);
+    color: #e8eaed;
+}
+
+.actionButton:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.analyticsPanel,
+.coachingPanel,
+.forgivenessPanel,
+.debuffsPanel,
+.recoveryTips {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.analyticsPanel h4,
+.coachingPanel h4,
+.forgivenessPanel h4,
+.debuffsPanel h4,
+.recoveryTips h4 {
+    margin: 0 0 15px 0;
+    font-size: 1.1em;
+    font-weight: 600;
+    color: #e8eaed;
+    letter-spacing: 0.3px;
+}
+
+.insightsList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.insightItem {
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 4px;
+    padding: 12px;
+    border-left: 3px solid;
+}
+
+.insightHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+}
+
+.insightType {
+    text-transform: uppercase;
+    font-size: 0.75em;
+    font-weight: 600;
+    padding: 3px 8px;
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.25);
+    color: #9aa0a6;
+    letter-spacing: 0.5px;
+}
+
+.insightSeverity {
+    font-size: 0.75em;
+    font-weight: 500;
+    padding: 3px 8px;
+    border-radius: 3px;
+    background: rgba(0, 0, 0, 0.25);
+    color: #9aa0a6;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.insightItem h5 {
+    margin: 0 0 8px 0;
+    font-size: 0.95em;
+    font-weight: 600;
+    color: #e8eaed;
+}
+
+.insightItem p {
+    margin: 0 0 8px 0;
+    font-size: 0.85em;
+    color: #c4c7cc;
+    line-height: 1.5;
+}
+
+.insightAction,
+.insightImpact {
+    font-size: 0.8em;
+    margin-top: 8px;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+    color: #c4c7cc;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.coachingHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    font-size: 0.85em;
+    font-weight: 500;
+    color: #c4c7cc;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.suggestionsList {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.suggestionItem {
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 4px;
+    padding: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.suggestionHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 10px;
+    gap: 10px;
+}
+
+.suggestionHeader h5 {
+    margin: 0;
+    font-size: 1em;
+    font-weight: 600;
+    flex: 1;
+    color: #e8eaed;
+}
+
+.priority {
+    font-size: 0.7em;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 3px;
+    color: #e8eaed;
+    text-transform: uppercase;
+    white-space: nowrap;
+    letter-spacing: 0.5px;
+}
+
+.suggestionItem p {
+    margin: 0 0 12px 0;
+    font-size: 0.85em;
+    color: #c4c7cc;
+    line-height: 1.5;
+}
+
+.benefits {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.benefits span {
+    font-size: 0.8em;
+    padding: 4px 10px;
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 3px;
+    font-weight: 500;
+    color: #c4c7cc;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.actionSteps {
+    font-size: 0.9em;
+}
+
+.actionSteps strong {
+    display: block;
+    margin-bottom: 8px;
+    color: #e8eaed;
+}
+
+.actionSteps ol {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.actionSteps li {
+    margin-bottom: 4px;
+    color: #c4c7cc;
+    line-height: 1.5;
+}
+
+.forgivenessList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.forgivenessItem {
+    background: rgba(76, 106, 78, 0.15);
+    border-radius: 4px;
+    padding: 12px;
+    border: 1px solid rgba(76, 106, 78, 0.3);
+}
+
+.forgivenessItem h5 {
+    margin: 0 0 8px 0;
+    font-size: 0.95em;
+    font-weight: 600;
+    color: #b0c9b1;
+}
+
+.forgivenessItem p {
+    margin: 0 0 10px 0;
+    font-size: 0.85em;
+    color: #c4c7cc;
+    line-height: 1.5;
+}
+
+.forgivenessRewards {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.forgivenessRewards span {
+    font-size: 0.8em;
+    padding: 4px 10px;
+    background: rgba(76, 106, 78, 0.2);
+    border-radius: 3px;
+    color: #b0c9b1;
+    font-weight: 500;
+    border: 1px solid rgba(76, 106, 78, 0.3);
+}
+
+.debuffsList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.debuffItem {
+    background: rgba(139, 58, 58, 0.15);
+    border-radius: 4px;
+    padding: 12px;
+    border: 1px solid rgba(139, 58, 58, 0.3);
+}
+
+.debuffHeader {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.debuffIcon {
+    font-size: 1.2em;
+}
+
+.debuffName {
+    font-weight: 600;
+    color: #d4a5a5;
+    flex: 1;
+}
+
+.debuffTime {
+    font-size: 0.75em;
+    padding: 3px 8px;
+    background: rgba(139, 58, 58, 0.25);
+    border-radius: 3px;
+    color: #d4a5a5;
+    border: 1px solid rgba(139, 58, 58, 0.3);
+}
+
+.debuffDescription {
+    margin: 0;
+    font-size: 0.85em;
+    color: #c4c7cc;
+    line-height: 1.5;
+}
+
+/* Buffs Panel Styles */
+.buffsPanel {
+    background: rgba(76, 106, 78, 0.15);
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 15px;
+    border: 1px solid rgba(76, 106, 78, 0.3);
+}
+
+.buffsPanel h4 {
+    margin: 0 0 15px 0;
+    font-size: 1.1em;
+    font-weight: 600;
+    color: #b0c9b1;
+    letter-spacing: 0.3px;
+}
+
+.buffsList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.buffItem {
+    background: rgba(76, 106, 78, 0.15);
+    border-radius: 4px;
+    padding: 12px;
+    border: 1px solid rgba(76, 106, 78, 0.3);
+    position: relative;
+}
+
+.buffHeader {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.buffIcon {
+    font-size: 1.2em;
+}
+
+.buffName {
+    font-weight: 600;
+    color: #b0c9b1;
+    flex: 1;
+}
+
+.buffTime {
+    font-size: 0.75em;
+    padding: 3px 8px;
+    background: rgba(76, 106, 78, 0.25);
+    border-radius: 3px;
+    color: #b0c9b1;
+    border: 1px solid rgba(76, 106, 78, 0.3);
+}
+
+.buffDescription {
+    margin: 0 0 8px 0;
+    font-size: 0.85em;
+    color: #c4c7cc;
+    line-height: 1.5;
+}
+
+.buffValue {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.valueBadge {
+    background: rgba(76, 106, 78, 0.3);
+    color: #b0c9b1;
+    padding: 3px 10px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid rgba(76, 106, 78, 0.4);
+}
+
+.recoveryTips ul {
+    margin: 0;
+    padding-left: 20px;
+}
+
+.recoveryTips li {
+    margin-bottom: 6px;
+    font-size: 0.85em;
+    color: #c4c7cc;
+    line-height: 1.5;
+}
+
+.noData {
+    text-align: center;
+    opacity: 0.7;
+    font-style: italic;
+    margin: 20px 0;
+}
+
+.loading {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    opacity: 0.7;
+}
+
+.loading span {
+    font-size: 0.9em;
+    font-style: italic;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .penaltyCard {
+        padding: 15px;
+        margin: 10px 0;
+    }
+
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 10px;
+    }
+
+    .header h3 {
+        font-size: 1.2em;
+    }
+
+    .quickStatus {
+        grid-template-columns: 1fr;
+        gap: 10px;
+        padding: 12px;
+    }
+
+    .actionButtons {
+        gap: 8px;
+    }
+
+    .actionButton {
+        padding: 6px 12px;
+        font-size: 0.85em;
+    }
+
+    .benefits {
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .forgivenessRewards {
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .coachingHeader {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+}
+
+/* Animation for new features */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.analyticsPanel,
+.coachingPanel,
+.forgivenessPanel {
+    animation: slideIn 0.3s ease-out;
+}
+
+/* Hover effects */
+.suggestionItem:hover,
+.forgivenessItem:hover,
+.debuffItem:hover,
+.buffItem:hover {
+    background: rgba(0, 0, 0, 0.25);
+    transition: all 0.2s ease;
+}
+
+.insightItem:hover {
+    background: rgba(0, 0, 0, 0.2);
+    transition: background 0.2s ease;
+}

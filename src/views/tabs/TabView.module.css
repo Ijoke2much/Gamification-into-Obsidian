@@ -1,0 +1,632 @@
+.container {
+    padding: 8px;
+    color: #fff;
+    width: 100%;
+    container-type: inline-size;
+}
+
+.reloadButton {
+    margin-bottom: 8px;
+    background: #444;
+    color: #fff;
+    border-radius: 4px;
+    padding: 4px 12px;
+    font-size: 12px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s;
+    /* Mobile touch target optimization */
+    min-height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.reloadButton:hover {
+    background: #222;
+}
+
+/* Mobile-specific button optimizations */
+@media (pointer: coarse) {
+    .reloadButton {
+        padding: 12px 16px;
+        font-size: 14px;
+        min-height: 48px;
+        min-width: 48px;
+    }
+}
+
+.dropdown {
+    position: relative;
+    margin: 16px 0;
+    width: 220px;
+    z-index: 9999;
+}
+
+.dropdownToggle {
+    display: flex;
+    align-items: center;
+    background: #222;
+    color: #fff;
+    border-radius: 6px;
+    padding: 8px 12px;
+    cursor: pointer;
+    border: 2px solid transparent;
+    user-select: none;
+    font-weight: 500;
+    font-size: 16px;
+    transition: border 0.15s;
+    /* Mobile touch target optimization */
+    min-height: 44px;
+    min-width: 44px;
+}
+
+.dropdownToggleActive {
+    border: 2px solid #8ecae6;
+}
+
+.dropdownArrow {
+    margin-left: auto;
+    font-size: 14px;
+    opacity: 0.7;
+}
+
+.dropdownMenu {
+    position: absolute;
+    top: 110%;
+    left: 0;
+    width: 100%;
+    background: #222;
+    border: 1px solid #8ecae6;
+    border-radius: 6px;
+    z-index: 10;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.dropdownItem {
+    display: flex;
+    align-items: center;
+    padding: 8px 12px;
+    cursor: pointer;
+    background: none;
+    font-weight: 400;
+    font-size: 16px;
+    transition: background 0.12s, font-weight 0.12s;
+    /* Mobile touch target optimization */
+    min-height: 44px;
+    min-width: 44px;
+}
+
+.dropdownItemActive {
+    background: #333;
+    font-weight: 600;
+}
+
+.tabContent {
+    margin-top: 24px;
+}
+
+.cardRow {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: stretch;
+    gap: 16px;
+    width: 100%;
+    min-width: 0;
+    flex-wrap: wrap;
+}
+
+.gridCol {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    width: 100%;
+}
+
+.progressCard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-width: 0;
+    padding: 8px;
+    margin-top: 4px;
+    border: 4px solid #219ebc;
+    background: #181a1b;
+}
+
+.button {
+    background: #219ebc;
+    color: #fff;
+    border-radius: 6px;
+    padding: 4px 12px;
+    font-size: 12px;
+    border: none;
+    cursor: pointer;
+    transition: background 0.15s;
+    /* Mobile touch target optimization */
+    min-height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.button:hover {
+    background: #126782;
+}
+
+.debugBlock {
+    background: #222;
+    color: #fff;
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    font-size: 13px;
+}
+
+.error {
+    color: #f87171;
+}
+
+/* Mobile performance optimizations */
+@media (max-width: 768px) {
+
+    /* Disable complex animations on mobile for better performance */
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    /* Optimize touch scrolling */
+    .container {
+        -webkit-overflow-scrolling: touch;
+        scroll-behavior: smooth;
+    }
+
+    /* Reduce motion for accessibility */
+    @media (prefers-reduced-motion: reduce) {
+
+        *,
+        *::before,
+        *::after {
+            animation-duration: 0.01ms !important;
+            animation-iteration-count: 1 !important;
+            transition-duration: 0.01ms !important;
+        }
+    }
+}
+
+/* Mobile input optimizations for coarse pointers (touch devices) */
+@media (pointer: coarse) {
+
+    .reloadButton,
+    .dropdownToggle,
+    .dropdownItem,
+    .button {
+        min-height: 48px;
+        min-width: 48px;
+        padding: 12px 16px;
+        font-size: 14px;
+    }
+
+    /* Increase spacing for touch targets */
+    .dropdownItem {
+        padding: 12px 16px;
+        margin: 2px 0;
+    }
+
+    /* Better touch feedback */
+    .dropdownToggle:active,
+    .dropdownItem:active,
+    .button:active {
+        transform: scale(0.98);
+        transition: transform 0.1s ease;
+    }
+}
+
+/* Container-based responsive design for sidebar positioning */
+/* Sidebar narrow (250px) optimizations */
+@container (max-width: 280px) {
+    .container {
+        padding: 2px !important;
+        font-size: 11px !important;
+        overflow: hidden;
+    }
+
+    .dropdown {
+        width: 100% !important;
+        margin: 4px 0 !important;
+        min-width: 0;
+    }
+
+    .dropdownToggle {
+        padding: 2px 4px !important;
+        font-size: 10px !important;
+        min-height: 28px !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .dropdownItem {
+        padding: 2px 4px !important;
+        font-size: 10px !important;
+        min-height: 28px !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .cardRow {
+        gap: 4px !important;
+        flex-direction: column !important;
+        margin: 2px 0 !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        overflow: hidden !important;
+    }
+
+    .progressCard {
+        padding: 2px !important;
+        margin: 1px 0 !important;
+    }
+
+    /* Compact button sizing for narrow sidebar */
+    .reloadButton {
+        padding: 4px 6px !important;
+        font-size: 9px !important;
+        min-height: 28px !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Make all content scale down aggressively */
+    * {
+        font-size: inherit !important;
+        line-height: 1.2 !important;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+        font-size: 12px !important;
+        margin: 2px 0 !important;
+    }
+
+    /* Ensure cards and containers fit */
+    .gridCol {
+        gap: 4px !important;
+    }
+}
+
+@container (max-width: 450px) {
+    .container {
+        padding: 6px;
+    }
+
+    .dropdown {
+        width: 100%;
+        margin: 12px 0;
+    }
+
+    .dropdownToggle {
+        padding: 6px 10px;
+        font-size: 14px;
+        min-height: 44px;
+    }
+
+    .dropdownItem {
+        padding: 6px 10px;
+        font-size: 14px;
+        min-height: 44px;
+    }
+
+    .cardRow {
+        gap: 12px;
+    }
+
+    .progressCard {
+        padding: 6px;
+    }
+
+    /* Mobile-specific button sizing */
+    .reloadButton {
+        padding: 8px 12px;
+        font-size: 13px;
+        min-height: 44px;
+    }
+}
+
+@container (max-width: 350px) {
+    .container {
+        padding: 4px;
+    }
+
+    .dropdown {
+        margin: 8px 0;
+    }
+
+    .dropdownToggle {
+        padding: 4px 8px;
+        font-size: 13px;
+        min-height: 44px;
+    }
+
+    .dropdownItem {
+        padding: 4px 8px;
+        font-size: 13px;
+        min-height: 44px;
+    }
+
+    .cardRow {
+        gap: 8px;
+    }
+
+    .progressCard {
+        padding: 4px;
+    }
+
+    /* Ultra-compact mobile buttons */
+    .reloadButton {
+        padding: 6px 10px;
+        font-size: 12px;
+        min-height: 44px;
+    }
+}
+
+/* Fallback viewport-based responsive design */
+@media (max-width: 450px) {
+    .container {
+        padding: 6px;
+    }
+
+    .dropdown {
+        width: 100%;
+        margin: 12px 0;
+    }
+
+    .cardRow {
+        gap: 12px;
+    }
+
+    /* Ensure all interactive elements meet touch target requirements */
+    .reloadButton,
+    .dropdownToggle,
+    .dropdownItem,
+    .button {
+        min-height: 44px;
+        min-width: 44px;
+    }
+}
+
+/* Mobile-specific enhancements */
+@media (max-width: 768px) {
+
+    /* Improve dropdown positioning on mobile */
+    .dropdownMenu {
+        position: fixed;
+        top: 0;
+        bottom: auto;
+        left: 0;
+        right: 0;
+        width: 100%;
+        border-radius: 0 0 12px 12px;
+        max-height: 60vh;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* Add backdrop for mobile dropdown */
+    .dropdownMenu::before {
+        content: '';
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: -1;
+    }
+
+    /* Mobile-friendly card layout */
+    .cardRow {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    /* Optimize grid for mobile */
+    .gridCol {
+        gap: 12px;
+    }
+}
+
+/* High DPI display optimizations */
+@media (-webkit-min-device-pixel-ratio: 2),
+(min-resolution: 192dpi) {
+
+    .dropdownToggle,
+    .dropdownItem,
+    .button {
+        border-width: 0.5px;
+    }
+}
+
+/* Landscape mobile optimizations */
+@media (max-width: 768px) and (orientation: landscape) {
+    .dropdownMenu {
+        max-height: 40vh;
+    }
+
+    .cardRow {
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+}
+
+/* Mobile-specific row layout */
+.mobileCardRow {
+    flex-direction: column !important;
+    gap: 12px !important;
+    align-items: stretch;
+}
+
+/* Mobile dropdown styles */
+.mobileDropdown {
+    width: 100%;
+    max-width: 100%;
+}
+
+.mobileDropdownMenu {
+    position: fixed !important;
+    top: 0 !important;
+    bottom: auto !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100vw !important;
+    border-radius: 0 0 12px 12px !important;
+    max-height: 60vh !important;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    z-index: 9999 !important;
+}
+
+/* Loading state mobile optimization */
+.loadingContainer {
+    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    color: var(--text-muted);
+    gap: 1rem;
+}
+
+@media (max-width: 768px) {
+    .loadingContainer {
+        min-height: 150px;
+        padding: 1rem;
+        gap: 0.75rem;
+    }
+}
+
+/* Simple modal styles for Stats */
+.modalBackdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+.modalPanel {
+    background: var(--background-primary, #23243a);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 12px;
+    width: min(720px, 92vw);
+    max-height: 90vh;
+    overflow: auto;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
+    padding: 12px 12px 16px 12px;
+}
+
+.modalHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 4px 8px 4px;
+    border-bottom: 1px solid var(--background-modifier-border);
+    margin-bottom: 8px;
+}
+
+/* Desktop tab ribbon styles */
+.tabRibbon {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    align-items: center;
+    margin: 12px 0;
+}
+
+.tabButton {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    border: 1px solid var(--background-modifier-border);
+    background: #2b2f36;
+    color: #fff;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    min-height: 40px;
+    transition: background 0.15s, border-color 0.15s, transform 0.08s;
+}
+
+.tabButton:hover {
+    background: #323845;
+}
+
+.tabButton:active {
+    transform: translateY(1px);
+}
+
+.tabButtonActive {
+    background: var(--interactive-success);
+    border-color: var(--interactive-success);
+    color: #fff;
+}
+
+.tabIcon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+}
+
+.tabLabel {
+    white-space: nowrap;
+}
+
+.tabPin {
+    margin-left: 6px;
+    opacity: 0.7;
+    font-size: 12px;
+}
+
+.tabButton:hover .tabPin {
+    opacity: 1;
+}
+
+/* Compact icon-only mode when sidebar is narrow */
+@container (max-width: 360px) {
+    .tabLabel {
+        display: none;
+    }
+
+    .tabButton {
+        padding: 8px 10px;
+        border-radius: 8px;
+    }
+
+    .tabRibbon {
+        gap: 6px;
+    }
+}

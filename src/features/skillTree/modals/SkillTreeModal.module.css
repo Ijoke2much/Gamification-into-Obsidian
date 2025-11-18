@@ -1,0 +1,664 @@
+/* Skill Tree Modal Styles */
+
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.3s ease-out;
+}
+
+.modalContent {
+    background: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 12px;
+    width: 90vw;
+    max-width: 900px;
+    max-height: 85vh;
+    overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    animation: slideIn 0.3s ease-out;
+}
+
+.modalHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--background-modifier-border);
+    background: var(--background-secondary);
+}
+
+.modalHeader h2 {
+    margin: 0;
+    color: var(--text-normal);
+    font-size: 1.5em;
+}
+
+.closeButton {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 20px;
+    cursor: pointer;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.closeButton:hover {
+    background: var(--background-modifier-hover);
+    color: var(--text-normal);
+}
+
+.tabNavigation {
+    display: flex;
+    background: var(--background-secondary);
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.tab {
+    flex: 1;
+    padding: 12px 16px;
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border-bottom: 2px solid transparent;
+}
+
+.tab:hover {
+    background: var(--background-modifier-hover);
+    color: var(--text-normal);
+}
+
+.tab.active {
+    color: var(--text-accent);
+    border-bottom-color: var(--text-accent);
+    background: var(--background-primary);
+}
+
+.tabContent {
+    padding: 20px;
+    overflow-y: auto;
+    max-height: calc(85vh - 120px);
+}
+
+.loading {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-muted);
+    font-size: 16px;
+}
+
+/* Overview Tab */
+.overviewTab h3 {
+    margin-top: 0;
+    color: var(--text-normal);
+    border-bottom: 1px solid var(--background-modifier-border);
+    padding-bottom: 8px;
+}
+
+.canvasActions {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.primaryButton {
+    background: var(--interactive-accent);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.primaryButton:hover {
+    background: var(--interactive-accent-hover);
+    transform: translateY(-1px);
+}
+
+.secondaryButton {
+    background: var(--background-modifier-border);
+    color: var(--text-normal);
+    border: 1px solid var(--background-modifier-border);
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.secondaryButton:hover {
+    background: var(--background-modifier-hover);
+    transform: translateY(-1px);
+}
+
+.skillOverview {
+    background: var(--background-secondary);
+    padding: 16px;
+    border-radius: 8px;
+    border: 1px solid var(--background-modifier-border);
+}
+
+.skillOverview h4 {
+    margin-top: 0;
+    color: var(--text-normal);
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.statItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--background-primary);
+    border-radius: 6px;
+    border: 1px solid var(--background-modifier-border);
+}
+
+.statItem span:first-child {
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+.statItem span:last-child {
+    color: var(--text-accent);
+    font-weight: 600;
+}
+
+.classBreakdown {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 8px;
+}
+
+.classItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--background-primary);
+    border-radius: 6px;
+    border: 1px solid var(--background-modifier-border);
+}
+
+.classItem strong {
+    color: var(--text-normal);
+}
+
+.classItem span {
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+/* Manage Tab */
+.manageTab h3 {
+    margin-top: 0;
+    color: var(--text-normal);
+    border-bottom: 1px solid var(--background-modifier-border);
+    padding-bottom: 8px;
+}
+
+.classFilter {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding: 12px;
+    background: var(--background-secondary);
+    border-radius: 6px;
+    border: 1px solid var(--background-modifier-border);
+}
+
+.classFilter label {
+    color: var(--text-normal);
+    font-weight: 500;
+}
+
+.classFilter select {
+    background: var(--background-primary);
+    color: var(--text-normal);
+    border: 1px solid var(--background-modifier-border);
+    padding: 6px 10px;
+    border-radius: 4px;
+    min-width: 150px;
+}
+
+.skillsList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.emptyState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    text-align: center;
+    background: var(--background-secondary);
+    border-radius: 8px;
+    border: 1px dashed var(--background-modifier-border);
+}
+
+.emptyIcon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.6;
+}
+
+.emptyTitle {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-normal);
+    margin-bottom: 8px;
+}
+
+.emptyDescription {
+    font-size: 14px;
+    color: var(--text-muted);
+    max-width: 400px;
+    line-height: 1.5;
+}
+
+.skillItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 16px;
+    background: var(--background-secondary);
+    border-radius: 8px;
+    border: 1px solid var(--background-modifier-border);
+    transition: all 0.2s ease;
+}
+
+.skillItem:hover {
+    border-color: var(--text-accent);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.skillInfo {
+    flex: 1;
+}
+
+.skillInfo h4 {
+    margin: 0 0 8px 0;
+    color: var(--text-normal);
+    font-size: 16px;
+}
+
+.skillInfo p {
+    margin: 4px 0;
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+.description {
+    font-style: italic;
+    margin-top: 8px !important;
+}
+
+.skillActions {
+    display: flex;
+    gap: 8px;
+}
+
+.skillActions button {
+    background: var(--interactive-normal);
+    color: var(--text-normal);
+    border: 1px solid var(--background-modifier-border);
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s ease;
+}
+
+.skillActions button:hover {
+    background: var(--interactive-hover);
+    transform: translateY(-1px);
+}
+
+/* Create Tab */
+.createTab h3 {
+    margin-top: 0;
+    color: var(--text-normal);
+    border-bottom: 1px solid var(--background-modifier-border);
+    padding-bottom: 8px;
+}
+
+.createTypeSelector {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding: 12px;
+    background: var(--background-secondary);
+    border-radius: 6px;
+    border: 1px solid var(--background-modifier-border);
+}
+
+.createTypeSelector label {
+    color: var(--text-normal);
+    font-weight: 500;
+}
+
+.createTypeSelector select {
+    background: var(--background-primary);
+    color: var(--text-normal);
+    border: 1px solid var(--background-modifier-border);
+    padding: 6px 10px;
+    border-radius: 4px;
+    min-width: 150px;
+}
+
+.createForm {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.formField {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.formField label {
+    color: var(--text-normal);
+    font-weight: 500;
+    font-size: 14px;
+}
+
+.formField input,
+.formField textarea,
+.formField select {
+    background: var(--background-primary);
+    color: var(--text-normal);
+    border: 1px solid var(--background-modifier-border);
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: all 0.2s ease;
+}
+
+.formField input:focus,
+.formField textarea:focus,
+.formField select:focus {
+    outline: none;
+    border-color: var(--text-accent);
+    box-shadow: 0 0 0 2px rgba(var(--text-accent-rgb), 0.1);
+}
+
+.formField textarea {
+    resize: vertical;
+    min-height: 80px;
+    font-family: inherit;
+}
+
+.createButton {
+    background: var(--interactive-accent);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 16px;
+    margin-top: 8px;
+    transition: all 0.2s ease;
+    align-self: flex-start;
+}
+
+.createButton:hover {
+    background: var(--interactive-accent-hover);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(var(--interactive-accent-rgb), 0.3);
+}
+
+.createButton:active {
+    transform: translateY(0);
+}
+
+/* Animations */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-20px) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Desktop Modal Improvements */
+@media (min-width: 1024px) {
+    .modalContent {
+        width: 95vw;
+        max-width: 1400px;
+        max-height: 90vh;
+    }
+
+    .tabContent {
+        max-height: calc(90vh - 120px);
+    }
+
+    .mobileTab {
+        height: calc(90vh - 120px);
+        overflow: hidden;
+    }
+}
+
+/* Ultra-wide desktop support */
+@media (min-width: 1440px) {
+    .modalContent {
+        width: 90vw;
+        max-width: 1600px;
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .modalContent {
+        width: 95vw;
+        max-height: 90vh;
+    }
+
+    .tabNavigation {
+        flex-direction: column;
+    }
+
+    .tab {
+        text-align: center;
+    }
+
+    .canvasActions {
+        flex-direction: column;
+    }
+
+    .stats {
+        grid-template-columns: 1fr;
+    }
+
+    .classBreakdown {
+        grid-template-columns: 1fr;
+    }
+
+    .skillItem {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .skillActions {
+        align-self: stretch;
+        justify-content: flex-end;
+    }
+}
+
+/* Custom Multi-Select Styles */
+.multiSelectContainer {
+    position: relative;
+    width: 100%;
+}
+
+.multiSelectDropdown {
+    background: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    padding: 10px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 42px;
+    transition: all 0.2s ease;
+}
+
+.multiSelectDropdown:hover {
+    border-color: var(--text-accent);
+}
+
+.multiSelectDropdown:focus {
+    outline: none;
+    border-color: var(--text-accent);
+    box-shadow: 0 0 0 2px rgba(var(--text-accent-rgb), 0.1);
+}
+
+.placeholder {
+    color: var(--text-muted);
+    font-style: italic;
+}
+
+.selectedStats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    flex: 1;
+}
+
+.selectedStat {
+    background: var(--interactive-accent);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.removeStat {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    padding: 0;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    transition: all 0.2s ease;
+}
+
+.removeStat:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.dropdownArrow {
+    color: var(--text-muted);
+    font-size: 12px;
+    transition: transform 0.2s ease;
+}
+
+.multiSelectDropdown:focus .dropdownArrow {
+    transform: rotate(180deg);
+}
+
+.dropdownOptions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 10;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.dropdownOption {
+    padding: 8px 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: all 0.2s ease;
+    color: var(--text-normal);
+}
+
+.dropdownOption:hover {
+    background: var(--background-modifier-hover);
+}
+
+.dropdownOption.selected {
+    background: var(--interactive-accent);
+    color: white;
+}
+
+.checkmark {
+    color: var(--text-accent);
+    font-weight: bold;
+}
+
+.dropdownOption.selected .checkmark {
+    color: white;
+}

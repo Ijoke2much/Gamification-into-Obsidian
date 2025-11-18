@@ -1,0 +1,501 @@
+/* Boss Analytics Integration Styles */
+
+.bossAnalyticsIntegration {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    border-radius: 20px;
+    padding: 32px;
+    color: #ffffff;
+    margin-bottom: 24px;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+.timeframeSelector {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 28px;
+    background: rgba(255, 255, 255, 0.08);
+    padding: 8px;
+    border-radius: 12px;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+}
+
+.timeframeButton {
+    background: transparent;
+    border: none;
+    color: #cbd5e1;
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    min-height: 44px;
+}
+
+.timeframeButton:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+}
+
+.timeframeButton.active {
+    background: #10b981;
+    color: #ffffff;
+    font-weight: bold;
+}
+
+.bossMetricsSection {
+    margin-bottom: 24px;
+}
+
+.sectionTitle {
+    margin: 0 0 20px 0;
+    color: #ffd700;
+    font-size: 28px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.metricsGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.metricCard {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 12px;
+    padding: 20px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    transition: all 0.2s ease;
+    min-height: 80px;
+}
+
+.metricCard:hover {
+    transform: translateY(-2px);
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.metricIcon {
+    font-size: 24px;
+    margin-right: 12px;
+    flex-shrink: 0;
+}
+
+.metricValue {
+    font-size: 24px;
+    font-weight: 700;
+    color: #10b981;
+    font-family: 'Courier New', monospace;
+}
+
+.metricLabel {
+    color: #cbd5e1;
+    font-size: 16px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    flex: 1;
+}
+
+.metricChange {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.metricChange.positive {
+    color: #10b981;
+}
+
+.metricChange.negative {
+    color: #ef4444;
+}
+
+.metricChange.neutral {
+    color: #64748b;
+}
+
+.twoColumnLayout {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.leftColumn,
+.rightColumn {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.achievementSummary,
+.personalityBreakdown,
+.insightsSummary {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.subsectionTitle {
+    margin: 0 0 16px 0;
+    color: #ffd700;
+    font-size: 16px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.achievementOverview {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    margin-bottom: 16px;
+}
+
+.achievementProgress {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.progressCircle {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: conic-gradient(#10b981 0% var(--progress, 0%), rgba(255, 255, 255, 0.1) var(--progress, 0%) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+}
+
+.progressCircle::before {
+    content: '';
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #1a1a2e;
+}
+
+.progressValue {
+    position: relative;
+    z-index: 1;
+    color: #10b981;
+    font-size: 14px;
+    font-weight: bold;
+    font-family: 'Courier New', monospace;
+}
+
+.progressInfo {
+    flex: 1;
+}
+
+.progressLabel {
+    color: #cbd5e1;
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.progressSubtext {
+    color: #64748b;
+    font-size: 12px;
+}
+
+.achievementStats {
+    display: flex;
+    gap: 16px;
+}
+
+.achievementStat {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 8px 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.statIcon {
+    font-size: 20px;
+}
+
+.statText {
+    display: flex;
+    flex-direction: column;
+}
+
+.statValue {
+    color: #10b981;
+    font-size: 14px;
+    font-weight: bold;
+    font-family: 'Courier New', monospace;
+}
+
+.statLabel {
+    color: #64748b;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.personalityGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.personalityItem {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.personalityHeader {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.personalityIcon {
+    font-size: 16px;
+    width: 24px;
+    text-align: center;
+}
+
+.personalityName {
+    color: #cbd5e1;
+    font-size: 12px;
+    font-weight: bold;
+    flex: 1;
+}
+
+.personalityBar {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 6px;
+}
+
+.personalityFill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.6s ease;
+}
+
+.personalityVictories {
+    color: #64748b;
+    font-size: 11px;
+    font-family: 'Courier New', monospace;
+    text-align: right;
+}
+
+.insightsList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.insightItem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 8px 12px;
+    border-radius: 6px;
+    border-left: 3px solid;
+}
+
+.insightItem.strength {
+    border-left-color: #10b981;
+}
+
+.insightItem.weakness {
+    border-left-color: #ef4444;
+}
+
+.insightItem.recommendation {
+    border-left-color: #3b82f6;
+}
+
+.insightIcon {
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.insightText {
+    color: #cbd5e1;
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+.loading {
+    text-align: center;
+    color: #cbd5e1;
+    font-size: 16px;
+    padding: 40px;
+}
+
+/* Progress circle animation */
+.progressCircle {
+    --progress: 0%;
+}
+
+/* Add CSS custom property support for dynamic progress */
+.progressCircle[style*="--progress"] {
+    background: conic-gradient(#10b981 0% var(--progress), rgba(255, 255, 255, 0.1) var(--progress) 100%);
+}
+
+/* Responsive adjustments */
+@media (max-width: 480px) {
+    .metricsGrid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .achievementOverview {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .achievementStats {
+        justify-content: center;
+    }
+}
+
+/* COMPACT SIDEBAR OVERRIDES */
+.bossAnalyticsIntegration {
+    padding: 10px !important;
+    margin-bottom: 10px !important;
+}
+
+/* Increase all text sizes for better readability */
+.personalityName {
+    font-size: 13px !important;
+}
+
+.personalityVictories {
+    font-size: 12px !important;
+}
+
+.insightText {
+    font-size: 13px !important;
+}
+
+.progressLabel {
+    font-size: 13px !important;
+}
+
+.progressSubtext {
+    font-size: 11px !important;
+}
+
+.progressValue {
+    font-size: 16px !important;
+}
+
+.sectionTitle {
+    font-size: 16px !important;
+    margin-bottom: 8px !important;
+    font-weight: 700 !important;
+}
+
+.bossMetricsSection {
+    margin-bottom: 8px !important;
+}
+
+.metricCard {
+    padding: 10px 12px !important;
+    margin-bottom: 6px !important;
+    border-radius: 6px !important;
+    min-height: 40px !important;
+}
+
+.metricValue {
+    font-size: 20px !important;
+    margin-left: 8px !important;
+}
+
+.metricLabel {
+    font-size: 14px !important;
+    font-weight: 500 !important;
+}
+
+.metricIcon {
+    font-size: 16px !important;
+    margin-right: 6px !important;
+}
+
+.metricChange {
+    font-size: 12px !important;
+}
+
+.twoColumnLayout {
+    gap: 6px !important;
+}
+
+.achievementSummary,
+.personalityBreakdown,
+.insightsSummary {
+    padding: 8px !important;
+    margin-bottom: 8px !important;
+}
+
+.achievementOverview {
+    flex-direction: column !important;
+    gap: 8px !important;
+}
+
+.achievementStats {
+    flex-wrap: wrap !important;
+    gap: 6px !important;
+}
+
+.achievementStat {
+    padding: 8px 10px !important;
+    font-size: 12px !important;
+    min-width: 0 !important;
+    flex: 1 !important;
+}
+
+.statValue {
+    font-size: 14px !important;
+}
+
+.statLabel {
+    font-size: 11px !important;
+}
+
+.subsectionTitle {
+    font-size: 14px !important;
+    margin-bottom: 6px !important;
+    font-weight: 600 !important;
+}
+
+.timeframeSelector {
+    margin-bottom: 12px !important;
+    padding: 4px !important;
+    display: flex !important;
+    width: 100% !important;
+    gap: 4px !important;
+}
+
+.timeframeButton {
+    padding: 10px 14px !important;
+    font-size: 14px !important;
+    flex: 1 !important;
+    text-align: center !important;
+    font-weight: 600 !important;
+}

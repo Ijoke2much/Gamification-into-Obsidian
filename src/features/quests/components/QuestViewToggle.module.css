@@ -1,0 +1,93 @@
+/* Quest View Toggle - Similar to Cards/Calendar/Timeline buttons */
+.viewToggle {
+    display: flex;
+    gap: 0;
+    background: rgba(30, 32, 50, 0.8);
+    border-radius: 8px;
+    padding: 2px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.viewButton {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    border: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 13px;
+    font-weight: 500;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    min-width: 70px;
+    justify-content: center;
+}
+
+.viewButton:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: rgba(255, 255, 255, 0.9);
+    transform: translateY(-1px);
+}
+
+.viewButton.active {
+    background: #3b82f6;
+    color: white;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.viewIcon {
+    font-size: 14px;
+}
+
+.viewLabel {
+    font-weight: 600;
+    letter-spacing: 0.3px;
+}
+
+.viewBadge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    background: #ef4444;
+    color: white;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 4px;
+    border-radius: 8px;
+    min-width: 16px;
+    text-align: center;
+}
+
+/* Energy-specific styling */
+.viewButton[data-view="energy"].active {
+    background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.viewButton[data-view="energy"]:hover {
+    background: rgba(16, 185, 129, 0.1);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .viewToggle {
+        gap: 1px;
+    }
+
+    .viewButton {
+        padding: 6px 8px;
+        min-width: 60px;
+        font-size: 12px;
+    }
+
+    .viewLabel {
+        display: none;
+    }
+
+    .viewIcon {
+        font-size: 16px;
+    }
+}

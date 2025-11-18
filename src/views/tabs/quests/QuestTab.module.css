@@ -1,0 +1,323 @@
+/* Quest Tab Styles */
+.questTabContainer {
+    padding: 8px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    max-width: 100%;
+}
+
+.searchContainer {
+    margin-bottom: 12px;
+}
+
+.controlsContainer {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: visible;
+    /* Allow horizontal scrolling while keeping dropdowns visible */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.controlsContainer::-webkit-scrollbar {
+    display: none;
+}
+
+/* Button Styles - Optimized for horizontal scrolling */
+.actionButton {
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    min-height: 36px;
+    min-width: 100px;
+    max-width: 120px;
+    font-weight: 500;
+    text-align: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.4) !important;
+    backdrop-filter: blur(10px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.actionButton:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.actionButton:active {
+    transform: translateY(0);
+}
+
+/* Filter Button */
+.filterButton {
+    composes: actionButton;
+    background: rgba(0, 0, 0, 0.4) !important;
+}
+
+.filterButton.active {
+    background: rgba(100, 149, 237, 0.3) !important;
+}
+
+.filterButton:hover {
+    background: rgba(0, 0, 0, 0.6) !important;
+}
+
+/* Template Button */
+.templateButton {
+    composes: actionButton;
+    background: rgba(74, 158, 255, 0.3) !important;
+}
+
+.templateButton:hover {
+    background: rgba(74, 158, 255, 0.5) !important;
+}
+
+/* Analytics Button */
+.analyticsButton {
+    composes: actionButton;
+    background: rgba(156, 39, 176, 0.3) !important;
+}
+
+.analyticsButton.active {
+    background: rgba(76, 175, 80, 0.3) !important;
+}
+
+/* Container-based responsive design for narrow sidebars */
+@container (max-width: 280px) {
+    .controlsContainer {
+        gap: 2px;
+        margin-bottom: 20px;
+        overflow-x: auto;
+        padding: 2px 0;
+    }
+
+    .actionButton {
+        min-width: 60px !important;
+        max-width: 80px !important;
+        padding: 4px 6px !important;
+        font-size: 9px !important;
+        min-height: 28px !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}
+
+@container (max-width: 350px) {
+    .controlsContainer {
+        gap: 3px;
+        margin-bottom: 22px;
+    }
+
+    .actionButton {
+        min-width: 80px !important;
+        max-width: 100px !important;
+        padding: 6px 8px !important;
+        font-size: 10px !important;
+        min-height: 32px !important;
+    }
+}
+
+.analyticsButton:hover {
+    background: rgba(156, 39, 176, 0.5) !important;
+}
+
+/* Advanced Button */
+.advancedButton {
+    composes: actionButton;
+    background: rgba(255, 193, 7, 0.3) !important;
+}
+
+.advancedButton:hover {
+    background: rgba(255, 193, 7, 0.5) !important;
+}
+
+/* Boss Button */
+.bossButton {
+    composes: actionButton;
+    background: rgba(220, 53, 69, 0.3) !important;
+}
+
+.bossButton:hover {
+    background: rgba(220, 53, 69, 0.5) !important;
+}
+
+/* Export Button */
+.exportButton {
+    composes: actionButton;
+    background: rgba(40, 167, 69, 0.3) !important;
+}
+
+.exportButton:hover {
+    background: rgba(40, 167, 69, 0.5) !important;
+}
+
+/* Quick Filter Cards - Optimized for 250px sidebar */
+.quickFilterContainer {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    margin-bottom: 40px;
+    flex-shrink: 0;
+}
+
+.quickFilterContainer.compact {
+    grid-template-columns: repeat(3, 1fr);
+    /* Changed from 6 to 3 for better visibility */
+    gap: 4px;
+    /* Increased from 2px */
+}
+
+.quickFilterCard {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    padding: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+    min-height: 45px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.quickFilterCard.compact {
+    min-height: 30px;
+    padding: 4px;
+    border-radius: 4px;
+}
+
+.quickFilterCard:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.quickFilterCard.active {
+    background: rgba(100, 149, 237, 0.3);
+    border-color: rgba(100, 149, 237, 0.5);
+}
+
+.quickFilterLabel {
+    font-size: 9px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    line-height: 1;
+}
+
+.quickFilterLabel.compact {
+    font-size: 8px;
+    margin-bottom: 1px;
+}
+
+.quickFilterCount {
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1;
+}
+
+.quickFilterCount.compact {
+    font-size: 12px;
+}
+
+/* Quest List */
+.questListContainer {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+    .controlsContainer {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+
+    .actionButton {
+        min-height: 44px;
+        font-size: 14px;
+        padding: 12px 16px;
+    }
+
+    .quickFilterContainer {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        margin-bottom: 40px;
+    }
+
+    .quickFilterCard {
+        min-height: 175px;
+        padding: 16px;
+    }
+
+    .quickFilterLabel {
+        font-size: 12px;
+    }
+
+    .quickFilterCount {
+        font-size: 20px;
+    }
+}
+
+/* Touch Device Optimizations */
+@media (pointer: coarse) {
+    .actionButton {
+        min-height: 48px;
+        min-width: 48px;
+        padding: 12px 16px;
+    }
+
+    .quickFilterCard {
+        min-height: 80px;
+    }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+    .actionButton {
+        border: 2px solid currentColor;
+    }
+
+    .quickFilterCard {
+        border: 2px solid currentColor;
+    }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+
+    .actionButton,
+    .quickFilterCard {
+        transition: none;
+    }
+
+    .actionButton:hover,
+    .quickFilterCard:hover {
+        transform: none;
+    }
+}

@@ -1,0 +1,395 @@
+/* Smart Battery Component Styles */
+.smartBattery {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.smartBattery:hover .tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+/* Battery Container */
+.batteryContainer {
+    position: relative;
+}
+
+/* Battery Shell */
+.batteryShell {
+    position: relative;
+    border: 2px solid var(--text-muted, #6b7280);
+    border-radius: 4px;
+    background: var(--background-secondary, #1f2937);
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.batteryTerminal {
+    position: absolute;
+    right: -4px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 4px;
+    height: 60%;
+    background: var(--text-muted, #6b7280);
+    border-radius: 0 2px 2px 0;
+    transition: all 0.3s ease;
+}
+
+/* Battery Fill */
+.batteryFill {
+    position: absolute;
+    left: 0;
+    top: 0;
+    height: 100%;
+    transition: all 0.5s ease;
+    border-radius: 2px;
+    z-index: 2;
+}
+
+/* Energy Level Colors */
+.batteryFill.high {
+    background: linear-gradient(90deg, #22c55e, #16a34a);
+}
+
+.batteryFill.medium {
+    background: linear-gradient(90deg, #eab308, #ca8a04);
+}
+
+.batteryFill.low {
+    background: linear-gradient(90deg, #f97316, #ea580c);
+}
+
+.batteryFill.critical {
+    background: linear-gradient(90deg, #ef4444, #dc2626);
+    animation: criticalPulse 1.5s ease-in-out infinite;
+}
+
+/* Energy Projection */
+.energyProjection {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    background: rgba(239, 68, 68, 0.4);
+    border-left: 2px dashed #ef4444;
+    z-index: 3;
+    animation: projectionBlink 2s ease-in-out infinite;
+}
+
+/* Energy Segments */
+.energySegments {
+    display: flex;
+    height: 100%;
+    width: 100%;
+}
+
+.segment {
+    flex: 1;
+    height: 100%;
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.segment:last-child {
+    border-right: none;
+}
+
+.segment.filled {
+    background: inherit;
+}
+
+.segment.empty {
+    background: transparent;
+}
+
+/* Trend Indicator */
+.trendIndicator {
+    position: absolute;
+    top: -8px;
+    right: -2px;
+    font-size: 10px;
+    z-index: 4;
+    transition: all 0.3s ease;
+}
+
+.trendIndicator.rising {
+    color: #22c55e;
+    animation: trendRise 2s ease-in-out infinite;
+}
+
+.trendIndicator.stable {
+    color: #eab308;
+}
+
+.trendIndicator.declining {
+    color: #f97316;
+    animation: trendDecline 2s ease-in-out infinite;
+}
+
+.trendIndicator.critical {
+    color: #ef4444;
+    animation: criticalBlink 1s ease-in-out infinite;
+}
+
+/* Size Variants */
+.smartBattery.small .batteryShell {
+    width: 30px;
+    height: 12px;
+}
+
+.smartBattery.small .batteryTerminal {
+    width: 2px;
+    right: -2px;
+}
+
+.smartBattery.small .trendIndicator {
+    font-size: 8px;
+    top: -6px;
+}
+
+.smartBattery.medium .batteryShell {
+    width: 50px;
+    height: 20px;
+}
+
+.smartBattery.large .batteryShell {
+    width: 70px;
+    height: 28px;
+}
+
+.smartBattery.large .batteryTerminal {
+    width: 5px;
+    right: -5px;
+}
+
+.smartBattery.large .trendIndicator {
+    font-size: 12px;
+    top: -10px;
+}
+
+/* Battery Stats */
+.batteryStats {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.energyValue {
+    color: var(--text-normal, #f9fafb);
+}
+
+.energyCost {
+    color: #ef4444;
+    font-size: 9px;
+}
+
+/* Battery Actions */
+.batteryActions {
+    display: flex;
+    gap: 4px;
+    margin-left: 8px;
+}
+
+.actionButton {
+    padding: 4px 6px;
+    font-size: 9px;
+    font-weight: 600;
+    border-radius: 4px;
+    border: 1px solid;
+    background: rgba(255, 255, 255, 0.05);
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    backdrop-filter: blur(5px);
+}
+
+.actionButton:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.actionButton.recharge {
+    border-color: #22c55e;
+    color: #22c55e;
+}
+
+.actionButton.recharge:hover {
+    background: rgba(34, 197, 94, 0.1);
+}
+
+.actionButton.highEnergy {
+    border-color: #f59e0b;
+    color: #f59e0b;
+}
+
+.actionButton.highEnergy:hover {
+    background: rgba(245, 158, 11, 0.1);
+}
+
+/* Tooltip */
+.tooltip {
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-4px);
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 500;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    z-index: 1000;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 4px solid transparent;
+    border-top-color: rgba(0, 0, 0, 0.9);
+}
+
+.tooltipContent {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+/* Energy Level Styling */
+.smartBattery.high .batteryShell {
+    border-color: #22c55e;
+    box-shadow: 0 0 0 1px rgba(34, 197, 94, 0.2);
+}
+
+.smartBattery.high .batteryTerminal {
+    background: #22c55e;
+}
+
+.smartBattery.medium .batteryShell {
+    border-color: #eab308;
+    box-shadow: 0 0 0 1px rgba(234, 179, 8, 0.2);
+}
+
+.smartBattery.medium .batteryTerminal {
+    background: #eab308;
+}
+
+.smartBattery.low .batteryShell {
+    border-color: #f97316;
+    box-shadow: 0 0 0 1px rgba(249, 115, 22, 0.2);
+}
+
+.smartBattery.low .batteryTerminal {
+    background: #f97316;
+}
+
+.smartBattery.critical .batteryShell {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 1px rgba(239, 68, 68, 0.3);
+}
+
+.smartBattery.critical .batteryTerminal {
+    background: #ef4444;
+}
+
+/* Animations */
+@keyframes criticalPulse {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.7;
+        transform: scale(0.98);
+    }
+}
+
+@keyframes criticalBlink {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.3;
+    }
+}
+
+@keyframes projectionBlink {
+
+    0%,
+    100% {
+        opacity: 0.6;
+    }
+
+    50% {
+        opacity: 0.3;
+    }
+}
+
+@keyframes trendRise {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-2px);
+    }
+}
+
+@keyframes trendDecline {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(2px);
+    }
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+    .smartBattery.medium .batteryShell {
+        width: 40px;
+        height: 16px;
+    }
+
+    .batteryStats {
+        font-size: 10px;
+    }
+
+    .energyCost {
+        font-size: 8px;
+    }
+
+    .actionButton {
+        padding: 2px 4px;
+        font-size: 8px;
+    }
+
+    .tooltip {
+        font-size: 9px;
+        padding: 6px 8px;
+    }
+}

@@ -1,0 +1,4383 @@
+/* HabitsTab.module.css - Complete CSS Module for Gamified Habits */
+
+/* Container */
+.container {
+  padding: 12px;
+  background-color: #1a1a1a;
+  color: white;
+  min-height: 100vh;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Loading State */
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 20px;
+  color: #9ca3af;
+  font-size: 14px;
+  text-align: center;
+}
+
+/* Header */
+.header {
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  color: white;
+  padding: 16px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 4px 12px rgba(249, 115, 22, 0.3);
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+/* Seasonal Events Banner */
+.seasonalEventsBanner {
+  background: linear-gradient(135deg, #4f46e5, #7c3aed);
+  border: 2px solid #8b5cf6;
+  border-radius: 16px;
+  padding: 16px;
+  margin-bottom: 20px;
+  box-shadow: 0 8px 25px rgba(79, 70, 229, 0.3);
+  animation: eventGlow 3s ease-in-out infinite;
+}
+
+@keyframes eventGlow {
+
+  0%,
+  100% {
+    box-shadow: 0 8px 25px rgba(79, 70, 229, 0.3);
+  }
+
+  50% {
+    box-shadow: 0 8px 25px rgba(79, 70, 229, 0.5);
+  }
+}
+
+.eventsHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.eventsIcon {
+  font-size: 24px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.eventsTitle {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: white;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.eventsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.eventCard {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.eventCard:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+.eventIcon {
+  font-size: 32px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+  flex-shrink: 0;
+}
+
+.eventInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.eventName {
+  margin: 0 0 8px 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: white;
+}
+
+.eventDescription {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.4;
+}
+
+.eventEffects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.effectBadge {
+  background: rgba(34, 197, 94, 0.2);
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  color: #4ade80;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* ===== TREE VISUAL EFFECTS ===== */
+
+/* Tree Container - Enhanced for effects */
+.treeContainer {
+  position: relative;
+  overflow: visible;
+  /* Allow effects to extend beyond bounds */
+}
+
+/* Stage Transitioning State */
+.treeContainer.stage-transitioning {
+  z-index: 100;
+  position: relative;
+}
+
+/* Particle Container */
+.particle-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 20;
+}
+
+/* Base Particle Styling */
+.particle {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  will-change: transform, opacity;
+}
+
+/* Completion Effects */
+.completion-sparkles {
+  animation: sparkleGlow 2s ease-out;
+}
+
+@keyframes sparkleGlow {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+
+  20% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  80% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+}
+
+.growth-pulse {
+  animation: growthPulse 1s ease-in-out;
+}
+
+@keyframes growthPulse {
+  0% {
+    transform: scale(1);
+    filter: brightness(1) drop-shadow(0 0 0 rgba(34, 197, 94, 0));
+  }
+
+  50% {
+    transform: scale(1.05);
+    filter: brightness(1.2) drop-shadow(0 0 20px rgba(34, 197, 94, 0.6));
+  }
+
+  100% {
+    transform: scale(1);
+    filter: brightness(1) drop-shadow(0 0 0 rgba(34, 197, 94, 0));
+  }
+}
+
+/* Milestone Effects */
+.milestone-celebration {
+  animation: milestoneCelebration 4s ease-out;
+}
+
+@keyframes milestoneCelebration {
+  0% {
+    opacity: 0;
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  90% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
+.milestone-glow {
+  animation: milestoneGlow 3s ease-in-out;
+}
+
+@keyframes milestoneGlow {
+  0% {
+    filter: drop-shadow(0 0 0 rgba(251, 191, 36, 0));
+    transform: scale(1);
+  }
+
+  30% {
+    filter: drop-shadow(0 0 30px rgba(251, 191, 36, 0.8));
+    transform: scale(1.02);
+  }
+
+  70% {
+    filter: drop-shadow(0 0 30px rgba(251, 191, 36, 0.8));
+    transform: scale(1.02);
+  }
+
+  100% {
+    filter: drop-shadow(0 0 0 rgba(251, 191, 36, 0));
+    transform: scale(1);
+  }
+}
+
+/* Stage Evolution Effects */
+.stage-evolution {
+  animation: stageEvolution 2.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@keyframes stageEvolution {
+  0% {
+    transform: scale(1);
+    filter: brightness(1) blur(0px) hue-rotate(0deg);
+    opacity: 1;
+  }
+
+  20% {
+    transform: scale(1.1);
+    filter: brightness(1.5) blur(1px) hue-rotate(30deg);
+    opacity: 0.8;
+  }
+
+  50% {
+    transform: scale(1.05);
+    filter: brightness(2) blur(2px) hue-rotate(60deg);
+    opacity: 0.6;
+  }
+
+  80% {
+    transform: scale(1);
+    filter: brightness(1.2) blur(0px) hue-rotate(0deg);
+    opacity: 1;
+  }
+
+  100% {
+    transform: scale(1);
+    filter: brightness(1) blur(0px) hue-rotate(0deg);
+    opacity: 1;
+  }
+}
+
+.evolution-burst {
+  animation: evolutionBurst 3s ease-out;
+}
+
+@keyframes evolutionBurst {
+  0% {
+    opacity: 0;
+    transform: scale(0.5);
+  }
+
+  15% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+
+  85% {
+    opacity: 0.8;
+    transform: scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: scale(1.5);
+  }
+}
+
+/* Seasonal Effects */
+.spring-blossoms {
+  animation: springBlossoms 4s ease-in-out infinite;
+}
+
+@keyframes springBlossoms {
+  0% {
+    opacity: 0;
+    transform: translateY(-10px) rotate(0deg);
+  }
+
+  25% {
+    opacity: 0.8;
+    transform: translateY(0px) rotate(90deg);
+  }
+
+  75% {
+    opacity: 0.6;
+    transform: translateY(20px) rotate(270deg);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(40px) rotate(360deg);
+  }
+}
+
+.autumn-leaves {
+  animation: autumnLeaves 6s ease-in-out infinite;
+}
+
+@keyframes autumnLeaves {
+  0% {
+    opacity: 0;
+    transform: translateY(-15px) rotate(0deg) translateX(0px);
+  }
+
+  20% {
+    opacity: 0.9;
+    transform: translateY(0px) rotate(45deg) translateX(5px);
+  }
+
+  80% {
+    opacity: 0.7;
+    transform: translateY(30px) rotate(180deg) translateX(-5px);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(50px) rotate(360deg) translateX(0px);
+  }
+}
+
+.winter-snow {
+  animation: winterSnow 8s linear infinite;
+}
+
+@keyframes winterSnow {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+
+  10% {
+    opacity: 0.7;
+  }
+
+  90% {
+    opacity: 0.5;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(60px);
+  }
+}
+
+/* Interactive Effects */
+.hover-shimmer {
+  animation: hoverShimmer 0.5s ease-in-out;
+}
+
+@keyframes hoverShimmer {
+  0% {
+    filter: brightness(1);
+  }
+
+  50% {
+    filter: brightness(1.15) drop-shadow(0 0 10px rgba(139, 92, 246, 0.4));
+  }
+
+  100% {
+    filter: brightness(1);
+  }
+}
+
+.click-ripple {
+  animation: clickRipple 0.8s ease-out;
+}
+
+@keyframes clickRipple {
+  0% {
+    transform: scale(1);
+    opacity: 0.6;
+    box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.6);
+  }
+
+  50% {
+    transform: scale(1.1);
+    opacity: 0.3;
+    box-shadow: 0 0 0 20px rgba(139, 92, 246, 0);
+  }
+
+  100% {
+    transform: scale(1);
+    opacity: 0;
+    box-shadow: 0 0 0 0 rgba(139, 92, 246, 0);
+  }
+}
+
+/* Enhanced Tree Images with Effect Support */
+.pixelTree {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  will-change: transform, filter;
+}
+
+.pixelTree:hover {
+  transform: scale(1.02);
+  filter: brightness(1.05) drop-shadow(0 6px 12px rgba(0, 0, 0, 0.4));
+}
+
+/* Progress Indicators */
+.treeProgressIndicator {
+  position: absolute;
+  bottom: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+  overflow: hidden;
+  backdrop-filter: blur(5px);
+}
+
+.treeProgressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981, #34d399);
+  border-radius: 2px;
+  transition: width 0.5s ease-in-out;
+  position: relative;
+}
+
+.treeProgressFill::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+  animation: progressShimmer 2s infinite;
+}
+
+@keyframes progressShimmer {
+  0% {
+    left: -100%;
+  }
+
+  100% {
+    left: 100%;
+  }
+}
+
+/* Milestone Badge */
+.treeMilestoneBadge {
+  position: absolute;
+  top: -15px;
+  right: -15px;
+  background: linear-gradient(135deg, #fbbf24, #f59e0b);
+  color: #1f2937;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: bold;
+  animation: milestoneBadgePulse 2s infinite;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes milestoneBadgePulse {
+
+  0%,
+  100% {
+    transform: scale(1);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  }
+
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 6px 12px rgba(251, 191, 36, 0.5);
+  }
+}
+
+/* Tree Stats Overlay */
+.treeStatsOverlay {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  opacity: 0;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.treeContainer:hover .treeStatsOverlay {
+  opacity: 1;
+}
+
+/* Tree Achievement Particles */
+.achievementParticles {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+
+.achievementParticle {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background: radial-gradient(circle, #fbbf24, #f59e0b);
+  border-radius: 50%;
+  animation: achievementFloat 3s ease-in-out infinite;
+}
+
+@keyframes achievementFloat {
+  0% {
+    transform: translateY(0px) scale(0.5);
+    opacity: 0;
+  }
+
+  20% {
+    opacity: 1;
+    transform: translateY(-10px) scale(1);
+  }
+
+  80% {
+    opacity: 0.8;
+    transform: translateY(-30px) scale(0.8);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-50px) scale(0.3);
+  }
+}
+
+/* Seasonal Effects Container */
+.seasonalEffectsContainer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+  z-index: 15;
+}
+
+/* Responsive Design for Effects */
+@media (max-width: 768px) {
+  .particle-container {
+    overflow: hidden;
+    /* Prevent mobile overflow issues */
+  }
+
+  .treeProgressIndicator {
+    bottom: -8px;
+    height: 3px;
+  }
+
+  .treeMilestoneBadge {
+    width: 25px;
+    height: 25px;
+    font-size: 12px;
+    top: -12px;
+    right: -12px;
+  }
+}
+
+.headerInfo h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.headerInfo p {
+  margin: 4px 0 0 0;
+  opacity: 0.9;
+  font-size: 12px;
+}
+
+.addButton {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.addButton:hover {
+  background-color: #2563eb;
+  transform: translateY(-1px);
+}
+
+/* Habits List */
+.habitsList {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Habit Card */
+.habitCard {
+  background-color: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  max-width: 100%;
+  margin: 0 4px;
+}
+
+.habitCard:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* Habit Header */
+.habitHeader {
+  padding: 12px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.habitInfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+  gap: 8px;
+}
+
+.habitMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.habitEmoji {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.habitName {
+  margin: 0 0 3px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 150px;
+}
+
+.habitTags {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.skillTag {
+  background-color: #3b82f6;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 500;
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.difficultyTag {
+  color: #6b7280;
+  font-size: 10px;
+}
+
+.habitActions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.completeButton,
+.editButton,
+.deleteButton {
+  padding: 6px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.completeButton {
+  background-color: #f3f4f6;
+  color: #6b7280;
+}
+
+.completeButton:hover {
+  background-color: #e5e7eb;
+  transform: scale(1.05);
+}
+
+.completeButton.completed {
+  background-color: #10b981;
+  color: white;
+}
+
+.completeButton.completed:hover {
+  background-color: #059669;
+}
+
+.editButton {
+  background-color: #3b82f6;
+  color: white;
+}
+
+.editButton:hover {
+  background-color: #2563eb;
+  transform: scale(1.05);
+}
+
+.deleteButton {
+  background-color: #ef4444;
+  color: white;
+}
+
+.deleteButton:hover {
+  background-color: #dc2626;
+  transform: scale(1.05);
+}
+
+/* Habit Stats */
+.habitStats {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.statBadge {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background-color: #f3f4f6;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  font-weight: 500;
+  color: #374151;
+  flex-shrink: 0;
+}
+
+.statBadge:first-child {
+  background-color: #fed7aa;
+  color: #c2410c;
+}
+
+.statBadge:last-child {
+  background-color: #fef3c7;
+  color: #d97706;
+}
+
+/* Habit Rewards */
+.habitRewards {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.rewardBadge {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.1), rgba(16, 185, 129, 0.1));
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  padding: 3px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #3b82f6;
+  flex-shrink: 0;
+}
+
+.rewardIcon {
+  font-size: 10px;
+}
+
+/* Weekly Section */
+.weeklySection {
+  padding: 12px;
+}
+
+.weeklyHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.sectionTitle {
+  font-size: 11px;
+  font-weight: 600;
+  color: #6b7280;
+}
+
+.expandButton {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  background: none;
+  border: none;
+  color: #3b82f6;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  padding: 3px 6px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+}
+
+.expandButton:hover {
+  background-color: #eff6ff;
+  color: #2563eb;
+}
+
+.weeklyGrid {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.dayColumn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  flex: 1;
+}
+
+.dayLabel {
+  font-size: 10px;
+  font-weight: 500;
+  color: #6b7280;
+}
+
+.dayCircle {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 12px;
+  font-weight: 600;
+  border: 2px solid transparent;
+}
+
+.dayCircle:hover {
+  transform: scale(1.1);
+}
+
+.dayCircle.completed {
+  background-color: #10b981;
+  border-color: #059669;
+  color: white;
+}
+
+.dayCircle.today {
+  background-color: white;
+  border-color: #3b82f6;
+  color: #3b82f6;
+}
+
+.dayCircle.incomplete {
+  background-color: #f3f4f6;
+  border-color: #d1d5db;
+  color: #9ca3af;
+}
+
+/* Scrollable Heatmap Section */
+.scrollableHeatmapSection {
+  border-top: 1px solid #e5e7eb;
+  padding: 12px;
+  background-color: #f9fafb;
+}
+
+.scrollableHeatmapHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.heatmapTitle {
+  font-size: 11px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.monthNavigation {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.monthNavButton {
+  padding: 3px;
+  color: #9ca3af;
+  background: none;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.monthNavButton:hover:not(:disabled) {
+  color: #6b7280;
+}
+
+.monthNavButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.monthOffset {
+  font-size: 10px;
+  color: #6b7280;
+  padding: 0 3px;
+  min-width: 40px;
+  text-align: center;
+}
+
+/* Months Container */
+.monthsContainer {
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scroll-behavior: smooth;
+}
+
+.monthsGrid {
+  display: flex;
+  gap: 10px;
+  min-width: max-content;
+}
+
+.monthColumn {
+  flex-shrink: 0;
+  width: 70px;
+  transition: opacity 0.3s ease;
+}
+
+.monthName {
+  font-size: 11px;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 6px;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.monthDaysGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 1px;
+  width: 70px;
+}
+
+.monthDay {
+  width: 7px;
+  height: 7px;
+  border-radius: 1px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.monthDay:hover {
+  transform: scale(1.25);
+}
+
+.monthDayCompleted {
+  background-color: #10b981;
+}
+
+.monthDayIncomplete {
+  background-color: #6b7280;
+}
+
+/* Scrollable Heatmap Legend */
+.scrollableHeatmapLegend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  margin-top: 10px;
+  font-size: 10px;
+  color: #6b7280;
+}
+
+.legendText {
+  font-size: 10px;
+  color: #6b7280;
+}
+
+.legendSquares {
+  display: flex;
+  gap: 1px;
+  margin: 0 3px;
+}
+
+.legendSquareEmpty {
+  width: 7px;
+  height: 7px;
+  background-color: #6b7280;
+  border-radius: 1px;
+}
+
+.legendSquareFilled {
+  width: 7px;
+  height: 7px;
+  background-color: #10b981;
+  border-radius: 1px;
+}
+
+/* Empty State */
+.emptyState {
+  text-align: center;
+  padding: 40px 20px;
+  color: #6b7280;
+}
+
+.emptyIcon {
+  font-size: 36px;
+  margin-bottom: 12px;
+}
+
+.emptyTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #374151;
+  margin: 0 0 6px 0;
+}
+
+.emptyText {
+  font-size: 13px;
+  margin: 0 0 16px 0;
+  opacity: 0.8;
+}
+
+.emptyButton {
+  background-color: #3b82f6;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.emptyButton:hover {
+  background-color: #2563eb;
+  transform: translateY(-1px);
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+  .container {
+    padding: 12px;
+  }
+
+  .header {
+    padding: 16px;
+    flex-direction: column;
+    gap: 12px;
+    align-items: stretch;
+  }
+
+  .habitInfo {
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .habitActions {
+    align-self: flex-end;
+  }
+
+  .weeklyGrid {
+    gap: 4px;
+  }
+
+  .dayCircle {
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+  }
+
+  .scrollableHeatmapHeader {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .monthNavigation {
+    align-self: flex-end;
+  }
+
+  .monthColumn {
+    width: 70px;
+  }
+
+  .monthDaysGrid {
+    width: 70px;
+  }
+
+  .monthDay {
+    width: 7px;
+    height: 7px;
+  }
+}
+
+/* Dark mode support (if your app has dark mode) */
+@media (prefers-color-scheme: dark) {
+  .habitCard {
+    background-color: #1f2937;
+    border-color: #374151;
+    color: white;
+  }
+
+  .habitName {
+    color: #f3f4f6;
+  }
+
+  .habitHeader {
+    border-bottom-color: #374151;
+  }
+
+  .statBadge {
+    background-color: #374151;
+    color: #d1d5db;
+  }
+
+  .dayCircle.incomplete {
+    background-color: #374151;
+    border-color: #4b5563;
+    color: #6b7280;
+  }
+
+  .scrollableHeatmapSection {
+    background-color: #1f2937;
+    border-top-color: #374151;
+  }
+
+  .heatmapTitle,
+  .monthName {
+    color: #f3f4f6;
+  }
+
+  .monthNavButton {
+    color: #6b7280;
+  }
+
+  .monthNavButton:hover:not(:disabled) {
+    color: #9ca3af;
+  }
+
+  .monthOffset {
+    color: #9ca3af;
+  }
+
+  .monthDayIncomplete {
+    background-color: #4b5563;
+  }
+
+  .legendText {
+    color: #9ca3af;
+  }
+
+  .legendSquareEmpty {
+    background-color: #4b5563;
+  }
+
+  .emptyTitle {
+    color: #f3f4f6;
+  }
+}
+
+/* Scrollbar styling */
+.monthsContainer::-webkit-scrollbar {
+  height: 4px;
+}
+
+.monthsContainer::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 2px;
+}
+
+.monthsContainer::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 2px;
+}
+
+.monthsContainer::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Animation for smooth transitions */
+.monthsGrid.loading {
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+/* Tooltip effect for month days */
+.monthDay::after {
+  content: attr(title);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #1f2937;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  z-index: 10;
+}
+
+.monthDay:hover::after {
+  opacity: 1;
+}
+
+/* Tree growth display inside habit cards */
+.treeContainer {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 8px;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(16, 185, 129, 0.05));
+  border-radius: 8px;
+  margin: 8px auto;
+  max-width: 80px;
+}
+
+.treeImage {
+  width: 64px;
+  height: auto;
+  image-rendering: pixelated;
+  transition: transform 0.3s ease, filter 0.3s ease;
+}
+
+.treeImage:hover {
+  transform: scale(1.1);
+  filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.7));
+}
+
+/* Tree Diorama Scene */
+.treeScene {
+  position: relative;
+  width: 100%;
+  max-width: 120px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.skyBackground {
+  position: relative;
+  background: linear-gradient(to top, #b3e5fc, #e1f5fe);
+  border-radius: 12px 12px 0 0;
+  padding: 8px;
+  height: 120px;
+  overflow: hidden;
+}
+
+.treeImage {
+  width: 64px;
+  height: auto;
+  image-rendering: pixelated;
+  transition: transform 0.3s ease;
+}
+
+.treeImage.floating {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.ground {
+  height: 12px;
+  background: linear-gradient(to top, #6d4c41, #8d6e63);
+  border-radius: 0 0 12px 12px;
+}
+
+.streakLabel {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #374151;
+  font-weight: bold;
+}
+
+.clouds {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 80%;
+  height: 20px;
+  background: repeating-radial-gradient(circle at 10% 50%, white 0px, white 5px, transparent 6px);
+  opacity: 0.8;
+}
+
+/* Full-width scenic tree scene */
+.treeSceneWide {
+  width: 100%;
+  border-radius: 12px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.skyBackgroundWide {
+  position: relative;
+  height: 140px;
+  overflow: hidden;
+}
+
+/* Sky gradient per stage */
+.skyBackgroundWide.stage-0 {
+  background: linear-gradient(to top, #d1f7c4, #aee1f9);
+}
+
+.skyBackgroundWide.stage-1 {
+  background: linear-gradient(to top, #b3e5fc, #e1f5fe);
+}
+
+.skyBackgroundWide.stage-2 {
+  background: linear-gradient(to top, #81d4fa, #c5e1a5);
+}
+
+.skyBackgroundWide.stage-3 {
+  background: linear-gradient(to top, #4fc3f7, #81c784);
+}
+
+.skyBackgroundWide.stage-4 {
+  background: linear-gradient(to top, #311b92, #4a148c);
+}
+
+/* Hills layers */
+.hillLayer1,
+.hillLayer2 {
+  position: absolute;
+  bottom: 0;
+  width: 200%;
+  height: 60px;
+  background: #2e7d32;
+  border-radius: 50% 50% 0 0;
+  animation: hillMove 12s linear infinite;
+}
+
+.hillLayer1 {
+  background: #388e3c;
+  bottom: 0;
+  animation-duration: 20s;
+}
+
+.hillLayer2 {
+  background: #2e7d32;
+  bottom: 10px;
+  animation-duration: 30s;
+}
+
+@keyframes hillMove {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-25%);
+  }
+}
+
+/* Tree styling */
+.treeImageWide {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-height: 100px;
+  image-rendering: pixelated;
+  transition: transform 0.3s ease;
+}
+
+.treeImageWide.floating {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes float {
+
+  0%,
+  100% {
+    transform: translate(-50%, 0px);
+  }
+
+  50% {
+    transform: translate(-50%, -4px);
+  }
+}
+
+/* Clouds for Stage 5 */
+.cloudsWide {
+  position: absolute;
+  bottom: 50px;
+  left: 0;
+  width: 200%;
+  height: 30px;
+  background: repeating-radial-gradient(circle at 10% 50%, white 0px, white 5px, transparent 6px);
+  opacity: 0.8;
+  animation: cloudDrift 25s linear infinite;
+}
+
+@keyframes cloudDrift {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* Streak label */
+.streakLabelWide {
+  margin-top: 4px;
+  text-align: center;
+  font-size: 12px;
+  color: #374151;
+  font-weight: bold;
+}
+
+/* Living Tree Container */
+.livingTreeContainer {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.livingTree {
+  animation: treeBreathing 4s ease-in-out infinite;
+  filter: drop-shadow(0 0 8px rgba(34, 197, 94, 0.3));
+}
+
+@keyframes treeBreathing {
+
+  0%,
+  100% {
+    transform: translate(-50%, 0px) scale(1);
+  }
+
+  50% {
+    transform: translate(-50%, -2px) scale(1.02);
+  }
+}
+
+/* Tree Growth Particles */
+.growthParticles {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100px;
+  height: 100px;
+  pointer-events: none;
+}
+
+.growthParticles::before,
+.growthParticles::after {
+  content: '';
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background: #22c55e;
+  border-radius: 50%;
+  animation: particleFloat 3s ease-in-out infinite;
+}
+
+.growthParticles::before {
+  left: 20px;
+  animation-delay: 0s;
+}
+
+.growthParticles::after {
+  right: 20px;
+  animation-delay: 1.5s;
+}
+
+@keyframes particleFloat {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0);
+  }
+
+  50% {
+    opacity: 1;
+    transform: translateY(-20px) scale(1);
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-40px) scale(0);
+  }
+}
+
+/* Falling Leaves */
+.fallingLeaves {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.fallingLeaves::before,
+.fallingLeaves::after,
+.fallingLeaves {
+  content: '🍃';
+  position: absolute;
+  font-size: 12px;
+  animation: leafFall 6s linear infinite;
+}
+
+.fallingLeaves::before {
+  left: 30%;
+  animation-delay: 0s;
+}
+
+.fallingLeaves::after {
+  left: 70%;
+  animation-delay: 3s;
+}
+
+@keyframes leafFall {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px) rotate(0deg);
+  }
+
+  10% {
+    opacity: 1;
+  }
+
+  90% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(120px) rotate(360deg);
+  }
+}
+
+/* Tree Glow Effect */
+.treeGlow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: glowPulse 3s ease-in-out infinite;
+}
+
+.treeGlow.stage-0 {
+  background: radial-gradient(circle, rgba(34, 197, 94, 0.1) 0%, transparent 70%);
+}
+
+.treeGlow.stage-1 {
+  background: radial-gradient(circle, rgba(34, 197, 94, 0.2) 0%, transparent 70%);
+}
+
+.treeGlow.stage-2 {
+  background: radial-gradient(circle, rgba(34, 197, 94, 0.3) 0%, transparent 70%);
+}
+
+.treeGlow.stage-3 {
+  background: radial-gradient(circle, rgba(34, 197, 94, 0.4) 0%, transparent 70%);
+}
+
+.treeGlow.stage-4 {
+  background: radial-gradient(circle, rgba(59, 130, 246, 0.5) 0%, transparent 70%);
+}
+
+@keyframes glowPulse {
+
+  0%,
+  100% {
+    opacity: 0.5;
+    transform: translate(-50%, -50%) scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1.1);
+  }
+}
+
+/* Sky Elements */
+.skyElements {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Celestial Body (Sun/Moon) */
+.celestialBody {
+  position: absolute;
+  top: 20px;
+  right: 30px;
+  width: 20px;
+  height: 20px;
+  background: #fbbf24;
+  border-radius: 50%;
+  box-shadow: 0 0 10px rgba(251, 191, 36, 0.6);
+  animation: sunMove 20s linear infinite;
+}
+
+@keyframes sunMove {
+  0% {
+    transform: translateX(0) rotate(0deg);
+  }
+
+  100% {
+    transform: translateX(-100px) rotate(360deg);
+  }
+}
+
+/* Atmospheric Particles */
+.atmosphericParticles {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.atmosphericParticles::before,
+.atmosphericParticles::after {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  animation: particleDrift 8s linear infinite;
+}
+
+.atmosphericParticles::before {
+  top: 40px;
+  left: 20%;
+  animation-delay: 0s;
+}
+
+.atmosphericParticles::after {
+  top: 80px;
+  left: 80%;
+  animation-delay: 4s;
+}
+
+@keyframes particleDrift {
+  0% {
+    opacity: 0;
+    transform: translateX(0);
+  }
+
+  50% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateX(50px);
+  }
+}
+
+/* Birds */
+.birds {
+  position: absolute;
+  top: 30px;
+  left: -50px;
+  font-size: 16px;
+  animation: birdsFly 15s linear infinite;
+}
+
+@keyframes birdsFly {
+  0% {
+    transform: translateX(0) translateY(0);
+  }
+
+  25% {
+    transform: translateX(100px) translateY(-10px);
+  }
+
+  50% {
+    transform: translateX(200px) translateY(0);
+  }
+
+  75% {
+    transform: translateX(300px) translateY(-10px);
+  }
+
+  100% {
+    transform: translateX(400px) translateY(0);
+  }
+}
+
+/* Additional Hill Layer */
+.hillLayer3 {
+  position: absolute;
+  bottom: 20px;
+  width: 250%;
+  height: 40px;
+  background: #1b5e20;
+  border-radius: 50% 50% 0 0;
+  animation: hillMove 40s linear infinite;
+}
+
+@keyframes hillMove {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50px);
+  }
+}
+
+/* Ground Layer */
+.groundLayer {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 30px;
+  background: linear-gradient(to top, #4a7c59, #6b8e23);
+  border-radius: 0 0 12px 12px;
+}
+
+.grassPatches {
+  position: absolute;
+  bottom: 5px;
+  left: 20%;
+  width: 60%;
+  height: 15px;
+  background: repeating-linear-gradient(90deg,
+      transparent 0px,
+      transparent 10px,
+      #7cb342 10px,
+      #7cb342 15px);
+}
+
+.flowers {
+  position: absolute;
+  bottom: 8px;
+  left: 25%;
+  width: 50%;
+  height: 12px;
+}
+
+.flowers::before,
+.flowers::after {
+  content: '🌸';
+  position: absolute;
+  font-size: 10px;
+  animation: flowerSway 4s ease-in-out infinite;
+}
+
+.flowers::before {
+  left: 20%;
+  animation-delay: 0s;
+}
+
+.flowers::after {
+  left: 70%;
+  animation-delay: 2s;
+}
+
+@keyframes flowerSway {
+
+  0%,
+  100% {
+    transform: rotate(0deg);
+  }
+
+  50% {
+    transform: rotate(5deg);
+  }
+}
+
+/* Environmental Effects */
+.environmentalEffects {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/* Butterflies */
+.butterflies {
+  position: absolute;
+  top: 60px;
+  left: 20px;
+  font-size: 12px;
+  animation: butterflyFloat 8s ease-in-out infinite;
+}
+
+@keyframes butterflyFloat {
+
+  0%,
+  100% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+
+  25% {
+    transform: translate(20px, -10px) rotate(10deg);
+  }
+
+  50% {
+    transform: translate(40px, 0) rotate(0deg);
+  }
+
+  75% {
+    transform: translate(20px, 10px) rotate(-10deg);
+  }
+}
+
+/* Fireflies */
+.fireflies {
+  position: absolute;
+  top: 80px;
+  right: 40px;
+  font-size: 8px;
+  animation: fireflyGlow 2s ease-in-out infinite;
+}
+
+@keyframes fireflyGlow {
+
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+/* Live Streak Counter */
+.liveStreakCounter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1), rgba(59, 130, 246, 0.1));
+  border-radius: 12px;
+  margin-top: 8px;
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.streakIcon {
+  font-size: 24px;
+  margin-bottom: 4px;
+  animation: iconPulse 2s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.1);
+  }
+}
+
+.streakNumber {
+  font-size: 24px;
+  font-weight: bold;
+  color: #059669;
+  margin-bottom: 2px;
+  animation: numberGlow 3s ease-in-out infinite;
+}
+
+@keyframes numberGlow {
+
+  0%,
+  100% {
+    text-shadow: 0 0 5px rgba(5, 150, 105, 0.3);
+  }
+
+  50% {
+    text-shadow: 0 0 15px rgba(5, 150, 105, 0.6);
+  }
+}
+
+.streakLabel {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+
+.nextMilestone {
+  font-size: 10px;
+  color: #059669;
+  background: rgba(34, 197, 94, 0.1);
+  padding: 4px 8px;
+  border-radius: 6px;
+  text-align: center;
+  animation: milestonePulse 4s ease-in-out infinite;
+}
+
+@keyframes milestonePulse {
+
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+
+
+/* RPG-Style Pixel Tree Container */
+.rpgTreeContainer {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  border: 2px solid #4a90e2;
+  border-radius: 12px;
+  padding: 16px;
+  margin: 16px 0;
+  box-shadow:
+    0 0 20px rgba(74, 144, 226, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+}
+
+.rpgTreeContainer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #4a90e2, #7b68ee, #4a90e2);
+  animation: borderGlow 3s ease-in-out infinite;
+}
+
+@keyframes borderGlow {
+
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Tree Stage Container - Horizontal Layout with Integrated Info */
+.treeStageContainer {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+  position: relative;
+  width: 100%;
+  gap: 20px;
+}
+
+.pixelTree {
+  width: 100%;
+  height: auto;
+  max-width: 300px;
+  min-width: 200px;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+  transition: all 0.3s ease;
+  animation: treePulse 2s ease-in-out infinite;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.pixelTree:hover {
+  transform: scale(1.02);
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.4));
+}
+
+@keyframes treePulse {
+
+  0%,
+  100% {
+    transform: scale(1);
+  }
+
+  50% {
+    transform: scale(1.01);
+  }
+}
+
+/* Tree Info Container - Right Side */
+.treeInfoContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1;
+  min-width: 200px;
+}
+
+/* Tree Level Badge - Compact */
+.treeLevelBadge {
+  background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+  border: 2px solid #b8860b;
+  border-radius: 16px;
+  padding: 10px 16px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  animation: badgeGlow 2s ease-in-out infinite;
+  align-self: flex-start;
+}
+
+@keyframes badgeGlow {
+
+  0%,
+  100% {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  }
+
+  50% {
+    box-shadow: 0 4px 16px rgba(255, 215, 0, 0.4);
+  }
+}
+
+.levelNumber {
+  display: block;
+  font-size: 16px;
+  font-weight: bold;
+  color: #8b4513;
+  text-shadow: 1px 1px 0px rgba(255, 255, 255, 0.5);
+}
+
+.stageName {
+  display: block;
+  font-size: 12px;
+  color: #8b4513;
+  margin-top: 2px;
+}
+
+/* Level Progress - Compact */
+.levelProgress {
+  width: 100%;
+}
+
+.progressBar {
+  width: 100%;
+  height: 12px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid #4a90e2;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 8px;
+  position: relative;
+}
+
+.progressBar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg,
+      rgba(74, 144, 226, 0.2) 0%,
+      rgba(74, 144, 226, 0.4) 50%,
+      rgba(74, 144, 226, 0.2) 100%);
+  animation: progressShine 2s ease-in-out infinite;
+}
+
+@keyframes progressShine {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #4a90e2, #7b68ee);
+  border-radius: 6px;
+  transition: width 0.5s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.progressText {
+  font-size: 12px;
+  color: #b8c6db;
+  text-align: center;
+  display: block;
+  font-weight: 500;
+}
+
+/* Achievements Container - Compact */
+.achievementsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.achievementEffect {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 215, 0, 0.05) 100%);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 6px;
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  animation: achievementPulse 2s ease-in-out infinite;
+  width: 100%;
+}
+
+@keyframes achievementPulse {
+
+  0%,
+  100% {
+    opacity: 0.8;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+.effectIcon {
+  font-size: 14px;
+  animation: iconFloat 3s ease-in-out infinite;
+}
+
+@keyframes iconFloat {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-1px);
+  }
+}
+
+.effectText {
+  font-size: 11px;
+  color: #ffd700;
+  font-weight: 500;
+  text-shadow: 0 0 4px rgba(255, 215, 0, 0.5);
+}
+
+/* Tree Stage Specific Styles */
+.pixelTree.stage-0 {
+  filter: drop-shadow(0 4px 8px rgba(34, 197, 94, 0.3));
+}
+
+.pixelTree.stage-1 {
+  filter: drop-shadow(0 4px 8px rgba(34, 197, 94, 0.4));
+}
+
+.pixelTree.stage-2 {
+  filter: drop-shadow(0 4px 8px rgba(34, 197, 94, 0.5));
+}
+
+.pixelTree.stage-3 {
+  filter: drop-shadow(0 4px 8px rgba(59, 130, 246, 0.6));
+}
+
+.pixelTree.stage-4 {
+  filter: drop-shadow(0 4px 8px rgba(147, 51, 234, 0.7));
+  animation: worldTreeGlow 3s ease-in-out infinite;
+}
+
+@keyframes worldTreeGlow {
+
+  0%,
+  100% {
+    filter: drop-shadow(0 4px 8px rgba(147, 51, 234, 0.7));
+  }
+
+  50% {
+    filter: drop-shadow(0 6px 16px rgba(147, 51, 234, 0.9));
+  }
+}
+
+/* Tree Growth Stages Overview */
+.treeGrowthStages {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  border: 2px solid #4a90e2;
+  border-radius: 12px;
+  padding: 16px;
+  margin: 16px 0;
+  box-shadow:
+    0 0 20px rgba(74, 144, 226, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.treeGrowthStages::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #4a90e2, #7b68ee, #4a90e2);
+  animation: borderGlow 3s ease-in-out infinite;
+}
+
+/* Stages Header */
+.stagesHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(74, 144, 226, 0.3);
+}
+
+.stagesTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: #4a90e2;
+  text-shadow: 0 0 8px rgba(74, 144, 226, 0.5);
+}
+
+.currentStageBadge {
+  background: rgba(74, 144, 226, 0.2);
+  border: 1px solid #4a90e2;
+  border-radius: 12px;
+  padding: 4px 12px;
+  font-size: 12px;
+  color: #b8c6db;
+  font-weight: 500;
+}
+
+/* Stages Container */
+.stagesContainer {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+}
+
+.stagesContainer::-webkit-scrollbar {
+  height: 6px;
+}
+
+.stagesContainer::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.stagesContainer::-webkit-scrollbar-thumb {
+  background: #4a90e2;
+  border-radius: 3px;
+}
+
+.stagesContainer::-webkit-scrollbar-thumb:hover {
+  background: #7b68ee;
+}
+
+/* Stage Card */
+.stageCard {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(74, 144, 226, 0.3);
+  border-radius: 8px;
+  padding: 12px;
+  min-width: 80px;
+  text-align: center;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(5px);
+  position: relative;
+  flex-shrink: 0;
+}
+
+.stageCard:hover {
+  transform: translateY(-2px);
+  border-color: rgba(74, 144, 226, 0.6);
+  box-shadow: 0 4px 12px rgba(74, 144, 226, 0.2);
+}
+
+.stageCard.activeStage {
+  background: rgba(34, 197, 94, 0.1);
+  border-color: #22c55e;
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.3);
+}
+
+.stageCard.activeStage::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, #22c55e, #16a34a);
+  border-radius: 10px;
+  z-index: -1;
+  animation: activeStageGlow 2s ease-in-out infinite;
+}
+
+@keyframes activeStageGlow {
+
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+/* Stage Elements */
+.stageIcon {
+  display: block;
+  font-size: 20px;
+  margin-bottom: 6px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.stageName {
+  display: block;
+  font-size: 12px;
+  font-weight: 500;
+  color: #b8c6db;
+  margin-bottom: 4px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.stageRange {
+  display: block;
+  font-size: 10px;
+  color: #6b7280;
+  font-weight: 400;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 2px 6px;
+  border-radius: 4px;
+  margin: 0 auto;
+  width: fit-content;
+}
+
+/* Active Stage Specific Styles */
+.stageCard.activeStage .stageName {
+  color: #22c55e;
+  font-weight: 600;
+}
+
+.stageCard.activeStage .stageRange {
+  background: rgba(34, 197, 94, 0.2);
+  color: #16a34a;
+  font-weight: 500;
+}
+
+/* Tree Section Dropdown */
+.treeSectionDropdown {
+  margin: 16px 0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.treeSectionToggle {
+  width: 100%;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  border: 2px solid #4a90e2;
+  border-bottom: none;
+  padding: 16px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.treeSectionToggle::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #4a90e2, #7b68ee, #4a90e2);
+  animation: borderGlow 3s ease-in-out infinite;
+}
+
+.treeSectionToggle:hover {
+  background: linear-gradient(135deg, #16213e 0%, #0f3460 50%, #1a1a2e 100%);
+  box-shadow: 0 0 20px rgba(74, 144, 226, 0.4);
+}
+
+.treeSectionToggle:active {
+  transform: translateY(1px);
+}
+
+.treeSectionToggle:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(74, 144, 226, 0.3);
+}
+
+.toggleIcon {
+  font-size: 14px;
+  color: #4a90e2;
+  font-weight: bold;
+  margin-right: 12px;
+  transition: transform 0.3s ease;
+}
+
+.treeSectionOpen .toggleIcon {
+  transform: rotate(90deg);
+}
+
+.toggleTitle {
+  flex: 1;
+  font-size: 16px;
+  font-weight: 600;
+  color: #b8c6db;
+  text-align: left;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.toggleBadge {
+  background: rgba(74, 144, 226, 0.2);
+  border: 1px solid #4a90e2;
+  border-radius: 12px;
+  padding: 6px 12px;
+  font-size: 12px;
+  color: #b8c6db;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.treeSectionContent {
+  background: rgba(0, 0, 0, 0.05);
+  border: 2px solid #4a90e2;
+  border-top: none;
+  border-radius: 0 0 12px 12px;
+  overflow: hidden;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    max-height: 0;
+    opacity: 0;
+  }
+
+  to {
+    max-height: 1000px;
+    opacity: 1;
+  }
+}
+
+/* Tree Rewards Display */
+.treeRewardsDisplay {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px;
+  background: rgba(34, 197, 94, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.rewardBonus {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #059669;
+}
+
+.bonusIcon {
+  font-size: 14px;
+}
+
+.bonusText {
+  font-weight: 500;
+}
+
+.itemDropDisplay {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: #7c3aed;
+  background: rgba(124, 58, 237, 0.1);
+  padding: 4px 8px;
+  border-radius: 6px;
+  border: 1px solid rgba(124, 58, 237, 0.2);
+}
+
+.dropIcon {
+  font-size: 14px;
+}
+
+.dropText {
+  font-weight: 500;
+}
+
+/* Compact Tree Container */
+.compactTreeContainer {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  border: 2px solid #4a90e2;
+  border-radius: 12px;
+  padding: 16px;
+  margin: 16px 0;
+  box-shadow: 0 0 20px rgba(74, 144, 226, 0.3);
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+}
+
+.compactTreeContainer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #4a90e2, #7b68ee, #4a90e2);
+  animation: borderGlow 3s ease-in-out infinite;
+}
+
+/* Tree Stage Compact */
+.treeStageCompact {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.compactTree {
+  width: 120px;
+  height: auto;
+  image-rendering: pixelated;
+  image-rendering: -moz-crisp-edges;
+  image-rendering: crisp-edges;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+  transition: all 0.3s ease;
+  animation: treePulse 2s ease-in-out infinite;
+}
+
+.compactTree:hover {
+  transform: scale(1.05);
+  filter: drop-shadow(0 6px 12px rgba(0, 0, 0, 0.4));
+}
+
+/* Tree Info Compact */
+.treeInfoCompact {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 300px;
+}
+
+/* Level and Stage Compact */
+.levelStageCompact {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+.levelBadgeCompact {
+  background: linear-gradient(135deg, #ffd700 0%, #ffed4e 100%);
+  border: 2px solid #b8860b;
+  border-radius: 12px;
+  padding: 8px 12px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  animation: badgeGlow 2s ease-in-out infinite;
+}
+
+.levelNumberCompact {
+  display: block;
+  font-size: 14px;
+  font-weight: bold;
+  color: #8b4513;
+  text-shadow: 1px 1px 0px rgba(255, 255, 255, 0.5);
+}
+
+.stageNameCompact {
+  display: block;
+  font-size: 11px;
+  color: #8b4513;
+  margin-top: 2px;
+}
+
+.nextMilestoneCompact {
+  background: rgba(74, 144, 226, 0.1);
+  border: 1px solid #4a90e2;
+  border-radius: 8px;
+  padding: 6px 10px;
+  text-align: center;
+}
+
+.milestoneText {
+  font-size: 11px;
+  color: #b8c6db;
+  font-weight: 500;
+}
+
+/* Progress Compact */
+.progressCompact {
+  width: 100%;
+}
+
+.progressBarCompact {
+  width: 100%;
+  height: 10px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid #4a90e2;
+  border-radius: 5px;
+  overflow: hidden;
+  margin-bottom: 6px;
+  position: relative;
+}
+
+.progressFillCompact {
+  height: 100%;
+  background: linear-gradient(90deg, #4a90e2, #7b68ee);
+  border-radius: 5px;
+  transition: width 0.5s ease;
+  position: relative;
+  z-index: 1;
+}
+
+.progressLabel {
+  font-size: 10px;
+  color: #b8c6db;
+  text-align: center;
+  display: block;
+  font-weight: 500;
+}
+
+/* Achievements Compact */
+.achievementsCompact {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  justify-content: center;
+}
+
+.achievementCompact {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 215, 0, 0.05) 100%);
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  border-radius: 6px;
+  padding: 4px 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  animation: achievementPulse 2s ease-in-out infinite;
+}
+
+.achievementIcon {
+  font-size: 12px;
+  animation: iconFloat 3s ease-in-out infinite;
+}
+
+.achievementText {
+  font-size: 10px;
+  color: #ffd700;
+  font-weight: 500;
+  text-shadow: 0 0 4px rgba(255, 215, 0, 0.5);
+}
+
+/* Tree Rewards Compact */
+.treeRewardsCompact {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px;
+  background: rgba(34, 197, 94, 0.1);
+  border-radius: 6px;
+  border: 1px solid rgba(34, 197, 94, 0.2);
+}
+
+.rewardBonusCompact {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #059669;
+}
+
+.bonusIconCompact {
+  font-size: 12px;
+}
+
+.bonusTextCompact {
+  font-weight: 500;
+}
+
+.itemDropCompact {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: #7c3aed;
+  background: rgba(124, 58, 237, 0.1);
+  padding: 3px 6px;
+  border-radius: 4px;
+  border: 1px solid rgba(124, 58, 237, 0.2);
+}
+
+.dropIconCompact {
+  font-size: 12px;
+}
+
+.dropTextCompact {
+  font-weight: 500;
+}
+
+/* Growth Stages Compact */
+.growthStagesCompact {
+  background: rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(74, 144, 226, 0.3);
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.stagesHeaderCompact {
+  text-align: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(74, 144, 226, 0.3);
+}
+
+.stagesTitleCompact {
+  font-size: 14px;
+  font-weight: 600;
+  color: #4a90e2;
+  text-shadow: 0 0 8px rgba(74, 144, 226, 0.5);
+}
+
+.stagesGridCompact {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.stageCardCompact {
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(74, 144, 226, 0.3);
+  border-radius: 6px;
+  padding: 8px;
+  text-align: center;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(5px);
+  position: relative;
+}
+
+.stageCardCompact:hover {
+  transform: translateY(-1px);
+  border-color: rgba(74, 144, 226, 0.6);
+  box-shadow: 0 2px 8px rgba(74, 144, 226, 0.2);
+}
+
+.stageCardCompact.activeStageCompact {
+  background: rgba(34, 197, 94, 0.1);
+  border-color: #22c55e;
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.3);
+}
+
+.stageCardCompact.activeStageCompact::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  right: -1px;
+  bottom: -1px;
+  background: linear-gradient(45deg, #22c55e, #16a34a);
+  border-radius: 7px;
+  z-index: -1;
+  animation: activeStageGlow 2s ease-in-out infinite;
+}
+
+.stageIconCompact {
+  display: block;
+  font-size: 16px;
+  margin-bottom: 4px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.stageNameCompact {
+  display: block;
+  font-size: 10px;
+  font-weight: 500;
+  color: #b8c6db;
+  margin-bottom: 2px;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.stageRangeCompact {
+  display: block;
+  font-size: 9px;
+  color: #6b7280;
+  font-weight: 400;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 1px 4px;
+  border-radius: 3px;
+  margin: 0 auto;
+  width: fit-content;
+}
+
+/* Active Stage Compact Styles */
+.stageCardCompact.activeStageCompact .stageNameCompact {
+  color: #22c55e;
+  font-weight: 600;
+}
+
+.stageCardCompact.activeStageCompact .stageRangeCompact {
+  background: rgba(34, 197, 94, 0.2);
+  color: #16a34a;
+  font-weight: 500;
+}
+
+/* Responsive adjustments for compact design */
+@media (max-width: 400px) {
+  .compactTree {
+    width: 100px;
+  }
+
+  .treeInfoCompact {
+    max-width: 250px;
+  }
+
+  .stagesGridCompact {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .achievementsCompact {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .achievementCompact {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Tree stage specific filters for compact design */
+.compactTree.stage-0 {
+  filter: drop-shadow(0 4px 8px rgba(34, 197, 94, 0.3));
+}
+
+.compactTree.stage-1 {
+  filter: drop-shadow(0 4px 8px rgba(34, 197, 94, 0.4));
+}
+
+.compactTree.stage-2 {
+  filter: drop-shadow(0 4px 8px rgba(34, 197, 94, 0.5));
+}
+
+.compactTree.stage-3 {
+  filter: drop-shadow(0 4px 8px rgba(59, 130, 246, 0.6));
+}
+
+.compactTree.stage-4 {
+  filter: drop-shadow(0 4px 8px rgba(147, 51, 234, 0.7));
+  animation: worldTreeGlow 3s ease-in-out infinite;
+}
+
+/* Responsive Design for narrow widths */
+@media (max-width: 400px) {
+  .container {
+    padding: 8px;
+  }
+
+  .header {
+    padding: 12px;
+    flex-direction: column;
+    gap: 10px;
+    align-items: stretch;
+  }
+
+  .headerInfo h2 {
+    font-size: 18px;
+  }
+
+  .headerInfo p {
+    font-size: 11px;
+  }
+
+  .addButton {
+    padding: 8px 12px;
+    font-size: 12px;
+    justify-content: center;
+  }
+
+  .habitCard {
+    margin: 0 2px;
+  }
+
+  .weeklySection {
+    padding: 10px;
+  }
+
+  .scrollableHeatmapSection {
+    padding: 10px;
+  }
+
+  .dayCircle {
+    width: 24px;
+    height: 24px;
+    font-size: 11px;
+  }
+
+  .monthColumn {
+    width: 60px;
+  }
+
+  .monthDaysGrid {
+    width: 60px;
+  }
+
+  .monthDay {
+    width: 6px;
+    height: 6px;
+  }
+}
+
+@media (max-width: 350px) {
+  .container {
+    padding: 6px;
+  }
+
+  .header {
+    padding: 10px;
+  }
+
+  .headerInfo h2 {
+    font-size: 16px;
+  }
+
+  .habitHeader {
+    padding: 8px;
+  }
+
+  .habitName {
+    font-size: 12px;
+    max-width: 120px;
+  }
+
+  .skillTag {
+    max-width: 50px;
+    font-size: 8px;
+    padding: 1px 4px;
+  }
+
+  .statBadge {
+    font-size: 8px;
+    padding: 2px 5px;
+  }
+
+  .rewardBadge {
+    font-size: 8px;
+    padding: 1px 4px;
+  }
+
+  .weeklySection {
+    padding: 8px;
+  }
+
+  .dayCircle {
+    width: 22px;
+    height: 22px;
+    font-size: 10px;
+  }
+
+  .dayLabel {
+    font-size: 9px;
+  }
+
+  .scrollableHeatmapSection {
+    padding: 8px;
+  }
+
+  .monthColumn {
+    width: 55px;
+  }
+
+  .monthDaysGrid {
+    width: 55px;
+  }
+
+  .monthDay {
+    width: 5px;
+    height: 5px;
+  }
+
+  .compactTree {
+    width: 80px;
+  }
+
+  .treeInfoCompact {
+    max-width: 200px;
+  }
+
+  .stagesGridCompact {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+  }
+
+  .stageCardCompact {
+    padding: 6px;
+  }
+
+  .stageIconCompact {
+    font-size: 14px;
+  }
+
+  .stageNameCompact {
+    font-size: 9px;
+  }
+
+  .stageRangeCompact {
+    font-size: 8px;
+  }
+}
+
+/* Additional optimizations for very narrow screens */
+@media (max-width: 300px) {
+  .container {
+    padding: 4px;
+  }
+
+  .header {
+    padding: 8px;
+    margin-bottom: 12px;
+  }
+
+  .headerInfo h2 {
+    font-size: 14px;
+  }
+
+  .headerInfo p {
+    font-size: 10px;
+  }
+
+  .addButton {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+
+  .habitCard {
+    margin: 0 1px;
+    border-radius: 8px;
+  }
+
+  .habitHeader {
+    padding: 6px;
+  }
+
+  .habitEmoji {
+    font-size: 16px;
+  }
+
+  .habitName {
+    font-size: 11px;
+    max-width: 100px;
+  }
+
+  .habitActions {
+    gap: 2px;
+  }
+
+  .completeButton,
+  .editButton,
+  .deleteButton {
+    padding: 4px;
+  }
+
+  .weeklySection {
+    padding: 6px;
+  }
+
+  .dayCircle {
+    width: 20px;
+    height: 20px;
+    font-size: 9px;
+  }
+
+  .dayLabel {
+    font-size: 8px;
+  }
+
+  .scrollableHeatmapSection {
+    padding: 6px;
+  }
+
+  .monthColumn {
+    width: 50px;
+  }
+
+  .monthDaysGrid {
+    width: 50px;
+  }
+
+  .monthDay {
+    width: 4px;
+    height: 4px;
+  }
+
+  .compactTree {
+    width: 70px;
+  }
+
+  .treeInfoCompact {
+    max-width: 180px;
+  }
+
+  .stagesGridCompact {
+    grid-template-columns: 1fr;
+    gap: 4px;
+  }
+
+  .stageCardCompact {
+    padding: 4px;
+  }
+
+  .stageIconCompact {
+    font-size: 12px;
+  }
+
+  .stageNameCompact {
+    font-size: 8px;
+  }
+
+  .stageRangeCompact {
+    font-size: 7px;
+  }
+}
+
+/* Optimize tree section toggle for narrow screens */
+@media (max-width: 400px) {
+  .treeSectionToggle {
+    padding: 12px 16px;
+  }
+
+  .toggleTitle {
+    font-size: 14px;
+  }
+
+  .toggleBadge {
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+
+  .compactTreeContainer {
+    padding: 12px;
+    margin: 12px 0;
+  }
+
+  .treeStageCompact {
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .treeInfoCompact {
+    gap: 10px;
+  }
+
+  .levelStageCompact {
+    gap: 6px;
+  }
+
+  .levelBadgeCompact {
+    padding: 6px 10px;
+  }
+
+  .levelNumberCompact {
+    font-size: 13px;
+  }
+
+  .stageNameCompact {
+    font-size: 10px;
+  }
+
+  .nextMilestoneCompact {
+    padding: 4px 8px;
+  }
+
+  .milestoneText {
+    font-size: 10px;
+  }
+
+  .progressCompact {
+    gap: 8px;
+  }
+
+  .progressBarCompact {
+    height: 8px;
+    margin-bottom: 4px;
+  }
+
+  .progressLabel {
+    font-size: 9px;
+  }
+
+  .achievementsCompact {
+    gap: 4px;
+  }
+
+  .achievementCompact {
+    padding: 3px 6px;
+  }
+
+  .achievementIcon {
+    font-size: 11px;
+  }
+
+  .achievementText {
+    font-size: 9px;
+  }
+
+  .treeRewardsCompact {
+    padding: 4px;
+    gap: 4px;
+  }
+
+  .rewardBonusCompact {
+    font-size: 10px;
+    gap: 4px;
+  }
+
+  .bonusIconCompact {
+    font-size: 11px;
+  }
+
+  .itemDropCompact {
+    font-size: 10px;
+    padding: 2px 5px;
+    gap: 4px;
+  }
+
+  .dropIconCompact {
+    font-size: 11px;
+  }
+
+  .growthStagesCompact {
+    padding: 10px;
+  }
+
+  .stagesHeaderCompact {
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+  }
+
+  .stagesTitleCompact {
+    font-size: 13px;
+  }
+
+  .stagesGridCompact {
+    gap: 6px;
+  }
+
+  .stageCardCompact {
+    padding: 6px;
+  }
+}
+
+/* Responsive adjustments for empty state and loading */
+@media (max-width: 400px) {
+  .loading {
+    padding: 20px 16px;
+    font-size: 13px;
+  }
+
+  .emptyState {
+    padding: 30px 16px;
+  }
+
+  .emptyIcon {
+    font-size: 32px;
+    margin-bottom: 10px;
+  }
+
+  .emptyTitle {
+    font-size: 16px;
+    margin-bottom: 4px;
+  }
+
+  .emptyText {
+    font-size: 12px;
+    margin-bottom: 12px;
+  }
+
+  .emptyButton {
+    padding: 8px 16px;
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 350px) {
+  .loading {
+    padding: 16px 12px;
+    font-size: 12px;
+  }
+
+  .emptyState {
+    padding: 24px 12px;
+  }
+
+  .emptyIcon {
+    font-size: 28px;
+    margin-bottom: 8px;
+  }
+
+  .emptyTitle {
+    font-size: 14px;
+  }
+
+  .emptyText {
+    font-size: 11px;
+    margin-bottom: 10px;
+  }
+
+  .emptyButton {
+    padding: 6px 12px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 300px) {
+  .loading {
+    padding: 12px 8px;
+    font-size: 11px;
+  }
+
+  .emptyState {
+    padding: 20px 8px;
+  }
+
+  .emptyIcon {
+    font-size: 24px;
+    margin-bottom: 6px;
+  }
+
+  .emptyTitle {
+    font-size: 12px;
+  }
+
+  .emptyText {
+    font-size: 10px;
+    margin-bottom: 8px;
+  }
+
+  .emptyButton {
+    padding: 5px 10px;
+    font-size: 10px;
+  }
+}
+
+/* Ensure proper spacing and alignment for narrow screens */
+@media (max-width: 400px) {
+  .habitsList {
+    gap: 12px;
+  }
+
+  .habitCard {
+    border-radius: 10px;
+  }
+
+  .treeSectionDropdown {
+    margin: 12px 0;
+  }
+
+  .treeSectionContent {
+    animation: slideDown 0.2s ease-out;
+  }
+
+  /* Optimize scrollable heatmap for narrow screens */
+  .monthsContainer {
+    padding-bottom: 4px;
+  }
+
+  .monthsGrid {
+    gap: 8px;
+  }
+
+  /* Ensure proper text wrapping */
+  .habitName,
+  .skillTag,
+  .milestoneText,
+  .progressLabel {
+    word-break: break-word;
+    hyphens: auto;
+  }
+
+  /* Optimize button sizes for touch */
+  .completeButton,
+  .editButton,
+  .deleteButton {
+    min-width: 28px;
+    min-height: 28px;
+  }
+
+  .addButton {
+    min-height: 36px;
+  }
+}
+
+/* Additional optimizations for ultra-narrow screens */
+@media (max-width: 280px) {
+  .container {
+    padding: 3px;
+  }
+
+  .header {
+    padding: 6px;
+    margin-bottom: 10px;
+  }
+
+  .headerInfo h2 {
+    font-size: 13px;
+  }
+
+  .headerInfo p {
+    font-size: 9px;
+  }
+
+  .addButton {
+    padding: 5px 8px;
+    font-size: 10px;
+    min-height: 32px;
+  }
+
+  .habitCard {
+    margin: 0;
+    border-radius: 6px;
+  }
+
+  .habitHeader {
+    padding: 4px;
+  }
+
+  .habitEmoji {
+    font-size: 14px;
+  }
+
+  .habitName {
+    font-size: 10px;
+    max-width: 80px;
+  }
+
+  .skillTag {
+    max-width: 40px;
+    font-size: 7px;
+    padding: 1px 3px;
+  }
+
+  .statBadge {
+    font-size: 7px;
+    padding: 1px 4px;
+  }
+
+  .rewardBadge {
+    font-size: 7px;
+    padding: 1px 3px;
+  }
+
+  .weeklySection {
+    padding: 4px;
+  }
+
+  .dayCircle {
+    width: 18px;
+    height: 18px;
+    font-size: 8px;
+  }
+
+  .dayLabel {
+    font-size: 7px;
+  }
+
+  .scrollableHeatmapSection {
+    padding: 4px;
+  }
+
+  .monthColumn {
+    width: 45px;
+  }
+
+  .monthDaysGrid {
+    width: 45px;
+  }
+
+  .monthDay {
+    width: 3px;
+    height: 3px;
+  }
+
+  .compactTree {
+    width: 60px;
+  }
+
+  .treeInfoCompact {
+    max-width: 160px;
+  }
+
+  .stagesGridCompact {
+    grid-template-columns: 1fr;
+    gap: 3px;
+  }
+
+  .stageCardCompact {
+    padding: 3px;
+  }
+
+  .stageIconCompact {
+    font-size: 10px;
+  }
+
+  .stageNameCompact {
+    font-size: 7px;
+  }
+
+  .stageRangeCompact {
+    font-size: 6px;
+  }
+
+  .loading {
+    padding: 10px 6px;
+    font-size: 10px;
+  }
+
+  .emptyState {
+    padding: 16px 6px;
+  }
+
+  .emptyIcon {
+    font-size: 20px;
+    margin-bottom: 4px;
+  }
+
+  .emptyTitle {
+    font-size: 11px;
+  }
+
+  .emptyText {
+    font-size: 9px;
+    margin-bottom: 6px;
+  }
+
+  .emptyButton {
+    padding: 4px 8px;
+    font-size: 9px;
+    min-height: 28px;
+  }
+}
+
+/* Optimize tree section toggle for narrow screens */
+@media (max-width: 400px) {
+  .treeSectionToggle {
+    padding: 12px 16px;
+  }
+
+  .toggleTitle {
+    font-size: 14px;
+  }
+
+  .toggleBadge {
+    font-size: 11px;
+    padding: 4px 8px;
+  }
+
+  .compactTreeContainer {
+    padding: 12px;
+    margin: 12px 0;
+  }
+
+  .treeStageCompact {
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+
+  .treeInfoCompact {
+    gap: 10px;
+  }
+
+  .levelStageCompact {
+    gap: 6px;
+  }
+
+  .levelBadgeCompact {
+    padding: 6px 10px;
+  }
+
+  .levelNumberCompact {
+    font-size: 13px;
+  }
+
+  .stageNameCompact {
+    font-size: 10px;
+  }
+
+  .nextMilestoneCompact {
+    padding: 4px 8px;
+  }
+
+  .milestoneText {
+    font-size: 10px;
+  }
+
+  .progressCompact {
+    gap: 8px;
+  }
+
+  .progressBarCompact {
+    height: 8px;
+    margin-bottom: 4px;
+  }
+
+  .progressLabel {
+    font-size: 9px;
+  }
+
+  .achievementsCompact {
+    gap: 4px;
+  }
+
+  .achievementCompact {
+    padding: 3px 6px;
+  }
+
+  .achievementIcon {
+    font-size: 11px;
+  }
+
+  .achievementText {
+    font-size: 9px;
+  }
+
+  .treeRewardsCompact {
+    padding: 4px;
+    gap: 4px;
+  }
+
+  .rewardBonusCompact {
+    font-size: 10px;
+    gap: 4px;
+  }
+
+  .bonusIconCompact {
+    font-size: 11px;
+  }
+
+  .itemDropCompact {
+    font-size: 10px;
+    padding: 2px 5px;
+    gap: 4px;
+  }
+
+  .dropIconCompact {
+    font-size: 11px;
+  }
+
+  .growthStagesCompact {
+    padding: 10px;
+  }
+
+  .stagesHeaderCompact {
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+  }
+
+  .stagesTitleCompact {
+    font-size: 13px;
+  }
+
+  .stagesGridCompact {
+    gap: 6px;
+  }
+
+  .stageCardCompact {
+    padding: 6px;
+  }
+}
+
+/* Window Tree Container - Full Width View */
+.windowTreeContainer {
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+  border: 2px solid #4a90e2;
+  border-radius: 16px;
+  padding: 0;
+  margin: 16px 0;
+  box-shadow: 0 0 25px rgba(74, 144, 226, 0.4);
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+}
+
+/* Window Frame Effect */
+.windowFrame {
+  position: relative;
+  width: 100%;
+  height: 220px;
+  overflow: hidden;
+  border-radius: 16px 16px 0 0;
+}
+
+/* Sky Background */
+.skyBackground {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  /* Gentler sky with soft vignette only */
+  background-image:
+    radial-gradient(ellipse at center, rgba(0, 0, 0, 0.06) 60%, rgba(0, 0, 0, 0.12) 100%),
+    linear-gradient(180deg, #88cfee 0%, #a9dff0 45%, #dbf6ff 100%);
+  background-repeat: no-repeat;
+  background-size: 100% 100%, 100% 100%;
+  background-position: center, center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* Tree Window View */
+.treeWindowView {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  box-sizing: border-box;
+  z-index: 1;
+  /* ensure panes can sit above */
+}
+
+.windowTree {
+  width: calc(100% - 8px);
+  margin: 4px;
+  height: auto;
+  max-width: none;
+  object-fit: contain;
+  object-position: center;
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.3));
+  transition: all 0.5s ease;
+}
+
+/* Override general pixelTree limits for the window view so it can go wide */
+.windowTree.pixelTree {
+  max-width: none;
+  min-width: 0;
+}
+
+/* Panes removed per design: clear pseudo-elements */
+.skyBackground::before,
+.skyBackground::after {
+  content: none;
+}
+
+/* Removed side stiles and cloud layer per design */
+
+/* Subtle inner frame to mimic window edges */
+.windowFrame::before {
+  content: '';
+  position: absolute;
+  inset: 10px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+  pointer-events: none;
+  z-index: 4;
+}
+
+/* Glass glare overlay to sell the window effect */
+.windowFrame::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: 16px 16px 0 0;
+  background: linear-gradient(120deg,
+      rgba(255, 255, 255, 0.18) 0%,
+      rgba(255, 255, 255, 0.06) 20%,
+      rgba(255, 255, 255, 0.02) 45%,
+      rgba(255, 255, 255, 0) 60%);
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Floating Info Cards - Removed, now below window */
+
+.levelBadge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.levelNumber {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1a1a2e;
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.stageName {
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  text-align: center;
+}
+
+.progressInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.progressBar {
+  width: 100%;
+  height: 8px;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981, #059669);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.progressLabel {
+  font-size: 10px;
+  color: #6b7280;
+  text-align: center;
+  font-weight: 500;
+}
+
+.milestoneInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.milestoneIcon {
+  font-size: 16px;
+}
+
+.milestoneText {
+  font-size: 11px;
+  color: #374151;
+  font-weight: 500;
+  text-align: center;
+}
+
+/* Horizontal Scrollable Growth Stages */
+.growthStagesScrollable {
+  padding: 20px;
+  background: rgba(26, 26, 46, 0.8);
+  backdrop-filter: blur(10px);
+}
+
+.stagesHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.stagesTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.stagesSubtitle {
+  font-size: 12px;
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.stagesScrollContainer {
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 8px;
+}
+
+.stagesScrollContainer::-webkit-scrollbar {
+  height: 6px;
+}
+
+.stagesScrollContainer::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+}
+
+.stagesScrollContainer::-webkit-scrollbar-thumb {
+  background: rgba(74, 144, 226, 0.6);
+  border-radius: 3px;
+}
+
+.stagesScrollContainer::-webkit-scrollbar-thumb:hover {
+  background: rgba(74, 144, 226, 0.8);
+}
+
+.stagesRow {
+  display: flex;
+  gap: 16px;
+  min-width: max-content;
+  padding: 4px 0;
+}
+
+.stageCard {
+  background: rgba(255, 255, 255, 0.1);
+  border: 2px solid transparent;
+  border-radius: 12px;
+  padding: 16px;
+  min-width: 100px;
+  text-align: center;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.stageCard:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-2px);
+}
+
+.stageCard.activeStage {
+  background: rgba(74, 144, 226, 0.2);
+  border-color: #4a90e2;
+  box-shadow: 0 0 20px rgba(74, 144, 226, 0.4);
+}
+
+.stageIcon {
+  display: block;
+  font-size: 24px;
+  margin-bottom: 8px;
+}
+
+.stageName {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 4px;
+}
+
+.stageRange {
+  display: block;
+  font-size: 11px;
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+/* Achievements and Rewards Section */
+.achievementsRewardsSection {
+  padding: 20px;
+  background: rgba(26, 26, 46, 0.6);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.achievementsSection,
+.rewardsSection {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.sectionTitle {
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffffff;
+  margin: 0 0 12px 0;
+  text-align: center;
+}
+
+.achievementsGrid,
+.rewardsGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.achievement,
+.rewardItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.achievement:hover,
+.rewardItem:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateX(4px);
+}
+
+.achievementIcon,
+.rewardIcon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.achievementText,
+.rewardText {
+  font-size: 12px;
+  color: #ffffff;
+  font-weight: 500;
+}
+
+/* Responsive Design for Window View */
+@media (max-width: 400px) {
+  .windowFrame {
+    height: 160px;
+  }
+
+  .treeInfoSection {
+    padding: 12px;
+  }
+
+  .treeInfoCompact {
+    gap: 12px;
+  }
+
+  .levelBadgeCompact {
+    padding: 8px 10px;
+    min-width: 70px;
+  }
+
+  .levelNumberCompact {
+    font-size: 14px;
+  }
+
+  .stageNameCompact {
+    font-size: 11px;
+  }
+
+  .progressInfoCompact {
+    padding: 8px 10px;
+    min-width: 120px;
+  }
+
+  .milestoneInfoCompact {
+    padding: 8px 10px;
+    min-width: 100px;
+  }
+
+  .stagesRow {
+    gap: 12px;
+  }
+
+  .stageCard {
+    padding: 12px;
+    min-width: 80px;
+  }
+
+  .stageIcon {
+    font-size: 20px;
+  }
+
+  .stageName {
+    font-size: 12px;
+  }
+}
+
+@media (max-width: 350px) {
+  .windowFrame {
+    height: 140px;
+  }
+
+  .treeInfoSection {
+    padding: 10px;
+  }
+
+  .treeInfoCompact {
+    gap: 10px;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .levelBadgeCompact {
+    padding: 6px 8px;
+    min-width: 60px;
+  }
+
+  .levelNumberCompact {
+    font-size: 12px;
+  }
+
+  .stageNameCompact {
+    font-size: 10px;
+  }
+
+  .progressInfoCompact {
+    padding: 6px 8px;
+    min-width: 100px;
+  }
+
+  .milestoneInfoCompact {
+    padding: 6px 8px;
+    min-width: 80px;
+  }
+
+  .stagesRow {
+    gap: 8px;
+  }
+
+  .stageCard {
+    padding: 8px;
+    min-width: 70px;
+  }
+
+  .stageIcon {
+    font-size: 18px;
+  }
+
+  .stageName {
+    font-size: 11px;
+  }
+
+  .stageRange {
+    font-size: 10px;
+  }
+}
+
+/* Tree Info Section - Below Window (Compact) */
+.treeInfoSection {
+  padding: 16px;
+  background: rgba(26, 26, 46, 0.9);
+  backdrop-filter: blur(10px);
+  border-top: 1px solid rgba(74, 144, 226, 0.3);
+}
+
+.treeInfoCompact {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.levelBadgeCompact {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  min-width: 80px;
+}
+
+.levelNumberCompact {
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffffff;
+  background: linear-gradient(135deg, #f97316, #ea580c);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.stageNameCompact {
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+  text-align: center;
+}
+
+.progressInfoCompact {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  min-width: 140px;
+}
+
+.progressBarCompact {
+  width: 100%;
+  height: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progressFillCompact {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981, #059669);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.progressLabelCompact {
+  font-size: 11px;
+  color: #d1d5db;
+  text-align: center;
+  font-weight: 500;
+}
+
+.milestoneInfoCompact {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  min-width: 120px;
+}
+
+.milestoneIconCompact {
+  font-size: 16px;
+}
+
+.milestoneTextCompact {
+  font-size: 11px;
+  color: #ffffff;
+  font-weight: 500;
+  text-align: center;
+}

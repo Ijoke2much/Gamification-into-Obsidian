@@ -1,0 +1,245 @@
+/* AttachTaskModal specific styles */
+.modalTitle {
+  color: #e0e6f7;
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.modalDescription {
+  color: #a0a6b7;
+  font-size: 0.9rem;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.tasksContainer {
+  max-height: 400px;
+  overflow-y: auto;
+  padding: 0.5rem;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  background: var(--background-secondary);
+  margin-bottom: 1rem;
+}
+
+.noTasksMessage {
+  color: #f87171;
+  text-align: center;
+  font-style: italic;
+  padding: 1rem;
+}
+
+.errorMessage {
+  color: #f87171;
+  text-align: center;
+  padding: 1rem;
+}
+
+.taskItem {
+  padding: 0.75rem;
+  margin-bottom: 0.5rem;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 8px;
+  background: var(--background-primary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: 44px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.taskItem:hover {
+  background: var(--background-modifier-hover);
+  border-color: var(--interactive-accent);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.taskItemHover {
+  background: var(--background-modifier-hover) !important;
+  border-color: var(--interactive-accent) !important;
+}
+
+.taskText {
+  font-weight: 500;
+  color: var(--text-normal);
+  margin-bottom: 0.25rem;
+}
+
+.taskPath {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  font-family: var(--font-monospace);
+}
+
+.closeButton {
+  background: var(--interactive-normal);
+  color: var(--text-normal);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 4px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.closeButton:hover {
+  background: var(--interactive-hover);
+  border-color: var(--interactive-accent);
+}
+
+/* Ensure modal is properly positioned and styled */
+.modal {
+  z-index: 10001 !important;
+}
+
+/* Specific styles for the Pomodoro Attach Task Modal */
+:global(.pomodoro-attach-task-modal) {
+  z-index: 10001 !important;
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  background: var(--background-primary) !important;
+  border: 1px solid var(--background-modifier-border) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
+  min-width: 320px !important;
+  max-width: 600px !important;
+  width: 90vw !important;
+  pointer-events: auto !important;
+  padding: 1.5rem !important;
+}
+
+:global(.pomodoro-attach-task-modal *) {
+  pointer-events: auto !important;
+}
+
+/* Ensure this modal appears above other modals */
+:global(.pomodoro-attach-task-modal .modal-content) {
+  background: var(--background-primary) !important;
+  border-radius: 8px !important;
+  padding: 1.5rem !important;
+}
+
+/* Override any conflicting styles from other modals */
+:global(.pomodoro-attach-task-modal .modal-backdrop) {
+  z-index: 10000 !important;
+}
+
+:global(.pomodoro-attach-task-modal .modal) {
+  z-index: 10001 !important;
+}
+
+/* Mobile-specific styles - FORCE OVERRIDE */
+@media screen and (max-width: 480px) {
+
+  :global(.pomodoro-attach-task-modal),
+  :global(.modal.pomodoro-attach-task-modal),
+  :global(.modal-container .pomodoro-attach-task-modal) {
+    width: 95vw !important;
+    min-width: 280px !important;
+    max-width: 370px !important;
+    padding: 0.5rem !important;
+    margin: 0 auto !important;
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    max-height: 80vh !important;
+    overflow-y: auto !important;
+    box-sizing: border-box !important;
+  }
+
+  .modalTitle {
+    font-size: 1.1rem !important;
+    margin-bottom: 0.5rem !important;
+    text-align: center !important;
+    line-height: 1.2 !important;
+  }
+
+  .modalDescription {
+    font-size: 0.75rem !important;
+    margin-bottom: 0.75rem !important;
+    text-align: center !important;
+    line-height: 1.3 !important;
+    padding: 0 0.25rem !important;
+  }
+
+  .tasksContainer {
+    max-height: 250px !important;
+    padding: 0.25rem !important;
+    margin-bottom: 0.75rem !important;
+  }
+
+  .taskItem {
+    padding: 0.4rem !important;
+    margin-bottom: 0.25rem !important;
+    border-radius: 6px !important;
+  }
+
+  .taskText {
+    font-size: 0.85rem !important;
+    line-height: 1.2 !important;
+    margin-bottom: 0.2rem !important;
+  }
+
+  .taskPath {
+    font-size: 0.65rem !important;
+    line-height: 1.1 !important;
+    opacity: 0.7 !important;
+  }
+
+  .closeButton {
+    padding: 0.4rem 0.75rem !important;
+    font-size: 0.8rem !important;
+    margin-top: 0.75rem !important;
+  }
+}
+
+/* Extra small mobile screens */
+@media screen and (max-width: 375px) {
+
+  :global(.pomodoro-attach-task-modal),
+  :global(.modal.pomodoro-attach-task-modal),
+  :global(.modal-container .pomodoro-attach-task-modal) {
+    width: 92vw !important;
+    max-width: 340px !important;
+    padding: 0.4rem !important;
+    margin: 0 auto !important;
+    max-height: 75vh !important;
+    box-sizing: border-box !important;
+  }
+
+  .modalTitle {
+    font-size: 1rem !important;
+    margin-bottom: 0.4rem !important;
+  }
+
+  .modalDescription {
+    font-size: 0.7rem !important;
+    margin-bottom: 0.6rem !important;
+  }
+
+  .tasksContainer {
+    max-height: 200px !important;
+    padding: 0.2rem !important;
+  }
+
+  .taskItem {
+    padding: 0.3rem !important;
+    margin-bottom: 0.2rem !important;
+  }
+
+  .taskText {
+    font-size: 0.8rem !important;
+  }
+
+  .taskPath {
+    font-size: 0.6rem !important;
+  }
+}

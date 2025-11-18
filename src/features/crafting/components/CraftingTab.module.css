@@ -1,0 +1,1306 @@
+.craftingTab {
+    padding: 12px;
+    max-width: 350px;
+    margin: 0 auto;
+    color: #ffffff;
+    overflow-y: auto;
+    height: 100%;
+}
+
+.header {
+    text-align: center;
+    margin-bottom: 20px;
+    padding: 15px;
+    background: linear-gradient(135deg, rgba(100, 149, 237, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+    border: 1px solid rgba(100, 149, 237, 0.2);
+    border-radius: 8px;
+}
+
+.header h2 {
+    margin: 0 0 8px 0;
+    font-size: 20px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #6495ed, #a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.header p {
+    margin: 0;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.8);
+    line-height: 1.4;
+}
+
+/* Tab Navigation */
+.tabNavigation {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 20px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    padding: 4px;
+}
+
+.tabButton {
+    flex: 1;
+    padding: 8px 6px;
+    background: transparent;
+    border: none;
+    border-radius: 6px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.tabButtonContent {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    width: 100%;
+}
+
+.tabIcon {
+    font-size: 16px;
+    line-height: 1;
+}
+
+.tabLabel {
+    font-size: 10px;
+    font-weight: 500;
+    line-height: 1;
+    white-space: nowrap;
+}
+
+.tabButton:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.activeTab {
+    background: rgba(100, 149, 237, 0.3);
+    color: #ffffff;
+    font-weight: 600;
+}
+
+.tabContent {
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Section Styling */
+.section {
+    margin-bottom: 24px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.section h3 {
+    margin: 0 0 16px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sectionHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.sectionHeader h3 {
+    margin: 0;
+}
+
+.toggleButton {
+    padding: 6px 12px;
+    background: rgba(100, 149, 237, 0.3);
+    border: 1px solid rgba(100, 149, 237, 0.5);
+    border-radius: 6px;
+    color: #ffffff;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.toggleButton:hover {
+    background: rgba(100, 149, 237, 0.5);
+}
+
+/* Materials Grid */
+.materialsGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+}
+
+.materialCard {
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid;
+    border-radius: 6px;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+}
+
+.materialCard:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+}
+
+.materialIcon {
+    font-size: 20px;
+    width: 24px;
+    text-align: center;
+}
+
+.materialInfo {
+    flex: 1;
+    min-width: 0;
+}
+
+.materialName {
+    font-size: 12px;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.materialQuality {
+    font-size: 10px;
+    color: #10b981;
+    margin-bottom: 2px;
+    text-transform: capitalize;
+}
+
+.materialRarity {
+    font-size: 10px;
+    color: #a855f7;
+    margin-bottom: 2px;
+    text-transform: capitalize;
+}
+
+.materialValue {
+    font-size: 10px;
+    color: #fbbf24;
+    font-weight: 600;
+}
+
+/* Recipes Grid */
+.recipesGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.recipeCard {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 12px;
+    transition: all 0.2s ease;
+}
+
+.recipeCard:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(100, 149, 237, 0.3);
+}
+
+.cannotCraft {
+    opacity: 0.6;
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.recipeHeader {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.recipeIcon {
+    font-size: 32px;
+    width: 40px;
+    text-align: center;
+}
+
+.recipeInfo {
+    flex: 1;
+}
+
+.recipeName {
+    font-size: 14px;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 2px;
+}
+
+.recipeCategory {
+    font-size: 11px;
+    color: #a855f7;
+    text-transform: capitalize;
+    margin-bottom: 2px;
+}
+
+.recipeDifficulty {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: capitalize;
+    margin-bottom: 2px;
+}
+
+.recipeSkill {
+    font-size: 10px;
+    color: #fbbf24;
+}
+
+.recipeDescription {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 12px;
+    line-height: 1.4;
+}
+
+.recipeMaterials {
+    margin-bottom: 12px;
+}
+
+.materialsLabel {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.materialsList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.materialRequirement {
+    font-size: 10px;
+    padding: 4px 6px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.hasMaterial {
+    background: rgba(34, 197, 94, 0.2);
+    border-color: rgba(34, 197, 94, 0.4);
+    color: #22c55e;
+}
+
+.missingMaterial {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: #ef4444;
+}
+
+.recipeRewards {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 12px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.craftButton {
+    width: 100%;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    border: none;
+    border-radius: 8px;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 44px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.craftButton:hover:not(:disabled) {
+    background: linear-gradient(135deg, #059669, #047857);
+    transform: translateY(-1px);
+}
+
+.disabledButton {
+    background: rgba(107, 114, 128, 0.5);
+    cursor: not-allowed;
+}
+
+.disabledButton:hover {
+    transform: none;
+}
+
+/* Active Sessions */
+.sessionsList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.sessionCard {
+    background: rgba(100, 149, 237, 0.1);
+    border: 1px solid rgba(100, 149, 237, 0.3);
+    border-radius: 6px;
+    padding: 10px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.sessionIcon {
+    font-size: 24px;
+    width: 30px;
+    text-align: center;
+}
+
+.sessionInfo {
+    flex: 1;
+}
+
+.sessionName {
+    font-size: 13px;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 2px;
+}
+
+.sessionTime {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* Gathering Locations */
+.locationsGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.locationCard {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.locationHeader {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.locationIcon {
+    font-size: 28px;
+    width: 35px;
+    text-align: center;
+}
+
+.locationInfo {
+    flex: 1;
+}
+
+.locationName {
+    font-size: 14px;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 2px;
+}
+
+.locationType {
+    font-size: 11px;
+    color: #a855f7;
+    text-transform: capitalize;
+}
+
+.locationDescription {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 12px;
+    line-height: 1.4;
+}
+
+.locationMaterials {
+    margin-bottom: 12px;
+}
+
+.locationMaterial {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 4px;
+}
+
+.gatherButton {
+    width: 100%;
+    padding: 8px 12px;
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    border: none;
+    border-radius: 6px;
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.gatherButton:hover:not(:disabled) {
+    background: linear-gradient(135deg, #d97706, #b45309);
+    transform: translateY(-1px);
+}
+
+/* Skills */
+.skillCard {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 16px;
+}
+
+.skillHeader {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.skillIcon {
+    font-size: 32px;
+    width: 40px;
+    text-align: center;
+}
+
+.skillInfo {
+    flex: 1;
+}
+
+.skillLevel {
+    font-size: 18px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 4px;
+}
+
+.skillMastery {
+    font-size: 14px;
+    color: #a855f7;
+    font-weight: 600;
+}
+
+.skillProgress {
+    margin-bottom: 16px;
+}
+
+.progressBar {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 8px;
+}
+
+.progressFill {
+    height: 100%;
+    background: linear-gradient(90deg, #10b981, #059669);
+    transition: width 0.3s ease;
+}
+
+.skillSpecialties {
+    margin-bottom: 16px;
+}
+
+.specialtiesLabel {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.specialtiesList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.specialty {
+    font-size: 11px;
+    padding: 4px 8px;
+    background: rgba(100, 149, 237, 0.2);
+    border: 1px solid rgba(100, 149, 237, 0.3);
+    border-radius: 4px;
+    color: #6495ed;
+}
+
+.noSpecialties {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.5);
+    font-style: italic;
+}
+
+/* Crafting Stations */
+.stationsGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.stationCard {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.stationHeader {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.stationIcon {
+    font-size: 28px;
+    width: 35px;
+    text-align: center;
+}
+
+.stationInfo {
+    flex: 1;
+}
+
+.stationName {
+    font-size: 14px;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 2px;
+}
+
+.stationType {
+    font-size: 11px;
+    color: #a855f7;
+    text-transform: capitalize;
+    margin-bottom: 2px;
+}
+
+.stationLevel {
+    font-size: 11px;
+    color: #fbbf24;
+}
+
+.stationDescription {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 12px;
+    line-height: 1.4;
+}
+
+.stationBonuses {
+    margin-bottom: 12px;
+}
+
+.bonusesLabel {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.bonusesList {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.stationStatus {
+    text-align: center;
+}
+
+.unlocked {
+    color: #10b981;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.locked {
+    color: #ef4444;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+/* Recipe Discovery */
+.fragmentsGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.fragmentCard {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.fragmentHeader {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.fragmentIcon {
+    font-size: 28px;
+    width: 35px;
+    text-align: center;
+}
+
+.fragmentInfo {
+    flex: 1;
+}
+
+.fragmentName {
+    font-size: 14px;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 2px;
+}
+
+.fragmentProgress {
+    font-size: 11px;
+    color: #fbbf24;
+    font-weight: 600;
+}
+
+.fragmentDescription {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 12px;
+    line-height: 1.4;
+}
+
+.fragmentLocation {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 11px;
+}
+
+.fragmentRarity {
+    font-weight: 600;
+}
+
+/* Crafting Result Modal */
+.resultModal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.resultContent {
+    background: rgba(0, 0, 0, 0.95);
+    border: 2px solid rgba(100, 149, 237, 0.5);
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 300px;
+    text-align: center;
+    animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.resultContent h3 {
+    margin: 0 0 20px 0;
+    font-size: 18px;
+    color: #10b981;
+    font-weight: 700;
+}
+
+.resultItem {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 20px;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+}
+
+.resultIcon {
+    font-size: 48px;
+    width: 60px;
+    text-align: center;
+}
+
+.resultInfo {
+    flex: 1;
+    text-align: left;
+}
+
+.resultName {
+    font-size: 16px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 4px;
+}
+
+.resultRarity {
+    font-size: 12px;
+    color: #a855f7;
+    text-transform: capitalize;
+    margin-bottom: 4px;
+}
+
+.resultQuality {
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: capitalize;
+    margin-bottom: 8px;
+}
+
+.resultDescription {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.8);
+    line-height: 1.4;
+    margin-bottom: 8px;
+}
+
+.criticalSuccess {
+    font-size: 12px;
+    color: #fbbf24;
+    font-weight: 600;
+    margin-bottom: 8px;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+}
+
+.materialBonus {
+    font-size: 11px;
+    color: #10b981;
+    font-style: italic;
+    margin-bottom: 8px;
+}
+
+.closeButton {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #6b7280, #4b5563);
+    border: none;
+    border-radius: 6px;
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.closeButton:hover {
+    background: linear-gradient(135deg, #4b5563, #374151);
+    transform: translateY(-1px);
+}
+
+/* Random Generation Styles */
+.randomTab {
+    animation: fadeIn 0.3s ease;
+}
+
+.randomDescription {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.8);
+    line-height: 1.4;
+    margin-bottom: 16px;
+    text-align: center;
+}
+
+.randomGenerationPanel {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.generateButton {
+    padding: 16px 24px;
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    border: none;
+    border-radius: 12px;
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-bottom: 12px;
+    min-height: 48px;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.generateButton:hover:not(:disabled) {
+    background: linear-gradient(135deg, #7c3aed, #6d28d9);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.generateButton:disabled {
+    background: rgba(107, 114, 128, 0.5);
+    cursor: not-allowed;
+    transform: none;
+}
+
+.noTemplatesMessage {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.6);
+    font-style: italic;
+    margin-top: 8px;
+}
+
+.templatesGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.templateCard {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 12px;
+    transition: all 0.2s ease;
+}
+
+.templateCard:hover {
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.craftable {
+    border-color: rgba(34, 197, 94, 0.3);
+    background: rgba(34, 197, 94, 0.05);
+}
+
+.notCraftable {
+    opacity: 0.7;
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+.templateHeader {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.templateIcon {
+    font-size: 24px;
+    width: 32px;
+    text-align: center;
+}
+
+.templateInfo {
+    flex: 1;
+}
+
+.templateName {
+    font-size: 14px;
+    font-weight: 600;
+    color: #ffffff;
+    margin-bottom: 2px;
+}
+
+.templateRarity {
+    font-size: 11px;
+    color: #a855f7;
+    text-transform: capitalize;
+    margin-bottom: 2px;
+}
+
+.templateCategory {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: capitalize;
+}
+
+.templateDescription {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 12px;
+    line-height: 1.4;
+}
+
+.templateRequirements {
+    margin-bottom: 12px;
+}
+
+.requirementsLabel {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.requirementsList {
+    font-size: 10px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.requirementsList div {
+    margin-bottom: 2px;
+}
+
+.templateEffects {
+    margin-bottom: 12px;
+}
+
+.effectsLabel {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.effectsList {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.effect {
+    margin-bottom: 3px;
+    padding: 2px 0;
+}
+
+.templateStatus {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 8px;
+}
+
+.craftableStatus {
+    color: #22c55e;
+    font-weight: 600;
+    font-size: 11px;
+}
+
+.lockedStatus {
+    color: #ef4444;
+    font-weight: 600;
+    font-size: 11px;
+}
+
+.levelRequirement {
+    text-align: center;
+    font-size: 10px;
+    color: #fbbf24;
+    font-weight: 600;
+    background: rgba(251, 191, 36, 0.1);
+    border: 1px solid rgba(251, 191, 36, 0.3);
+    border-radius: 4px;
+    padding: 4px 8px;
+    margin-top: 8px;
+}
+
+.randomInfoPanel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.infoCard {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 12px;
+}
+
+.infoCard h4 {
+    margin: 0 0 8px 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.infoCard p {
+    margin: 0 0 8px 0;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.8);
+    line-height: 1.4;
+}
+
+.infoCard ul {
+    margin: 0;
+    padding-left: 16px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.8);
+    line-height: 1.4;
+}
+
+.infoCard li {
+    margin-bottom: 4px;
+}
+
+.infoCard strong {
+    color: #ffffff;
+    font-weight: 600;
+}
+
+/* Enhanced Mobile Optimizations */
+@media (max-width: 768px) {
+    .craftingContainer {
+        padding: 8px;
+    }
+
+    .tabNavigation {
+        gap: 2px;
+        padding: 2px;
+        margin-bottom: 16px;
+    }
+
+    .tabButton {
+        padding: 10px 4px;
+        font-size: 11px;
+        min-height: 48px;
+    }
+
+    .tabIcon {
+        font-size: 18px;
+    }
+
+    .tabLabel {
+        font-size: 9px;
+        font-weight: 600;
+    }
+
+    .materialsGrid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .materialCard {
+        padding: 12px;
+        border-radius: 8px;
+    }
+
+    .materialIcon {
+        font-size: 24px;
+        width: 32px;
+    }
+
+    .recipeCard {
+        padding: 16px;
+        border-radius: 12px;
+    }
+
+    .craftButton {
+        padding: 16px;
+        font-size: 16px;
+        min-height: 48px;
+        border-radius: 12px;
+    }
+
+    .generateButton {
+        padding: 18px 24px;
+        font-size: 18px;
+        min-height: 52px;
+        border-radius: 16px;
+    }
+
+    .section {
+        padding: 12px;
+        margin-bottom: 16px;
+        border-radius: 12px;
+    }
+
+    .templateCard {
+        padding: 16px;
+        border-radius: 12px;
+    }
+
+    .templateIcon {
+        font-size: 28px;
+        width: 36px;
+    }
+}
+
+/* Small mobile screens */
+@media (max-width: 400px) {
+    .tabButton {
+        padding: 12px 2px;
+        font-size: 10px;
+        min-height: 50px;
+    }
+
+    .tabIcon {
+        font-size: 16px;
+    }
+
+    .tabLabel {
+        font-size: 8px;
+        font-weight: 600;
+    }
+
+    .craftButton,
+    .generateButton {
+        font-size: 15px;
+        padding: 18px 16px;
+        min-height: 50px;
+    }
+
+    .recipeIcon {
+        font-size: 24px;
+        width: 32px;
+    }
+
+    .materialIcon {
+        font-size: 20px;
+        width: 28px;
+    }
+}
+
+/* Touch device optimizations */
+@media (pointer: coarse) {
+
+    .tabButton,
+    .craftButton,
+    .generateButton,
+    .toggleButton {
+        min-height: 48px;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
+    }
+
+    .tabButton:active,
+    .craftButton:active,
+    .generateButton:active {
+        transform: scale(0.98);
+        transition: transform 0.1s ease;
+    }
+
+    .materialCard:active,
+    .recipeCard:active,
+    .templateCard:active {
+        transform: scale(0.99);
+        transition: transform 0.1s ease;
+    }
+
+    /* Better touch feedback */
+    .materialCard,
+    .recipeCard,
+    .templateCard {
+        transition: all 0.2s ease;
+    }
+
+    .materialCard:hover,
+    .recipeCard:hover,
+    .templateCard:hover {
+        /* Disable hover effects on touch devices */
+        transform: none;
+    }
+}
+
+/* Video game-like interface enhancements for mobile */
+@media (max-width: 768px) {
+    .craftingContainer {
+        background: linear-gradient(135deg, rgba(0, 0, 0, 0.8) 0%, rgba(20, 20, 40, 0.9) 100%);
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        overflow: hidden;
+    }
+
+    .tabButton {
+        background: linear-gradient(135deg, rgba(100, 149, 237, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        color: rgba(255, 255, 255, 0.9);
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .activeTab {
+        background: linear-gradient(135deg, rgba(100, 149, 237, 0.6) 0%, rgba(139, 92, 246, 0.6) 100%);
+        border-color: rgba(255, 255, 255, 0.3);
+        box-shadow: 0 4px 16px rgba(100, 149, 237, 0.3);
+        transform: translateY(-1px);
+    }
+
+    .materialCard,
+    .recipeCard,
+    .templateCard {
+        background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+        backdrop-filter: blur(10px);
+    }
+
+    .craftButton {
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    }
+
+    .generateButton {
+        background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+        box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    }
+}

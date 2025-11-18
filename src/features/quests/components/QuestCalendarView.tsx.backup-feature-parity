@@ -1,0 +1,425 @@
+import React, { useState, useMemo, useCallback } from 'react';
+import type { Quest } from '../utils/taskParser';
+import type GamificationObsidianPlugin from '../../../core/main';
+import styles from './QuestCalendarView.module.css';
+
+interface QuestCalendarViewProps {
+  quests: Quest[];
+  plugin: GamificationObsidianPlugin;
+  currentEnergy: number;
+  onQuestSelect: (quest: Quest) => void;
+  onQuestComplete: (questTitle: string) => void;
+  onQuestEdit: (quest: Quest) => void;
+  onDateSelect: (date: Date) => void;
+  onQuestMove: (questId: string, newDate: string) => void;
+}
+
+interface CalendarDay {
+  date: Date;
+  isCurrentMonth: boolean;
+  isToday: boolean;
+  isWeekend: boolean;
+  quests: Quest[];
+  questCount: number;
+  urgentCount: number;
+  completedCount: number;
+  energyRequirement: number;
+}
+
+export const QuestCalendarView: React.FC<QuestCalendarViewProps> = ({
+  quests,
+  plugin,
+  currentEnergy,
+  onQuestSelect,
+  onQuestComplete,
+  onQuestEdit,
+  onDateSelect,
+  onQuestMove
+}) => {
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [focusMode, setFocusMode] = useState(false);
+  const [energyFilter, setEnergyFilter] = useState(false);
+  const [draggedQuest, setDraggedQuest] = useState<Quest | null>(null);
+
+  // Calendar generation logic
+  const calendarDays = useMemo((): CalendarDay[] => {
+    const year = currentMonth.getFullYear();
+    const month = currentMonth.getMonth();
+    const firstDay = new Date(year, month, 1);
+    const lastDay = new Date(year, month + 1, 0);
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - firstDay.getDay());
+    
+    const days: CalendarDay[] = [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Generate 42 days (6 weeks)
+    for (let i = 0; i < 42; i++) {
+      const date = new Date(startDate);
+      date.setDate(startDate.getDate() + i);
+      
+      const dateStr = date.toISOString().split('T')[0];
+      const dayQuests = quests.filter(quest => {
+        if (quest.completed && focusMode) return false;
+        // Handle both date-only (YYYY-MM-DD) and datetime (YYYY-MM-DDTHH:MM)
+        if (quest.due) {
+          const questDateStr = quest.due.includes('T') ? quest.due.split('T')[0] : quest.due;
+          if (questDateStr === dateStr) return true;
+        }
+        if (quest.today && date.getTime() === today.getTime()) return true;
+        return false;
+      });
+
+      // Filter by energy if enabled
+      const filteredQuests = energyFilter 
+        ? dayQuests.filter(quest => (quest.energyCost || 10) <= currentEnergy)
+        : dayQuests;
+
+      const urgentQuests = filteredQuests.filter(quest => 
+        quest.priority?.toLowerCase() === 'high' || 
+        (quest.due && new Date(quest.due) <= today)
+      );
+
+      const completedQuests = filteredQuests.filter(quest => quest.completed);
+      const totalEnergyRequired = filteredQuests
+        .filter(quest => !quest.completed)
+        .reduce((sum, quest) => sum + (quest.energyCost || 10), 0);
+
+      days.push({
+        date,
+        isCurrentMonth: date.getMonth() === month,
+        isToday: date.getTime() === today.getTime(),
+        isWeekend: date.getDay() === 0 || date.getDay() === 6,
+        quests: filteredQuests,
+        questCount: filteredQuests.filter(q => !q.completed).length,
+        urgentCount: urgentQuests.filter(q => !q.completed).length,
+        completedCount: completedQuests.length,
+        energyRequirement: totalEnergyRequired
+      });
+    }
+
+    return days;
+  }, [currentMonth, quests, focusMode, energyFilter, currentEnergy]);
+
+  // Navigation functions
+  const goToPreviousMonth = useCallback(() => {
+    setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() - 1, 1));
+  }, []);
+
+  const goToNextMonth = useCallback(() => {
+    setCurrentMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+  }, []);
+
+  const goToToday = useCallback(() => {
+    const today = new Date();
+    setCurrentMonth(new Date(today.getFullYear(), today.getMonth(), 1));
+    setSelectedDate(today);
+  }, []);
+
+  // Drag and drop handlers
+  const handleDragStart = useCallback((e: React.DragEvent, quest: Quest) => {
+    setDraggedQuest(quest);
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', quest.id || quest.title);
+  }, []);
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+  }, []);
+
+  const handleDrop = useCallback((e: React.DragEvent, targetDate: Date) => {
+    e.preventDefault();
+    if (draggedQuest) {
+      const newDateStr = targetDate.toISOString().split('T')[0];
+      onQuestMove(draggedQuest.id || draggedQuest.title, newDateStr);
+      setDraggedQuest(null);
+    }
+  }, [draggedQuest, onQuestMove]);
+
+  // Get priority color for quest indicators
+  const getPriorityColor = (quest: Quest): string => {
+    const priority = quest.priority?.toLowerCase();
+    if (priority === 'high') return '#ef4444'; // Red
+    if (priority === 'medium') return '#f59e0b'; // Yellow
+    if (priority === 'low') return '#10b981'; // Green
+    return '#6b7280'; // Gray
+  };
+
+  // Get energy level indicator
+  const getEnergyIndicator = (energyRequired: number): string => {
+    if (energyRequired === 0) return '';
+    if (energyRequired <= currentEnergy * 0.3) return '🟢'; // Low energy
+    if (energyRequired <= currentEnergy * 0.7) return '🟡'; // Medium energy
+    return '🔴'; // High energy
+  };
+
+  const monthNames = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
+
+  const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+  return (
+    <div className={styles.calendarContainer}>
+      {/* Calendar Header */}
+      <div className={styles.calendarHeader}>
+        <div className={styles.monthNavigation}>
+          <button 
+            className={styles.navButton} 
+            onClick={goToPreviousMonth}
+            title="Previous Month"
+          >
+            ◀
+          </button>
+          <h2 className={styles.monthTitle}>
+            {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}
+          </h2>
+          <button 
+            className={styles.navButton} 
+            onClick={goToNextMonth}
+            title="Next Month"
+          >
+            ▶
+          </button>
+        </div>
+
+        <div className={styles.calendarControls}>
+          <button 
+            className={styles.todayButton} 
+            onClick={goToToday}
+            title="Go to Today"
+          >
+            Today
+          </button>
+          <button 
+            className={`${styles.filterButton} ${focusMode ? styles.active : ''}`}
+            onClick={() => setFocusMode(!focusMode)}
+            title="Focus Mode - Hide completed quests"
+          >
+            🎯 Focus
+          </button>
+          <button 
+            className={`${styles.filterButton} ${energyFilter ? styles.active : ''}`}
+            onClick={() => setEnergyFilter(!energyFilter)}
+            title="Energy Filter - Show only quests within energy level"
+          >
+            ⚡ Energy
+          </button>
+        </div>
+      </div>
+
+      {/* Energy Level Indicator */}
+      <div className={styles.energyIndicator}>
+        <div className={styles.energyBar}>
+          <div 
+            className={styles.energyFill}
+            style={{ width: `${Math.min(currentEnergy, 100)}%` }}
+          />
+        </div>
+        <span className={styles.energyText}>Energy: {currentEnergy}/100</span>
+      </div>
+
+      {/* Calendar Grid */}
+      <div className={styles.calendarGrid}>
+        {/* Day Headers */}
+        {dayNames.map(day => (
+          <div key={day} className={styles.dayHeader}>
+            {day}
+          </div>
+        ))}
+
+        {/* Calendar Days */}
+        {calendarDays.map((day, index) => (
+          <div
+            key={index}
+            className={`
+              ${styles.calendarDay}
+              ${!day.isCurrentMonth ? styles.otherMonth : ''}
+              ${day.isToday ? styles.today : ''}
+              ${day.isWeekend ? styles.weekend : ''}
+              ${selectedDate?.getTime() === day.date.getTime() ? styles.selected : ''}
+            `}
+            onClick={() => {
+              setSelectedDate(day.date);
+              onDateSelect(day.date);
+            }}
+            onDragOver={handleDragOver}
+            onDrop={(e) => handleDrop(e, day.date)}
+          >
+            {/* Date Number */}
+            <div className={styles.dateNumber}>
+              {day.date.getDate()}
+              {day.energyRequirement > 0 && (
+                <span className={styles.energyIcon} title={`Energy Required: ${day.energyRequirement}`}>
+                  {getEnergyIndicator(day.energyRequirement)}
+                </span>
+              )}
+            </div>
+
+            {/* Quest Indicators */}
+            {day.questCount > 0 && (
+              <div className={styles.questIndicators}>
+                {day.quests.slice(0, 3).map((quest, qIndex) => (
+                  <div
+                    key={qIndex}
+                    className={`${styles.questDot} ${quest.completed ? styles.completed : ''}`}
+                    style={{ backgroundColor: getPriorityColor(quest) }}
+                    title={quest.title}
+                    draggable={!quest.completed}
+                    onDragStart={(e) => handleDragStart(e, quest)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onQuestSelect(quest);
+                    }}
+                  />
+                ))}
+                {day.questCount > 3 && (
+                  <div className={styles.questOverflow}>
+                    +{day.questCount - 3}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Urgent Badge */}
+            {day.urgentCount > 0 && (
+              <div className={styles.urgentBadge} title={`${day.urgentCount} urgent quests`}>
+                🚨
+              </div>
+            )}
+
+            {/* Completion Badge */}
+            {day.completedCount > 0 && (
+              <div className={styles.completionBadge} title={`${day.completedCount} completed`}>
+                ✅
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {/* Selected Date Details */}
+      {selectedDate && (
+        <div className={styles.dateDetails}>
+          <h3 className={styles.dateDetailsTitle}>
+            {selectedDate.toLocaleDateString('en-US', { 
+              weekday: 'long', 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            })}
+          </h3>
+          
+          {(() => {
+            const selectedDay = calendarDays.find(day => 
+              day.date.getTime() === selectedDate.getTime()
+            );
+            
+            if (!selectedDay || selectedDay.quests.length === 0) {
+              return (
+                <div className={styles.noQuests}>
+                  <span className={styles.noQuestsIcon}>📝</span>
+                  <p>No quests scheduled for this day</p>
+                  <button 
+                    className={styles.addQuestButton}
+                    onClick={() => {
+                      // TODO: Open quest creation modal with pre-filled date
+                      console.log('Create quest for', selectedDate.toISOString().split('T')[0]);
+                    }}
+                  >
+                    Add Quest
+                  </button>
+                </div>
+              );
+            }
+
+            return (
+              <div className={styles.questList}>
+                {selectedDay.quests.map((quest, index) => (
+                  <div 
+                    key={index} 
+                    className={`${styles.questItem} ${quest.completed ? styles.questCompleted : ''}`}
+                  >
+                    <div className={styles.questItemHeader}>
+                      <div 
+                        className={styles.questPriority}
+                        style={{ backgroundColor: getPriorityColor(quest) }}
+                      />
+                      <span className={styles.questTitle}>{quest.title}</span>
+                      <div className={styles.questActions}>
+                        {!quest.completed && (
+                          <button
+                            className={styles.completeButton}
+                            onClick={() => onQuestComplete(quest.title)}
+                            title="Complete Quest"
+                          >
+                            ✓
+                          </button>
+                        )}
+                        <button
+                          className={styles.editButton}
+                          onClick={() => onQuestEdit(quest)}
+                          title="Edit Quest"
+                        >
+                          ✏️
+                        </button>
+                      </div>
+                    </div>
+                    
+                    {quest.description && (
+                      <p className={styles.questDescription}>{quest.description}</p>
+                    )}
+                    
+                    <div className={styles.questMeta}>
+                      {/* Scheduled Time - if has specific time */}
+                      {quest.due && quest.due.includes('T') && (
+                        <span className={styles.questScheduledTime} style={{
+                          backgroundColor: 'rgba(66, 135, 245, 0.2)',
+                          color: '#4287f5',
+                          padding: '2px 8px',
+                          borderRadius: 4,
+                          fontSize: 11,
+                          fontWeight: 600,
+                        }}>
+                          🕐 {(() => {
+                            const date = new Date(quest.due);
+                            return date.toLocaleTimeString('en-US', {
+                              hour: 'numeric',
+                              minute: '2-digit',
+                              hour12: true
+                            });
+                          })()}
+                        </span>
+                      )}
+                      
+                      {/* Duration */}
+                      {quest.estimatedTime && (
+                        <span className={styles.questTime}>
+                          ⏱️ {quest.estimatedTime}min
+                        </span>
+                      )}
+                      
+                      {/* Energy Cost */}
+                      {quest.energyCost && (
+                        <span className={styles.questEnergy}>⚡ {quest.energyCost}</span>
+                      )}
+                      
+                      {/* XP Reward */}
+                      {quest.xp && (
+                        <span className={styles.questXP}>🎯 {quest.xp} XP</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            );
+          })()}
+        </div>
+      )}
+    </div>
+  );
+};

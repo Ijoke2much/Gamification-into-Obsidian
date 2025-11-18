@@ -1,0 +1,2125 @@
+/* ========================================
+   ENHANCED BOTW-STYLE INVENTORY STYLES
+   ======================================== */
+
+/* Scope to our modal instance to avoid layout thrash */
+:global(.modal-container .modal.gamify-inventory-modal) {
+    max-width: 95vw !important;
+    width: 1200px !important;
+    min-width: 800px !important;
+    max-height: 90vh !important;
+    height: 700px !important;
+    min-height: 500px !important;
+}
+
+/* Make Modal Draggable - ONLY for inventory modal */
+:global(.modal-container .modal.gamify-inventory-modal .modal-title) {
+    cursor: move;
+    user-select: none;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px 16px 0 0;
+    font-weight: 600;
+    color: #e0e6f7;
+    text-align: center;
+}
+
+/* Enhanced Modal Background - ONLY for inventory modal */
+:global(.modal-container .modal.gamify-inventory-modal) {
+    background: linear-gradient(135deg, #1a1d29 0%, #2d3748 100%) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Main Inventory Modal Layout */
+.inventoryModalContent {
+    display: flex;
+    height: 100%;
+    max-height: 650px;
+    background: transparent;
+    border-radius: 0 0 16px 16px;
+    overflow: hidden;
+}
+
+/* ========================================
+   CATEGORY TABS SECTION
+   ======================================== */
+
+/* Tab Navigation */
+.tabNavigation {
+    display: flex;
+    padding: 16px;
+    gap: 8px;
+    background: linear-gradient(90deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.2) 100%);
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.tabButton {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 24px;
+    color: #e0e6f7;
+    font-weight: 500;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: none;
+    min-width: 120px;
+    justify-content: center;
+    position: relative;
+}
+
+.tabButton:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.tabButton.activeTab {
+    background: linear-gradient(135deg, rgba(69, 183, 209, 0.3) 0%, rgba(69, 183, 209, 0.1) 100%);
+    border: 1px solid #45B7D1;
+    color: #45B7D1;
+    box-shadow: 0 0 20px rgba(69, 183, 209, 0.3);
+}
+
+.tabIcon {
+    font-size: 18px;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.tabBadge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: #FF6B6B;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+    border: 2px solid #1a1d29;
+}
+
+/* Quality Filter for Materials */
+.qualityFilter {
+    padding: 16px;
+    background: linear-gradient(90deg, rgba(69, 183, 209, 0.1) 0%, rgba(69, 183, 209, 0.05) 100%);
+    border-bottom: 1px solid rgba(69, 183, 209, 0.2);
+}
+
+.qualityTitle {
+    color: #45B7D1;
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 12px;
+    text-align: center;
+}
+
+.qualityButtons {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.qualityButton {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    color: #e0e6f7;
+    font-weight: 500;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.qualityButton:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-1px);
+}
+
+.qualityIcon {
+    font-size: 14px;
+}
+
+.qualityName {
+    font-weight: 500;
+}
+
+.qualityCount {
+    background: rgba(69, 183, 209, 0.3);
+    color: #45B7D1;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: bold;
+    min-width: 16px;
+    text-align: center;
+}
+
+.categoryTabs {
+    display: flex;
+    padding: 16px;
+    gap: 8px;
+    background: linear-gradient(90deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.1) 100%);
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.categoryTab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 24px;
+    color: #e0e6f7;
+    font-weight: 500;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: none;
+    min-width: 120px;
+    justify-content: center;
+}
+
+.categoryTab:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.categoryTab.active {
+    background: linear-gradient(135deg, rgba(142, 202, 230, 0.2) 0%, rgba(33, 158, 188, 0.1) 100%);
+    border: 1px solid #8ecae6;
+    color: #8ecae6;
+    box-shadow: 0 0 20px rgba(142, 202, 230, 0.3);
+}
+
+.categoryIcon {
+    font-size: 18px;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.categoryName {
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+/* ========================================
+   SEARCH AND FILTERS SECTION
+   ======================================== */
+
+.searchContainer {
+    padding: 16px;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.2) 0%, rgba(0, 0, 0, 0.1) 100%);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.searchBar {
+    width: 100%;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    color: #e0e6f7;
+    font-size: 14px;
+    font-weight: 500;
+    backdrop-filter: none;
+    transition: all 0.3s ease;
+}
+
+.searchBar::placeholder {
+    color: rgba(224, 230, 247, 0.5);
+    font-style: italic;
+}
+
+.searchBar:focus {
+    outline: none;
+    border-color: #8ecae6;
+    background: rgba(255, 255, 255, 0.12);
+    box-shadow: 0 0 0 3px rgba(142, 202, 230, 0.2);
+}
+
+/* ========================================
+   INVENTORY GRID LAYOUT
+   ======================================== */
+
+.inventoryContent {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    overflow-y: auto;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.05) 100%);
+}
+
+.inventoryGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 16px;
+    padding: 8px;
+    flex: 1;
+    align-content: start;
+}
+
+/* Enhanced inventory slots */
+.inventorySlot {
+    background: rgba(255, 255, 255, 0.08);
+    border: 2px solid rgba(255, 255, 255, 0.15);
+    border-radius: 16px;
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease;
+    backdrop-filter: none;
+    height: 165px;
+    overflow: hidden;
+}
+
+.inventorySlot:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 255, 255, 0.25);
+}
+
+.inventorySlot.selected {
+    background: linear-gradient(135deg, rgba(142, 202, 230, 0.15) 0%, rgba(33, 158, 188, 0.08) 100%);
+    border: 2px solid #8ecae6;
+    box-shadow: 0 0 25px rgba(142, 202, 230, 0.4);
+}
+
+/* Item Icons and Content */
+.itemIcon {
+    font-size: 32px;
+    margin-bottom: 8px;
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
+    transition: transform 0.3s ease;
+}
+
+.inventorySlot:hover .itemIcon {
+    transform: scale(1.1);
+}
+
+.itemName {
+    font-size: 13px;
+    font-weight: 600;
+    color: #e0e6f7;
+    text-align: center;
+    line-height: 1.3;
+    margin-bottom: 4px;
+    word-wrap: break-word;
+    max-width: 100%;
+}
+
+.itemRarity {
+    font-size: 11px;
+    color: rgba(224, 230, 247, 0.7);
+    text-transform: capitalize;
+    font-weight: 500;
+}
+
+/* Quantity Badge */
+.quantityBadge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
+    color: white;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: bold;
+    box-shadow: 0 2px 8px rgba(255, 107, 53, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Rarity Indicators */
+.rarityIndicator {
+    position: absolute;
+    bottom: 8px;
+    left: 8px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    box-shadow: 0 0 8px currentColor;
+}
+
+/* ========================================
+   ITEM DETAILS PANEL
+   ======================================== */
+
+.itemDetailsPanel {
+    flex: 1 0 350px;
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.3) 0%, rgba(0, 0, 0, 0.2) 100%);
+    border-left: 2px solid rgba(255, 255, 255, 0.1);
+    padding: 24px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    backdrop-filter: none;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    /* Ensure proper scrolling */
+    max-height: 100%;
+    min-height: 0;
+    /* Custom scrollbar for better visibility */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(142, 202, 230, 0.5) rgba(0, 0, 0, 0.2);
+}
+
+/* Custom scrollbar styling for webkit browsers */
+.itemDetailsPanel::-webkit-scrollbar {
+    width: 8px;
+}
+
+.itemDetailsPanel::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+
+.itemDetailsPanel::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, rgba(142, 202, 230, 0.6), rgba(33, 158, 188, 0.6));
+    border-radius: 4px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.itemDetailsPanel::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, rgba(142, 202, 230, 0.8), rgba(33, 158, 188, 0.8));
+}
+
+.selectedItemHeader {
+    text-align: center;
+    padding-bottom: 20px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+    border-radius: 16px;
+    padding: 20px;
+    position: relative;
+    overflow: visible;
+}
+
+.selectedItemHeader::before {
+    display: none;
+}
+
+@keyframes shimmer {
+    0% {
+        left: -100%;
+    }
+
+    100% {
+        left: 100%;
+    }
+}
+
+.selectedItemIcon {
+    font-size: 64px;
+    margin-bottom: 16px;
+    filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.6));
+    animation: none;
+    /* Ensure icon is visible and properly positioned */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 80px;
+    /* Add background for better visibility */
+    background: linear-gradient(135deg, rgba(142, 202, 230, 0.05), rgba(33, 158, 188, 0.05));
+    border-radius: 16px;
+    padding: 16px;
+    border: 2px solid rgba(142, 202, 230, 0.2);
+    /* Ensure icon doesn't get cut off */
+    overflow: visible;
+    position: relative;
+    z-index: 1;
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-8px);
+    }
+}
+
+.selectedItemName {
+    font-size: 24px;
+    font-weight: 800;
+    color: #e0e6f7;
+    margin-bottom: 12px;
+    line-height: 1.2;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    letter-spacing: 0.5px;
+}
+
+.selectedItemRarity {
+    font-size: 16px;
+    font-weight: 700;
+    text-transform: uppercase;
+    padding: 8px 16px;
+    border-radius: 20px;
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    letter-spacing: 1px;
+    backdrop-filter: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+}
+
+/* Item Description */
+.itemDescription {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    padding: 16px;
+    font-size: 15px;
+    line-height: 1.6;
+    color: rgba(224, 230, 247, 0.9);
+    font-style: italic;
+    text-align: center;
+    backdrop-filter: none;
+    box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.selectedItemDetails {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.detailItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 16px;
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+    backdrop-filter: none;
+}
+
+.detailItem:hover {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.06) 100%);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: translateX(4px);
+}
+
+.detailLabel {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 600;
+    color: rgba(224, 230, 247, 0.8);
+    font-size: 14px;
+}
+
+.detailIcon {
+    font-size: 16px;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.detailValue {
+    font-weight: 700;
+    color: #e0e6f7;
+    font-size: 15px;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
+
+/* Action Buttons */
+.itemActions {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+}
+
+.actionButton {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, rgba(142, 202, 230, 0.2) 0%, rgba(33, 158, 188, 0.1) 100%);
+    border: 2px solid rgba(142, 202, 230, 0.3);
+    border-radius: 12px;
+    color: #8ecae6;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: background 0.2s ease, border-color 0.2s ease;
+    backdrop-filter: none;
+    position: relative;
+    overflow: hidden;
+}
+
+.actionButton::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.actionButton:hover::before {
+    left: 100%;
+}
+
+.actionButton:hover {
+    background: linear-gradient(135deg, rgba(142, 202, 230, 0.3) 0%, rgba(33, 158, 188, 0.15) 100%);
+    border-color: #8ecae6;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(142, 202, 230, 0.4);
+}
+
+.actionButton:active {
+    transform: translateY(0px);
+    box-shadow: 0 4px 15px rgba(142, 202, 230, 0.3);
+}
+
+.actionButton span {
+    font-size: 16px;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+/* Item Lore Section */
+.itemLore {
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.2) 100%);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 10px;
+    margin-top: 12px;
+    margin-bottom: 20px;
+    /* Add bottom margin to ensure it's not cut off */
+    backdrop-filter: none;
+    position: relative;
+    overflow: visible;
+    /* Change from hidden to visible */
+    /* Ensure the lore section is fully visible */
+    min-height: 300px;
+    word-wrap: break-word;
+    hyphens: auto;
+}
+
+.itemLore::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(142, 202, 230, 0.5), transparent);
+}
+
+.loreTitle {
+    font-size: 16px;
+    font-weight: 700;
+    color: #8ecae6;
+    margin-bottom: 12px;
+    text-align: center;
+    text-shadow: 0 2px 8px rgba(142, 202, 230, 0.3);
+    letter-spacing: 0.5px;
+}
+
+.loreText {
+    font-size: 13px;
+    line-height: 1.7;
+    color: rgba(224, 230, 247, 0.9);
+    /* Increased opacity for better visibility */
+    text-align: justify;
+    font-style: italic;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+    /* Ensure text doesn't get cut off */
+    overflow-wrap: break-word;
+    word-break: break-word;
+    white-space: pre-wrap;
+    max-width: 100%;
+}
+
+/* Empty State */
+.emptyState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: rgba(224, 230, 247, 0.5);
+    text-align: center;
+    padding: 40px;
+}
+
+.emptyStateIcon {
+    font-size: 64px;
+    margin-bottom: 16px;
+    opacity: 0.3;
+}
+
+.emptyStateText {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.emptyStateSubtext {
+    font-size: 14px;
+    opacity: 0.7;
+    line-height: 1.4;
+}
+
+/* Material-specific slot styling */
+.materialSlot {
+    background: linear-gradient(135deg, rgba(69, 183, 209, 0.1) 0%, rgba(69, 183, 209, 0.05) 100%);
+    border: 1px solid rgba(69, 183, 209, 0.3);
+}
+
+.materialSlot:hover {
+    background: linear-gradient(135deg, rgba(69, 183, 209, 0.2) 0%, rgba(69, 183, 209, 0.1) 100%);
+    border-color: rgba(69, 183, 209, 0.5);
+    box-shadow: 0 0 20px rgba(69, 183, 209, 0.2);
+}
+
+/* Quality Badge for Materials */
+.qualityBadge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(255, 255, 255, 0.9);
+    color: #1a1d29;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: bold;
+    border: 2px solid #45B7D1;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Material Category Display */
+.materialCategory {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: rgba(69, 183, 209, 0.8);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Materials Summary */
+.materialsSummary {
+    margin-top: 16px;
+    padding: 16px;
+    background: rgba(69, 183, 209, 0.1);
+    border-radius: 12px;
+    border: 1px solid rgba(69, 183, 209, 0.2);
+}
+
+.summaryItem {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.summaryItem:last-child {
+    margin-bottom: 0;
+}
+
+.summaryIcon {
+    font-size: 16px;
+    width: 20px;
+    text-align: center;
+}
+
+.summaryLabel {
+    color: #e0e6f7;
+    font-weight: 500;
+    font-size: 13px;
+    flex: 1;
+}
+
+.summaryValue {
+    color: #45B7D1;
+    font-weight: 600;
+    font-size: 14px;
+    background: rgba(69, 183, 209, 0.2);
+    padding: 4px 8px;
+    border-radius: 6px;
+    min-width: 40px;
+    text-align: center;
+}
+
+/* Responsive Design */
+@media (max-width: 1000px) {
+    :global(.modal-container .modal) {
+        width: 90vw !important;
+        min-width: 600px !important;
+    }
+
+    .inventoryGrid {
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 12px;
+    }
+
+    .itemDetailsPanel {
+        flex: 0 0 300px;
+    }
+
+    .selectedItemIcon {
+        font-size: 48px;
+    }
+
+    .selectedItemName {
+        font-size: 20px;
+    }
+}
+
+@media (max-width: 800px) {
+    .inventoryModalContent {
+        flex-direction: column;
+    }
+
+    .itemDetailsPanel {
+        flex: none;
+        max-height: 400px;
+        /* Increased from 300px for better visibility */
+        min-height: 200px;
+        /* Add minimum height */
+        border-left: none;
+        border-top: 2px solid rgba(255, 255, 255, 0.1);
+        /* Ensure proper scrolling on mobile */
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 16px;
+        /* Slightly reduced padding for mobile */
+    }
+
+    .selectedItemIcon {
+        font-size: 48px;
+        min-height: 60px;
+        /* Reduced for mobile */
+        padding: 12px;
+    }
+
+    .inventoryGrid {
+        grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    }
+
+    .itemActions {
+        flex-direction: column;
+    }
+
+    .actionButton {
+        width: 100%;
+    }
+
+    /* Ensure item lore is visible on mobile */
+    .itemLore {
+        margin-bottom: 16px;
+        padding: 16px;
+        min-height: 80px;
+    }
+
+    .loreText {
+        font-size: 12px;
+        /* Slightly smaller for mobile */
+        line-height: 1.6;
+    }
+}
+
+/* ========================================
+   ENHANCED FILTER CONTROLS
+   ======================================== */
+
+.filterControls {
+    padding: 12px 20px;
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+
+.filterSection {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.filterToggle {
+    background: linear-gradient(135deg, #4c1d95, #6b21a8);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    color: #e0e6f7;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.filterToggle:hover {
+    background: linear-gradient(135deg, #5b21b6, #7c3aed);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+}
+
+.filterToggle.active {
+    background: linear-gradient(135deg, #6b21a8, #8b5cf6);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+.filterOptions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    animation: filterSlideDown 0.3s ease;
+}
+
+@keyframes filterSlideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.filterGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 120px;
+}
+
+.filterLabel {
+    font-size: 12px;
+    font-weight: 500;
+    color: #a1a1aa;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.filterSelect {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #e0e6f7;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    transition: all 0.2s ease;
+}
+
+.filterSelect:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(139, 92, 246, 0.3);
+}
+
+.filterSelect:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: #8b5cf6;
+    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+}
+
+.viewModeButtons {
+    display: flex;
+    gap: 4px;
+}
+
+.viewModeButton {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #a1a1aa;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.viewModeButton:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #e0e6f7;
+}
+
+.viewModeButton.active {
+    background: linear-gradient(135deg, #4c1d95, #6b21a8);
+    border-color: rgba(139, 92, 246, 0.3);
+    color: #e0e6f7;
+    box-shadow: 0 2px 8px rgba(139, 92, 246, 0.2);
+}
+
+/* Mobile responsiveness for filters */
+@media (max-width: 800px) {
+    .filterOptions {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .filterGroup {
+        min-width: auto;
+    }
+
+    .viewModeButtons {
+        flex-direction: row;
+        justify-content: center;
+    }
+}
+
+/* ========================================
+   ENHANCED INVENTORY FEATURES
+   ======================================== */
+
+/* Enhanced Filter Bar */
+.enhancedFilterBar {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    flex-wrap: wrap;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    margin-bottom: 12px;
+}
+
+.toggleFilters {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.toggleFilter {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: #a1a1aa;
+    cursor: pointer;
+}
+
+.toggleFilter input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    accent-color: #8b5cf6;
+}
+
+/* Enhanced Sort Bar */
+.enhancedSortBar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.15);
+    border-radius: 6px;
+    margin-bottom: 12px;
+}
+
+.enhancedSortBar label {
+    font-size: 12px;
+    color: #a1a1aa;
+    font-weight: 500;
+}
+
+.sortSelect {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #e0e6f7;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+.sortOrderButton {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #a1a1aa;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.sortOrderButton:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #e0e6f7;
+}
+
+.sortOrderButton.active {
+    background: #8b5cf6;
+    color: white;
+}
+
+/* Selection Controls */
+.selectionBar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.2), rgba(139, 92, 246, 0.1));
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    border-radius: 8px;
+    margin-bottom: 12px;
+}
+
+.selectionInfo {
+    font-size: 14px;
+    color: #e0e6f7;
+    font-weight: 500;
+}
+
+.selectionActions {
+    display: flex;
+    gap: 8px;
+}
+
+.selectionButton {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #e0e6f7;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.selectionButton:hover {
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Bulk Actions */
+.bulkActions {
+    display: flex;
+    gap: 8px;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+}
+
+.bulkActionButton {
+    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+    border: none;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.bulkActionButton:hover {
+    background: linear-gradient(135deg, #7c3aed, #6d28d9);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+/* Enhanced Item Cards */
+.enhancedSelected {
+    border: 2px solid #8b5cf6 !important;
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.3) !important;
+}
+
+.favorite {
+    border: 2px solid #fbbf24 !important;
+    box-shadow: 0 0 15px rgba(251, 191, 36, 0.2) !important;
+}
+
+.equipped {
+    border: 2px solid #10b981 !important;
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.2) !important;
+}
+
+.itemCheckbox {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    z-index: 10;
+}
+
+.itemCheckbox input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: #8b5cf6;
+    cursor: pointer;
+}
+
+.favoriteIndicator {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    font-size: 16px;
+    z-index: 10;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+}
+
+.equippedIndicator {
+    position: absolute;
+    top: 32px;
+    right: 8px;
+    font-size: 16px;
+    z-index: 10;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+}
+
+
+
+/* Close Item Button */
+.closeItemButton {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #a1a1aa;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.closeItemButton:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #e0e6f7;
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* Favorite Action Button */
+.favoriteActionButton {
+    background: linear-gradient(135deg, #fbbf24, #f59e0b) !important;
+    color: #1f2937 !important;
+    font-weight: 600;
+}
+
+.favoriteActionButton:hover {
+    background: linear-gradient(135deg, #f59e0b, #d97706) !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(251, 191, 36, 0.3);
+}
+
+/* Icon Picker Modal */
+.iconPickerOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.iconPickerModal {
+    background: linear-gradient(135deg, #1a1d29 0%, #2d3748 100%);
+    border-radius: 16px;
+    padding: 24px;
+    max-width: 600px;
+    width: 90%;
+    max-height: 80vh;
+    overflow-y: auto;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+}
+
+.iconPickerHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.iconPickerHeader h3 {
+    margin: 0;
+    color: #e0e6f7;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.iconPickerClose {
+    background: none;
+    border: none;
+    color: #a1a1aa;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 4px;
+    transition: all 0.2s ease;
+}
+
+.iconPickerClose:hover {
+    color: #e0e6f7;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.iconPickerContent {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.iconPickerSearch {
+    margin-bottom: 16px;
+}
+
+.iconSearchInput {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #e0e6f7;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 14px;
+}
+
+.iconSearchInput:focus {
+    outline: none;
+    border-color: #8b5cf6;
+    box-shadow: 0 0 0 2px rgba(139, 92, 246, 0.2);
+}
+
+.iconGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+    gap: 8px;
+}
+
+.iconButton {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #e0e6f7;
+    padding: 8px;
+    border-radius: 6px;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.iconButton:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(139, 92, 246, 0.3);
+    transform: scale(1.05);
+}
+
+.iconButton.current {
+    background: #8b5cf6;
+    border-color: #8b5cf6;
+    color: white;
+}
+
+/* ========================================
+   COMPREHENSIVE MOBILE OPTIMIZATIONS
+   ======================================== */
+
+/* Mobile-first approach for small screens */
+@media (max-width: 480px) {
+
+    /* Full screen modal for mobile with safe area support */
+    :global(.modal-container .modal.gamify-inventory-modal) {
+        width: 100vw !important;
+        height: 100vh !important;
+        height: 100dvh !important;
+        /* Dynamic viewport height for mobile browsers */
+        min-width: 320px !important;
+        min-height: 500px !important;
+        top: 0 !important;
+        left: 0 !important;
+        transform: none !important;
+        border-radius: 0 !important;
+        max-width: none !important;
+        max-height: none !important;
+        /* Safe area insets for iPhone notch and home indicator */
+        padding-top: env(safe-area-inset-top) !important;
+        padding-bottom: env(safe-area-inset-bottom) !important;
+        padding-left: env(safe-area-inset-left) !important;
+        padding-right: env(safe-area-inset-right) !important;
+    }
+
+    /* Modal title/header safe area */
+    :global(.modal-container .modal.gamify-inventory-modal .modal-title),
+    :global(.modal-container .modal.gamify-inventory-modal .modal-title-bar) {
+        padding-top: calc(16px + env(safe-area-inset-top)) !important;
+        min-height: calc(60px + env(safe-area-inset-top)) !important;
+    }
+
+    .inventoryModalContent {
+        flex-direction: column;
+        height: calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+        height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+        max-height: none;
+        padding: 0;
+        overflow: hidden;
+        display: flex;
+    }
+
+    /* Enhanced mobile tab navigation */
+    .tabNavigation {
+        padding: 8px 4px;
+        gap: 4px;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        justify-content: flex-start;
+        background: rgba(0, 0, 0, 0.3);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .tabNavigation::-webkit-scrollbar {
+        display: none;
+    }
+
+    .tabButton {
+        min-width: 90px;
+        padding: 12px 14px;
+        font-size: 12px;
+        flex-shrink: 0;
+        min-height: 48px;
+        border-radius: 12px;
+        white-space: nowrap;
+    }
+
+    .tabIcon {
+        font-size: 14px;
+    }
+
+    .tabBadge {
+        width: 18px;
+        height: 18px;
+        font-size: 10px;
+        top: -6px;
+        right: -6px;
+    }
+
+    /* Mobile-friendly search bar */
+    .searchContainer {
+        padding: 12px 8px;
+    }
+
+    .searchBar {
+        padding: 16px 20px;
+        font-size: 16px;
+        min-height: 52px;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 2px solid rgba(255, 255, 255, 0.2);
+    }
+
+    .searchBar:focus {
+        border-color: #8ecae6;
+        background: rgba(255, 255, 255, 0.15);
+        box-shadow: 0 0 0 3px rgba(142, 202, 230, 0.3);
+    }
+
+    /* Optimized inventory grid for mobile */
+    .inventoryContent {
+        padding: 8px;
+        flex: 1;
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+        /* Smooth transition when details panel appears */
+        transition: max-height 0.3s ease;
+    }
+
+    /* When an item is selected, add visual feedback */
+    .inventoryModalContent:has(.itemDetailsPanel) {
+        /* Add a subtle overlay to indicate selection mode */
+        background: linear-gradient(to bottom, rgba(142, 202, 230, 0.05) 0%, rgba(0, 0, 0, 0.1) 100%);
+    }
+
+    /* Better visual feedback for selected items on mobile */
+    .inventorySlot.selected {
+        background: linear-gradient(135deg, rgba(142, 202, 230, 0.3) 0%, rgba(33, 158, 188, 0.15) 100%) !important;
+        border: 3px solid #8ecae6 !important;
+        box-shadow: 0 0 25px rgba(142, 202, 230, 0.5) !important;
+        transform: scale(1.05) !important;
+    }
+
+    .inventoryGrid {
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+        gap: 6px;
+        padding: 4px;
+    }
+
+    .inventorySlot {
+        height: 110px;
+        padding: 6px 4px;
+        border-radius: 12px;
+        min-height: 48px;
+        border: 2px solid rgba(255, 255, 255, 0.15);
+        background: rgba(255, 255, 255, 0.08);
+    }
+
+    .inventorySlot:hover {
+        background: rgba(255, 255, 255, 0.12);
+        border-color: rgba(255, 255, 255, 0.25);
+        transform: scale(1.02);
+    }
+
+    .inventorySlot.selected {
+        background: linear-gradient(135deg, rgba(142, 202, 230, 0.2) 0%, rgba(33, 158, 188, 0.1) 100%);
+        border: 2px solid #8ecae6;
+        box-shadow: 0 0 20px rgba(142, 202, 230, 0.4);
+    }
+
+    .itemIcon {
+        font-size: 20px;
+        margin-bottom: 4px;
+    }
+
+    .itemName {
+        font-size: 10px;
+        line-height: 1.1;
+        margin-bottom: 2px;
+        word-wrap: break-word;
+        hyphens: auto;
+    }
+
+    .itemRarity {
+        font-size: 8px;
+    }
+
+    .quantityBadge {
+        width: 18px;
+        height: 18px;
+        font-size: 9px;
+        top: 3px;
+        right: 3px;
+    }
+
+    /* Mobile item details panel - improved accessibility */
+    .itemDetailsPanel {
+        flex: none !important;
+        height: 55vh !important;
+        max-height: 55vh !important;
+        min-height: 220px !important;
+        border-left: none !important;
+        border-top: 3px solid #8ecae6 !important;
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        padding: 16px !important;
+        background: rgba(0, 0, 0, 0.4) !important;
+        -webkit-overflow-scrolling: touch;
+        position: relative !important;
+        z-index: 10 !important;
+        box-shadow: 0 -6px 20px rgba(0, 0, 0, 0.4) !important;
+        /* Ensure it's always visible when rendered */
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        width: 100% !important;
+        /* Add a subtle animation when it appears */
+        animation: slideUpPanel 0.3s ease;
+    }
+
+    @keyframes slideUpPanel {
+        from {
+            transform: translateY(100%);
+            opacity: 0;
+        }
+
+        to {
+            transform: translateY(0);
+            opacity: 1;
+        }
+    }
+
+    /* Force the item details panel to be visible on mobile */
+    .itemDetailsPanel {
+        display: block !important;
+        visibility: visible !important;
+    }
+
+    /* Ensure the main content area adjusts when details panel is present */
+    .inventoryModalContent {
+        /* Use flexbox to ensure proper layout */
+        display: flex !important;
+        flex-direction: column !important;
+    }
+
+    /* When details panel exists, adjust the inventory content */
+    .inventoryContent {
+        flex: 1 !important;
+        max-height: 45vh !important;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch !important;
+        transition: max-height 0.3s ease;
+    }
+
+    .selectedItemHeader {
+        padding: 16px;
+        border-radius: 12px;
+        position: relative;
+    }
+
+    /* Mobile close button for item details */
+    .closeItemButton {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 2px solid rgba(255, 255, 255, 0.2);
+        color: #e0e6f7;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        font-size: 18px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 20;
+    }
+
+    .closeItemButton:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: rgba(255, 255, 255, 0.4);
+        transform: scale(1.1);
+    }
+
+    .closeItemButton:active {
+        transform: scale(0.95);
+    }
+
+    .selectedItemIcon {
+        font-size: 40px;
+        min-height: 50px;
+        padding: 8px;
+        border-radius: 12px;
+    }
+
+    .selectedItemName {
+        font-size: 18px;
+        margin-bottom: 8px;
+    }
+
+    .selectedItemRarity {
+        font-size: 12px;
+        padding: 6px 12px;
+    }
+
+    .itemDescription {
+        font-size: 13px;
+        padding: 12px;
+        border-radius: 8px;
+    }
+
+    .detailItem {
+        padding: 10px 12px;
+        border-radius: 8px;
+    }
+
+    .detailLabel {
+        font-size: 12px;
+    }
+
+    .detailValue {
+        font-size: 13px;
+    }
+
+    .itemActions {
+        flex-direction: column;
+        gap: 8px;
+        margin-top: 12px;
+    }
+
+    .actionButton {
+        width: 100%;
+        padding: 14px 16px;
+        font-size: 14px;
+        min-height: 48px;
+        border-radius: 12px;
+    }
+
+    /* Mobile-optimized filters */
+    .qualityFilter {
+        padding: 12px 8px;
+    }
+
+    .qualityTitle {
+        font-size: 13px;
+        margin-bottom: 8px;
+    }
+
+    .qualityButtons {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+        gap: 4px;
+    }
+
+    .qualityButton {
+        padding: 10px 6px;
+        font-size: 10px;
+        min-height: 44px;
+        border-radius: 10px;
+        flex-direction: column;
+        gap: 2px;
+    }
+
+    .qualityIcon {
+        font-size: 12px;
+    }
+
+    .qualityCount {
+        font-size: 9px;
+        padding: 1px 4px;
+        min-width: 14px;
+    }
+
+    /* Mobile category tabs */
+    .categoryTabs {
+        padding: 8px 4px;
+        gap: 4px;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        justify-content: flex-start;
+    }
+
+    .categoryTabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .categoryTab {
+        min-width: 80px;
+        padding: 10px 12px;
+        font-size: 11px;
+        flex-shrink: 0;
+        min-height: 44px;
+        border-radius: 10px;
+        white-space: nowrap;
+    }
+
+    .categoryIcon {
+        font-size: 12px;
+    }
+
+    /* Mobile bulk actions */
+    .bulkActions {
+        padding: 8px;
+        gap: 6px;
+        flex-wrap: wrap;
+        justify-content: center;
+    }
+
+    .bulkActionButton {
+        padding: 12px 16px;
+        font-size: 13px;
+        min-height: 48px;
+        border-radius: 12px;
+        flex: 1;
+        min-width: 100px;
+        max-width: 140px;
+    }
+
+    /* Mobile selection bar */
+    .selectionBar {
+        padding: 12px 8px;
+        flex-direction: column;
+        gap: 12px;
+        align-items: stretch;
+        border-radius: 12px;
+    }
+
+    .selectionInfo {
+        font-size: 14px;
+        text-align: center;
+    }
+
+    .selectionActions {
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+
+    .selectionButton {
+        padding: 12px 16px;
+        font-size: 13px;
+        min-height: 44px;
+        border-radius: 12px;
+        flex: 1;
+        min-width: 120px;
+    }
+
+    /* Mobile filter controls */
+    .filterControls {
+        padding: 8px 12px;
+        border-radius: 12px;
+        margin-bottom: 8px;
+    }
+
+    .filterSection {
+        flex-direction: column;
+        gap: 12px;
+        align-items: stretch;
+    }
+
+    .filterToggle {
+        padding: 12px 16px;
+        font-size: 14px;
+        min-height: 48px;
+        border-radius: 12px;
+        justify-content: center;
+    }
+
+    .filterOptions {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .filterGroup {
+        min-width: auto;
+    }
+
+    .filterSelect {
+        padding: 12px 16px;
+        font-size: 14px;
+        min-height: 48px;
+        border-radius: 12px;
+    }
+
+    .viewModeButtons {
+        flex-direction: row;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .viewModeButton {
+        padding: 10px 16px;
+        font-size: 12px;
+        min-height: 44px;
+        border-radius: 10px;
+    }
+
+    /* Mobile item lore */
+    .itemLore {
+        margin-bottom: 12px;
+        padding: 12px;
+        min-height: 60px;
+        border-radius: 12px;
+    }
+
+    .loreTitle {
+        font-size: 14px;
+        margin-bottom: 8px;
+    }
+
+    .loreText {
+        font-size: 11px;
+        line-height: 1.5;
+    }
+
+    /* Mobile empty state */
+    .emptyState {
+        padding: 20px;
+    }
+
+    .emptyStateIcon {
+        font-size: 48px;
+        margin-bottom: 12px;
+    }
+
+    .emptyStateText {
+        font-size: 16px;
+        margin-bottom: 6px;
+    }
+
+    .emptyStateSubtext {
+        font-size: 13px;
+    }
+
+    /* Mobile material slots */
+    .materialSlot {
+        border: 2px solid rgba(69, 183, 209, 0.4);
+    }
+
+    .qualityBadge {
+        width: 18px;
+        height: 18px;
+        font-size: 10px;
+        top: 3px;
+        right: 3px;
+    }
+
+    .materialCategory {
+        font-size: 8px;
+        padding: 2px 6px;
+        bottom: 3px;
+        right: 3px;
+    }
+
+    /* Mobile materials summary */
+    .materialsSummary {
+        margin-top: 12px;
+        padding: 12px;
+        border-radius: 12px;
+    }
+
+    .summaryItem {
+        padding: 8px 10px;
+        border-radius: 8px;
+        margin-bottom: 6px;
+    }
+
+    .summaryIcon {
+        font-size: 14px;
+        width: 18px;
+    }
+
+    .summaryLabel {
+        font-size: 12px;
+    }
+
+    .summaryValue {
+        font-size: 12px;
+        padding: 3px 6px;
+        min-width: 30px;
+    }
+}
+
+/* Extra small mobile screens */
+@media (max-width: 375px) {
+    .tabButton {
+        min-width: 80px;
+        padding: 10px 12px;
+        font-size: 11px;
+    }
+
+    .inventoryGrid {
+        grid-template-columns: repeat(auto-fill, minmax(75px, 1fr));
+        gap: 4px;
+    }
+
+    .inventorySlot {
+        height: 100px;
+        padding: 4px 3px;
+    }
+
+    .itemIcon {
+        font-size: 18px;
+    }
+
+    .itemName {
+        font-size: 9px;
+    }
+
+    .quantityBadge {
+        width: 16px;
+        height: 16px;
+        font-size: 8px;
+    }
+
+    .bulkActionButton {
+        min-width: 90px;
+        padding: 10px 12px;
+        font-size: 12px;
+    }
+
+    .selectionButton {
+        min-width: 100px;
+        padding: 10px 12px;
+        font-size: 12px;
+    }
+}
+
+/* Touch device optimizations */
+@media (pointer: coarse) {
+    .inventorySlot {
+        min-height: 48px;
+    }
+
+    .tabButton,
+    .categoryTab,
+    .qualityButton,
+    .actionButton,
+    .bulkActionButton,
+    .selectionButton,
+    .filterToggle,
+    .viewModeButton {
+        min-height: 48px;
+    }
+
+    .searchBar {
+        min-height: 48px;
+    }
+
+    /* Add touch feedback */
+    .inventorySlot:active,
+    .tabButton:active,
+    .categoryTab:active,
+    .qualityButton:active,
+    .actionButton:active,
+    .bulkActionButton:active,
+    .selectionButton:active,
+    .filterToggle:active,
+    .viewModeButton:active {
+        transform: scale(0.95);
+        transition: transform 0.1s ease;
+    }
+}
+
+/* Landscape mobile optimization */
+@media (max-width: 480px) and (orientation: landscape) {
+    .inventoryModalContent {
+        flex-direction: row;
+    }
+
+    .itemDetailsPanel {
+        max-height: 100vh;
+        min-height: 200px;
+        border-left: 2px solid rgba(255, 255, 255, 0.1);
+        border-top: none;
+        flex: 0 0 40%;
+    }
+
+    .inventoryGrid {
+        grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    }
+
+    .inventorySlot {
+        height: 90px;
+    }
+}
+
+/* ========================================
+   CHANGE ICON BUTTON STYLES
+   ======================================== */
+
+/* Change icon button - positioned separately from item icon */
+.changeIconButton {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(0, 0, 0, 0.2);
+    color: #333;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    font-size: 10px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 15;
+    opacity: 0.7;
+}
+
+.changeIconButton:hover {
+    background: rgba(255, 255, 255, 1);
+    opacity: 1;
+    transform: scale(1.1);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
+}
+
+.changeIconButton:active {
+    transform: scale(0.95);
+}
+
+/* Mobile optimizations for change icon button */
+@media (max-width: 480px) {
+    .changeIconButton {
+        width: 24px;
+        height: 24px;
+        font-size: 12px;
+        top: 2px;
+        left: 2px;
+        min-height: 24px;
+        /* Ensure it meets touch target guidelines */
+    }
+}
+
+/* Hide change icon button by default, show on hover/selection */
+.inventorySlot .changeIconButton {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.inventorySlot:hover .changeIconButton,
+.inventorySlot.selected .changeIconButton {
+    opacity: 0.8;
+    pointer-events: auto;
+}
+
+.inventorySlot.selected .changeIconButton {
+    opacity: 1;
+}

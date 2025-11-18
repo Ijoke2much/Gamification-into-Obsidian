@@ -1,0 +1,411 @@
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.85);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(8px);
+    padding: 20px;
+}
+
+.modalContent {
+    background: white;
+    border-radius: 20px;
+    width: 98vw;
+    max-width: 1400px;
+    height: 95vh;
+    max-height: 900px;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.4);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: modalSlideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.modalHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 24px 32px;
+    border-bottom: 1px solid #e2e8f0;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    min-height: 80px;
+}
+
+.headerContent {
+    flex: 1;
+}
+
+.headerContent h2 {
+    margin: 0 0 8px 0;
+    font-size: 2rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.headerSubtitle {
+    margin: 0;
+    font-size: 1rem;
+    opacity: 0.9;
+    font-weight: 400;
+    line-height: 1.4;
+}
+
+.closeButton {
+    background: rgba(255, 255, 255, 0.15);
+    border: none;
+    border-radius: 12px;
+    color: white;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 18px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    flex-shrink: 0;
+}
+
+.closeButton:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: scale(1.1);
+    box-shadow: 0 4px 16px rgba(255, 255, 255, 0.2);
+}
+
+/* Navigation Tabs */
+.navigation {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    padding: 20px 32px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+    flex-wrap: wrap;
+}
+
+.navButton {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 12px;
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.navButton:hover {
+    background: #e2e8f0;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.navButton.active {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-color: #667eea;
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.4);
+}
+
+.modalBody {
+    flex: 1;
+    overflow: auto;
+    padding: 0;
+    background: #f8fafc;
+}
+
+/* Content Views */
+.dashboardView,
+.exampleView,
+.tutorialView {
+    height: 100%;
+}
+
+.dashboardContainer {
+    height: 100%;
+    padding: 0;
+    background: white;
+}
+
+.contentHeader {
+    text-align: center;
+    padding: 30px 20px;
+    background: white;
+    border-bottom: 1px solid #e2e8f0;
+}
+
+.contentHeader h3 {
+    color: #1e293b;
+    font-size: 1.8rem;
+    font-weight: 700;
+    margin: 0 0 15px 0;
+}
+
+.contentHeader p {
+    color: #64748b;
+    font-size: 1.1rem;
+    margin: 0;
+    line-height: 1.6;
+}
+
+.exampleContainer {
+    padding: 20px;
+    background: white;
+    height: calc(100% - 120px);
+    overflow: auto;
+}
+
+/* Tutorial Content */
+.tutorialContent {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 25px;
+    padding: 30px;
+    background: white;
+}
+
+.tutorialSection {
+    background: #f8fafc;
+    padding: 25px;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    transition: all 0.3s ease;
+}
+
+.tutorialSection:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    border-color: #cbd5e1;
+}
+
+.tutorialSection h4 {
+    color: #1e293b;
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin: 0 0 15px 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tutorialSection ul {
+    margin: 0;
+    padding-left: 20px;
+    color: #475569;
+    line-height: 1.6;
+}
+
+.tutorialSection li {
+    margin-bottom: 8px;
+    font-size: 0.95rem;
+}
+
+.tutorialSection li:last-child {
+    margin-bottom: 0;
+}
+
+/* Animation */
+@keyframes modalSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-30px) scale(0.9);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+    .modalContent {
+        width: 99vw;
+        height: 98vh;
+        max-height: none;
+        border-radius: 16px;
+    }
+
+    .modalHeader {
+        padding: 20px 24px;
+        min-height: 70px;
+    }
+
+    .headerContent h2 {
+        font-size: 1.8rem;
+    }
+
+    .headerSubtitle {
+        font-size: 0.9rem;
+    }
+
+    .closeButton {
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
+    }
+
+    .navigation {
+        padding: 16px 24px;
+        gap: 12px;
+    }
+
+    .navButton {
+        padding: 10px 20px;
+        font-size: 0.9rem;
+    }
+
+    .tutorialContent {
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+        padding: 25px;
+    }
+}
+
+@media (max-width: 768px) {
+    .modalOverlay {
+        padding: 10px;
+    }
+
+    .modalContent {
+        width: 100vw;
+        height: 100vh;
+        border-radius: 12px;
+    }
+
+    .modalHeader {
+        padding: 16px 20px;
+        min-height: 60px;
+        flex-direction: column;
+        gap: 12px;
+        text-align: center;
+    }
+
+    .headerContent h2 {
+        font-size: 1.5rem;
+        margin-bottom: 4px;
+    }
+
+    .headerSubtitle {
+        font-size: 0.85rem;
+    }
+
+    .closeButton {
+        width: 32px;
+        height: 32px;
+        font-size: 14px;
+        position: absolute;
+        top: 16px;
+        right: 20px;
+    }
+
+    .navigation {
+        padding: 12px 16px;
+        gap: 8px;
+    }
+
+    .navButton {
+        padding: 8px 16px;
+        font-size: 0.85rem;
+    }
+
+    .contentHeader {
+        padding: 20px 16px;
+    }
+
+    .contentHeader h3 {
+        font-size: 1.5rem;
+    }
+
+    .contentHeader p {
+        font-size: 1rem;
+    }
+
+    .tutorialContent {
+        grid-template-columns: 1fr;
+        gap: 20px;
+        padding: 20px;
+    }
+
+    .tutorialSection {
+        padding: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .modalOverlay {
+        padding: 0;
+    }
+
+    .modalContent {
+        width: 100vw;
+        height: 100vh;
+        border-radius: 0;
+    }
+
+    .modalHeader {
+        padding: 12px 16px;
+        min-height: 56px;
+    }
+
+    .headerContent h2 {
+        font-size: 1.3rem;
+    }
+
+    .headerSubtitle {
+        font-size: 0.8rem;
+    }
+
+    .closeButton {
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+        top: 12px;
+        right: 16px;
+    }
+
+    .navigation {
+        padding: 10px 12px;
+    }
+
+    .navButton {
+        padding: 6px 12px;
+        font-size: 0.8rem;
+    }
+
+    .contentHeader {
+        padding: 16px 12px;
+    }
+
+    .contentHeader h3 {
+        font-size: 1.3rem;
+    }
+
+    .tutorialContent {
+        padding: 16px;
+    }
+
+    .tutorialSection {
+        padding: 16px;
+    }
+}

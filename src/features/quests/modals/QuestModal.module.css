@@ -1,0 +1,457 @@
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal {
+    background: #23272e;
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 600px;
+    max-height: 80vh;
+    width: 100%;
+    overflow-y: auto;
+    box-shadow: 0 4px 32px #000a;
+    z-index: 10000;
+}
+
+.error {
+    color: #ff4757;
+    margin-top: 12px;
+    text-align: center;
+    font-weight: bold;
+}
+
+@keyframes blink {
+
+    0%,
+    50% {
+        opacity: 1;
+    }
+
+    51%,
+    100% {
+        opacity: 0;
+    }
+}
+
+.blinkingCursor {
+    animation: blink 1s infinite;
+    margin-left: 2px;
+}
+
+/* Common spacing */
+.marginBottom16 {
+    margin-bottom: 16px;
+}
+
+.marginBottom8 {
+    margin-bottom: 8px;
+}
+
+.marginBottom4 {
+    margin-bottom: 4px;
+}
+
+.marginTop12 {
+    margin-top: 12px;
+}
+
+.marginLeft8 {
+    margin-left: 8px;
+}
+
+/* Labels */
+.label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--text-normal);
+}
+
+/* Form Inputs & Selects */
+
+.input,
+.select {
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 8px;
+    border: 2px solid var(--interactive-accent);
+    background-color: var(--background-primary);
+    color: var(--text-normal);
+    font-size: 15px;
+    font-weight: 500;
+    box-sizing: border-box;
+    line-height: 1.6;
+}
+
+.select {
+    min-height: 48px;
+    margin-bottom: 8px;
+    padding: 8px;
+}
+
+.input:focus,
+.select:focus {
+    outline: none;
+    border-color: var(--interactive-hover);
+    box-shadow: 0 0 0 3px rgba(var(--interactive-accent-rgb), 0.1);
+}
+
+/* Date input specific tweak: give text more left spacing from icon */
+.dateInput {
+    padding-left: 20px;
+}
+
+.select option {
+    padding: 10px;
+    background-color: var(--background-primary);
+    color: var(--text-normal);
+}
+
+/* Flex utilities */
+.flex {
+    display: flex;
+}
+
+.flex1 {
+    flex: 1;
+}
+
+.flexGap8 {
+    gap: 8px;
+}
+
+.flexGap12 {
+    gap: 12px;
+}
+
+.flexGap16 {
+    gap: 16px;
+}
+
+.justifyEnd {
+    justify-content: flex-end;
+}
+
+.alignCenter {
+    align-items: center;
+}
+
+.spaceBetween {
+    justify-content: space-between;
+}
+
+/* Containers */
+.selectedSkillsContainer {
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    padding: 12px;
+    background-color: var(--background-primary);
+    margin-bottom: 8px;
+}
+
+.selectedSkillsTitle {
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--text-normal);
+}
+
+/* Skill Item */
+.skillItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px;
+    margin-bottom: 4px;
+    background-color: var(--background-secondary);
+    border-radius: 4px;
+    border: 1px solid var(--background-modifier-border);
+}
+
+.skillName {
+    color: var(--text-normal);
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.skillDetails {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+/* Buttons */
+.buttonRemove {
+    background: var(--interactive-accent);
+    border: none;
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+.buttonAdd {
+    padding: 8px 12px;
+    background-color: var(--interactive-accent);
+    border: none;
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+/* Subtasks container */
+.subtasksContainer {
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    padding: 12px;
+    background-color: var(--background-secondary);
+    min-height: 60px;
+    margin-bottom: 16px;
+}
+
+.subtaskItem {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+    padding: 8px;
+    background-color: var(--background-primary);
+    border-radius: 4px;
+}
+
+.subtaskText {
+    flex: 1;
+    color: var(--text-normal);
+    font-size: 14px;
+}
+
+/* Rewards container */
+.rewardsContainer {
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    padding: 12px;
+    background-color: var(--background-secondary);
+    margin-bottom: 16px;
+}
+
+.rewardItem {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+    padding: 8px;
+    background-color: var(--background-primary);
+    border-radius: 4px;
+}
+
+.rewardText {
+    flex: 1;
+    color: var(--text-normal);
+    font-size: 14px;
+}
+
+.rewardRarity {
+    margin-left: 8px;
+    font-size: 12px;
+}
+
+/* Task preview */
+.taskPreview {
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    padding: 12px;
+    background-color: var(--background-primary);
+    font-family: monospace;
+    font-size: 12px;
+    color: var(--text-muted);
+    white-space: pre-wrap;
+    max-height: 200px;
+    overflow: auto;
+    margin-bottom: 8px;
+}
+
+/* Buttons container for form submit/cancel */
+.buttonsContainer {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.buttonCancel {
+    padding: 12px 24px;
+    background-color: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    color: var(--text-normal);
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.buttonSubmit {
+    padding: 12px 24px;
+    background-color: var(--interactive-accent);
+    border: none;
+    border-radius: 6px;
+    color: white;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+/* Streamlined Quest Modal Animations */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.advancedOptionsContent {
+    animation: slideDown 0.3s ease-out;
+}
+
+.tabContent {
+    animation: fadeIn 0.2s ease-in;
+}
+
+/* Core form styling improvements */
+.coreFormSection {
+    margin-bottom: 20px;
+}
+
+.coreFormSection input,
+.coreFormSection select {
+    transition: all 0.2s ease;
+    border: 2px solid var(--interactive-accent);
+    border-radius: 8px;
+    padding: 14px;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.coreFormSection input:focus,
+.coreFormSection select:focus {
+    outline: none;
+    border-color: var(--interactive-hover);
+    box-shadow: 0 0 0 3px rgba(var(--interactive-accent-rgb), 0.1);
+}
+
+.rewardHighlight {
+    background: rgba(var(--interactive-accent-rgb), 0.1);
+    border: 1px solid var(--interactive-accent);
+    border-radius: 12px;
+    padding: 16px;
+}
+
+.skillPill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background-color: var(--interactive-accent);
+    color: white;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    margin: 4px;
+}
+
+.skillPillRemove {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.advancedToggle {
+    width: 100%;
+    padding: 16px 20px;
+    border: 2px solid var(--interactive-accent);
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+}
+
+.advancedToggle:hover {
+    background-color: var(--interactive-hover);
+    transform: translateY(-1px);
+}
+
+.advancedToggleIcon {
+    transition: transform 0.3s ease;
+    font-size: 18px;
+}
+
+.advancedToggleIconExpanded {
+    transform: rotate(180deg);
+}
+
+.tabNav {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid var(--background-modifier-border);
+}
+
+.tabButton {
+    padding: 12px 16px;
+    border: none;
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.tabButtonActive {
+    background-color: var(--interactive-accent);
+    color: white;
+}
+
+.tabButtonInactive {
+    background-color: transparent;
+    color: var(--text-normal);
+}
+
+.tabButtonInactive:hover {
+    background-color: var(--background-modifier-hover);
+}
