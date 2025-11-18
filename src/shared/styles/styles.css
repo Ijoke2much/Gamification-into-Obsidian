@@ -1,0 +1,963 @@
+/* Global plugin styles - keeping only essential shared styles */
+/* Note: Component-specific styles have been moved to CSS modules */
+
+/* Mobile optimizations included directly */
+
+/* Mobile-first responsive design */
+.mobile-optimized {
+  /* Base mobile optimization class */
+  contain: layout style paint;
+}
+
+/* Modal isolation styles to prevent conflicts */
+.pomodoro-attach-task-modal {
+  z-index: 10001 !important;
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  background: var(--background-primary) !important;
+  border: 1px solid var(--background-modifier-border) !important;
+  border-radius: 8px !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+  min-width: 400px !important;
+  max-width: 600px !important;
+  pointer-events: auto !important;
+}
+
+.pomodoro-attach-task-modal * {
+  pointer-events: auto !important;
+}
+
+/* Ensure inventory modal doesn't interfere with pomodoro modal */
+.pomodoro-attach-task-modal~.modal,
+.pomodoro-attach-task-modal~.modal * {
+  pointer-events: none !important;
+}
+
+/* Restrictive drag and drop containment - only allow drops on specific targets */
+.quest-dragging,
+.sidebar-quest-dragging {
+  /* Completely disable all pointer events during drag */
+  pointer-events: none !important;
+}
+
+/* Disable all interactions during drag except for specific drop zones */
+.quest-dragging *,
+.sidebar-quest-dragging * {
+  pointer-events: none !important;
+  cursor: not-allowed !important;
+}
+
+/* Only allow pointer events on quick filter cards (the valid drop zones) */
+.quest-dragging .quick-filter-card,
+.sidebar-quest-dragging .quick-filter-card,
+.quest-dragging [data-drop-zone="quick-filter"],
+.sidebar-quest-dragging [data-drop-zone="quick-filter"] {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}
+
+/* Ensure the dragged element itself remains interactive */
+.quest-dragging [draggable="true"]:not([data-dragging="false"]),
+.sidebar-quest-dragging [draggable="true"]:not([data-dragging="false"]) {
+  pointer-events: auto !important;
+}
+
+/* Visual feedback for valid drop zones during drag */
+.quest-dragging .quick-filter-card,
+.sidebar-quest-dragging .quick-filter-card {
+  position: relative;
+  z-index: 10000;
+}
+
+/* Disable all Obsidian UI interactions during drag */
+.quest-dragging .workspace-leaf,
+.quest-dragging .workspace-tab-header,
+.quest-dragging .workspace-tab-header-container,
+.quest-dragging .workspace-tab-header-tab,
+.quest-dragging .workspace-ribbon,
+.quest-dragging .workspace-split,
+.sidebar-quest-dragging .workspace-leaf,
+.sidebar-quest-dragging .workspace-tab-header,
+.sidebar-quest-dragging .workspace-tab-header-container,
+.sidebar-quest-dragging .workspace-tab-header-tab,
+.sidebar-quest-dragging .workspace-ribbon,
+.sidebar-quest-dragging .workspace-split {
+  pointer-events: none !important;
+  cursor: not-allowed !important;
+}
+
+/* Ensure quest containers have proper stacking */
+.quest-tab-container,
+.sidebar-quest-container {
+  position: relative;
+  z-index: 1000;
+}
+
+/* Style draggable elements */
+.quest-tab-container [draggable="true"],
+.sidebar-quest-container [draggable="true"] {
+  cursor: grab;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.quest-tab-container [draggable="true"]:active,
+.sidebar-quest-container [draggable="true"]:active {
+  cursor: grabbing;
+  transform: scale(0.98);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Quest overdue animations */
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
+
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes shake {
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-2px);
+  }
+
+  75% {
+    transform: translateX(2px);
+  }
+}
+
+.overdue-indicator {
+  animation: pulse 2s infinite, shake 0.5s ease-in-out;
+}
+
+/* Enhanced overdue quest styling */
+.quest-overdue-warning {
+  animation: pulse 2s infinite;
+  position: relative;
+}
+
+.quest-overdue-warning::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  background: linear-gradient(45deg, #ff4757, #ff6b6b, #ff4757);
+  border-radius: 5px;
+  z-index: -1;
+  animation: pulse 2s infinite;
+  opacity: 0.3;
+}
+
+/* Essential tab header styles */
+.tab-header {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+
+.tab-button {
+  padding: 0.5rem 1rem;
+  border: none;
+  background: var(--background-modifier-border);
+  color: var(--text-normal);
+  cursor: pointer;
+  border-radius: 3px;
+  margin: 0 0.25rem;
+  /* Mobile touch target optimization */
+  min-height: 44px;
+  min-width: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tab-button.active {
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+}
+
+/* Essential progress bar styles */
+.progress-bar {
+  width: 100%;
+  height: 20px;
+  background-color: var(--background-modifier-border);
+  border-radius: 10px;
+  overflow: hidden;
+  margin: 10px 0;
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+.progress-bar-inner {
+  height: 100%;
+  transition: width 0.3s ease;
+  border-radius: 10px;
+}
+
+/* Essential utility classes that aren't in modules yet */
+.obs-card {
+  background: var(--background-primary);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: box-shadow 0.2s ease;
+}
+
+.obs-card:hover {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* Background utility classes */
+.bg-base-200 {
+  background: var(--background-secondary);
+}
+
+.bg-base-100 {
+  background: var(--background-primary);
+}
+
+.border-base-300 {
+  border-color: var(--background-modifier-border);
+}
+
+.rounded-lg {
+  border-radius: 6px;
+}
+
+.shadow-sm {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+/* Grid utilities */
+.grid {
+  display: grid;
+}
+
+.grid-cols-1 {
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+@media (min-width: 768px) {
+  .grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.gap-4 {
+  gap: 1rem;
+}
+
+.max-w-3xl {
+  max-width: 48rem;
+}
+
+.mx-auto {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.col-span-1 {
+  grid-column: span 1 / span 1;
+}
+
+.md\:row-span-2 {
+  grid-row: span 2 / span 2;
+}
+
+/* Flex utilities */
+.flex {
+  display: flex;
+}
+
+.flex-col {
+  flex-direction: column;
+}
+
+.items-center {
+  align-items: center;
+}
+
+.justify-between {
+  justify-content: space-between;
+}
+
+.justify-center {
+  justify-content: center;
+}
+
+/* Text utilities */
+.text-center {
+  text-align: center;
+}
+
+.text-gray-400 {
+  color: var(--text-muted);
+}
+
+.text-yellow-400 {
+  color: var(--text-accent);
+}
+
+.text-blue-400 {
+  color: var(--text-accent);
+}
+
+.text-lg {
+  font-size: 1.125rem;
+  line-height: 1.75rem;
+}
+
+.text-2xl {
+  font-size: 1.5rem;
+  line-height: 2rem;
+}
+
+.font-bold {
+  font-weight: 700;
+}
+
+.font-semibold {
+  font-weight: 600;
+}
+
+/* Spacing utilities */
+.mt-2 {
+  margin-top: 0.5rem;
+}
+
+.mt-4 {
+  margin-top: 1rem;
+}
+
+.mb-2 {
+  margin-bottom: 0.5rem;
+}
+
+.w-24 {
+  width: 6rem;
+}
+
+.h-24 {
+  height: 6rem;
+}
+
+.p-2 {
+  padding: 0.5rem;
+}
+
+.p-4 {
+  padding: 1rem;
+}
+
+.space-y-1> :not([hidden])~ :not([hidden]) {
+  margin-top: 0.25rem;
+}
+
+.space-y-4> :not([hidden])~ :not([hidden]) {
+  margin-top: 1rem;
+}
+
+/* Mobile-specific responsive utilities */
+@media (max-width: 768px) {
+
+  /* Mobile-first grid adjustments */
+  .grid {
+    grid-template-columns: 1fr !important;
+    gap: 1rem !important;
+  }
+
+  /* Mobile-friendly spacing */
+  .p-4 {
+    padding: 0.75rem !important;
+  }
+
+  .mt-4 {
+    margin-top: 0.75rem !important;
+  }
+
+  .mb-2 {
+    margin-bottom: 0.75rem !important;
+  }
+
+  /* Mobile-optimized text sizes */
+  .text-lg {
+    font-size: 1rem !important;
+    line-height: 1.5rem !important;
+  }
+
+  .text-2xl {
+    font-size: 1.25rem !important;
+    line-height: 1.75rem !important;
+  }
+
+  /* Mobile-friendly cards */
+  .obs-card {
+    padding: 0.75rem !important;
+    margin-bottom: 0.75rem !important;
+    border-radius: 8px !important;
+  }
+}
+
+/* Touch device optimizations */
+@media (pointer: coarse) {
+
+  /* Larger touch targets for all interactive elements */
+  .tab-button,
+  button,
+  [role="button"] {
+    min-height: 48px !important;
+    min-width: 48px !important;
+    padding: 0.75rem 1rem !important;
+  }
+
+  /* Better touch feedback */
+  .tab-button:active,
+  button:active,
+  [role="button"]:active {
+    transform: scale(0.98) !important;
+    transition: transform 0.1s ease !important;
+  }
+}
+
+/* ========================================
+   MOBILE OPTIMIZATIONS FOR GAMIFICATION PLUGIN
+   ======================================== */
+
+/* ========================================
+   TOUCH TARGET OPTIMIZATIONS
+   ======================================== */
+
+/* Ensure all interactive elements meet minimum touch target requirements */
+button,
+[role="button"],
+.clickable,
+.interactive,
+.dropdown-toggle,
+.dropdown-item,
+.tab-button,
+.nav-button,
+.action-button,
+.complete-button,
+.edit-button,
+.delete-button,
+.add-button,
+.attach-button,
+.detach-button,
+.quick-action,
+.session-type-btn,
+.preset-btn,
+.control-btn,
+.nav-btn,
+.close-btn {
+  min-height: 44px !important;
+  min-width: 44px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Icon-only buttons need larger touch targets */
+.icon-button,
+[data-icon-only="true"],
+button:has(svg:only-child),
+button:has(.icon:only-child) {
+  min-height: 48px !important;
+  min-width: 48px !important;
+  padding: 12px !important;
+}
+
+/* ========================================
+   MOBILE PERFORMANCE OPTIMIZATIONS
+   ======================================== */
+
+@media (max-width: 768px) {
+
+  /* Disable complex animations on mobile for better performance */
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  /* Optimize touch scrolling */
+  .scrollable,
+  .scrollable-container,
+  [data-scrollable="true"] {
+    -webkit-overflow-scrolling: touch !important;
+    scroll-behavior: smooth !important;
+    overscroll-behavior: contain !important;
+  }
+
+  /* Reduce motion for accessibility */
+  @media (prefers-reduced-motion: reduce) {
+
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+
+  /* Optimize images for mobile */
+  img {
+    max-width: 100% !important;
+    height: auto !important;
+    object-fit: contain !important;
+  }
+
+  /* Prevent horizontal scrolling */
+  body,
+  .container,
+  .modal-content {
+    overflow-x: hidden !important;
+    max-width: 100vw !important;
+  }
+}
+
+/* ========================================
+   TOUCH DEVICE OPTIMIZATIONS
+   ======================================== */
+
+@media (pointer: coarse) {
+
+  /* Larger touch targets for touch devices */
+  button,
+  [role="button"],
+  .clickable,
+  .interactive,
+  .dropdown-toggle,
+  .dropdown-item,
+  .tab-button,
+  .nav-button,
+  .action-button {
+    min-height: 48px !important;
+    min-width: 48px !important;
+    padding: 12px 16px !important;
+    font-size: 14px !important;
+  }
+
+  /* Increase spacing between touch targets */
+  .touch-targets-container>* {
+    margin: 4px 0 !important;
+  }
+
+  /* Better touch feedback */
+  button:active,
+  [role="button"]:active,
+  .clickable:active,
+  .interactive:active {
+    transform: scale(0.98) !important;
+    transition: transform 0.1s ease !important;
+  }
+
+  /* Disable hover effects on touch devices */
+  button:hover,
+  [role="button"]:hover,
+  .clickable:hover,
+  .interactive:hover {
+    transform: none !important;
+  }
+}
+
+/* ========================================
+   MOBILE LAYOUT OPTIMIZATIONS
+   ======================================== */
+
+@media (max-width: 768px) {
+
+  /* Mobile-friendly grid layouts */
+  .grid,
+  .grid-container {
+    grid-template-columns: 1fr !important;
+    gap: 12px !important;
+  }
+
+  /* Stack cards vertically on mobile */
+  .card-row,
+  .cards-row,
+  .horizontal-layout {
+    flex-direction: column !important;
+    gap: 12px !important;
+  }
+
+  /* Optimize modal positioning */
+  .modal,
+  .modal-content {
+    width: 95vw !important;
+    max-width: none !important;
+    margin: 2.5vw !important;
+    border-radius: 12px !important;
+  }
+
+  /* Mobile-friendly dropdowns */
+  .dropdown-menu,
+  .dropdown-content {
+    position: fixed !important;
+    top: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    width: 100% !important;
+    border-radius: 12px 12px 0 0 !important;
+    max-height: 60vh !important;
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  /* Add backdrop for mobile dropdowns */
+  .dropdown-menu::before,
+  .dropdown-content::before {
+    content: '' !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    background: rgba(0, 0, 0, 0.5) !important;
+    z-index: -1 !important;
+  }
+}
+
+/* ========================================
+   MOBILE TYPOGRAPHY OPTIMIZATIONS
+   ======================================== */
+
+@media (max-width: 768px) {
+
+  /* Ensure readable font sizes on mobile */
+  body,
+  .container {
+    font-size: 16px !important;
+    /* Prevent zoom on iOS */
+    line-height: 1.5 !important;
+  }
+
+  /* Optimize headings for mobile */
+  h1 {
+    font-size: 1.5rem !important;
+  }
+
+  h2 {
+    font-size: 1.25rem !important;
+  }
+
+  h3 {
+    font-size: 1.125rem !important;
+  }
+
+  h4,
+  h5,
+  h6 {
+    font-size: 1rem !important;
+  }
+
+  /* Ensure text doesn't overflow */
+  p,
+  span,
+  div {
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    hyphens: auto !important;
+  }
+
+  /* Optimize button text */
+  button,
+  [role="button"] {
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    text-align: center !important;
+  }
+}
+
+/* ========================================
+   MOBILE FORM OPTIMIZATIONS
+   ======================================== */
+
+@media (max-width: 768px) {
+
+  /* Optimize form inputs for mobile */
+  input,
+  textarea,
+  select {
+    font-size: 16px !important;
+    /* Prevent zoom on iOS */
+    padding: 12px !important;
+    min-height: 44px !important;
+    border-radius: 8px !important;
+  }
+
+  /* Better form layout on mobile */
+  .form-group,
+  .input-group {
+    margin-bottom: 16px !important;
+  }
+
+  /* Full-width inputs on mobile */
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"],
+  textarea,
+  select {
+    width: 100% !important;
+    box-sizing: border-box !important;
+  }
+}
+
+/* ========================================
+   MOBILE NAVIGATION OPTIMIZATIONS
+   ======================================== */
+
+@media (max-width: 768px) {
+
+  /* Mobile-friendly navigation */
+  .nav-tabs,
+  .tab-navigation {
+    flex-direction: column !important;
+    gap: 8px !important;
+  }
+
+  .nav-tab,
+  .tab-button {
+    width: 100% !important;
+    text-align: left !important;
+    padding: 12px 16px !important;
+    border-radius: 8px !important;
+  }
+
+  /* Mobile-friendly breadcrumbs */
+  .breadcrumb,
+  .breadcrumb-nav {
+    flex-wrap: wrap !important;
+    gap: 4px !important;
+    font-size: 14px !important;
+  }
+}
+
+/* ========================================
+   MOBILE ACCESSIBILITY ENHANCEMENTS
+   ======================================== */
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+
+  button,
+  [role="button"] {
+    border: 2px solid currentColor !important;
+  }
+
+  .dropdown-menu,
+  .modal-content {
+    border: 2px solid currentColor !important;
+  }
+}
+
+/* Dark mode optimizations */
+@media (prefers-color-scheme: dark) {
+  .mobile-optimized {
+    background: var(--background-primary) !important;
+    color: var(--text-normal) !important;
+  }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ========================================
+   LANDSCAPE MOBILE OPTIMIZATIONS
+   ======================================== */
+
+@media (max-width: 768px) and (orientation: landscape) {
+
+  /* Optimize for landscape orientation */
+  .dropdown-menu,
+  .modal-content {
+    max-height: 40vh !important;
+  }
+
+  /* Use horizontal layout when space allows */
+  .card-row,
+  .cards-row {
+    flex-direction: row !important;
+    flex-wrap: wrap !important;
+    gap: 8px !important;
+  }
+
+  /* Smaller touch targets in landscape */
+  button,
+  [role="button"] {
+    min-height: 40px !important;
+    min-width: 40px !important;
+    padding: 8px 12px !important;
+  }
+}
+
+/* ========================================
+   HIGH DPI DISPLAY OPTIMIZATIONS
+   ======================================== */
+
+@media (-webkit-min-device-pixel-ratio: 2),
+(min-resolution: 192dpi) {
+
+  /* Crisp borders on high DPI displays */
+  button,
+  [role="button"],
+  .dropdown-toggle,
+  .dropdown-item {
+    border-width: 0.5px !important;
+  }
+
+  /* Optimize icons for high DPI */
+  svg,
+  .icon {
+    shape-rendering: geometricPrecision !important;
+  }
+}
+
+/* ========================================
+   MOBILE-SPECIFIC UTILITY CLASSES
+   ======================================== */
+
+/* Mobile-first responsive utilities */
+.mobile-hidden {
+  display: none !important;
+}
+
+@media (min-width: 769px) {
+  .mobile-hidden {
+    display: initial !important;
+  }
+
+  .desktop-hidden {
+    display: none !important;
+  }
+}
+
+/* Touch-friendly spacing */
+.touch-spacing>* {
+  margin: 8px 0 !important;
+}
+
+/* Mobile-optimized containers */
+.mobile-container {
+  padding: 16px !important;
+  max-width: 100% !important;
+  overflow-x: hidden !important;
+}
+
+/* Mobile-friendly cards */
+.mobile-card {
+  padding: 16px !important;
+  border-radius: 12px !important;
+  margin-bottom: 12px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* ========================================
+   MOBILE GESTURE SUPPORT
+   ======================================== */
+
+/* Swipe gesture support */
+.swipeable {
+  touch-action: pan-y !important;
+  user-select: none !important;
+}
+
+/* Prevent unwanted zooming */
+.no-zoom {
+  touch-action: manipulation !important;
+}
+
+/* Optimize for touch scrolling */
+.touch-scroll {
+  -webkit-overflow-scrolling: touch !important;
+  scroll-behavior: smooth !important;
+  overscroll-behavior: contain !important;
+}
+
+/* ========================================
+   MOBILE PERFORMANCE MONITORING
+   ======================================== */
+
+/* Add performance monitoring classes */
+.mobile-optimized {
+  /* This class indicates mobile optimizations are applied */
+  contain: layout style paint !important;
+}
+
+/* Optimize for mobile rendering */
+.mobile-render {
+  will-change: auto !important;
+  transform: translateZ(0) !important;
+  /* Force hardware acceleration */
+}
+
+/* ========================================
+   MOBILE DEBUGGING HELPERS
+   ======================================== */
+
+/* Debug touch targets */
+.debug-touch-targets * {
+  outline: 2px solid red !important;
+}
+
+.debug-touch-targets button,
+.debug-touch-targets [role="button"] {
+  outline: 2px solid blue !important;
+}
+
+/* Debug mobile layout */
+.debug-mobile-layout {
+  border: 2px dashed orange !important;
+}
+
+/* ========================================
+   MOBILE FALLBACKS
+   ======================================== */
+
+/* Fallback for older mobile browsers */
+@supports not (container-type: inline-size) {
+  .container-query-fallback {
+    /* Fallback styles for browsers without container queries */
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
+
+/* Fallback for browsers without CSS Grid */
+@supports not (display: grid) {
+  .grid-fallback {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+}
