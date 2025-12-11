@@ -1,0 +1,122 @@
+.row {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.row:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.selected {
+  background: rgba(59, 130, 246, 0.15);
+}
+
+.overdue {
+  border-left: 2px solid #ef4444;
+}
+
+.energyHeavy {
+  box-shadow: inset 0 0 0 1px rgba(239, 68, 68, 0.4);
+}
+
+.left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.icon {
+  font-size: 12px;
+}
+
+.middle {
+  flex: 1;
+  min-width: 0;
+  padding: 0 6px;
+}
+
+.title {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.meta {
+  display: flex;
+  gap: 6px;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 11px;
+  margin-top: 1px;
+  overflow: hidden;
+}
+
+.metaItem {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.priorityDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+/* Priority colors (match your existing theme roughly) */
+.highest,
+.high {
+  background: #ef4444;
+}
+
+.medium {
+  background: #f59e0b;
+}
+
+.low,
+.lowest {
+  background: #9ca3af;
+}
+
+.right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 8px;
+  flex-shrink: 0;
+}
+
+.badge {
+  padding: 2px 6px;
+  border-radius: 999px;
+  font-size: 10px;
+}
+
+.dueBadge {
+  background: rgba(148, 163, 184, 0.2);
+}
+
+.energyBadge {
+  background: rgba(34, 197, 94, 0.18);
+}
+
+.rewards,
+.time {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 11px;
+}
+
+.menu {
+  padding: 0 4px;
+  opacity: 0.5;
+}
+
+.menu:hover {
+  opacity: 1;
+}

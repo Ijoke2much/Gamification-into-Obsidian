@@ -3,7 +3,8 @@ import type GamificationObsidianPlugin from '../../../core/main';
 import { useQuestManagement, QuestFilters } from '../../../data/hooks/useQuestManagement';
 import { usePlayerData } from '../../../data/hooks/usePlayerData';
 import { ADHDEnhancedQuestCard } from '../../../features/quests/components/ADHDEnhancedQuestCard';
-import { QuestViewToggle, QuestViewMode } from '../../../features/quests/components/QuestViewToggle';
+import { QuestInboxRow } from '../../../features/quests/components/QuestInboxRow';
+import type { QuestViewMode } from '../../../features/quests/components/QuestViewToggle';
 import { EnhancedQuestFilters } from '../../../features/quests/components/EnhancedQuestFilters';
 import { EnergyCalculationService } from '../../../features/quests/services/energyCalculationService';
 import { SavedQuestsManager } from '../../../features/quests/services/savedQuestsManager';
@@ -20,10 +21,128 @@ import { SearchResult } from '../../../features/quests/types/SearchTypes';
 const QuestCalendarView = lazy(() => import('../../../features/quests/components/QuestCalendarView').then(m => ({ default: m.QuestCalendarView })));
 const QuestTimelineView = lazy(() => import('../../../features/quests/components/QuestTimelineView').then(m => ({ default: m.QuestTimelineView })));
 const TimelineModal = lazy(() => import('../../../features/quests/components/TimelineModal').then(m => ({ default: m.TimelineModal })));
+const UnifiedQuestView = lazy(() => import('../../../features/quests/components/UnifiedQuestView').then(m => ({ default: m.UnifiedQuestView })));
 import type { Quest } from '../../../features/quests/utils/taskParser';
 import { TFile } from 'obsidian';
 import styles from './QuestTab.module.css';
 // Boss view is now handled by the full-page BossView
+
+// Quick filter helper functions (kept in sync with EnhancedQuestFilters)
+function isTomorrowQuickFilter(dueDate?: string): boolean {
+  if (!dueDate) return false;
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  return new Date(dueDate).toDateString() === tomorrow.toDateString();
+}
+
+function isOverdueQuickFilter(dueDate?: string): boolean {
+  if (!dueDate) return false;
+  return new Date(dueDate) < new Date();
+}
+
+function isUpcomingQuickFilter(dueDate?: string): boolean {
+  if (!dueDate) return false;
+  const due = new Date(dueDate);
+  const today = new Date();
+  const twoWeeksFromNow = new Date();
+  twoWeeksFromNow.setDate(today.getDate() + 14);
+  return due > today && due <= twoWeeksFromNow;
+}
+
+function parseTimeToMinutesForQuickFilters(timeStr: string): number {
+  const match = timeStr.match(/(\d+)\s*(min|hour|hr|h)/i);
+  if (!match) return 15;
+
+  const value = parseInt(match[1], 10);
+  const unit = match[2].toLowerCase();
+
+  if (unit.startsWith('h')) return value * 60;
+  return value;
+}
+
+function getEnergyMatchForQuickFilters(
+  quest: Quest,
+  currentEnergy: number
+): 'perfect' | 'good' | 'challenging' | 'insufficient' {
+  const estimatedCost = Math.min(
+    10 +
+      (quest.estimatedTime ? parseTimeToMinutesForQuickFilters(quest.estimatedTime) / 5 : 5) +
+      (quest.difficulty === 'hard' ? 15 : quest.difficulty === 'easy' ? 5 : 10),
+    50
+  );
+
+  const ratio = estimatedCost / currentEnergy;
+
+  if (ratio <= 0.3) return 'perfect';
+  if (ratio <= 0.5) return 'good';
+  if (ratio <= 0.8) return 'challenging';
+  return 'insufficient';
+}
+
+function isHyperfocusCandidateForQuickFilters(quest: Quest): boolean {
+  const hasDeepWorkSkills = (quest.skills || []).some((skill: string) =>
+    ['@coding', '@writing', '@learning', '@research', '@analysis'].includes(skill)
+  );
+  const isLongEnough =
+    quest.estimatedTime && parseTimeToMinutesForQuickFilters(quest.estimatedTime) >= 30;
+  const isComplex = quest.difficulty === 'hard' || quest.difficulty === 'epic';
+
+  return Boolean(hasDeepWorkSkills || isLongEnough || isComplex);
+}
+
+const QUICK_FILTER_LABELS: Record<string, string> = {
+  all: 'All quests',
+  today: 'Today',
+  tomorrow: 'Tomorrow',
+  overdue: 'Overdue',
+  upcoming: 'Upcoming',
+  no_due_date: 'No due date',
+  perfect_energy: 'Perfect match',
+  quick_wins: 'Quick wins',
+  hyperfocus: 'Hyperfocus',
+  saved: 'Saved'
+};
+
+function applyQuickFilterToQuests(
+  quests: Quest[],
+  filterId: string,
+  currentEnergy: number
+): Quest[] {
+  if (!filterId || filterId === 'all') return quests;
+
+  const activeQuests = quests.filter(q => !q.completed);
+
+  switch (filterId) {
+    case 'today':
+      return activeQuests.filter(q => q.today);
+    case 'tomorrow':
+      return activeQuests.filter(q => isTomorrowQuickFilter(q.due));
+    case 'overdue':
+      return activeQuests.filter(q => isOverdueQuickFilter(q.due));
+    case 'upcoming':
+      return activeQuests.filter(q => isUpcomingQuickFilter(q.due));
+    case 'no_due_date':
+      return activeQuests.filter(q => !q.due);
+    case 'perfect_energy':
+      return activeQuests.filter(
+        q => getEnergyMatchForQuickFilters(q, currentEnergy) === 'perfect'
+      );
+    case 'quick_wins':
+      return activeQuests.filter(
+        q => q.estimatedTime && parseTimeToMinutesForQuickFilters(q.estimatedTime) <= 10
+      );
+    case 'hyperfocus':
+      return activeQuests.filter(q => isHyperfocusCandidateForQuickFilters(q));
+    case 'saved': {
+      const savedQuestIds = new Set(
+        SavedQuestsManager.getAllSavedQuests().map(sq => sq.questId)
+      );
+      return activeQuests.filter(q => savedQuestIds.has(q.id));
+    }
+    default:
+      return quests;
+  }
+}
 
 interface QuestTabProps {
   plugin: GamificationObsidianPlugin;
@@ -94,7 +213,7 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
   const currentEnergy = playerState.playerData?.stats?.energy || 70;
   
   // ADHD-enhanced state management
-  const [viewMode, setViewMode] = useState<QuestViewMode>('cards');
+  const [viewMode] = useState<QuestViewMode>('test-one-view');
   const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
   
   // Timeline modal state
@@ -142,23 +261,23 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
     return EnergyCalculationService.enhanceQuestsWithEnergy(quests, currentEnergy);
   }, [quests, currentEnergy]);
 
-
-
-  // Use the hook's filtered and sorted quests directly with mobile debugging
+  // Use the hook's filtered and sorted quests, then apply quick filters
   const filteredQuests = useMemo(() => {
-    let filtered = getFilteredAndSortedQuests();
-    
-    // Apply active quick filter
-    if (activeQuickFilter && activeQuickFilter !== 'all') {
-      if (activeQuickFilter === 'saved') {
-        const savedQuestIds = new Set(SavedQuestsManager.getAllSavedQuests().map(sq => sq.questId));
-        filtered = filtered.filter((q: Quest) => savedQuestIds.has(q.id));
-      }
-      // Other quick filters can be added here as needed
-    }
-    
-    return filtered;
-  }, [getFilteredAndSortedQuests, sortOptions, filters, isMobile, quests.length, loading, error, plugin.app.vault, activeQuickFilter]);
+    const base = getFilteredAndSortedQuests() as Quest[];
+
+    return applyQuickFilterToQuests(base, activeQuickFilter, currentEnergy);
+  }, [
+    getFilteredAndSortedQuests,
+    sortOptions,
+    filters,
+    isMobile,
+    quests.length,
+    loading,
+    error,
+    plugin.app.vault,
+    activeQuickFilter,
+    currentEnergy
+  ]);
 
   // Ensure timeline receives data even if filters hide everything
   const timelineQuests = useMemo(() => {
@@ -1072,12 +1191,32 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
         currentEnergy={currentEnergy}
       />
 
-      {/* View Toggle Buttons - Cards, Calendar, Timeline */}
-      <div style={{ marginTop: '16px', marginBottom: '32px', display: 'flex', justifyContent: 'center', gap: '8px' }}>
-        <QuestViewToggle 
-          currentView={viewMode}
-          onViewChange={setViewMode}
-        />
+      {/* Quick Filter Results Summary */}
+      <div className={styles.quickFilterResultsHeader}>
+        <div className={styles.quickFilterResultsTitle}>
+          {activeQuickFilter === 'all'
+            ? `${filteredQuests.length} quests`
+            : `${filteredQuests.length} quests for ${
+                QUICK_FILTER_LABELS[activeQuickFilter] || 'current filter'
+              }`}
+        </div>
+        <div className={styles.quickFilterResultsMeta}>
+          {activeQuickFilter !== 'all' && (
+            <button
+              className={styles.quickFilterClearButton}
+              onClick={() => setActiveQuickFilter('all')}
+            >
+              Clear filter
+            </button>
+          )}
+          <span className={styles.quickFilterResultsCount}>
+            {virtualScrolling
+              ? `Showing ${visibleQuests.length} of ${filteredQuests.length}`
+              : `Showing ${filteredQuests.length} quest${
+                  filteredQuests.length === 1 ? '' : 's'
+                }`}
+          </span>
+        </div>
       </div>
 
       {/* Loading State - Mobile Optimized */}
@@ -1256,6 +1395,36 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
           </div>
         ) : (
           <>
+            {/* Quick Filter Inbox: Todoist-style rows above the main view */}
+            {viewMode === 'test-one-view' && filteredQuests.length > 0 && activeQuickFilter !== 'all' && (
+              <div
+                style={{
+                  marginBottom: '16px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: '4px'
+                }}
+              >
+                {filteredQuests.map((quest: Quest) => (
+                  <QuestInboxRow
+                    key={`${quest.id || quest.title}-inbox-${quest.due || 'no-due'}`}
+                    quest={quest}
+                    // In inbox mode, treat checkbox as completed state toggle
+                    isSelected={quest.completed}
+                    onToggleSelect={(title) => {
+                      if (quest.completed) {
+                        handleUncompleteQuest?.(title);
+                      } else {
+                        handleCompleteQuest(title);
+                      }
+                    }}
+                    onOpen={handleEditQuest}
+                    currentEnergy={currentEnergy}
+                  />
+                ))}
+              </div>
+            )}
+
             {/* Render based on view mode */}
             <Suspense fallback={<div style={{ padding: '20px', textAlign: 'center' }}>Loading view…</div>}>
             {viewMode === 'calendar' ? (
@@ -1358,6 +1527,21 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
                   initialViewMode="day"
                 />
               </>
+            ) : viewMode === 'test-one-view' ? (
+              <UnifiedQuestView
+                quests={enhancedQuests}
+                plugin={plugin}
+                currentEnergy={currentEnergy}
+                onQuestComplete={handleCompleteQuest}
+                onQuestEdit={handleEditQuest}
+                onQuestMove={handleQuestMove}
+                onStartHyperfocus={handleStartHyperfocus}
+                onStartPomodoro={handleStartPomodoro}
+                onToggleFavorite={handleToggleFavorite}
+                onDeleteQuest={handleDeleteQuest}
+                onUncompleteQuest={handleUncompleteQuest}
+                onToggleSubtask={handleToggleSubtask}
+              />
             ) : (
               // Default cards view - existing quest cards rendering
               <>
@@ -1386,32 +1570,53 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
                   }} />
                 )}
                 
-                {/* Render visible quests with ADHD enhancements */}
-                {visibleQuests.map((quest: Quest, index: number) => (
-                <ADHDEnhancedQuestCard
-                  key={`${quest.id || quest.title}-${quest.due || 'no-due'}-${quest.lastModified || Date.now()}`}
-                  quest={quest}
-                  plugin={plugin}
-                  collapsed={compactView}
-                  onEdit={handleEditQuest}
-                  onToggleSubtask={handleToggleSubtask}
-                  onCompleteQuest={handleCompleteQuest}
-                  onUncompleteQuest={handleUncompleteQuest}
-                  onToggleFavorite={handleToggleFavorite}
-                  onDeleteQuest={handleDeleteQuest}
-                  onSelect={handleQuestSelect}
-                  isSelected={selectedQuest?.id === quest.id}
-                  currentEnergy={currentEnergy}
-                  onStartPomodoro={handleStartPomodoro}
-                  onStartHyperfocus={handleStartHyperfocus}
-                  onBreakDown={handleBreakDown}
-                  onFailQuest={async (title) => {
-                    await handleFailQuestAddDebt(plugin.app, title, plugin.app.vault);
-                    await loadQuests();
-                  }}
-                  bulkMode={bulkMode}
-                />
-                ))}
+                {/* Render visible quests - cards normally, inbox rows in bulk mode */}
+                {bulkMode
+                  ? visibleQuests.map((quest: Quest) => (
+                      <QuestInboxRow
+                        key={`${quest.id || quest.title}-inbox-${quest.due || 'no-due'}`}
+                        quest={quest}
+                        isSelected={selectedQuests.has(quest.title)}
+                        onToggleSelect={(title) => {
+                          setSelectedQuests(prev => {
+                            const next = new Set(prev);
+                            if (next.has(title)) {
+                              next.delete(title);
+                            } else {
+                              next.add(title);
+                            }
+                            return next;
+                          });
+                        }}
+                        onOpen={handleEditQuest}
+                        currentEnergy={currentEnergy}
+                      />
+                    ))
+                  : visibleQuests.map((quest: Quest) => (
+                      <ADHDEnhancedQuestCard
+                        key={`${quest.id || quest.title}-${quest.due || 'no-due'}-${quest.lastModified || Date.now()}`}
+                        quest={quest}
+                        plugin={plugin}
+                        collapsed={compactView}
+                        onEdit={handleEditQuest}
+                        onToggleSubtask={handleToggleSubtask}
+                        onCompleteQuest={handleCompleteQuest}
+                        onUncompleteQuest={handleUncompleteQuest}
+                        onToggleFavorite={handleToggleFavorite}
+                        onDeleteQuest={handleDeleteQuest}
+                        onSelect={handleQuestSelect}
+                        isSelected={selectedQuest?.id === quest.id}
+                        currentEnergy={currentEnergy}
+                        onStartPomodoro={handleStartPomodoro}
+                        onStartHyperfocus={handleStartHyperfocus}
+                        onBreakDown={handleBreakDown}
+                        onFailQuest={async (title) => {
+                          await handleFailQuestAddDebt(plugin.app, title, plugin.app.vault);
+                          await loadQuests();
+                        }}
+                        bulkMode={bulkMode}
+                      />
+                    ))}
                 
                 {/* Virtual scrolling spacer for content below visible area */}
                 {virtualScrolling && visibleRange.end < filteredQuests.length && (
