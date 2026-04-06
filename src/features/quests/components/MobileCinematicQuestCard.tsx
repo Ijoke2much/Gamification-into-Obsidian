@@ -23,13 +23,6 @@ export const MobileCinematicQuestCard: React.FC<MobileCinematicQuestCardProps> =
     const { quest, onCompleteQuest, onEdit, onToggleFavorite } = props;
     const [isExpanded, setIsExpanded] = useState(false);
 
-    // Debug: Log that MobileCinematicQuestCard is rendering
-    console.log('=== MOBILE CINEMATIC QUEST CARD RENDER ===');
-    console.log('Quest title:', quest.title);
-    console.log('Quest banner:', quest.banner);
-    console.log('Plugin exists:', !!props.plugin);
-    console.log('==========================================');
-
     // Mobile gesture handlers
     const handleSwipeRight = () => {
         if (!quest.completed) {

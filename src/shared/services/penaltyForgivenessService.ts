@@ -1,6 +1,7 @@
 import { playerStore } from '../state/playerStore';
 import { PlayerData, Debuff } from '../../data/models/PlayerData';
 import { Notice } from 'obsidian';
+import { showGameNotice } from '../utils/noticeUtils';
 
 export interface ForgivenessEvent {
     id: string;
@@ -224,7 +225,7 @@ export class PenaltyForgivenessService {
             message += `\n🏆 Special reward: ${event.rewards.specialReward}`;
         }
 
-        new Notice(message, 10000);
+        showGameNotice(message, 10000);
 
         return {
             success: true,

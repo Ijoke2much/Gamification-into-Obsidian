@@ -72,7 +72,7 @@ export const PomodoroTab: React.FC<PomodoroTabProps> = React.memo(({
   const reloadPlayerDataRef = useRef(reloadPlayerData);
   
   // Enhanced state management
-  const [duration, setDuration] = useState(25 * 60);
+  const [duration, setDuration] = useState(25 * 60); // seconds
   const [timerMode, setTimerMode] = useState<'classic' | 'extended' | 'short' | 'custom' | 'deepWork' | 'quickFocus'>('classic');
   const [shouldAutoStart, setShouldAutoStart] = useState(false);
   
@@ -111,8 +111,8 @@ export const PomodoroTab: React.FC<PomodoroTabProps> = React.memo(({
 
 
 
-  // Existing state
-  const [customDuration, setCustomDuration] = useState<number>(25);
+  // Custom session duration (in seconds) for the "Custom" card
+  const [customDuration, setCustomDuration] = useState<number>(0);
   
   // Stable quest state to prevent resetting during re-renders
   const [attachedQuest, setAttachedQuest] = useState<{
@@ -369,6 +369,7 @@ export const PomodoroTab: React.FC<PomodoroTabProps> = React.memo(({
         window.console.log(`⏱️ Setting timer duration to ${estimatedMinutes} minutes (${durationInSeconds} seconds)`);
         
         setDuration(durationInSeconds);
+        setCustomDuration(durationInSeconds);
         setTimerMode('custom'); // Use custom mode to respect the quest's duration
         
         // Set the attached quest
@@ -444,6 +445,7 @@ export const PomodoroTab: React.FC<PomodoroTabProps> = React.memo(({
         const estimatedMinutes = stash.estimatedTime || 25;
         const durationInSeconds = typeof quickSeconds === 'number' ? quickSeconds : (estimatedMinutes * 60);
         setDuration(durationInSeconds);
+        setCustomDuration(durationInSeconds);
         setTimerMode('custom');
         stableSetAttachedQuest(stash);
         const sessionId = questProgressTracker.startQuestTracking(stash as any, 'custom');
@@ -892,7 +894,8 @@ export const PomodoroTab: React.FC<PomodoroTabProps> = React.memo(({
     if (timerMode === 'short') return 15;
     if (timerMode === 'deepWork') return 60;
     if (timerMode === 'quickFocus') return 10;
-    return duration; // custom mode
+  // For custom mode, convert the stored seconds to minutes
+  return Math.max(1, Math.floor(duration / 60));
   }, [timerMode, duration]);
 
   // Handle pomodoro session completion
@@ -1354,10 +1357,11 @@ export const PomodoroTab: React.FC<PomodoroTabProps> = React.memo(({
           onClick={() => {
             try {
               const modal = new CustomInputModal(plugin.app, (seconds: number) => {
-                const duration = Math.floor(seconds / 60);
-                if (duration > 0) {
+                const totalSeconds = Math.max(1, Math.floor(seconds)); // always at least 1 second
+                if (totalSeconds > 0) {
                   setTimerMode('custom');
-                  setCustomDuration(duration);
+                  setDuration(totalSeconds);
+                  setCustomDuration(totalSeconds);
                 }
                 modal.close();
               });
@@ -1373,8 +1377,12 @@ export const PomodoroTab: React.FC<PomodoroTabProps> = React.memo(({
         >
           <div className={styles.sessionTypeIcon}>⚙️</div>
           <div className={styles.sessionTypeTitle}>Custom</div>
-          <div className={styles.sessionTypeDuration}>Set Time</div>
-          <div className={styles.sessionTypeXP}>+{Math.floor((customDuration || 25) / 60 * 0.5)} XP</div>
+          <div className={styles.sessionTypeDuration}>
+            {customDuration > 0 ? `${Math.floor(customDuration / 60)} min` : 'Set Time'}
+          </div>
+          <div className={styles.sessionTypeXP}>
+            +{Math.floor(((customDuration || 25 * 60) / 60) * 0.5)} XP
+          </div>
         </div>
       </div>
     </div>

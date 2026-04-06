@@ -1,8 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import type GamifiedObsidianPlugin from '../../core/main';
 import { Quest, parseQuestsFromMarkdown } from '../../features/quests/utils/taskParser';
-import { playerStore } from '../../shared/state/playerStore';
 import { TFile, Notice } from 'obsidian';
+import { awardQuestRewards, buildCompletionNoticeText } from '../../shared/utils/questCompletionPipeline';
 
 export interface QuestFilters {
     search: string;
@@ -31,7 +31,8 @@ export const clearQuestCache = () => {
 };
 
 if (typeof window !== 'undefined') {
-    (window as any).clearQuestCache = clearQuestCache;
+    // Expose cache clear helper on window without using 'any'
+    (window as unknown as { clearQuestCache: () => void }).clearQuestCache = clearQuestCache;
 }
 
 export const useQuestManagement = (plugin: GamifiedObsidianPlugin) => {
@@ -64,11 +65,45 @@ export const useQuestManagement = (plugin: GamifiedObsidianPlugin) => {
                 return;
             }
 
-            const questFiles = plugin.app.vault.getMarkdownFiles().filter((file: TFile) =>
-                file.name.toLowerCase().includes('gamified') ||
-                file.name.toLowerCase().includes('quest') ||
-                file.name.toLowerCase().includes('task')
-            );
+            // First, try to resolve any explicitly-configured quest files directly by path.
+            // This is much faster on large vaults than scanning every markdown file.
+            const configuredQuestPaths = new Set<string>();
+            const defaultQuestFilePath = plugin.settings?.defaultQuestFilePath || 'GamifiedTasks.md';
+            if (defaultQuestFilePath) {
+                configuredQuestPaths.add(defaultQuestFilePath);
+            }
+            (plugin.settings?.questSaveLocations ?? []).forEach(loc => {
+                if (loc.filePath) {
+                    configuredQuestPaths.add(loc.filePath);
+                }
+            });
+
+            const questFilesByConfig: TFile[] = [];
+            if (configuredQuestPaths.size > 0) {
+                for (const path of configuredQuestPaths) {
+                    const file = plugin.app.vault.getAbstractFileByPath(path);
+                    if (file instanceof TFile) {
+                        questFilesByConfig.push(file);
+                    }
+                }
+            }
+
+            let questFiles: TFile[] = [];
+
+            if (questFilesByConfig.length > 0) {
+                // Fast path: we have one or more explicitly configured quest files.
+                questFiles = questFilesByConfig;
+            } else {
+                // Slow path: fall back to name-based discovery across all markdown files.
+                const allMarkdownFiles = plugin.app.vault.getMarkdownFiles();
+
+                // Base heuristic: any file whose name suggests it contains gamified tasks/quests
+                questFiles = allMarkdownFiles.filter((file: TFile) =>
+                    file.name.toLowerCase().includes('gamified') ||
+                    file.name.toLowerCase().includes('quest') ||
+                    file.name.toLowerCase().includes('task')
+                );
+            }
 
             if (questFiles.length === 0) {
                 const defaultContent = '# Gamified Tasks\n\n<!-- Add your quests here -->\n';
@@ -86,7 +121,7 @@ export const useQuestManagement = (plugin: GamifiedObsidianPlugin) => {
                 try {
                     const content = await plugin.app.vault.read(file);
                     const parsedQuests = parseQuestsFromMarkdown(content);
-                    
+
                     parsedQuests.forEach(quest => {
                         quest.filePath = file.path;
                         if (!quest.id) {
@@ -102,7 +137,7 @@ export const useQuestManagement = (plugin: GamifiedObsidianPlugin) => {
 
             questCache = allQuests;
             questCacheTime = Date.now();
-            
+
             setQuests(allQuests);
             setLoading(false);
         } catch (err) {
@@ -136,7 +171,7 @@ export const useQuestManagement = (plugin: GamifiedObsidianPlugin) => {
         if (filters.difficulty) {
             const difficultyArray = Array.isArray(filters.difficulty) ? filters.difficulty : [filters.difficulty];
             if (difficultyArray.length > 0) {
-                filtered = filtered.filter((q: Quest) => 
+                filtered = filtered.filter((q: Quest) =>
                     q.difficulty && difficultyArray.includes(q.difficulty.toLowerCase())
                 );
             }
@@ -174,14 +209,18 @@ export const useQuestManagement = (plugin: GamifiedObsidianPlugin) => {
         }
 
         filtered.sort((a, b) => {
-            let aVal: any = a[sortOptions.field];
-            let bVal: any = b[sortOptions.field];
+            // Values used for sorting can be string or number depending on field
+            let aVal: string | number | undefined = a[sortOptions.field] as string | number | undefined;
+            let bVal: string | number | undefined = b[sortOptions.field] as string | number | undefined;
 
             if (aVal === undefined) aVal = sortOptions.field === 'xp' ? 0 : '';
             if (bVal === undefined) bVal = sortOptions.field === 'xp' ? 0 : '';
 
             if (sortOptions.field === 'xp') {
-                return sortOptions.direction === 'asc' ? aVal - bVal : bVal - aVal;
+                // Ensure numeric comparison for XP
+                const aNum = typeof aVal === 'number' ? aVal : Number(aVal || 0);
+                const bNum = typeof bVal === 'number' ? bVal : Number(bVal || 0);
+                return sortOptions.direction === 'asc' ? aNum - bNum : bNum - aNum;
             } else {
                 const comparison = String(aVal).localeCompare(String(bVal));
                 return sortOptions.direction === 'asc' ? comparison : -comparison;
@@ -226,14 +265,37 @@ export const useQuestManagement = (plugin: GamifiedObsidianPlugin) => {
                 }
             }
 
+            // Persist the change to disk
             await plugin.app.vault.modify(file, lines.join('\n'));
-            clearQuestCache();
-            await loadQuests();
+
+            // Optimistically update quests state (and cache) without a full reload
+            if (quest.subtasks && quest.subtasks.length > 0) {
+                const updatedSubtasks = quest.subtasks.map((st, idx) =>
+                    idx === subtaskIndex ? { ...st, completed: !st.completed } : st
+                );
+
+                setQuests(prev => {
+                    const updated = prev.map(q =>
+                        (q.id === quest.id || q.title === quest.title)
+                            ? { ...q, subtasks: updatedSubtasks }
+                            : q
+                    );
+
+                    // Keep cache in sync so subsequent loads see the change
+                    questCache = updated;
+                    questCacheTime = Date.now();
+
+                    return updated;
+                });
+            } else {
+                // No existing subtasks array on quest; just clear cache so next load picks it up
+                clearQuestCache();
+            }
         } catch (err) {
             console.error('Failed to toggle subtask:', err);
             new Notice('Failed to toggle subtask');
         }
-    }, [quests, plugin.app.vault, loadQuests]);
+    }, [quests, plugin.app.vault]);
 
     const handleCompleteQuest = useCallback(async (questId: string) => {
         try {
@@ -254,22 +316,29 @@ export const useQuestManagement = (plugin: GamifiedObsidianPlugin) => {
                 lines[questLineIndex] = lines[questLineIndex].replace('- [ ]', '- [x]');
                 await plugin.app.vault.modify(file, lines.join('\n'));
 
-                const xp = quest.xp || 0;
-                const coins = Math.round(xp * 0.2);
-                
-                await playerStore.addXP(xp);
-                await playerStore.addCoins(coins);
+                const rewardResult = await awardQuestRewards(plugin.app.vault, quest, plugin.settings);
+                new Notice(buildCompletionNoticeText(rewardResult, plugin.settings), 5000);
 
-                new Notice(`✅ Quest Complete! +${xp} XP, +${coins} coins`, 5000);
-                
-                clearQuestCache();
-                await loadQuests();
+                // Optimistically update in-memory quests and cache instead of
+                // re-parsing every quest file from disk.
+                setQuests(prev => {
+                    const updated = prev.map(q =>
+                        (q.id === quest.id || q.title === quest.title)
+                            ? { ...q, completed: true }
+                            : q
+                    );
+
+                    questCache = updated;
+                    questCacheTime = Date.now();
+
+                    return updated;
+                });
             }
         } catch (err) {
             console.error('Failed to complete quest:', err);
             new Notice('Failed to complete quest');
         }
-    }, [quests, plugin.app.vault, loadQuests]);
+    }, [quests, plugin.app.vault]);
 
     const handleUncompleteQuest = useCallback(async (questId: string) => {
         try {
@@ -289,15 +358,26 @@ export const useQuestManagement = (plugin: GamifiedObsidianPlugin) => {
             if (questLineIndex !== -1) {
                 lines[questLineIndex] = lines[questLineIndex].replace('- [x]', '- [ ]');
                 await plugin.app.vault.modify(file, lines.join('\n'));
-                
-                clearQuestCache();
-                await loadQuests();
+
+                // Optimistically flip completion state in memory and cache.
+                setQuests(prev => {
+                    const updated = prev.map(q =>
+                        (q.id === quest.id || q.title === quest.title)
+                            ? { ...q, completed: false }
+                            : q
+                    );
+
+                    questCache = updated;
+                    questCacheTime = Date.now();
+
+                    return updated;
+                });
             }
         } catch (err) {
             console.error('Failed to uncomplete quest:', err);
             new Notice('Failed to uncomplete quest');
         }
-    }, [quests, plugin.app.vault, loadQuests]);
+    }, [quests, plugin.app.vault]);
 
     const handleToggleFavorite = useCallback(async (questId: string) => {
         console.log('Toggle favorite:', questId);
@@ -320,7 +400,7 @@ export const useQuestManagement = (plugin: GamifiedObsidianPlugin) => {
 
             if (questLineIndex !== -1) {
                 const linesToRemove = [questLineIndex];
-                
+
                 for (let i = questLineIndex + 1; i < lines.length; i++) {
                     const line = lines[i];
                     if (line.trim().startsWith('  - [') || line.trim().startsWith('    ')) {
@@ -335,16 +415,44 @@ export const useQuestManagement = (plugin: GamifiedObsidianPlugin) => {
                 }
 
                 await plugin.app.vault.modify(file, lines.join('\n'));
-                
+
                 new Notice('Quest deleted');
-                clearQuestCache();
-                await loadQuests();
+
+                // Remove the quest from in-memory state and keep cache in sync.
+                setQuests(prev => {
+                    const updated = prev.filter(q => !(q.id === quest.id || q.title === quest.title));
+                    questCache = updated;
+                    questCacheTime = Date.now();
+                    return updated;
+                });
             }
         } catch (err) {
             console.error('Failed to delete quest:', err);
             new Notice('Failed to delete quest');
         }
-    }, [quests, plugin.app.vault, loadQuests]);
+    }, [quests, plugin.app.vault]);
+
+    const addQuestOptimistically = useCallback((quest: Partial<Quest> & { title: string; xp: number; cp: number }, filePath: string) => {
+        const fullQuest: Quest = {
+            ...quest,
+            id: quest.id || `${filePath}-${quest.title}`,
+            title: quest.title,
+            className: quest.className || '',
+            stats: quest.stats || [],
+            xp: quest.xp ?? 0,
+            cp: quest.cp ?? 0,
+            coins: quest.coins ?? Math.round((quest.xp ?? 0) * 0.2),
+            subtasks: quest.subtasks || [],
+            completed: false,
+            filePath,
+        };
+        setQuests(prev => {
+            const updated = [...prev, fullQuest];
+            questCache = updated;
+            questCacheTime = Date.now();
+            return updated;
+        });
+    }, []);
 
     const handleQuestDropOnFilter = useCallback(async (questId: string, filterType: string) => {
         try {
@@ -365,18 +473,20 @@ export const useQuestManagement = (plugin: GamifiedObsidianPlugin) => {
                     newDueDate = today.toISOString().split('T')[0];
                     needsDateUpdate = true;
                     break;
-                case 'tomorrow':
+                case 'tomorrow': {
                     const tomorrow = new Date(today);
                     tomorrow.setDate(tomorrow.getDate() + 1);
                     newDueDate = tomorrow.toISOString().split('T')[0];
                     needsDateUpdate = true;
                     break;
-                case 'overdue':
+                }
+                case 'overdue': {
                     const yesterday = new Date(today);
                     yesterday.setDate(yesterday.getDate() - 1);
                     newDueDate = yesterday.toISOString().split('T')[0];
                     needsDateUpdate = true;
                     break;
+                }
             }
 
             if (needsDateUpdate && quest.filePath) {
@@ -392,7 +502,7 @@ export const useQuestManagement = (plugin: GamifiedObsidianPlugin) => {
 
                 if (questLineIndex !== -1) {
                     let line = lines[questLineIndex];
-                    
+
                     if (line.includes('📅')) {
                         line = line.replace(/📅\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?/, `📅${newDueDate}`);
                     } else {
@@ -401,7 +511,7 @@ export const useQuestManagement = (plugin: GamifiedObsidianPlugin) => {
 
                     lines[questLineIndex] = line;
                     await plugin.app.vault.modify(file, lines.join('\n'));
-                    
+
                     clearQuestCache();
                     await loadQuests();
                     new Notice(`Quest moved to ${filterType}`);
@@ -429,5 +539,6 @@ export const useQuestManagement = (plugin: GamifiedObsidianPlugin) => {
         handleDeleteQuest,
         handleQuestDropOnFilter,
         loadQuests,
+        addQuestOptimistically,
     };
 };

@@ -1,7 +1,7 @@
 import React from 'react';
 import styles from './QuestViewToggle.module.css';
 
-export type QuestViewMode = 'cards' | 'calendar' | 'timeline';
+export type QuestViewMode = 'cards' | 'calendar' | 'timeline' | 'test-one-view';
 
 interface QuestViewToggleProps {
   currentView: QuestViewMode;
@@ -32,6 +32,12 @@ export const QuestViewToggle: React.FC<QuestViewToggleProps> = ({
       icon: '⏰',
       label: 'Timeline',
       description: 'Daily time blocking'
+    },
+    {
+      id: 'test-one-view' as QuestViewMode,
+      icon: '🧪',
+      label: 'Test One View',
+      description: 'Unified calendar → timeline → detail flow'
     }
   ];
 

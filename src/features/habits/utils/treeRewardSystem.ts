@@ -1,3 +1,5 @@
+import { getLocalDateString } from './habitsUtils';
+
 export interface TreeRewardConfig {
   enableProgressiveRewards: boolean;
   enableItemDrops: boolean;
@@ -340,7 +342,7 @@ export const checkSpecialBonuses = (
         const pastWeek = Array.from({ length: 7 }, (_, i) => {
           const date = new Date();
           date.setDate(date.getDate() - i);
-          return date.toISOString().split('T')[0];
+          return getLocalDateString(date);
         });
 
         shouldTrigger = allHabits.every(h =>
@@ -351,7 +353,7 @@ export const checkSpecialBonuses = (
         break;
       case 'combo_completion':
         // Check if multiple habits were completed on the same day
-        const today = new Date().toISOString().split('T')[0];
+        const today = getLocalDateString();
         const completedToday = allHabits.filter(h =>
           h.completedDates?.includes(today)
         ).length;

@@ -1,7 +1,9 @@
 // Quest Completion Tracker Service
 // Automatically detects quest completion and awards rewards
 
-import { App, TFile, Notice } from 'obsidian';
+import { App, TFile } from 'obsidian';
+import { showGameNotice } from '../../../shared/utils/noticeUtils';
+import { resolvePluginSettings, buildCompletionNoticeText } from '../../../shared/utils/questCompletionPipeline';
 
 export class QuestCompletionTracker {
     private app: App;
@@ -24,7 +26,7 @@ export class QuestCompletionTracker {
         // Watch for file modifications
         this.app.vault.on('modify', this.handleFileModified.bind(this) as any);
 
-        // Initial cache population
+        // Initial cache population (optimized to only track GamifiedTasks.md)
         this.populateInitialCache();
     }
 
@@ -45,8 +47,8 @@ export class QuestCompletionTracker {
      * Handle file modification events
      */
     private async handleFileModified(file: TFile): Promise<void> {
-        // Only track markdown files
-        if (file.extension !== 'md') return;
+        // Only track our main gamified tasks file to avoid scanning the entire vault
+        if (file.extension !== 'md' || file.path !== 'GamifiedTasks.md') return;
 
         try {
             const newContent = await this.app.vault.read(file);
@@ -100,42 +102,41 @@ export class QuestCompletionTracker {
      */
     private async processQuestCompletion(taskLine: string, filePath: string, lineNumber: number): Promise<void> {
         try {
-            // Extract quest information
             const title = this.extractTitle(taskLine);
             const xp = this.extractXP(taskLine);
+            const cp = this.extractCP(taskLine);
             const coins = Math.round(xp * 0.1);
             const difficulty = this.extractDifficulty(taskLine);
+            const skills = this.extractSkills(taskLine);
 
             console.log(`[QuestTracker] Quest completed: "${title}" in ${filePath}:${lineNumber}`);
 
-            // Award XP and coins
-            const { playerStore } = await import('../../../shared/state/playerStore');
-            await playerStore.addXP(xp);
-            await playerStore.addCoins(coins);
+            // Build a minimal Quest-shaped object so the shared pipeline can handle rewards.
+            const questShim = {
+                xp,
+                cp,
+                coins,
+                skills,
+                stats: [] as string[],
+            } as unknown as import('../utils/taskParser').Quest;
 
-            // Trigger achievement events
+            const { awardQuestRewards } = await import('../../../shared/utils/questCompletionPipeline');
+            const rewardResult = await awardQuestRewards(this.app.vault, questShim);
+
             const { achievementEventService } = await import('../../achievements/services/achievementEventService');
             await achievementEventService.processGameEvent({
                 type: 'quest_completed',
-                data: {
-                    questData: {
-                        title,
-                        xp,
-                        difficulty,
-                        completion: 100
-                    }
-                },
+                data: { questData: { title, xp, difficulty, completion: 100 } },
                 timestamp: new Date()
             });
-
             await achievementEventService.processGameEvent({
                 type: 'task_completed',
                 data: { taskData: { title, difficulty } },
                 timestamp: new Date()
             });
 
-            // Show success notification
-            new Notice(`✅ Quest Complete! "${title}" (+${xp} XP, +${coins} coins)`, 5000);
+            const settings = resolvePluginSettings(this.app);
+            showGameNotice(`✅ Quest Complete! "${title}" (${buildCompletionNoticeText(rewardResult, settings).replace('✅ Quest Complete! ', '')})`, 5000);
 
         } catch (error) {
             console.error('[QuestTracker] Error processing quest completion:', error);
@@ -170,6 +171,39 @@ export class QuestCompletionTracker {
     }
 
     /**
+     * Extract CP value from task line
+     */
+    private extractCP(taskLine: string): number {
+        const cpMatch = taskLine.match(/⭐(\d+)/);
+        if (cpMatch) {
+            return parseInt(cpMatch[1]);
+        }
+        return 0;
+    }
+
+    /**
+     * Extract skills from task line metadata
+     */
+    private extractSkills(taskLine: string): string[] {
+        const line = taskLine.toLowerCase();
+        const fieldMatch = line.match(/skills:\s*([^|}#]+)/i);
+        if (fieldMatch) {
+            return fieldMatch[1]
+                .split(',')
+                .map(s => s.trim())
+                .filter(Boolean);
+        }
+        const emojiMatch = taskLine.match(/🛠️\s*([^✨⭐💰🔁🔥⚖️🌱📅#\n\r]+)/);
+        if (emojiMatch) {
+            return emojiMatch[1]
+                .split(/[;,]/)
+                .map(s => s.trim())
+                .filter(Boolean);
+        }
+        return [];
+    }
+
+    /**
      * Extract difficulty from task line
      */
     private extractDifficulty(taskLine: string): string {
@@ -182,17 +216,17 @@ export class QuestCompletionTracker {
      * Populate initial cache with current file contents
      */
     private async populateInitialCache(): Promise<void> {
-        const markdownFiles = this.app.vault.getMarkdownFiles();
-
-        for (const file of markdownFiles) {
-            try {
-                const content = await this.app.vault.read(file);
-                this.fileContentsCache.set(file.path, content);
-            } catch (error) {
-                console.error(`[QuestTracker] Error caching ${file.path}:`, error);
+        try {
+            const questFile = this.app.vault.getAbstractFileByPath('GamifiedTasks.md');
+            if (questFile && questFile instanceof TFile) {
+                const content = await this.app.vault.read(questFile);
+                this.fileContentsCache.set(questFile.path, content);
+                console.log('[QuestTracker] Cached GamifiedTasks.md for tracking');
+            } else {
+                console.log('[QuestTracker] GamifiedTasks.md not found, tracking disabled until file exists');
             }
+        } catch (error) {
+            console.error('[QuestTracker] Error caching GamifiedTasks.md:', error);
         }
-
-        console.log(`[QuestTracker] Cached ${markdownFiles.length} files for tracking`);
     }
 }

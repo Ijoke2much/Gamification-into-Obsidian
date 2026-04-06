@@ -338,6 +338,8 @@ export interface Quest {
   notes?: string;
   // Quest banner for Far Cry-style visual identity
   banner?: string;
+  // Optional banner alignment for vertical focus: 'top' | 'center' | 'bottom'
+  bannerAlign?: string;
   // ADHD Energy System
   energyCost?: number; // Estimated energy cost (1-50)
   // Boss system properties
@@ -356,6 +358,8 @@ export interface Quest {
   sharedQuestId?: string;
   totalXP?: number;
   totalCP?: number;
+  /** Default tactical loadout id from frontmatter: `battle_weapon: rapier` */
+  battle_weapon?: string;
 }
 
 // --- Quest Parsing Utility ---
@@ -508,31 +512,27 @@ export function parseQuestsFromMarkdown(md: string): Quest[] {
         const recur = String(getField('recur') || getField('recurrence') || '');
         const skills = String(getField('skills') || '').split(',').map((s: string) => s.trim()).filter(Boolean);
 
-        // Debug: Log quest parsing for all quests
-        window.console.log('═══════════════════════════════════════');
-        window.console.log('[TaskParser] 🔍 Parsing quest:', cleanTitle);
-        window.console.log('[TaskParser] 📝 Full line:', line);
-        window.console.log('[TaskParser] 🎯 Emoji metadata extracted:', emojiMeta);
-        window.console.log('[TaskParser] 📅 Due date found:', due);
-        window.console.log('[TaskParser] 🔁 Recurrence from getField:', recur);
-        window.console.log('[TaskParser] 🔁 Recurrence from emojiMeta:', emojiMeta.recur);
-        window.console.log('[TaskParser] ⚡ Priority:', priority);
-        window.console.log('[TaskParser] 💪 Difficulty:', difficulty);
-        window.console.log('[TaskParser] ✨ XP:', xp, 'CP:', cp);
-        window.console.log('═══════════════════════════════════════');
         const description = String(getField('description') || '');
-        const banner = String(getField('banner') || '');
+        const rawBanner = String(getField('banner') || '');
+        const banner = sanitizeBanner(rawBanner) || undefined;
+        const bannerAlign = String(getField('banneralign') || getField('banner_align') || '');
         const dependencies = String(getField('depends') || '').split(',').map((s: string) => s.trim()).filter(Boolean);
         const rewards = String(getField('rewards') || '').split(',').map((s: string) => s.trim()).filter(Boolean);
         const type = String(getField('type') || '');
         const giver = String(getField('giver') || '');
         const status = String(getField('status') || '');
+        const today = parseBooleanMeta(getField('today'));
         const isFavorite = Boolean(getField('favorite') || getField('starred') || false);
         const createdDate = String(getField('created') || '');
         const lastModified = String(getField('modified') || '');
         const estimatedTime = String(getField('time') || getField('estimate') || '');
         const notes = String(getField('notes') || '');
         const energyCost = parseInt(String(getField('energy') || getField('energyCost') || '0')) || undefined;
+        const battleWeaponRaw = getField('battle_weapon') ?? getField('battleweapon');
+        const battle_weapon =
+          battleWeaponRaw !== undefined && battleWeaponRaw !== null && String(battleWeaponRaw).trim() !== ''
+            ? String(battleWeaponRaw).trim().toLowerCase()
+            : undefined;
 
         // --- Parse description and subtasks ---
         const subtasks: { text: string; completed: boolean; description?: string }[] = [];
@@ -594,6 +594,7 @@ export function parseQuestsFromMarkdown(md: string): Quest[] {
           skills,
           description: questDescription || description, // Use parsed description if available
           banner: banner || undefined, // Add banner path
+          bannerAlign: bannerAlign || undefined,
           subtasks,
           completed: checked === 'x',
           dependencies,
@@ -601,6 +602,7 @@ export function parseQuestsFromMarkdown(md: string): Quest[] {
           type,
           giver,
           status,
+          today,
           tags: tagArr,
           isFavorite,
           createdDate,
@@ -608,6 +610,7 @@ export function parseQuestsFromMarkdown(md: string): Quest[] {
           estimatedTime,
           notes,
           energyCost,
+          battle_weapon,
         });
       }
     }
@@ -638,34 +641,64 @@ const EMOJI_FIELD_MAP: Record<string, string> = {
   // Add more as needed
 };
 
+function parseBooleanMeta(value: unknown): boolean | undefined {
+  if (typeof value === 'boolean') return value;
+  if (typeof value === 'number') return value !== 0;
+  if (typeof value !== 'string') return undefined;
+  const normalized = value.trim().toLowerCase();
+  if (['true', 'yes', '1', 'on'].includes(normalized)) return true;
+  if (['false', 'no', '0', 'off'].includes(normalized)) return false;
+  return undefined;
+}
+
+// Performance: Prefer file paths over inline base64. Skip data URLs and very long banners.
+const MAX_BANNER_LENGTH = 500;
+const EMOJI_AFTER_BANNER = /(🛠️|📅|✨|⭐|🪙|🔥|⚖️|🌱|⏱️)/gu;
+
+function stripBannerFromLine(line: string): string {
+  const emoji = '🖼️';
+  const idx = line.indexOf(emoji);
+  if (idx === -1) return line;
+  const afterEmoji = idx + emoji.length;
+  const nextPart = line.slice(afterEmoji, afterEmoji + 20);
+  const isDataUrl = nextPart.startsWith('data:');
+  const rest = line.slice(afterEmoji);
+  const nextEmojiMatch = rest.match(EMOJI_AFTER_BANNER);
+  const endIdx = nextEmojiMatch ? afterEmoji + (nextEmojiMatch.index ?? rest.length) : line.length;
+  const bannerValue = line.slice(afterEmoji, endIdx).trim();
+  const isHuge = bannerValue.length > MAX_BANNER_LENGTH || isDataUrl;
+  if (isHuge) {
+    return line.slice(0, idx) + line.slice(endIdx);
+  }
+  return line.replace(/🖼️[^\s]+/g, '');
+}
+
+function sanitizeBanner(value: string): string | undefined {
+  if (!value || value.length > MAX_BANNER_LENGTH) return undefined;
+  if (value.startsWith('data:') || value.startsWith('http')) return undefined;
+  return value;
+}
+
 // Helper to extract emoji-based metadata from a task line
 function parseEmojiMetadata(line: string): Record<string, string> {
   const result: Record<string, string> = {};
 
-  console.log('[parseEmojiMetadata] 🔍 Parsing line:', line);
-
-  // First, handle banner specially since it often gets mixed with other emojis
+  // First, handle banner specially - prefer file paths, skip inline base64 (performance)
   const bannerMatch = line.match(/🖼️([^\s]+)/);
   if (bannerMatch && bannerMatch[1]) {
-    result['banner'] = bannerMatch[1];
-    console.log('[parseEmojiMetadata] 🖼️ Banner found:', bannerMatch[1]);
+    const sanitized = sanitizeBanner(bannerMatch[1]);
+    if (sanitized) result['banner'] = sanitized;
   }
 
-  // Extract date FIRST before removing anything - support both date and datetime
-  const dateMatch = line.match(/📅(\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2})?)/);
-  if (dateMatch && dateMatch[1]) {
-    result['due'] = dateMatch[1];
-    console.log('[parseEmojiMetadata] 📅 Date found:', dateMatch[1]);
-  }
-
-  // Then handle other emojis, excluding the banner part to avoid conflicts
-  const lineWithoutBanner = line.replace(/🖼️[^\s]+/g, '');
+  // Strip banner from line - use safe strip for long lines to avoid regex on MBs
+  const needsSafeStrip = line.length > 10000 ||
+    (bannerMatch?.[1] && (bannerMatch[1].startsWith('data:') || bannerMatch[1].length > MAX_BANNER_LENGTH));
+  const lineWithoutBanner = needsSafeStrip ? stripBannerFromLine(line) : line.replace(/🖼️[^\s]+/g, '');
 
   // Handle corrupted coins emoji pattern first (where emoji shows as ��)
   const corruptedCoinsMatch = lineWithoutBanner.match(/��(\d+)/);
   if (corruptedCoinsMatch && corruptedCoinsMatch[1]) {
     result['coins'] = corruptedCoinsMatch[1];
-    console.log('[parseEmojiMetadata] 💰 Corrupted coins found:', corruptedCoinsMatch[1]);
   }
 
   // Improved regex to handle Unicode properly and avoid conflicts
@@ -683,7 +716,6 @@ function parseEmojiMetadata(line: string): Record<string, string> {
     const field = EMOJI_FIELD_MAP[emoji];
     if (field && field !== 'banner' && field !== 'due') { // Avoid overriding already extracted fields
       result[field] = value;
-      console.log(`[parseEmojiMetadata] ${emoji} ${field} found:`, value);
     }
   }
 
@@ -695,7 +727,6 @@ function parseEmojiMetadata(line: string): Record<string, string> {
       value = value.slice(1, -1);
     }
     result['difficulty'] = value;
-    console.log('[parseEmojiMetadata] ⚖️ difficulty found:', value);
   }
 
   // Handle ⏱️ time separately (combined character)
@@ -706,7 +737,12 @@ function parseEmojiMetadata(line: string): Record<string, string> {
       value = value.slice(1, -1);
     }
     result['time'] = value;
-    console.log('[parseEmojiMetadata] ⏱️ time found:', value);
+  }
+
+  // Handle 📅 due date separately - format: 📅2026-02-22 or 📅2026-02-22T10:00
+  const dueMatch = lineWithoutBanner.match(/📅\s*(\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?)?)/u);
+  if (dueMatch && dueMatch[1]) {
+    result['due'] = dueMatch[1].trim();
   }
 
   // Handle 🔁 recurrence separately (combined character) - must have a value
@@ -718,15 +754,6 @@ function parseEmojiMetadata(line: string): Record<string, string> {
       value = value.slice(1, -1);
     }
     result['recur'] = value;
-    window.console.log('[parseEmojiMetadata] 🔁 recurrence found:', value);
-  } else if (lineWithoutBanner.includes('🔁')) {
-    // Check if there's a bare 🔁 followed by another emoji (this is invalid)
-    const bareRecurMatch = lineWithoutBanner.match(/🔁\s*([🛠️📅✨⭐🪙🔥⚖️🌱⏱️🖼️])/u);
-    if (bareRecurMatch) {
-      window.console.log('[parseEmojiMetadata] 🔁 found but followed by emoji - skipping (invalid format)');
-    } else {
-      window.console.log('[parseEmojiMetadata] 🔁 found but no value - skipping');
-    }
   }
 
   // --- Extract priority symbols (standalone emojis without values) - Tasks plugin compatible ---

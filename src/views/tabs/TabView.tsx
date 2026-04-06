@@ -16,31 +16,32 @@ import { ActiveBuffsCard } from "../../features/player/components/ActiveBuffsCar
 import { ClickableTooltip } from "../../shared/components/ui/ClickableTooltip";
 import { GlobalNotificationSystem } from "../../shared/components/ui/GlobalNotificationSystem";
 
-import { 
-    PlayerIcon, 
-    ShopIcon, 
-    QuestIcon, 
-    StatsIcon, 
+import {
+    PlayerIcon,
+    ShopIcon,
+    QuestIcon,
+    StatsIcon,
     AchievementsIcon,
     FlameTimerIcon
 } from "../../shared/components/ui/GameIcons";
 import { EnhancedEnergyHUD } from "../../features/energy/components/EnhancedEnergyHUD";
-import { SkillTreeButton } from "../../features/skillTree/components/SkillTreeButton";
-import { InventoryButton } from "../../features/inventory/components/InventoryButton";
+import SkillTreeModal from "../../features/skillTree/modals/SkillTreeModal";
+import { InventoryModalClass } from "../../features/inventory/modals/InventoryModalClass";
 import { useMobileOptimizations, useMobilePerformance } from "../../shared/hooks/useMobileOptimizations";
 import { currencyDisplay } from "../../shared/services/currencyDisplayService";
 import { MobileErrorBoundary } from "../../shared/components/MobileErrorBoundary";
 
 // Enhanced lazy loading with performance optimization
 const ShopTab = React.lazy(() => import("src/features/shop/components/createShopTab"));
-const QuestTab = React.lazy(() => import("./quests/QuestTab").then(module => ({ default: module.QuestTab })));
+const QuestTab = React.lazy(() =>
+	import("../sidebar/SidebarQuestView").then((m) => ({ default: m.SidebarQuestViewComponent }))
+);
 const HabitsTab = React.lazy(() => import("src/views/tabs/habits/HabitsTab").then(module => ({ default: module.HabitsTab })));
 const StatsTabView = React.lazy(() => import("./stats/StatsTab").then(module => ({ default: module.StatsTabView })));
 const AchievementsTab = React.lazy(() => import("./achievements/AchievementsTab"));
 const PomodoroTab = React.lazy(() => import("./pomodoro/PomodoroTab").then(module => ({ default: module.PomodoroTab })));
 const AnalyticsTab = React.lazy(() => import("./analytics/AnalyticsTab"));
 const CraftingTab = React.lazy(() => import("../../features/crafting/components/CraftingTab").then(module => ({ default: module.CraftingTab })));
-
 // Heavy features with enhanced lazy loading
 
 // Debug components - only load in development
@@ -74,6 +75,45 @@ const AnalyticsIcon = (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <path d="M3 3v18h18"/>
         <path d="M7 15l3-3 4 4 5-7"/>
+    </svg>
+);
+
+const BossBattleIcon = (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M14.5 17.5L3 6V3h3l11.5 11.5"/>
+        <path d="M13 19l6-6"/>
+        <path d="M16 16l4 4"/>
+        <path d="M19 21l2-2"/>
+        <path d="M9.5 4.5L21 16v3h-3L6.5 7.5"/>
+        <path d="M11 2l2 2"/>
+        <path d="M6.5 9.5L4 12"/>
+    </svg>
+);
+
+const SkillTreeCardIcon = (
+    <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+        focusable="false"
+    >
+        <circle cx="12" cy="7" r="4.5" fill="#16a34a" />
+        <circle cx="9" cy="8" r="3.5" fill="#22c55e" />
+        <circle cx="15" cy="8" r="3.5" fill="#22c55e" />
+        <path
+            d="M12 11v6"
+            stroke="#bbf7d0"
+            strokeWidth="2"
+            strokeLinecap="round"
+        />
+        <path
+            d="M12 13l-3 2.5M12 14.5l3 2"
+            stroke="#bbf7d0"
+            strokeWidth="1.8"
+            strokeLinecap="round"
+        />
+        <circle cx="12" cy="19" r="1.3" fill="#15803d" />
     </svg>
 );
 
@@ -120,6 +160,7 @@ const TABS = [
     { key: "player", label: "Player", icon: PlayerIcon },
     { key: "shop", label: "Shop", icon: ShopIcon },
     { key: "quests", label: "Quests", icon: QuestIcon },
+    { key: "boss", label: "Boss Battle", icon: BossBattleIcon },
     { key: "habits", label: "Habits", icon: HabitsIcon },
     { key: "crafting", label: "Crafting", icon: CraftingIcon },
     { key: "achievements", label: "Achievements", icon: AchievementsIcon },
@@ -139,7 +180,8 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
     // Use localStorage to persist tab state
     const [selectedTab, setSelectedTab] = useState<string>(() => {
         const saved = localStorage.getItem('gamification-selected-tab');
-        return saved === 'stats' ? 'player' : (saved || "player");
+        if (saved === 'stats' || saved === 'boss') return 'player';
+        return saved || 'player';
     });
     const [playerData, setPlayerData] = useState<PlayerData | null>(null);
     const [loading, setLoading] = useState(true);
@@ -152,6 +194,9 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
     const [pinned, setPinned] = useState<string[]>(() => {
         try { return JSON.parse(localStorage.getItem('gamification-pinned-tabs') || '[]'); } catch { return []; }
     });
+    const [showSkillTreeModal, setShowSkillTreeModal] = useState(false);
+    // Keep Pomodoro mounted after first open so the timer doesn't reset on tab switch
+    const [hasMountedPomodoro, setHasMountedPomodoro] = useState(() => selectedTab === 'pomodoro');
 
     // Debug logging
     console.log('🎮 PlayerTabView component loaded, selectedTab:', selectedTab);
@@ -223,11 +268,22 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
         localStorage.setItem('gamification-selected-tab', selectedTab);
     }, [selectedTab]);
 
+    // Once Pomodoro has been opened, keep it mounted (hidden when inactive)
+    useEffect(() => {
+        if (selectedTab === 'pomodoro') {
+            setHasMountedPomodoro(true);
+        }
+    }, [selectedTab]);
+
     // Listen for tab switch requests from other components
     useEffect(() => {
         const handleTabSwitchRequest = (event: CustomEvent) => {
-            const { targetTab } = event.detail;
+            const { targetTab } = event.detail ?? {};
             window.console.log('🔄 TabView: Received tab switch request for:', targetTab);
+            if (targetTab === 'boss') {
+                void plugin.activateBossView();
+                return;
+            }
             if (targetTab === 'stats') {
                 setShowStats(true);
                 return;
@@ -239,11 +295,11 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
         };
 
         window.addEventListener('requestActiveTabChange', handleTabSwitchRequest as EventListener);
-        
+
         return () => {
             window.removeEventListener('requestActiveTabChange', handleTabSwitchRequest as EventListener);
         };
-    }, [selectedTab]);
+    }, [selectedTab, plugin]);
 
     // Saving indicator events
     useEffect(() => {
@@ -264,25 +320,44 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
         return () => document.removeEventListener('visibilitychange', onVis);
     }, []);
 
+    const selectTabKey = useCallback(
+        (tabKey: string) => {
+            if (tabKey === 'boss') {
+                void plugin.activateBossView();
+                return;
+            }
+            setSelectedTab(tabKey);
+        },
+        [plugin]
+    );
+
     // Mobile swipe navigation - disable for tabs that have their own internal navigation
     const swipeHandlers = useSwipe(
         () => {
-            // Don't handle swipe for tabs with internal navigation
             if (selectedTab === 'analytics') return;
-            
-            // Swipe left - next tab
-            const currentIndex = displayTabs.findIndex(tab => tab.key === selectedTab);
-            const nextIndex = (currentIndex + 1) % displayTabs.length;
-            setSelectedTab(displayTabs[nextIndex].key);
+            const n = displayTabs.length;
+            let idx = displayTabs.findIndex(tab => tab.key === selectedTab);
+            for (let s = 0; s < n; s++) {
+                idx = (idx + 1) % n;
+                const key = displayTabs[idx].key;
+                if (key !== 'boss' && key !== 'analytics') {
+                    setSelectedTab(key);
+                    return;
+                }
+            }
         },
         () => {
-            // Don't handle swipe for tabs with internal navigation
             if (selectedTab === 'analytics') return;
-            
-            // Swipe right - previous tab
-            const currentIndex = displayTabs.findIndex(tab => tab.key === selectedTab);
-            const prevIndex = currentIndex === 0 ? displayTabs.length - 1 : currentIndex - 1;
-            setSelectedTab(displayTabs[prevIndex].key);
+            const n = displayTabs.length;
+            let idx = displayTabs.findIndex(tab => tab.key === selectedTab);
+            for (let s = 0; s < n; s++) {
+                idx = (idx - 1 + n) % n;
+                const key = displayTabs[idx].key;
+                if (key !== 'boss' && key !== 'analytics') {
+                    setSelectedTab(key);
+                    return;
+                }
+            }
         }
     );
 
@@ -538,6 +613,26 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
                     aria-label="Check player level"
                 >
                     {isMobile ? '📊' : 'Check Level'}
+                </button>
+            )}
+            {/* Test notice button for debugging the gamified notice styling */}
+            {(!isMobile || process.env.NODE_ENV === 'development') && (
+                <button
+                    onClick={() => {
+                        // Lazy-load to avoid circular deps at module load time
+                        import('../../shared/utils/noticeUtils')
+                            .then(({ showGameNotice }) => {
+                                showGameNotice('Test Gamification Notice');
+                            })
+                            .catch(err => {
+                                console.error('Failed to show test notice:', err);
+                            });
+                    }}
+                    className={`${styles.reloadButton} ${mobileClasses.button}`}
+                    style={{ marginLeft: isMobile ? "8px" : "10px" }}
+                    aria-label="Show test notice"
+                >
+                    {isMobile ? '🧪' : 'Test Notice'}
                 </button>
             )}
             {saving && (
@@ -831,7 +926,7 @@ ${testResults.join('\n')}`;
                                                     : `${styles.dropdownItem} ${mobileClasses.touchTarget}`
                                             }
                                             onClick={() => {
-                                                setSelectedTab(tab.key);
+                                                selectTabKey(tab.key);
                                                 setDropdownOpen(false);
                                             }}
                                             role="option"
@@ -840,7 +935,7 @@ ${testResults.join('\n')}`;
                                             onKeyDown={(e) => {
                                                 if (e.key === 'Enter' || e.key === ' ') {
                                                     e.preventDefault();
-                                                    setSelectedTab(tab.key);
+                                                    selectTabKey(tab.key);
                                                     setDropdownOpen(false);
                                                 }
                                             }}
@@ -859,7 +954,7 @@ ${testResults.join('\n')}`;
                             {displayTabs.map((tab) => (
                                 <button
                                     key={tab.key}
-                                    onClick={() => setSelectedTab(tab.key)}
+                                    onClick={() => selectTabKey(tab.key)}
                                     className={
                                         selectedTab === tab.key
                                             ? `${styles.tabButton} ${styles.tabButtonActive}`
@@ -893,69 +988,27 @@ ${testResults.join('\n')}`;
                                     plugin={plugin}
                                     openAvatarPicker={openAvatarPicker}
                                 />
-                                {/* Level & EXP Cards Side by Side */}
-                                <div className={`${cardStyles.cardRow} ${isMobile ? styles.mobileCardRow : ''}`} style={{
-                                  flexDirection: isMobile ? 'column' : 'row',
-                                  gap: isMobile ? '12px' : '16px'
-                                }}>
-                                    {/* Level Card */}
+                                {/* Player Level + EXP row (below Player card) */}
+                                <div
+                                    className={cardStyles.cardRow}
+                                    style={{
+                                        flexDirection: 'row',
+                                        flexWrap: 'nowrap',
+                                        gap: isMobile ? '10px' : '16px',
+                                        alignItems: 'stretch',
+                                    }}
+                                >
                                     <div className={`${cardStyles.levelCard} ${isMobile ? mobileClasses.card : ''}`}>
-                                        <ClickableTooltip
-                                            icon={
-                                                <svg
-                                                    width="16"
-                                                    height="16"
-                                                    style={{
-                                                        paddingRight: "2px",
-                                                    }}
-                                                    viewBox="0 0 24 24"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    strokeWidth="2"
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                >
-                                                    <title>Level</title>
-                                                    <circle
-                                                        cx="12"
-                                                        cy="12"
-                                                        r="10"
-                                                    />
-                                                    <text
-                                                        x="12"
-                                                        y="16"
-                                                        textAnchor="middle"
-                                                        fontSize="10"
-                                                        fill="currentColor"
-                                                    >
-                                                        Lv
-                                                    </text>
-                                                </svg>
-                                            }
-                                            label="Level"
-                                            tooltipContent={
-                                                <div>
-                                                    Level is your overall
-                                                    progress. Earn XP to
-                                                    increase it!
-                                                </div>
-                                            }
-                                        />
-                                        <div className={cardStyles.levelValue}>
-                                            {playerData.level}
-                                        </div>
+                                        <div className={cardStyles.cardLabel}>LEVEL</div>
+                                        <div className={cardStyles.levelValue}>{playerData.level}</div>
                                     </div>
-                                    {/* EXP Card */}
+
                                     <div className={`${cardStyles.expCard} ${isMobile ? mobileClasses.card : ''}`}>
-                                        <ClickableTooltip
-                                            icon={
+                                        <div className={cardStyles.cardLabel} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                                            <span style={{ display: 'inline-flex', alignItems: 'center' }} aria-hidden="true">
                                                 <svg
-                                                    width="16"
-                                                    height="16"
-                                                    style={{
-                                                        paddingRight: "2px",
-                                                    }}
+                                                    width="14"
+                                                    height="14"
                                                     viewBox="0 0 24 24"
                                                     fill="none"
                                                     stroke="currentColor"
@@ -965,49 +1018,29 @@ ${testResults.join('\n')}`;
                                                     xmlns="http://www.w3.org/2000/svg"
                                                 >
                                                     <title>Experience</title>
-                                                    <rect
-                                                        x="4"
-                                                        y="4"
-                                                        width="16"
-                                                        height="16"
-                                                        rx="4"
-                                                    />
-                                                    <text
-                                                        x="12"
-                                                        y="16"
-                                                        textAnchor="middle"
-                                                        fontSize="10"
-                                                        fill="currentColor"
-                                                    >
+                                                    <rect x="4" y="4" width="16" height="16" rx="4" />
+                                                    <text x="12" y="16" textAnchor="middle" fontSize="10" fill="currentColor">
                                                         XP
                                                     </text>
                                                 </svg>
-                                            }
-                                            label="EXP"
-                                            tooltipContent={
-                                                <div>
-                                                    Earn EXP by completing
-                                                    tasks. Reach the next level
-                                                    by filling the bar!
-                                                </div>
-                                            }
-                                        />
-                                        <div className={cardStyles.expValue}>
-                                            {playerData.xp} /{" "}
-                                            {playerData.xpRequired}
+                                            </span>
+                                            EXP
                                         </div>
-                                    </div>
-                                </div>
-                                {/* Progress Bar Card */}
-                                <div className={`${cardStyles.progressCard} ${isMobile ? mobileClasses.card : ''}`}>
-                                    <div style={{ width: "100%" }}>
                                         <ProgressBar
-                                            progress={Math.round(
-                                                (playerData.xp /
-                                                    playerData.xpRequired) *
-                                                    100
+                                            progress={Math.min(
+                                                100,
+                                                Math.max(
+                                                    0,
+                                                    Math.round(
+                                                        (Number(playerData.xp || 0) /
+                                                            Math.max(1, Number(playerData.xpRequired || 1))) *
+                                                            100
+                                                    )
+                                                )
                                             )}
-                                            height={isMobile ? 16 : 20}
+                                            height={14}
+                                            labelPosition="center"
+                                            label={`${Number(playerData.xp || 0)}/${Math.max(1, Number(playerData.xpRequired || 1))}`}
                                         />
                                     </div>
                                 </div>
@@ -1036,26 +1069,40 @@ ${testResults.join('\n')}`;
                                             {playerData.coins}
                                         </div>
                                     </div>
-                                    {/* Skill Tree Card */}
-                                    <div className={`${cardStyles.skillTreeCard} ${mobileClasses.card}`}>
-                                        <SkillTreeButton plugin={plugin} />
-                                    </div>
-                                    {/* Inventory Card */}
-                                    <div className={`${cardStyles.inventoryCard} ${mobileClasses.card}`}>
-                                        <InventoryButton plugin={plugin} />
-                                    </div>
-                                    {/* Stats Button Card */}
-                                    <div className={`${mobileClasses.card}`} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: isMobile ? '8px' : '12px', background: '#181a1b', border: '1px solid var(--background-modifier-border)', borderRadius: '8px' }}>
-                                        <button
-                                            onClick={() => setShowStats(true)}
-                                            className={styles.button}
-                                            aria-label="View Stats"
-                                            style={{ display: 'flex', alignItems: 'center', gap: isMobile ? 6 : 8 }}
-                                        >
-                                            <span style={{ display: 'inline-flex', alignItems: 'center' }}>{StatsIcon}</span>
-                                            <span>Stats</span>
-                                        </button>
-                                    </div>
+                                    {/* Skill Tree Card - outer card is the button */}
+                                    <button
+                                        type="button"
+                                        className={`${cardStyles.skillTreeCard} ${mobileClasses.card}`}
+                                        onClick={() => setShowSkillTreeModal(true)}
+                                        aria-label="Open Skill Tree"
+                                    >
+                                        <span className={cardStyles.actionIcon} style={{ display: 'inline-flex', alignItems: 'center' }}>
+                                            {SkillTreeCardIcon}
+                                        </span>
+                                        <span className={cardStyles.actionLabel}>Skill Tree</span>
+                                    </button>
+                                    {/* Inventory Card - outer card is the button */}
+                                    <button
+                                        type="button"
+                                        className={`${cardStyles.inventoryCard} ${mobileClasses.card}`}
+                                        onClick={() => new InventoryModalClass(plugin.app).open()}
+                                        aria-label="Open Inventory"
+                                    >
+                                        <span className={cardStyles.actionIcon}>🎒</span>
+                                        <span className={cardStyles.actionLabel}>Inventory</span>
+                                    </button>
+                                    {/* Stats Button Card - outer card is the button */}
+                                    <button
+                                        type="button"
+                                        className={`${cardStyles.inventoryCard} ${mobileClasses.card}`}
+                                        onClick={() => setShowStats(true)}
+                                        aria-label="View Stats"
+                                    >
+                                        <span className={cardStyles.actionIcon} style={{ display: 'inline-flex', alignItems: 'center' }}>
+                                            {StatsIcon}
+                                        </span>
+                                        <span className={cardStyles.actionLabel}>Stats</span>
+                                    </button>
                                 </div>
                                                                                                  {/* Energy HUD with Rejuvenating Features */}
                                 <div className={`${cardStyles.energyCard} ${mobileClasses.card}`}>
@@ -1086,10 +1133,9 @@ ${testResults.join('\n')}`;
 
                         <ErrorBoundary componentName="Quest Tab">
                             <Suspense fallback={<TabLoadingState tabName="Quests" />}>
-                                {selectedTab === "quests" && (<QuestTab plugin={plugin} />)}
+                                {selectedTab === "quests" && (<QuestTab app={plugin.app} plugin={plugin} />)}
                             </Suspense>
                         </ErrorBoundary>
-
 
                         <ErrorBoundary componentName="Habits Tab">
                             <Suspense fallback={<TabLoadingState tabName="Habits" />}>
@@ -1113,7 +1159,11 @@ ${testResults.join('\n')}`;
 
                         <ErrorBoundary componentName="Pomodoro Tab">
                             <Suspense fallback={<TabLoadingState tabName="Pomodoro" />}>
-                                {selectedTab === "pomodoro" && (<PomodoroTab plugin={plugin} playerData={playerData} reloadPlayerData={reloadPlayerData} />)}
+                                {hasMountedPomodoro && (
+                                    <div style={{ display: selectedTab === 'pomodoro' ? 'block' : 'none' }}>
+                                        <PomodoroTab plugin={plugin} playerData={playerData} reloadPlayerData={reloadPlayerData} />
+                                    </div>
+                                )}
                             </Suspense>
                         </ErrorBoundary>
 
@@ -1161,6 +1211,15 @@ ${testResults.join('\n')}`;
                     </ErrorBoundary>
                 </div>
             </div>
+        )}
+
+        {/* Skill Tree Modal */}
+        {showSkillTreeModal && (
+            <SkillTreeModal
+                isOpen={showSkillTreeModal}
+                onClose={() => setShowSkillTreeModal(false)}
+                plugin={plugin}
+            />
         )}
         </div>
         </MobileErrorBoundary>

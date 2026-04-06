@@ -5,6 +5,8 @@ import { EnhancedBossRewards } from '../services/bossRewardService';
 import TacticalBattleUI from '../components/TacticalBattleUI';
 import type { Quest } from '../utils/taskParser';
 import type { PlayerData } from '../../../data/models/PlayerData';
+import { applyTacticalBattleBonuses } from '../../../shared/utils/questCompletionPipeline';
+import type { TacticalBattleCompletionExtras } from '../utils/tacticalBattleCompletion';
 
 interface BossBattleModalProps {
   isOpen: boolean;
@@ -78,8 +80,13 @@ export const BossBattleModal: React.FC<BossBattleModalProps> = ({
     lastDailyReset: new Date().toISOString()
   };
 
-  const handleQuestComplete = (questTitle: string) => {
-    console.log(`Quest completed: ${questTitle}`);
+  const handleQuestComplete = async (questTitle: string, extras?: TacticalBattleCompletionExtras) => {
+    console.log(`Quest completed: ${questTitle}`, extras);
+    if (extras) {
+      const bonusXp = (extras.moveBonusXp ?? 0) + (extras.finisherBonusXp ?? 0);
+      const bonusCoins = extras.moveBonusCoins ?? 0;
+      await applyTacticalBattleBonuses(bonusXp, bonusCoins);
+    }
     onVictory(boss);
   };
 

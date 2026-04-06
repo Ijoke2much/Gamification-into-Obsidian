@@ -136,6 +136,10 @@ export interface SkillMetadata {
   level?: number;
   cp?: number;
   maxCP?: number;
+
+  // Icon metadata (for habits, views, etc.)
+  icon?: string; // emoji or short text
+  iconImage?: string; // vault-relative image / svg path
 }
 
 export interface ClassMetadata {
@@ -147,6 +151,8 @@ export interface ClassMetadata {
   totalCP: number;
   description: string;
   filePath: string;
+  icon?: string;
+  iconImage?: string;
 }
 
 export interface StatMetadata {
@@ -248,7 +254,9 @@ export async function getAllClasses(vault: Vault): Promise<ClassMetadata[]> {
               requiredCP: data.requiredCP || 100,
               totalCP: data.totalCP || 0,
               description: data.Description || data.description || '',
-              filePath: file.path
+              filePath: file.path,
+              icon: data.icon,
+              iconImage: data.iconImage
             });
           }
         } catch (error) {
@@ -261,13 +269,28 @@ export async function getAllClasses(vault: Vault): Promise<ClassMetadata[]> {
   return classes;
 }
 
+// Skills cache for faster modal open (avoids re-scanning vault on every open)
+let skillsCache: SkillMetadata[] | null = null;
+let skillsCacheTime = 0;
+const SKILLS_CACHE_TTL_MS = 45_000; // 45 seconds
+
+export function clearSkillsCache(): void {
+  skillsCache = null;
+  skillsCacheTime = 0;
+}
+
 /**
  * Scans the vault for all skills in SkillTree/*Skills*.md, parses their YAML frontmatter,
- * and returns a list of skills with metadata.
+ * and returns a list of skills with metadata. Results are cached for 45s for faster modal open.
  * @param vault Obsidian Vault instance
  * @returns Promise<SkillMetadata[]> Array of skill metadata
  */
 export async function getAllSkills(vault: Vault): Promise<SkillMetadata[]> {
+  const now = Date.now();
+  if (skillsCache && (now - skillsCacheTime) < SKILLS_CACHE_TTL_MS) {
+    return skillsCache;
+  }
+
   const skills: SkillMetadata[] = [];
   const allFiles = vault.getAllLoadedFiles();
 
@@ -368,7 +391,9 @@ export async function getAllSkills(vault: Vault): Promise<SkillMetadata[]> {
             filePath: file.path,
             level: data.level,
             cp: data.cp,
-            maxCP: data.maxCP
+            maxCP: data.maxCP,
+            icon: data.icon,
+            iconImage: data.iconImage
           });
         }
       }
@@ -383,5 +408,7 @@ export async function getAllSkills(vault: Vault): Promise<SkillMetadata[]> {
     });
   }
 
+  skillsCache = skills;
+  skillsCacheTime = Date.now();
   return skills;
 } 

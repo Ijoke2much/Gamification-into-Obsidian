@@ -10,10 +10,21 @@ interface HabitFormData {
     // New multiple skills list for richer linkage
     skills?: string[];
     skillColor: string;
+    // New: type of habit - build (do more) vs avoid (do less)
+    habitType: 'build' | 'avoid';
     difficulty: number;
     xpMultiplier: number;
     cpMultiplier: number;
     coinsMultiplier: number;
+    // Icon from the primary selected skill
+    primarySkillIcon?: string;
+    // New: schedule configuration
+    scheduleType?: 'daily' | 'weekly';
+    /**
+     * Days of week the habit should appear when scheduleType === 'weekly'
+     * 0 = Sunday ... 6 = Saturday
+     */
+    scheduleDays?: number[];
 }
   
   interface HabitFormProps {
@@ -30,10 +41,15 @@ interface HabitFormData {
       skill: initialData?.skill || '',
       skills: (initialData as any)?.skills || (initialData?.skill ? [initialData.skill] : []),
       skillColor: initialData?.skillColor || '',
+      habitType: initialData?.habitType || 'build',
       difficulty: initialData?.difficulty || 1,
       xpMultiplier: initialData?.xpMultiplier || 10,
       cpMultiplier: initialData?.cpMultiplier || 5,
-      coinsMultiplier: initialData?.coinsMultiplier || 3
+      coinsMultiplier: initialData?.coinsMultiplier || 3,
+      primarySkillIcon: (initialData as any)?.primarySkillIcon,
+      // Default schedule: daily on all days unless provided
+      scheduleType: (initialData as any)?.scheduleType || 'daily',
+      scheduleDays: (initialData as any)?.scheduleDays || [0, 1, 2, 3, 4, 5, 6]
     });
 
     const [skills, setSkills] = useState<SkillMetadata[]>([]);
@@ -87,6 +103,26 @@ interface HabitFormData {
       return '⭐'.repeat(difficulty) + '☆'.repeat(3 - difficulty);
     };
   
+    // Preview icon for the habit based on the primary associated skill,
+    // falling back to any existing primarySkillIcon or a default star.
+    const getHabitIconPreview = () => {
+      const primarySkillName =
+        (formData.skills && formData.skills[0]) || formData.skill || '';
+
+      if (primarySkillName) {
+        const meta = skills.find((s) => s.name === primarySkillName);
+        if (meta?.icon) {
+          return meta.icon;
+        }
+      }
+
+      if (formData.primarySkillIcon) {
+        return formData.primarySkillIcon;
+      }
+
+      return '⭐';
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
       e.preventDefault();
       const hasAnySkill = (formData.skills && formData.skills.length > 0) || !!formData.skill;
@@ -99,35 +135,48 @@ interface HabitFormData {
           skill: primarySkill,
           name: formData.name.trim(),
           skillColor: selectedSkill ? getSkillColor(selectedSkill.class) : '#666666',
-          skills: formData.skills && formData.skills.length > 0 ? formData.skills : [primarySkill]
+          skills: formData.skills && formData.skills.length > 0 ? formData.skills : [primarySkill],
+          primarySkillIcon: selectedSkill?.icon,
+          // Ensure schedule fields are always populated on submit
+          scheduleType: formData.scheduleType || 'daily',
+          scheduleDays: (formData.scheduleDays && formData.scheduleDays.length > 0)
+            ? formData.scheduleDays
+            : [0, 1, 2, 3, 4, 5, 6]
         });
-        setFormData({ name: '', skill: '', skills: [], skillColor: '', difficulty: 1, xpMultiplier: 10, cpMultiplier: 5, coinsMultiplier: 3 });
+        setFormData({
+          name: '',
+          skill: '',
+          skills: [],
+          skillColor: '',
+          habitType: 'build',
+          difficulty: 1,
+          xpMultiplier: 10,
+          cpMultiplier: 5,
+          coinsMultiplier: 3,
+          primarySkillIcon: undefined,
+          scheduleType: 'daily',
+          scheduleDays: [0, 1, 2, 3, 4, 5, 6]
+        });
       }
     };
   
-    // Add a skill to the multi-select list
-    const addSkill = (skillName: string) => {
-      if (!skillName) return;
-      const updated = new Set([...(formData.skills || []), skillName]);
-      const primary = [...updated][0] || '';
-      const selectedSkill = skills.find(s => s.name === primary);
-      setFormData({
-        ...formData,
-        skill: primary,
-        skills: [...updated],
-        skillColor: selectedSkill ? getSkillColor(selectedSkill.class) : ''
-      });
-    };
+    // Single-skill selection: keep skill and skills[0] in sync
+    const handleSkillChange = (skillName: string) => {
+      if (!skillName) {
+        setFormData({
+          ...formData,
+          skill: '',
+          skills: [],
+          skillColor: ''
+        });
+        return;
+      }
 
-    // Remove a skill from the list
-    const removeSkill = (skillName: string) => {
-      const remaining = (formData.skills || []).filter(s => s !== skillName);
-      const primary = remaining[0] || '';
-      const selectedSkill = skills.find(s => s.name === primary);
+      const selectedSkill = skills.find((s) => s.name === skillName);
       setFormData({
         ...formData,
-        skill: primary,
-        skills: remaining,
+        skill: skillName,
+        skills: [skillName],
         skillColor: selectedSkill ? getSkillColor(selectedSkill.class) : ''
       });
     };
@@ -139,57 +188,76 @@ interface HabitFormData {
           
           <form onSubmit={handleSubmit} className={styles.form}>
             <div className={styles.field}>
+              <label className={styles.label}>Habit Type</label>
+              <div className={styles.difficultyButtons}>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, habitType: 'build' })}
+                  className={`${styles.difficultyButton} ${formData.habitType === 'build' ? styles.selected : ''}`}
+                >
+                  Do more of this
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, habitType: 'avoid' })}
+                  className={`${styles.difficultyButton} ${formData.habitType === 'avoid' ? styles.selected : ''}`}
+                >
+                  Avoid this
+                </button>
+              </div>
+              <p style={{ fontSize: 11, opacity: 0.8 }}>
+                For avoid habits (like “No eating out today”), mark it completed on days you successfully avoid the behavior.
+              </p>
+            </div>
+
+            <div className={styles.field}>
               <label className={styles.label}>Habit Name</label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
-                className={styles.input}
-                placeholder="Enter habit name..."
-                required
-              />
+              <div className={styles.nameRow}>
+                <div className={styles.iconPreview}>
+                  {getHabitIconPreview()}
+                </div>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  className={styles.input}
+                  placeholder="Enter habit name..."
+                  required
+                />
+              </div>
             </div>
             
             <div className={styles.field}>
               <label className={styles.label}>Associated Skills</label>
               <select
-                value=""
-                onChange={(e) => addSkill(e.target.value)}
+                value={formData.skill}
+                onChange={(e) => handleSkillChange(e.target.value)}
                 className={styles.select}
                 disabled={skillsLoading}
               >
                 <option value="">
-                  {skillsLoading ? "Loading skills..." : skills.length > 0 ? "Add a skill..." : "No skills found in SkillTree"}
+                  {skillsLoading ? "Loading skills..." : skills.length > 0 ? "Select a skill..." : "No skills found in SkillTree"}
                 </option>
                 {!skillsLoading && skills
-                  .filter(s => !(formData.skills || []).includes(s.name))
                   .map(skill => (
                   <option key={skill.name} value={skill.name}>
-                    {skill.name} ({skill.class})
+                    {skill.icon ? `${skill.icon} ` : ''}{skill.name} ({skill.class})
                   </option>
                 ))}
               </select>
 
-              {/* Selected skills chips and preview */}
-              {(formData.skills && formData.skills.length > 0) && (
+              {/* Class/Stats preview for the selected skill */}
+              {!skillsLoading && formData.skill && (
                 <div style={{ marginTop: 8 }}>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 8 }}>
-                    {(formData.skills || []).map(s => (
-                      <span key={s} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 14, background: 'var(--interactive-accent)', color: '#fff', fontSize: 12 }}>
-                        {s}
-                        <button type="button" onClick={() => removeSkill(s)} style={{ background: 'transparent', color: '#fff', border: 'none', cursor: 'pointer', fontWeight: 700 }}>×</button>
-                      </span>
-                    ))}
-                  </div>
-
-                  {/* Class/Stats preview like quest modal */}
                   <div style={{ padding: 10, border: '1px solid var(--background-modifier-border)', borderRadius: 8, background: 'var(--background-secondary)' }}>
-                    {(formData.skills || []).map(skillName => {
-                      const meta = skills.find(sk => sk.name === skillName);
+                    {(() => {
+                      const meta = skills.find(sk => sk.name === formData.skill);
                       if (!meta) return null;
                       return (
-                        <div key={skillName} style={{ marginBottom: 8 }}>
-                          <div style={{ fontWeight: 600 }}>{meta.name} — <span style={{ opacity: 0.85 }}>{meta.class}</span></div>
+                        <div style={{ marginBottom: 4 }}>
+                          <div style={{ fontWeight: 600 }}>
+                            {meta.name} — <span style={{ opacity: 0.85 }}>{meta.class}</span>
+                          </div>
                           {meta.stats && (
                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
                               {Object.keys(meta.stats).map(stat => (
@@ -199,10 +267,85 @@ interface HabitFormData {
                           )}
                         </div>
                       );
-                    })}
+                    })()}
                   </div>
                 </div>
               )}
+            </div>
+            
+            {/* Schedule configuration */}
+            <div className={styles.field}>
+              <label className={styles.label}>Schedule</label>
+              <div className={styles.difficultyButtons}>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setFormData({
+                      ...formData,
+                      scheduleType: 'daily',
+                      // daily implies all days are valid
+                      scheduleDays: [0, 1, 2, 3, 4, 5, 6],
+                    })
+                  }
+                  className={`${styles.difficultyButton} ${
+                    (formData.scheduleType || 'daily') === 'daily' ? styles.selected : ''
+                  }`}
+                >
+                  Daily
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setFormData({
+                      ...formData,
+                      scheduleType: 'weekly',
+                      // if user is switching for the first time, default to weekdays
+                      scheduleDays:
+                        formData.scheduleType === 'weekly' && formData.scheduleDays && formData.scheduleDays.length > 0
+                          ? formData.scheduleDays
+                          : [1, 2, 3, 4, 5],
+                    })
+                  }
+                  className={`${styles.difficultyButton} ${
+                    (formData.scheduleType || 'daily') === 'weekly' ? styles.selected : ''
+                  }`}
+                >
+                  Weekly
+                </button>
+              </div>
+
+              {(formData.scheduleType || 'daily') === 'weekly' && (
+                <div className={styles.scheduleDaysRow}>
+                  {['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((label, index) => {
+                    const isSelected = (formData.scheduleDays || []).includes(index);
+                    return (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => {
+                          const current = formData.scheduleDays || [];
+                          const already = current.includes(index);
+                          const next = already
+                            ? current.filter((d) => d !== index)
+                            : [...current, index].sort((a, b) => a - b);
+                          setFormData({
+                            ...formData,
+                            scheduleDays: next.length > 0 ? next : [index],
+                          });
+                        }}
+                        className={`${styles.dayChip} ${isSelected ? styles.dayChipSelected : ''}`}
+                      >
+                        {label}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+
+              <p style={{ fontSize: 11, opacity: 0.8 }}>
+                <strong>Daily</strong> shows every day. <strong>Weekly</strong> only shows on the days you pick
+                in your habit list and streak views.
+              </p>
             </div>
             
             <div className={styles.field}>
@@ -264,10 +407,35 @@ interface HabitFormData {
               <div className={styles.rewardPreview}>
                 {(() => { 
                   const obsidianWindow = window as Window & { app?: { plugins?: { plugins?: Record<string, { settings?: { currencyName?: string } }> } } };
-                  const plugin = obsidianWindow?.app?.plugins?.plugins?.["Gamification-into-Obsidian"] || obsidianWindow?.app?.plugins?.plugins?.["Gamification-into-Obsidian"];
-                  const currencyName = plugin?.settings?.currencyName || "Coins"; 
+                  const plugin = obsidianWindow?.app?.plugins?.plugins?.["Gamification-into-Obsidian"];
+                  const currencyName = plugin?.settings?.currencyName || "Boogers"; 
+
+                  const baseXp = formData.xpMultiplier * formData.difficulty;
+                  const baseCp = formData.cpMultiplier * formData.difficulty;
+                  const baseCoins = formData.coinsMultiplier * formData.difficulty;
+
+                  // Simple 7‑day preview: treat it as a 2x bonus for clarity
+                  const sevenDayMultiplier = 2;
+                  const streakXp = Math.round(baseXp * sevenDayMultiplier);
+                  const streakCp = Math.round(baseCp * sevenDayMultiplier);
+                  const streakCoins = Math.round(baseCoins * sevenDayMultiplier);
+                  const bonusPercent = Math.round((sevenDayMultiplier - 1) * 100);
+
                   return (
-                    <span>Preview: {formData.xpMultiplier * formData.difficulty} XP, {formData.cpMultiplier * formData.difficulty} CP, {formData.coinsMultiplier * formData.difficulty} {currencyName}</span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      <span>
+                        <strong>Base completion reward:</strong>{' '}
+                        {baseXp} XP, {baseCp} CP, {baseCoins} {currencyName}
+                      </span>
+                      <span style={{ color: 'var(--text-accent)' }}>
+                        <strong>7‑day streak bonus preview:</strong>{' '}
+                        {streakXp} XP, {streakCp} CP, {streakCoins} {currencyName} (+{bonusPercent}%)
+                      </span>
+                      <span style={{ fontSize: 11, opacity: 0.8 }}>
+                        Long streaks also grow your habit tree, which can drop <strong>materials</strong> and
+                        boost XP / CP / {currencyName} for this skill.
+                      </span>
+                    </div>
                   ); 
                 })()}
               </div>

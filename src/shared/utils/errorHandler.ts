@@ -1,4 +1,5 @@
 import { Notice } from 'obsidian';
+import { showGameNotice } from './noticeUtils';
 
 export interface ErrorHandlerOptions {
     showNotice?: boolean;
@@ -38,7 +39,8 @@ export function handleError<T = any>(
 
     // Show user notification if enabled
     if (showNotice) {
-        new Notice(displayMessage, noticeTimeout);
+        // Use centralized notice helper so errors stay visible until clicked.
+        showGameNotice(displayMessage, noticeTimeout);
     }
 
     // Rethrow if requested
@@ -235,7 +237,7 @@ export class ComponentErrorHandler {
 
         console.error(`[${context}]:`, error, errorInfo);
 
-        new Notice(
+        showGameNotice(
             `Component error in ${componentName || 'unknown component'}. Please refresh the tab.`,
             5000
         );

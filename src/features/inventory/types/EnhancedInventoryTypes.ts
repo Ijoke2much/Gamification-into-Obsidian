@@ -1,5 +1,9 @@
 import { InventoryItem } from '../utils/updateInventoryFile';
 
+// ============================================================================
+// Enhanced Inventory Item (runtime owned items)
+// ============================================================================
+
 export interface EnhancedInventoryItem extends InventoryItem {
     isFavorite?: boolean;
     acquiredDate?: string;
@@ -11,6 +15,60 @@ export interface EnhancedInventoryItem extends InventoryItem {
     setBonus?: string;
     craftingUses?: string[]; // Recipes this item is used in
     usesRemaining?: number;
+}
+
+// ============================================================================
+// Game Item Definitions (configuration-level item schema)
+// Used for defining weapons, materials, and artifacts in a structured way.
+// These definitions can then be rendered in the Shop or converted to
+// InventoryItem entries when the player acquires them.
+// ============================================================================
+
+export type ItemType =
+    | 'material'   // Foundational crafting ingredients and materials
+    | 'weapon'     // One-time use items for bosses / combat
+    | 'artifact';  // Real-world reward items / special promises
+
+export type ItemEffectKind =
+    | 'stat-bonus'  // XP/CP/etc. modifiers
+    | 'boss-bonus'  // Extra damage/shields or bonuses in boss fights
+    | 'real-world'; // Real-world activities, timers, approvals, etc.
+
+export interface ItemEffect {
+    kind: ItemEffectKind;
+    /**
+     * Effect payload, shape depends on kind:
+     * - stat-bonus: { xpBonusPercent: number; appliesToTags?: string[]; ... }
+     * - boss-bonus: { damageBonusPercent?: number; shieldHP?: number; bossId?: string; ... }
+     * - real-world: { durationMinutes?: number; maxUses?: number; requiresApproval?: boolean; ... }
+     */
+    data: Record<string, unknown>;
+}
+
+export interface GameItemDefinition {
+    /** Stable identifier for this item definition */
+    id: string;
+    /** Display name */
+    name: string;
+    /** High-level type (material / weapon / artifact) */
+    type: ItemType;
+    /** Rarity tier for display and drop logic */
+    rarity: 'common' | 'rare' | 'epic' | 'legendary';
+    /** Whether the item can exist in stacks in the inventory */
+    stackable: boolean;
+    /** Optional flavor description */
+    description?: string;
+    /** Optional icon (emoji or image URL) */
+    icon?: string;
+    /** Optional effect definition describing what this item does */
+    effect?: ItemEffect;
+    /** Optional shop price in currency units */
+    priceInCoins?: number;
+    /**
+     * Optional material requirements for purchasing / crafting this item.
+     * These IDs should correspond to your material IDs / names in markdown.
+     */
+    requiredMaterials?: Array<{ id: string; amount: number }>;
 }
 
 export interface InventoryFilter {

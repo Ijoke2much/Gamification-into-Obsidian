@@ -20,6 +20,9 @@ interface QuestCalendarViewProps {
   onDateSelect: (date: Date) => void;
   onQuestMove: (questId: string, newDate: string) => void;
   onStartHyperfocus?: (quest: Quest) => void;
+  hideSelectedDateDetails?: boolean; // For unified view, hide the selected date details section
+  onAddQuestForDate?: (date: Date) => void; // Opens create modal with date pre-filled
+  showFocusEnergyControls?: boolean;
 }
 
 interface CalendarDay {
@@ -43,13 +46,20 @@ export const QuestCalendarView: React.FC<QuestCalendarViewProps> = ({
   onQuestEdit,
   onDateSelect,
   onQuestMove,
-  onStartHyperfocus
+  onStartHyperfocus,
+  hideSelectedDateDetails = false,
+  onAddQuestForDate,
+  showFocusEnergyControls = true,
 }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [editingField, setEditingField] = useState<{ questId: string; field: string; subtaskIndex?: number } | null>(null);
   const [focusMode, setFocusMode] = useState(false);
   const [energyFilter, setEnergyFilter] = useState(false);
+
+  // Format date as YYYY-MM-DD in local timezone (avoids UTC offset bugs)
+  const toLocalDateStr = (d: Date) =>
+    `${d.getFullYear()}-${(d.getMonth() + 1).toString().padStart(2, '0')}-${d.getDate().toString().padStart(2, '0')}`;
 
   // Calendar generation logic
   const calendarDays = useMemo((): CalendarDay[] => {
@@ -68,7 +78,8 @@ export const QuestCalendarView: React.FC<QuestCalendarViewProps> = ({
       const date = new Date(startDate);
       date.setDate(startDate.getDate() + i);
       
-      const dateStr = date.toISOString().split('T')[0];
+      const dateStr = toLocalDateStr(date);
+      const isToday = date.getTime() === today.getTime();
       const dayQuests = quests.filter(quest => {
         if (quest.completed && focusMode) return false;
         // Handle both date-only (YYYY-MM-DD) and datetime (YYYY-MM-DDTHH:MM)
@@ -76,7 +87,8 @@ export const QuestCalendarView: React.FC<QuestCalendarViewProps> = ({
           const questDateStr = quest.due.includes('T') ? quest.due.split('T')[0] : quest.due;
           if (questDateStr === dateStr) return true;
         }
-        if (quest.today && date.getTime() === today.getTime()) return true;
+        // Undated quests: show on today (common UX - no date = appears today)
+        if (isToday && (!quest.due || quest.today)) return true;
         return false;
       });
 
@@ -95,13 +107,16 @@ export const QuestCalendarView: React.FC<QuestCalendarViewProps> = ({
         .filter(quest => !quest.completed)
         .reduce((sum, quest) => sum + (quest.energyCost || 10), 0);
 
+      // Include completed quests in questCount so dots show for all quests (completed styled differently)
+      const totalQuestCount = filteredQuests.length;
+
       days.push({
         date,
         isCurrentMonth: date.getMonth() === month,
         isToday: date.getTime() === today.getTime(),
         isWeekend: date.getDay() === 0 || date.getDay() === 6,
         quests: filteredQuests,
-        questCount: filteredQuests.filter(q => !q.completed).length,
+        questCount: totalQuestCount,
         urgentCount: urgentQuests.filter(q => !q.completed).length,
         completedCount: completedQuests.length,
         energyRequirement: totalEnergyRequired
@@ -113,22 +128,37 @@ export const QuestCalendarView: React.FC<QuestCalendarViewProps> = ({
 
   // Debug logging for calendar quest detection
   useEffect(() => {
+    const questsWithDue = quests.filter(q => q.due);
+    const undatedCount = quests.filter(q => !q.due).length;
+    const completedCount = quests.filter(q => q.completed).length;
     window.console.log('🔍 [Calendar] Debug Info:');
     window.console.log('  Current Month:', currentMonth.getFullYear(), currentMonth.getMonth() + 1);
-    window.console.log('  Total Quests:', quests.length);
-    window.console.log('  Quest Dates:', quests.filter(q => q.due).map(q => ({ 
-      title: q.title, 
-      due: q.due, 
-      questDate: q.due?.split('T')[0] 
-    })));
+    window.console.log('  Total Quests:', quests.length, '(completed:', completedCount, ', undated:', undatedCount, ')');
+    window.console.log('  Quests with due dates:', questsWithDue.length);
+    if (questsWithDue.length > 0) {
+      window.console.log('  Quest Dates:', questsWithDue.map(q => ({ 
+        title: q.title, 
+        due: q.due, 
+        questDate: q.due?.split('T')[0],
+        completed: q.completed
+      })));
+    }
+    if (undatedCount > 0) {
+      window.console.log('  Undated quests (shown on today):', quests.filter(q => !q.due).map(q => q.title));
+    }
     
     const currentMonthDays = calendarDays.filter(day => day.isCurrentMonth);
     const daysWithQuests = currentMonthDays.filter(day => day.questCount > 0);
     window.console.log('  Days in current month with quests:', daysWithQuests.length);
-    window.console.log('  Days with quests:', daysWithQuests.map(d => ({
-      date: d.date.toISOString().split('T')[0],
-      questCount: d.questCount
-    })));
+    if (daysWithQuests.length > 0) {
+      window.console.log('  Days with quests:', daysWithQuests.map(d => ({
+        date: toLocalDateStr(d.date),
+        questCount: d.questCount,
+        completedCount: d.completedCount
+      })));
+    } else if (quests.length > 0) {
+      window.console.log('  ⚠️ No days matched - check date format / timezone');
+    }
   }, [currentMonth, quests, calendarDays]);
 
   // Navigation functions
@@ -142,9 +172,11 @@ export const QuestCalendarView: React.FC<QuestCalendarViewProps> = ({
 
   const goToToday = useCallback(() => {
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
     setCurrentMonth(new Date(today.getFullYear(), today.getMonth(), 1));
     setSelectedDate(today);
-  }, []);
+    onDateSelect(today);
+  }, [onDateSelect]);
 
   // Drag and drop handlers
   const [draggedQuest, setDraggedQuest] = useState<Quest | null>(null);
@@ -460,20 +492,24 @@ export const QuestCalendarView: React.FC<QuestCalendarViewProps> = ({
           >
             Today
           </button>
-          <button 
-            className={`${styles.filterButton} ${focusMode ? styles.active : ''}`}
-            onClick={() => setFocusMode(!focusMode)}
-            title="Focus Mode - Hide completed quests"
-          >
-            🎯 Focus
-          </button>
-          <button 
-            className={`${styles.filterButton} ${energyFilter ? styles.active : ''}`}
-            onClick={() => setEnergyFilter(!energyFilter)}
-            title="Energy Filter - Show only quests within energy level"
-          >
-            ⚡ Energy
-          </button>
+          {showFocusEnergyControls && (
+            <>
+              <button 
+                className={`${styles.filterButton} ${focusMode ? styles.active : ''}`}
+                onClick={() => setFocusMode(!focusMode)}
+                title="Focus Mode - Hide completed quests"
+              >
+                🎯 Focus
+              </button>
+              <button 
+                className={`${styles.filterButton} ${energyFilter ? styles.active : ''}`}
+                onClick={() => setEnergyFilter(!energyFilter)}
+                title="Energy Filter - Show only quests within energy level"
+              >
+                ⚡ Energy
+              </button>
+            </>
+          )}
         </div>
       </div>
 
@@ -509,8 +545,13 @@ export const QuestCalendarView: React.FC<QuestCalendarViewProps> = ({
               ${selectedDate?.getTime() === day.date.getTime() ? styles.selected : ''}
             `}
             onClick={() => {
-              setSelectedDate(day.date);
-              onDateSelect(day.date);
+              const selected = new Date(day.date);
+              selected.setHours(0, 0, 0, 0);
+              setSelectedDate(selected);
+              onDateSelect(selected);
+              if (!day.isCurrentMonth) {
+                setCurrentMonth(new Date(selected.getFullYear(), selected.getMonth(), 1));
+              }
             }}
             onDragOver={handleDragOver}
             onDrop={(e) => handleDrop(e, day.date)}
@@ -567,8 +608,8 @@ export const QuestCalendarView: React.FC<QuestCalendarViewProps> = ({
         ))}
       </div>
 
-      {/* Selected Date Details */}
-      {selectedDate && (
+      {/* Selected Date Details - Hidden in unified view */}
+      {!hideSelectedDateDetails && selectedDate && (
         <div className={styles.dateDetails}>
           <h3 className={styles.dateDetailsTitle}>
             {selectedDate.toLocaleDateString('en-US', { 
@@ -591,10 +632,7 @@ export const QuestCalendarView: React.FC<QuestCalendarViewProps> = ({
                   <p>No quests scheduled for this day</p>
                   <button 
                     className={styles.addQuestButton}
-                    onClick={() => {
-                      // TODO: Open quest creation modal with pre-filled date
-                      console.log('Create quest for', selectedDate.toISOString().split('T')[0]);
-                    }}
+                    onClick={() => onAddQuestForDate?.(selectedDate)}
                   >
                     Add Quest
                   </button>

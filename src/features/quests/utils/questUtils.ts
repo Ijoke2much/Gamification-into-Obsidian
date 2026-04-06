@@ -61,6 +61,7 @@ export function generateMarkdownTask({
     recur,
     estimatedTime,
     banner,
+    bannerAlign,
     customRewards,
     enhancedRewards,
     metadataStyle = "emoji",
@@ -77,6 +78,7 @@ export function generateMarkdownTask({
     recur?: string;
     estimatedTime?: string;
     banner?: string;
+    bannerAlign?: string;
     customRewards?: string[];
     enhancedRewards?: any[]; // Enhanced custom rewards
     metadataStyle?: "emoji" | "tags";
@@ -138,6 +140,7 @@ export function generateMarkdownTask({
         estimatedTime ? `time: ${estimatedTime}` : null,
         `skills: ${skills.join(", ")}`,
         banner ? `banner: ${banner}` : null,
+        bannerAlign ? `bannerAlign: ${bannerAlign}` : null,
         customRewards && customRewards.length > 0
             ? `rewards: ${customRewards.join(", ")}`
             : null,
@@ -154,6 +157,7 @@ export function generateMarkdownTask({
         ...(estimatedTime ? { time: estimatedTime } : {}),
         skills: skills,
         ...(banner ? { banner } : {}),
+        ...(bannerAlign ? { bannerAlign } : {}),
         ...(customRewards && customRewards.length > 0
             ? { rewards: customRewards }
             : {}),

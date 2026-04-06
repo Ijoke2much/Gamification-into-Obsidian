@@ -1,4 +1,5 @@
 import { App, Notice } from 'obsidian';
+import { showGameNotice } from '../utils/noticeUtils';
 import { addOrIncrementInventoryItem } from '../../features/inventory/utils/updateInventoryFile';
 import { ShopItem } from '../../features/shop/utils/ShopParser';
 import { MaterialRewardService } from './materialRewardService';
@@ -277,7 +278,7 @@ export class MaterialInventoryManager {
     static showMaterialRewardNotification(materials: MaterialReward[], quality: string, source: string) {
         // For now, use a simple notice until we can properly integrate the React component
         const materialNames = materials.map(m => m.name).join(', ');
-        new Notice(`🎉 Materials Earned from ${source}: ${materialNames} (${quality} quality)`, 5000);
+        showGameNotice(`🎉 Materials Earned from ${source}: ${materialNames} (${quality} quality)`, 5000);
     }
 
     // Get material details by ID and quality

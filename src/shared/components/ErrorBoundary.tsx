@@ -1,5 +1,5 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
-import { Notice } from 'obsidian';
+import { showGameNotice } from '../utils/noticeUtils';
 
 interface Props {
   children: ReactNode;
@@ -31,7 +31,7 @@ export class ErrorBoundary extends Component<Props, State> {
     console.error(`[ErrorBoundary${this.props.componentName ? ` - ${this.props.componentName}` : ''}]:`, error, errorInfo);
     
     // Show user-friendly notification
-    new Notice(`Something went wrong${this.props.componentName ? ` in ${this.props.componentName}` : ''}. Please check the console for details.`, 5000);
+    showGameNotice(`Something went wrong${this.props.componentName ? ` in ${this.props.componentName}` : ''}. Please check the console for details.`, 5000);
     
     // Call custom error handler if provided
     this.props.onError?.(error, errorInfo);
@@ -140,6 +140,6 @@ export function withErrorBoundary<P extends object>(
 export function useErrorHandler() {
   return (error: Error, errorInfo?: any) => {
     console.error('[Error Handler]:', error, errorInfo);
-    new Notice(`An error occurred: ${error.message}`, 5000);
+    showGameNotice(`An error occurred: ${error.message}`, 5000);
   };
 }

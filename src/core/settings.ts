@@ -1,4 +1,5 @@
 import { TreeRewardConfig, DEFAULT_TREE_REWARD_CONFIG } from '../features/habits/utils/treeRewardSystem';
+import type { GameItemDefinition } from '../features/inventory/types/EnhancedInventoryTypes';
 
 // ============================================================================
 // SETTINGS CATEGORIES FOR CARD VIEW
@@ -11,6 +12,14 @@ export interface SettingsCategory {
   description: string;
   color: string;
   settings: string[];
+}
+
+// Dedicated type for quest save locations so they can be reused
+// across settings, UI, and quest-creation logic.
+export interface QuestSaveLocation {
+  id: string;
+  label: string;
+  filePath: string;
 }
 
 // ============================================================================
@@ -369,7 +378,11 @@ export const SETTINGS_PRESETS: SettingsPreset[] = [
         defaultTimelineView: 'day',
         showCompletedTasks: true,
         groupByCategory: true,
-        enableTimeBlocks: true
+        enableTimeBlocks: true,
+        colorMode: 'adaptive',
+        useCustomDayRange: false,
+        dayStartHour: 0,
+        dayEndHour: 23
       }
     }
   },
@@ -435,7 +448,11 @@ export const SETTINGS_PRESETS: SettingsPreset[] = [
         defaultTimelineView: 'week',
         showCompletedTasks: true,
         groupByCategory: true,
-        enableTimeBlocks: true
+        enableTimeBlocks: true,
+        colorMode: 'adaptive',
+        useCustomDayRange: false,
+        dayStartHour: 0,
+        dayEndHour: 23
       },
       schedulingPreferences: {
         defaultTaskDuration: 30,
@@ -508,6 +525,16 @@ export interface GamificationPluginSettings {
   autoRefreshTasks: boolean; // Auto-refresh tasks when files change
   hideCompletedQuests: boolean; // Hide completed quests by default
   questRefreshInterval: number; // Quest refresh interval in seconds (0 = disabled)
+  // Quest file locations
+  // Default markdown file used when creating new quests from the modal
+  defaultQuestFilePath?: string;
+  // Optional list of named save locations that appear in the quest modal dropdown
+  questSaveLocations?: QuestSaveLocation[];
+
+  // Custom game item definitions (e.g., weapons and real-world artifacts)
+  // These are configuration-level definitions which can be rendered in the
+  // Shop or converted into inventory entries when acquired.
+  customArtifacts?: GameItemDefinition[];
 
   // Timeline & Calendar Settings
   timelineViewSettings?: {
@@ -516,6 +543,13 @@ export interface GamificationPluginSettings {
     showCompletedTasks: boolean;
     groupByCategory: boolean;
     enableTimeBlocks: boolean;
+    // Timeline color strategy for quest block palettes.
+    colorMode?: 'adaptive' | 'priority' | 'difficulty' | 'tag';
+    // If false, quest timeline always uses full-day (00:00 - 23:59) window.
+    useCustomDayRange?: boolean;
+    // Inclusive hour window when custom range is enabled (0-23).
+    dayStartHour?: number;
+    dayEndHour?: number;
   };
   calendarIntegration?: {
     enableCalendarSync: boolean;
@@ -603,6 +637,20 @@ export interface GamificationPluginSettings {
   dragonFestivalEnabled?: boolean;
   mysticalMarketEnabled?: boolean;
 
+  // Shopkeeper dialogue overrides (optional - user-edited strings)
+  shopkeeperDialogueOverrides?: {
+    greeting?: string;
+    purchaseConfirmation?: string;
+    purchaseSuccess?: string;
+    purchaseFollowUp?: string;
+    farewell?: string;
+    noThanks?: string;
+    insufficientFunds?: string;
+    addItem?: string;
+    addArtifact?: string;
+    imageUpdated?: string;
+  };
+
   // Performance Settings
   performanceSettings?: {
     enableCache: boolean;
@@ -683,12 +731,18 @@ export const DEFAULT_SETTINGS: GamificationPluginSettings = {
   skillFolder: 'SkillTree/Master-Class/Class/Skills',
   statFolder: 'SkillTree/Master-Class/Stats',
 
+  // Item definitions
+  customArtifacts: [],
+
   // Quest Board Default Settings
   enableSidebarQuestBoard: true,
   questBoardPosition: 'right',
   autoRefreshTasks: false,
   hideCompletedQuests: false,
   questRefreshInterval: 0, // Default to disabled
+  // Quest file locations
+  defaultQuestFilePath: 'GamifiedTasks.md',
+  questSaveLocations: [],
 
   // Timeline & Calendar Default Settings
   timelineViewSettings: {
@@ -696,7 +750,11 @@ export const DEFAULT_SETTINGS: GamificationPluginSettings = {
     defaultTimelineView: 'day',
     showCompletedTasks: true,
     groupByCategory: true,
-    enableTimeBlocks: true
+    enableTimeBlocks: true,
+    colorMode: 'adaptive',
+    useCustomDayRange: false,
+    dayStartHour: 0,
+    dayEndHour: 23
   },
   calendarIntegration: {
     enableCalendarSync: false,

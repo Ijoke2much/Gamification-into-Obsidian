@@ -207,10 +207,16 @@ export class GamifiedTaskScanner {
      */
     private async processCompletedTask(task: any): Promise<void> {
         try {
-            // Add XP and coins to player
-            const { playerStore } = await import('../../../shared/state/playerStore');
-            await playerStore.addXP(task.xp);
-            await playerStore.addCoins(task.coins);
+            // Use shared pipeline for consistent reward handling
+            const { awardQuestRewards, resolvePluginSettings } = await import('../../../shared/utils/questCompletionPipeline');
+            const questShim = {
+                xp: task.xp,
+                coins: task.coins,
+                cp: 0,
+                skills: [] as string[],
+                stats: [] as string[],
+            } as unknown as import('../utils/taskParser').Quest;
+            await awardQuestRewards(this.vault, questShim, resolvePluginSettings(this.app));
 
             // Trigger achievement events
             const { achievementEventService } = await import('../../achievements/services/achievementEventService');

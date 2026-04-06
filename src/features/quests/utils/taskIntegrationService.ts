@@ -32,11 +32,13 @@ export class TaskIntegrationService {
                 bullet: 0.8,
                 heading: 1.2
             },
-            enableRealTimeSync: true,
+            // Disable continuous real‑time sync by default to avoid
+            // repeatedly rescanning large vaults in the background.
+            // Task scans are still performed on‑demand by views
+            // (e.g., Boss Battle UI) via scanVaultForTasks().
+            enableRealTimeSync: false,
             scanInterval: 5000 // 5 seconds
         };
-
-        this.startRealTimeSync();
     }
 
     static getInstance(vault?: Vault, metadataCache?: MetadataCache): TaskIntegrationService {

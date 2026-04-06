@@ -5,19 +5,28 @@
     align-items: center;
     justify-content: center;
     gap: 6px;
-    border: none;
-    border-radius: 6px;
     cursor: pointer;
-    font-weight: 500;
-    transition: all 0.2s ease;
+    font-weight: 600;
+    font-size: 14px;
     text-decoration: none;
     font-family: inherit;
-    white-space: nowrap;
+    /* Let the outer card provide the visual styling so this doesn't look like
+       a button inside a button. */
+    padding: 0;
+    margin: 0;
+    background: transparent;
+    color: inherit;
+    border: none;
+    /* Allow text to wrap inside narrow sidebars so labels aren't cut off */
+    white-space: normal;
+    max-width: 100%;
+    width: 100%;
+    text-align: center;
+    box-sizing: border-box;
 }
 
 .inventoryButton:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    opacity: 0.9;
 }
 
 .inventoryButton:active {
@@ -26,14 +35,15 @@
 
 /* Variants */
 .primary {
-    background: var(--interactive-accent);
-    color: white;
-    border: 1px solid var(--interactive-accent);
+    /* Variants kept for future use but neutral here so
+       the outer card drives the look. */
+    background: transparent;
+    color: inherit;
+    border: none;
 }
 
 .primary:hover {
-    background: var(--interactive-accent-hover);
-    border-color: var(--interactive-accent-hover);
+    background: transparent;
 }
 
 .secondary {
@@ -104,8 +114,13 @@
 
 /* Focus states */
 .inventoryButton:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px var(--text-accent-rgb), 0 4px 12px rgba(0, 0, 0, 0.15);
+    outline: none !important;
+    box-shadow: none !important;
+}
+
+.inventoryButton:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
 }
 
 /* Disabled state */

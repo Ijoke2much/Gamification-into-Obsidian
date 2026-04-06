@@ -4,7 +4,7 @@ import { useQuestManagement, QuestFilters } from '../../../data/hooks/useQuestMa
 import { usePlayerData } from '../../../data/hooks/usePlayerData';
 import { ADHDEnhancedQuestCard } from '../../../features/quests/components/ADHDEnhancedQuestCard';
 import { QuestInboxRow } from '../../../features/quests/components/QuestInboxRow';
-import type { QuestViewMode } from '../../../features/quests/components/QuestViewToggle';
+import { QuestViewToggle, type QuestViewMode } from '../../../features/quests/components/QuestViewToggle';
 import { EnhancedQuestFilters } from '../../../features/quests/components/EnhancedQuestFilters';
 import { EnergyCalculationService } from '../../../features/quests/services/energyCalculationService';
 import { SavedQuestsManager } from '../../../features/quests/services/savedQuestsManager';
@@ -17,6 +17,7 @@ import { AdvancedQuestDashboard } from '../../../features/quests/components/Adva
 import { AdvancedSearchFilters } from '../../../features/quests/components/AdvancedSearchFilters';
 import { SearchResults } from '../../../features/quests/components/SearchResults';
 import { SearchResult } from '../../../features/quests/types/SearchTypes';
+import { currencyDisplay } from '../../../shared/services/currencyDisplayService';
 // Lazy-load heavy views
 const QuestCalendarView = lazy(() => import('../../../features/quests/components/QuestCalendarView').then(m => ({ default: m.QuestCalendarView })));
 const QuestTimelineView = lazy(() => import('../../../features/quests/components/QuestTimelineView').then(m => ({ default: m.QuestTimelineView })));
@@ -90,6 +91,8 @@ function isHyperfocusCandidateForQuickFilters(quest: Quest): boolean {
   return Boolean(hasDeepWorkSkills || isLongEnough || isComplex);
 }
 
+const PAGE_SIZE = 10;
+
 const QUICK_FILTER_LABELS: Record<string, string> = {
   all: 'All quests',
   today: 'Today',
@@ -150,6 +153,10 @@ interface QuestTabProps {
 
 export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
 
+  // Ensure currency display service is initialized for this tab
+  currencyDisplay.initialize(plugin.settings);
+  const currencyName = currencyDisplay.getCurrencyName();
+
   // Expose a simple bridge for quick-add from timeline gap clicks
   (window as Window & { openQuestQuickAdd?: (opts: { startMinutes: number; durationMinutes: number; date: Date }) => void; __questQuickPrefill?: unknown }).openQuestQuickAdd = (opts: { startMinutes: number; durationMinutes: number; date: Date }) => {
     try {
@@ -186,8 +193,19 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
     handleToggleFavorite,
     handleDeleteQuest,
     // handleQuestDropOnFilter, // Available but not used in this component
-    loadQuests
+    loadQuests,
+    addQuestOptimistically,
   } = useQuestManagement(plugin);
+
+  // Track whether we've successfully loaded quests at least once so that
+  // subsequent refreshes (e.g. after creating a quest) don't blank the whole tab.
+  const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
+
+  useEffect(() => {
+    if (!loading && !error && !hasLoadedOnce) {
+      setHasLoadedOnce(true);
+    }
+  }, [loading, error, hasLoadedOnce]);
 
   useEffect(() => {
     (window as unknown as Record<string, unknown>).manualLoadQuests = loadQuests;
@@ -213,7 +231,7 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
   const currentEnergy = playerState.playerData?.stats?.energy || 70;
   
   // ADHD-enhanced state management
-  const [viewMode] = useState<QuestViewMode>('test-one-view');
+  const [viewMode, setViewMode] = useState<QuestViewMode>('test-one-view');
   const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
   
   // Timeline modal state
@@ -244,9 +262,9 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
   const [compactView, setCompactView] = useState(false);
   const [selectedQuests, setSelectedQuests] = useState<Set<string>>(new Set());
   const [bulkMode, setBulkMode] = useState(false);
-  const [showSmartSuggestions, setShowSmartSuggestions] = useState(false);
   const [virtualScrolling, setVirtualScrolling] = useState(false);
   const [visibleRange, setVisibleRange] = useState({ start: 0, end: 50 });
+  const [currentPage, setCurrentPage] = useState(1);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -293,14 +311,26 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
     return quests;
   }, [filteredQuests, quests, filters, activeQuickFilter]);
 
-  // Performance optimization: Enable virtual scrolling for large lists
+  // Pagination: slice filtered quests for current page
+  const totalPages = Math.max(1, Math.ceil(filteredQuests.length / PAGE_SIZE));
+  const paginatedQuests = useMemo(() => {
+    const start = (currentPage - 1) * PAGE_SIZE;
+    return filteredQuests.slice(start, start + PAGE_SIZE);
+  }, [filteredQuests, currentPage]);
+
+  // Reset to page 1 when filters or quest list changes
   useEffect(() => {
-    const shouldUseVirtualScrolling = filteredQuests.length > 100;
+    setCurrentPage(1);
+  }, [filteredQuests.length, activeQuickFilter, filters.search]);
+
+  // Performance optimization: Enable virtual scrolling for very large lists (cards view only)
+  useEffect(() => {
+    const shouldUseVirtualScrolling = viewMode === 'cards' && filteredQuests.length > 75;
     setVirtualScrolling(shouldUseVirtualScrolling);
     if (shouldUseVirtualScrolling) {
       setVisibleRange({ start: 0, end: 50 });
     }
-  }, [filteredQuests.length]);
+  }, [filteredQuests.length, viewMode]);
 
   // Virtual scrolling handler
   const handleScroll = useCallback(() => {
@@ -318,11 +348,13 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
     setVisibleRange({ start, end });
   }, [virtualScrolling, filteredQuests.length, compactView]);
 
-  // Memoized quest rendering for performance
+  // Memoized quest rendering: pagination (default) or virtual scroll (large lists in cards view)
   const visibleQuests = useMemo(() => {
-    if (!virtualScrolling) return filteredQuests;
-    return filteredQuests.slice(visibleRange.start, visibleRange.end);
-  }, [filteredQuests, virtualScrolling, visibleRange]);
+    if (virtualScrolling) {
+      return filteredQuests.slice(visibleRange.start, visibleRange.end);
+    }
+    return paginatedQuests;
+  }, [filteredQuests, virtualScrolling, visibleRange, paginatedQuests]);
 
   // Attach scroll listener for virtual scrolling
   useEffect(() => {
@@ -333,47 +365,19 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
     return () => container.removeEventListener('scroll', handleScroll);
   }, [virtualScrolling, handleScroll]);
 
+  // Debug: log when switching to calendar view (for troubleshooting empty calendar)
+  useEffect(() => {
+    if (viewMode === 'calendar') {
+      window.console.log('📅 [QuestTab] Switched to calendar view:', {
+        calendarQuestsCount: calendarQuests.length,
+        filteredQuestsCount: filteredQuests.length,
+        questsCount: quests.length,
+        activeQuickFilter,
+        sampleQuests: calendarQuests.slice(0, 3).map(q => ({ title: q.title, due: q.due, completed: q.completed }))
+      });
+    }
+  }, [viewMode, calendarQuests, filteredQuests.length, quests.length, activeQuickFilter]);
 
-  // Smart suggestions logic
-  const smartSuggestions = useMemo(() => {
-    const today = new Date();
-    const activeQuests = quests.filter((q: Quest) => !q.completed);
-    
-    // Quick wins: Easy quests or those with low estimated time
-    const quickWins = activeQuests
-      .filter((q: Quest) => 
-        q.difficulty?.toLowerCase() === 'easy' || 
-        (q.estimatedTime && parseInt(q.estimatedTime) <= 30) ||
-        (q.subtasks?.length || 0) <= 2
-      )
-      .slice(0, 3);
-
-    // Focus time: High priority quests
-    const focusTime = activeQuests
-      .filter((q: Quest) => 
-        q.priority?.toLowerCase() === 'high' || 
-        q.priority?.toLowerCase() === 'highest'
-      )
-      .sort((a: Quest, b: Quest) => {
-        const priorityOrder = { highest: 4, high: 3, medium: 2, low: 1 };
-        const aPriority = priorityOrder[a.priority?.toLowerCase() as keyof typeof priorityOrder] || 0;
-        const bPriority = priorityOrder[b.priority?.toLowerCase() as keyof typeof priorityOrder] || 0;
-        return bPriority - aPriority;
-      })
-      .slice(0, 3);
-
-    // Due today/overdue
-    const urgent = activeQuests
-      .filter((q: Quest) => {
-        if (!q.due) return false;
-        const due = new Date(q.due);
-        due.setHours(23, 59, 59, 999);
-        return due <= today;
-      })
-      .slice(0, 3);
-
-    return { quickWins, focusTime, urgent };
-  }, [quests]);
 
   // Bulk operations handlers (for future use)
   // const handleSelectQuest = (questTitle: string) => {
@@ -472,16 +476,10 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
             setSelectedQuests(new Set());
           }
           break;
-        case 's':
-          if (e.ctrlKey || e.metaKey) break;
-          e.preventDefault();
-          setShowSmartSuggestions(!showSmartSuggestions);
-          break;
         case 'escape':
           setShowFilters(false);
           setSelectedQuests(new Set());
           setBulkMode(false);
-          setShowSmartSuggestions(false);
           break;
       }
     };
@@ -496,6 +494,15 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
   }, []);
 
   const handleCreateQuest = useCallback(() => {
+    setEditingQuest(null);
+    setIsModalOpen(true);
+  }, []);
+
+  const handleAddQuestForDate = useCallback((date: Date) => {
+    const dateStr = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
+    (window as Window & { __questQuickPrefill?: { dueISO?: string } }).__questQuickPrefill = {
+      dueISO: dateStr,
+    };
     setEditingQuest(null);
     setIsModalOpen(true);
   }, []);
@@ -710,10 +717,15 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
     }
   };
 
-  const handleCloseModal = () => {
+  const handleCloseModal = (createdQuest?: Quest, filePath?: string) => {
     setIsModalOpen(false);
     setEditingQuest(null);
-    loadQuests(); // Reload quests after modal closes
+    if (createdQuest && filePath) {
+      // Defer optimistic update to next tick so modal unmounts first (avoids blocking re-render)
+      setTimeout(() => addQuestOptimistically(createdQuest, filePath), 0);
+    } else {
+      loadQuests();
+    }
   };
 
   const handleBossDashboard = () => {
@@ -791,7 +803,10 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
 
 
 
-  if (loading) {
+  // For the very first load, keep the simple blocking loader so the tab
+  // doesn't render half-configured UI. After that, we show inline loading
+  // states instead of blanking the entire quest tab.
+  if (loading && !hasLoadedOnce) {
     return (
       <div style={{ padding: '20px', textAlign: 'center' }}>
         <div>Loading quests...</div>
@@ -799,7 +814,7 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
     );
   }
 
-  if (error) {
+  if (error && !hasLoadedOnce) {
     return (
       <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-error)' }}>
         <div>Error loading quests: {error}</div>
@@ -855,7 +870,7 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
         fontSize: "9px",
         zIndex: 1000,
         cursor: "help"
-      }} title="Keyboard Shortcuts: N=New Quest, /=Search, F=Filters, C=Compact, V=Bulk Mode, S=Suggestions, T=Templates, B=Boss, ESC=Clear">
+      }} title="Keyboard Shortcuts: N=New Quest, /=Search, F=Filters, C=Compact, V=Bulk Mode, T=Templates, B=Boss, ESC=Clear">
         ⌨️ Shortcuts
       </div>
       
@@ -897,13 +912,6 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
             title="Bulk Operations (V)"
           >
             ☑️ {bulkMode ? 'Exit Bulk' : 'Bulk Mode'}
-          </button>
-          <button
-            onClick={() => setShowSmartSuggestions(!showSmartSuggestions)}
-            className={`${styles.actionButton} ${styles.filterButton} ${showSmartSuggestions ? styles.active : ''}`}
-            title="Smart Suggestions (S)"
-          >
-            🎯 Suggestions
           </button>
           <button
             onClick={handleCreateFromTemplate}
@@ -1094,93 +1102,15 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
           </div>
         )}
 
-        {/* Smart Suggestions */}
-        {showSmartSuggestions && (
-          <div style={{
-            background: "rgba(156, 163, 175, 0.1)",
-            border: "1px solid rgba(156, 163, 175, 0.3)",
-            borderRadius: "8px",
-            padding: "12px",
-            marginTop: "8px"
-          }}>
-            <h4 style={{ 
-              margin: "0 0 8px 0", 
-              color: "#9ca3af", 
-              fontSize: "12px", 
-              fontWeight: "600" 
-            }}>
-              🎯 Smart Suggestions
-            </h4>
-            <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
-              {smartSuggestions.quickWins.length > 0 && (
-                <div style={{ flex: "1", minWidth: "100px" }}>
-                  <h5 style={{ 
-                    margin: "0 0 4px 0", 
-                    color: "#22c55e", 
-                    fontSize: "10px", 
-                    fontWeight: "600" 
-                  }}>
-                    ⚡ Quick Wins
-                  </h5>
-                  {smartSuggestions.quickWins.map((quest: Quest) => (
-                    <div key={quest.title} style={{
-                      fontSize: "10px",
-                      color: "rgba(255, 255, 255, 0.8)",
-                      padding: "2px 0",
-                      cursor: "pointer"
-                    }} onClick={() => setFilters((prev: QuestFilters) => ({ ...prev, search: quest.title }))}>
-                      • {quest.title.substring(0, 25)}...
-                    </div>
-                  ))}
-                </div>
-              )}
-              {smartSuggestions.focusTime.length > 0 && (
-                <div style={{ flex: "1", minWidth: "100px" }}>
-                  <h5 style={{ 
-                    margin: "0 0 4px 0", 
-                    color: "#ef4444", 
-                    fontSize: "10px", 
-                    fontWeight: "600" 
-                  }}>
-                    🎯 Focus Time
-                  </h5>
-                  {smartSuggestions.focusTime.map((quest: Quest) => (
-                    <div key={quest.title} style={{
-                      fontSize: "10px",
-                      color: "rgba(255, 255, 255, 0.8)",
-                      padding: "2px 0",
-                      cursor: "pointer"
-                    }} onClick={() => setFilters((prev: QuestFilters) => ({ ...prev, search: quest.title }))}>
-                      • {quest.title.substring(0, 25)}...
-                    </div>
-                  ))}
-                </div>
-              )}
-              {smartSuggestions.urgent.length > 0 && (
-                <div style={{ flex: "1", minWidth: "100px" }}>
-                  <h5 style={{ 
-                    margin: "0 0 4px 0", 
-                    color: "#f59e0b", 
-                    fontSize: "10px", 
-                    fontWeight: "600" 
-                  }}>
-                    🚨 Urgent
-                  </h5>
-                  {smartSuggestions.urgent.map((quest: Quest) => (
-                    <div key={quest.title} style={{
-                      fontSize: "10px",
-                      color: "rgba(255, 255, 255, 0.8)",
-                      padding: "2px 0",
-                      cursor: "pointer"
-                    }} onClick={() => setFilters((prev: QuestFilters) => ({ ...prev, search: quest.title }))}>
-                      • {quest.title.substring(0, 25)}...
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        )}
+      </div>
+
+      {/* View Mode Toggle - Cards, Calendar, Timeline, Unified */}
+      <div style={{ marginBottom: 16 }}>
+        <QuestViewToggle
+          currentView={viewMode}
+          onViewChange={setViewMode}
+          energyLevel={currentEnergy}
+        />
       </div>
 
       {/* Enhanced Quick Filter Cards with ADHD features */}
@@ -1191,7 +1121,7 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
         currentEnergy={currentEnergy}
       />
 
-      {/* Quick Filter Results Summary */}
+      {/* Quick Filter Results Summary + Pagination */}
       <div className={styles.quickFilterResultsHeader}>
         <div className={styles.quickFilterResultsTitle}>
           {activeQuickFilter === 'all'
@@ -1209,13 +1139,36 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
               Clear filter
             </button>
           )}
-          <span className={styles.quickFilterResultsCount}>
-            {virtualScrolling
-              ? `Showing ${visibleQuests.length} of ${filteredQuests.length}`
-              : `Showing ${filteredQuests.length} quest${
-                  filteredQuests.length === 1 ? '' : 's'
-                }`}
-          </span>
+          {filteredQuests.length > PAGE_SIZE && (
+            <div className={styles.paginationControls}>
+              <button
+                className={styles.paginationButton}
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                disabled={currentPage <= 1}
+                title="Previous page"
+              >
+                ← Prev
+              </button>
+              <span className={styles.paginationInfo}>
+                Page {currentPage} of {totalPages}
+                {' · '}
+                {((currentPage - 1) * PAGE_SIZE) + 1}–{Math.min(currentPage * PAGE_SIZE, filteredQuests.length)} of {filteredQuests.length}
+              </span>
+              <button
+                className={styles.paginationButton}
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                disabled={currentPage >= totalPages}
+                title="Next page"
+              >
+                Next →
+              </button>
+            </div>
+          )}
+          {filteredQuests.length <= PAGE_SIZE && (
+            <span className={styles.quickFilterResultsCount}>
+              {filteredQuests.length} quest{filteredQuests.length === 1 ? '' : 's'}
+            </span>
+          )}
         </div>
       </div>
 
@@ -1395,7 +1348,7 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
           </div>
         ) : (
           <>
-            {/* Quick Filter Inbox: Todoist-style rows above the main view */}
+            {/* Quick Filter Inbox: Todoist-style rows (paginated) above main view */}
             {viewMode === 'test-one-view' && filteredQuests.length > 0 && activeQuickFilter !== 'all' && (
               <div
                 style={{
@@ -1405,7 +1358,7 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
                   gap: '4px'
                 }}
               >
-                {filteredQuests.map((quest: Quest) => (
+                {paginatedQuests.map((quest: Quest) => (
                   <QuestInboxRow
                     key={`${quest.id || quest.title}-inbox-${quest.due || 'no-due'}`}
                     quest={quest}
@@ -1420,6 +1373,8 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
                     }}
                     onOpen={handleEditQuest}
                     currentEnergy={currentEnergy}
+                    currencyName={currencyName}
+                    currencyAmount={quest.coins || 0}
                   />
                 ))}
               </div>
@@ -1438,6 +1393,7 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
                 onDateSelect={() => {}}
                 onQuestMove={handleQuestMove}
                 onStartHyperfocus={handleStartHyperfocus}
+                onAddQuestForDate={handleAddQuestForDate}
               />
             ) : viewMode === 'timeline' ? (
               <>
@@ -1541,6 +1497,7 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
                 onDeleteQuest={handleDeleteQuest}
                 onUncompleteQuest={handleUncompleteQuest}
                 onToggleSubtask={handleToggleSubtask}
+                onAddQuestForDate={handleAddQuestForDate}
               />
             ) : (
               // Default cards view - existing quest cards rendering
@@ -1590,6 +1547,8 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
                         }}
                         onOpen={handleEditQuest}
                         currentEnergy={currentEnergy}
+                        currencyName={currencyName}
+                        currencyAmount={quest.coins || 0}
                       />
                     ))
                   : visibleQuests.map((quest: Quest) => (

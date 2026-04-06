@@ -15,6 +15,7 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import styles from "./PomodoroTimer.module.css";
+import { showGameNotice } from "../../../shared/utils/noticeUtils";
 
 interface PomodoroTimerProps {
   duration: number;
@@ -49,6 +50,10 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
   const [isRunning, setIsRunning] = useState(false);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const hasAutoStarted = useRef(false);
+  const endTimeRef = useRef<number | null>(null);
+  const lastMilestoneMinutesRef = useRef<number>(0);
+  const secondsLeftRef = useRef(secondsLeft);
+  secondsLeftRef.current = secondsLeft;
 
   // Update timer when duration, mode, or phase (work/break) changes
   useEffect(() => {
@@ -63,6 +68,8 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
       setSecondsLeft(isBreak ? customBreakDuration : duration);
     }
     setIsRunning(false);
+    endTimeRef.current = null;
+    lastMilestoneMinutesRef.current = 0;
     if (intervalRef.current) clearInterval(intervalRef.current);
     hasAutoStarted.current = false; // Reset auto-start flag when duration changes
   }, [duration, mode, isBreak]);
@@ -76,27 +83,54 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
     }
   }, [autoStart, isRunning, isBreak]);
 
-  // Timer logic
+  // Timer logic - time-based to avoid drift from setInterval inaccuracy
   useEffect(() => {
     if (isRunning) {
       onStart?.();
 
+      // Store end timestamp so remaining time is computed from real elapsed time
+      const initialSeconds = secondsLeftRef.current;
+      endTimeRef.current = Date.now() + initialSeconds * 1000;
+      lastMilestoneMinutesRef.current = 0;
+
       intervalRef.current = setInterval(() => {
-        setSecondsLeft((prev) => {
-          if (prev <= 1) {
-            clearInterval(intervalRef.current!);
-            setIsRunning(false);
-            onComplete(); // Call completion
-            setIsBreak((prevBreak) => !prevBreak); // Switch phase
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
+        const endTime = endTimeRef.current;
+        if (!endTime) return;
+
+        const remaining = Math.ceil((endTime - Date.now()) / 1000);
+
+        if (remaining <= 0) {
+          if (intervalRef.current) clearInterval(intervalRef.current);
+          intervalRef.current = null;
+          endTimeRef.current = null;
+          setIsRunning(false);
+          onComplete();
+          setIsBreak((prev) => !prev);
+          setSecondsLeft(0);
+          return;
+        }
+
+        // Every 10 mins: show notice "10 mins - X mins left"
+        const elapsedSeconds = initialSeconds - remaining;
+        const elapsedMinutes = Math.floor(elapsedSeconds / 60);
+        const milestoneMinutes = Math.floor(elapsedMinutes / 10) * 10;
+        if (milestoneMinutes > 0 && milestoneMinutes > lastMilestoneMinutesRef.current) {
+          lastMilestoneMinutesRef.current = milestoneMinutes;
+          const minsLeft = Math.floor(remaining / 60);
+          showGameNotice(
+            `⏱️ ${milestoneMinutes} mins elapsed – ${minsLeft} mins left`,
+            4000
+          );
+        }
+
+        setSecondsLeft(remaining);
+      }, 100); // 100ms ticks for smooth display; accuracy comes from Date.now()
     }
 
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
+      intervalRef.current = null;
+      endTimeRef.current = null;
     };
   }, [isRunning]);
 
@@ -120,6 +154,10 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
     }
     setSecondsLeft(resetDuration);
     setIsRunning(false);
+    endTimeRef.current = null;
+    lastMilestoneMinutesRef.current = 0;
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    intervalRef.current = null;
     onAbort?.();
   };
 

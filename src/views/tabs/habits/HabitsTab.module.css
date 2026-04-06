@@ -677,6 +677,37 @@
   transform: translateY(-1px);
 }
 
+/* Compact tabs row (Today / All / Done / Archived) */
+.tabsRow {
+  display: flex;
+  gap: 8px;
+  margin: -6px 0 12px;
+  padding: 0 2px;
+}
+
+.tab {
+  flex: 1;
+  height: 30px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  background: rgba(31, 41, 55, 0.6);
+  color: rgba(255, 255, 255, 0.85);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.tab:hover {
+  transform: translateY(-1px);
+}
+
+.tabActive {
+  background: rgba(78, 163, 91, 0.25);
+  border-color: rgba(78, 163, 91, 0.85);
+  color: #eaffef;
+}
+
 /* Habits List */
 .habitsList {
   display: flex;
@@ -771,7 +802,8 @@
 
 .completeButton,
 .editButton,
-.deleteButton {
+.deleteButton,
+.archiveButton {
   padding: 6px;
   border: none;
   border-radius: 4px;
@@ -818,6 +850,16 @@
 
 .deleteButton:hover {
   background-color: #dc2626;
+  transform: scale(1.05);
+}
+
+.archiveButton {
+  background-color: #6b7280;
+  color: white;
+}
+
+.archiveButton:hover {
+  background-color: #4b5563;
   transform: scale(1.05);
 }
 
@@ -971,6 +1013,22 @@
   color: #9ca3af;
 }
 
+/* Avoidance habit miss (failed to avoid on a past day) */
+.dayCircle.avoidMiss {
+  background-color: #fee2e2;
+  border-color: #ef4444;
+  color: #b91c1c;
+}
+
+/* Unscheduled day (for weekly habits on days that don't count) */
+.dayCircle.unscheduled {
+  background-color: #111827;
+  border-color: #1f2937;
+  color: #4b5563;
+  cursor: default;
+  opacity: 0.6;
+}
+
 /* Scrollable Heatmap Section */
 .scrollableHeatmapSection {
   border-top: 1px solid #e5e7eb;
@@ -1078,6 +1136,17 @@
 
 .monthDayIncomplete {
   background-color: #6b7280;
+}
+
+/* Month heatmap cell for unscheduled days */
+.monthDayUnscheduled {
+  background-color: #111827;
+  opacity: 0.4;
+}
+
+/* Avoidance habit miss in month heatmap */
+.monthDayAvoidMiss {
+  background-color: #ef4444;
 }
 
 /* Scrollable Heatmap Legend */
@@ -1241,6 +1310,12 @@
     color: #6b7280;
   }
 
+  .dayCircle.avoidMiss {
+    background-color: #450a0a;
+    border-color: #b91c1c;
+    color: #fecaca;
+  }
+
   .scrollableHeatmapSection {
     background-color: #1f2937;
     border-top-color: #374151;
@@ -1265,6 +1340,10 @@
 
   .monthDayIncomplete {
     background-color: #4b5563;
+  }
+
+  .monthDayAvoidMiss {
+    background-color: #b91c1c;
   }
 
   .legendText {
@@ -3883,10 +3962,12 @@
 }
 
 .windowTree {
-  width: calc(100% - 8px);
-  margin: 4px;
-  height: auto;
-  max-width: none;
+  /* Let the tree fill the entire window area while keeping the full sprite visible */
+  height: 100%;
+  max-height: 100%;
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
   object-fit: contain;
   object-position: center;
   filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.3));

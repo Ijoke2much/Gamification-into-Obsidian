@@ -17,6 +17,10 @@ interface PluginType {
             readBinary: (file: TFile) => Promise<ArrayBuffer>;
         };
     };
+    enhancedQuestSystem?: {
+        getCachedBanner: (title: string) => string | null;
+        loadBannerAsDataUrl: (path: string) => Promise<string | null>;
+    };
 }
 
 interface QuestCardProps {
@@ -56,15 +60,7 @@ export const QuestCard: React.FC<QuestCardProps> = ({
     const [bannerDataUrl, setBannerDataUrl] = useState<string | null>(null);
     const [bannerError, setBannerError] = useState(false);
 
-    // Debug: Log quest data for troubleshooting
-    console.log('=== QUEST CARD RENDER ===');
-    console.log('Quest title:', quest.title);
-    console.log('Quest banner:', quest.banner);
-    console.log('Banner exists:', !!quest.banner);
-    console.log('Plugin exists:', !!plugin);
-    console.log('========================');
-
-    // Load banner image from vault
+    // Load banner image from vault (or cache when enhancedQuestSystem is available)
     useEffect(() => {
         async function loadBannerImage() {
             if (!quest.banner || !plugin) {
@@ -74,13 +70,25 @@ export const QuestCard: React.FC<QuestCardProps> = ({
 
             setBannerError(false);
 
-            // If it's already a data URL or HTTP URL, use it directly
             if (quest.banner.startsWith("data:") || quest.banner.startsWith("http")) {
                 setBannerDataUrl(quest.banner);
                 return;
             }
 
             try {
+                if (plugin.enhancedQuestSystem) {
+                    const cached = plugin.enhancedQuestSystem.getCachedBanner(quest.title);
+                    if (cached) {
+                        setBannerDataUrl(cached);
+                        return;
+                    }
+                    const loaded = await plugin.enhancedQuestSystem.loadBannerAsDataUrl(quest.banner);
+                    if (loaded) {
+                        setBannerDataUrl(loaded);
+                        return;
+                    }
+                }
+
                 const vaultFile = plugin.app.vault.getAbstractFileByPath(quest.banner);
                 if (vaultFile && vaultFile instanceof TFile) {
                     const data = await plugin.app.vault.readBinary(vaultFile);

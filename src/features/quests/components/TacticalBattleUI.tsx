@@ -1,14 +1,75 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import type { Quest } from '../utils/taskParser';
 import type { PlayerData } from '../../../data/models/PlayerData';
 import type GamifiedObsidianPlugin from '../../../core/main';
+import {
+  type BattleWeaponId,
+  clampBattleWeaponToInventory,
+  getBattleWeaponsFromInventory,
+  getWeaponDef,
+  parseBattleWeaponId
+} from '../utils/battleWeapons';
+import type { TacticalBattleCompletionExtras } from '../utils/tacticalBattleCompletion';
 import styles from './TacticalBattleUI.module.css';
+
+/** Boss HP from deadline alone (mirrors % of project time remaining). `relief` > 1 softens deadline pressure slightly. */
+function getTimeTiedBossHp(
+  timeRemainingMs: number,
+  maxHp: number,
+  initialProjectMs: number | null,
+  relief = 1
+): number {
+  if (initialProjectMs == null || initialProjectMs <= 0) return maxHp;
+  const tied = maxHp * (timeRemainingMs / initialProjectMs) * relief;
+  return Math.max(0, Math.min(maxHp, Math.round(tied)));
+}
+
+/** Shown boss HP = lower of structural (tasks/moves) and time pressure. */
+function getDisplayBossHp(
+  structuralHp: number,
+  timeRemainingMs: number,
+  maxHp: number,
+  initialProjectMs: number | null,
+  timeTiedRelief = 1
+): number {
+  return Math.min(structuralHp, getTimeTiedBossHp(timeRemainingMs, maxHp, initialProjectMs, timeTiedRelief));
+}
+
+const MOVE_REWARD_XP = 5;
+const MOVE_REWARD_COINS = 2;
+const MOVE_REWARD_XP_CAP = 50;
+const MOVE_REWARD_COINS_CAP = 30;
+
+function formatCooldownRemaining(readyAtMs: number, nowMs: number): string {
+  const sec = Math.ceil((readyAtMs - nowMs) / 1000);
+  if (sec <= 0) return 'Ready';
+  if (sec < 60) return `${sec}s`;
+  if (sec < 3600) return `${Math.ceil(sec / 60)}m`;
+  return `${Math.ceil(sec / 3600)}h`;
+}
+
+function getMoveCooldownMs(initialProjectMs: number, shareOfProject: number): number {
+  const raw = initialProjectMs * shareOfProject;
+  return Math.max(5 * 60 * 1000, Math.min(72 * 60 * 60 * 1000, raw));
+}
+
+function formatMsForRecap(ms: number): string {
+  const n = Math.max(0, Math.floor(ms));
+  const d = Math.floor(n / 86400000);
+  const h = Math.floor((n % 86400000) / 3600000);
+  const m = Math.floor((n % 3600000) / 60000);
+  const parts: string[] = [];
+  if (d > 0) parts.push(`${d}d`);
+  if (h > 0 || parts.length) parts.push(`${h}h`);
+  parts.push(`${m}m`);
+  return parts.join(' ') || '0m';
+}
 
 interface TacticalBattleUIProps {
   quest: Quest;
   playerData: PlayerData;
   plugin?: GamifiedObsidianPlugin;
-  onQuestComplete: (questTitle: string) => void;
+  onQuestComplete: (questTitle: string, extras?: TacticalBattleCompletionExtras) => void;
   onQuestFail?: (questTitle: string) => void;
   onClose: () => void;
   onSubtaskToggle?: (questTitle: string, subtaskIndex: number) => void;
@@ -31,6 +92,8 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
                          quest.tags?.includes('tutorial') ||
                          quest.tags?.includes('practice') ||
                          quest.className === 'training';
+
+  const battleStateKey = `tactical-battle-${quest.id}`;
 
   const [battleState, setBattleState] = useState({
     isActive: true,
@@ -158,14 +221,31 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
     };
   }, [draggingSplit, controlsHeight]);
 
-  const [battleLog, setBattleLog] = useState([
-    { turn: 1, event: 'Battle started against Training Dummy Dragon!', type: 'system' },
-    { turn: 2, event: 'Subtask completed! Deals 22 damage!', type: 'player' },
-    { turn: 3, event: 'Subtask completed! 15 damage dealt!', type: 'player' },
-    { turn: 4, event: 'Strategic Analysis: Increase all stat effectiveness by 25% for 5 turns', type: 'system' }
-  ]);
+  const [battleLog, setBattleLog] = useState<
+    Array<{ turn: number; event: string; type: string }>
+  >(() => {
+    try {
+      const raw = localStorage.getItem(battleStateKey);
+      if (raw) {
+        const p = JSON.parse(raw);
+        if (Array.isArray(p.battleLog) && p.battleLog.length > 0) {
+          return p.battleLog;
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+    return [];
+  });
   const [isAnimating, setIsAnimating] = useState(false);
-  const [moveCooldowns, setMoveCooldowns] = useState<{ [key: number]: number }>({});
+  /** Real-time move cooldowns: move id -> epoch ms when usable again */
+  const [moveReadyAt, setMoveReadyAt] = useState<Record<number, number>>({});
+  /** Snapshot of total project window for deadline-scaled HP and cooldowns */
+  const [initialProjectTimeMs, setInitialProjectTimeMs] = useState<number | null>(null);
+  /** Bonus rewards from battle moves this session (capped) */
+  const [moveRewardTotals, setMoveRewardTotals] = useState<{ xp: number; coins: number }>({ xp: 0, coins: 0 });
+  /** Tick so move cooldown labels update every second */
+  const [nowMs, setNowMs] = useState(() => Date.now());
   
   // NEW: Player status effects (buffs/debuffs)
   const [playerEffects, setPlayerEffects] = useState<Array<{
@@ -193,8 +273,8 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
   const [xpAnimProgress, setXpAnimProgress] = useState<number>(0);
   const [levelUpOccurred, setLevelUpOccurred] = useState<boolean>(false);
   
-  // Subquest addition state
-  const [showAddSubquestInput, setShowAddSubquestInput] = useState(false);
+  // Subquest modal
+  const [showSubquestModal, setShowSubquestModal] = useState(false);
   const [newSubquestText, setNewSubquestText] = useState('');
   const [isAddingSubquest, setIsAddingSubquest] = useState(false);
   
@@ -210,8 +290,25 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
   const [showCriticalFlash, setShowCriticalFlash] = useState(false);
   const [attackFlashing, setAttackFlashing] = useState(false);
 
-  // Battle state persistence key
-  const battleStateKey = `tactical-battle-${quest.id}`;
+  const loadoutWeaponRows = useMemo(
+    () => getBattleWeaponsFromInventory(playerData.inventory),
+    [playerData.inventory]
+  );
+
+  const [battleWeaponId, setBattleWeaponId] = useState<BattleWeaponId>(() =>
+    clampBattleWeaponToInventory(parseBattleWeaponId(quest.battle_weapon), playerData.inventory)
+  );
+  /** Shown until loadout is chosen (new fight) or restored from save */
+  const [weaponPickerOpen, setWeaponPickerOpen] = useState(() => {
+    if (isTutorialBoss) return true;
+    try {
+      return !localStorage.getItem(battleStateKey);
+    } catch {
+      return true;
+    }
+  });
+  /** Twin Momentum: next battle move cooldown reduced after a task */
+  const [momentumRushReady, setMomentumRushReady] = useState(false);
 
   // Load quest tasks from actual quest data - use state to make it reactive
   const [questTasks, setQuestTasks] = useState(() => 
@@ -239,38 +336,75 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
 
   // Load saved battle state on mount
   useEffect(() => {
-    // Tutorial bosses ALWAYS start fresh - never restore saved state
     if (isTutorialBoss) {
       console.log('🔄 Tutorial boss detected - starting fresh battle (no saved state)');
       localStorage.removeItem(battleStateKey);
+      setInitialProjectTimeMs(Math.max(3 * 60 * 60 * 1000, 60 * 1000));
+      setMoveReadyAt({});
+      setMoveRewardTotals({ xp: 0, coins: 0 });
+      setBattleWeaponId(clampBattleWeaponToInventory('balanced', playerData.inventory));
+      setMomentumRushReady(false);
+      setWeaponPickerOpen(true);
       return;
     }
-    
+
     const savedState = localStorage.getItem(battleStateKey);
     if (savedState) {
       try {
         const parsed = JSON.parse(savedState);
         console.log('📦 Restoring battle state:', parsed);
-        
-        // Restore all battle state
+
         if (parsed.bossData) setBossData(parsed.bossData);
         if (parsed.playerBattleData) setPlayerBattleData(parsed.playerBattleData);
         if (parsed.battleState) setBattleState(parsed.battleState);
         if (parsed.battleLog) setBattleLog(parsed.battleLog);
-        if (parsed.moveCooldowns) setMoveCooldowns(parsed.moveCooldowns);
         if (parsed.timestamp) setLastSavedAt(parsed.timestamp);
-        if (parsed.questTasks) {
-          // Note: questTasks is derived from props, handled by parent component
-          // Battle state restoration focuses on battle-specific state
+        setBattleWeaponId(
+          clampBattleWeaponToInventory(parseBattleWeaponId(parsed.battleWeaponId), playerData.inventory)
+        );
+        if (typeof parsed.momentumRushReady === 'boolean') {
+          setMomentumRushReady(parsed.momentumRushReady);
+        }
+        setWeaponPickerOpen(false);
+        if (typeof parsed.finalBlowReady === 'boolean') {
+          setFinalBlowReady(parsed.finalBlowReady);
+        }
+        if (typeof parsed.initialProjectTimeMs === 'number' && parsed.initialProjectTimeMs > 0) {
+          setInitialProjectTimeMs(parsed.initialProjectTimeMs);
+        }
+        if (parsed.moveReadyAt && typeof parsed.moveReadyAt === 'object') {
+          const m: Record<number, number> = {};
+          Object.keys(parsed.moveReadyAt).forEach(k => {
+            m[Number(k)] = Number(parsed.moveReadyAt[k]);
+          });
+          setMoveReadyAt(m);
+        }
+        if (parsed.moveRewardTotals && typeof parsed.moveRewardTotals === 'object') {
+          setMoveRewardTotals({
+            xp: Math.min(MOVE_REWARD_XP_CAP, Math.max(0, Number(parsed.moveRewardTotals.xp) || 0)),
+            coins: Math.min(MOVE_REWARD_COINS_CAP, Math.max(0, Number(parsed.moveRewardTotals.coins) || 0))
+          });
         }
       } catch (error) {
         console.error('Failed to restore battle state:', error);
       }
+    } else {
+      setBattleWeaponId(
+        clampBattleWeaponToInventory(parseBattleWeaponId(quest.battle_weapon), playerData.inventory)
+      );
     }
   }, []);
 
+  useEffect(() => {
+    if (!weaponPickerOpen) return;
+    setBattleWeaponId(prev => clampBattleWeaponToInventory(prev, playerData.inventory));
+  }, [weaponPickerOpen, playerData.inventory]);
+
   // Save battle state whenever it changes (but not victory state for tutorial bosses)
   useEffect(() => {
+    if (weaponPickerOpen) {
+      return;
+    }
     // Don't save victory state for tutorial bosses
     if (isTutorialBoss && battleState.battlePhase === 'victory') {
       return;
@@ -281,61 +415,108 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
       playerBattleData,
       battleState,
       battleLog,
-      moveCooldowns,
       questTasks,
+      finalBlowReady,
+      initialProjectTimeMs,
+      moveReadyAt,
+      moveRewardTotals,
+      battleWeaponId,
+      momentumRushReady,
       timestamp: Date.now()
     };
-    
+
     localStorage.setItem(battleStateKey, JSON.stringify(stateToSave));
     setLastSavedAt(stateToSave.timestamp);
-  }, [bossData, playerBattleData, battleState, battleLog, moveCooldowns, questTasks, isTutorialBoss]);
+  }, [
+    bossData,
+    playerBattleData,
+    battleState,
+    battleLog,
+    questTasks,
+    finalBlowReady,
+    initialProjectTimeMs,
+    moveReadyAt,
+    moveRewardTotals,
+    battleWeaponId,
+    momentumRushReady,
+    weaponPickerOpen,
+    isTutorialBoss
+  ]);
 
   // Calculate battle moves based on real player stats
-  // All moves are unlocked - damage scales with stat values
+  // cooldownShareOfProject: fraction of total project window before this move can be used again (real time)
   const battleMoves = [
-    { 
-      id: 1, 
-      name: 'Deep Work', 
-      icon: '🧠', 
-      stat: 'focus',  // Uses actual player stat
-      dmg: 120,  // Base damage
-      type: 'magic', 
-      cooldown: 3, // 3 turn cooldown
-      locked: false  // Always available
+    {
+      id: 1,
+      name: 'Deep Work',
+      icon: '🧠',
+      stat: 'focus',
+      dmg: 120,
+      type: 'magic',
+      cooldownShareOfProject: 0.07,
+      locked: false
     },
-    { 
-      id: 2, 
-      name: 'Power Surge', 
-      icon: '💪', 
-      stat: 'energy',  // Uses actual player stat
-      dmg: 100, 
-      type: 'physical', 
-      cooldown: 2, // 2 turn cooldown
-      locked: false  // Always available
+    {
+      id: 2,
+      name: 'Power Surge',
+      icon: '💪',
+      stat: 'energy',
+      dmg: 100,
+      type: 'physical',
+      cooldownShareOfProject: 0.055,
+      locked: false
     },
-    { 
-      id: 3, 
-      name: 'Calm Strike', 
-      icon: '🧘', 
-      stat: 'calm',  // Uses actual player stat
-      dmg: 90, 
-      type: 'magic', 
-      cooldown: 2, // 2 turn cooldown
-      locked: false  // Always available
+    {
+      id: 3,
+      name: 'Calm Strike',
+      icon: '🧘',
+      stat: 'calm',
+      dmg: 90,
+      type: 'magic',
+      cooldownShareOfProject: 0.055,
+      locked: false
     },
-    { 
-      id: 4, 
-      name: 'Motivated Rush', 
-      icon: '🔥', 
-      stat: 'motivation',  // Uses actual player stat
-      dmg: 110, 
-      type: 'physical', 
-      cooldown: 4, // 4 turn cooldown
-      locked: false  // Always available
+    {
+      id: 4,
+      name: 'Motivated Rush',
+      icon: '🔥',
+      stat: 'motivation',
+      dmg: 110,
+      type: 'physical',
+      cooldownShareOfProject: 0.08,
+      locked: false
     }
-  ];
+  ] as const;
 
-  const bossHpPercent = (bossData.currentHp / bossData.maxHp) * 100;
+  useEffect(() => {
+    const id = window.setInterval(() => setNowMs(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  // First-time project budget when no saved initial window
+  useEffect(() => {
+    if (isTutorialBoss || initialProjectTimeMs != null) return;
+    const tr = quest.due
+      ? Math.max(0, new Date(quest.due).getTime() - Date.now())
+      : 3 * 24 * 60 * 60 * 1000;
+    setInitialProjectTimeMs(Math.max(tr, 60 * 1000));
+  }, [isTutorialBoss, quest.due, initialProjectTimeMs]);
+
+  const timeTiedRelief = getWeaponDef(battleWeaponId).timeTiedHpRelief;
+
+  const displayBossHp = useMemo(
+    () =>
+      getDisplayBossHp(
+        bossData.currentHp,
+        battleState.timeRemaining,
+        bossData.maxHp,
+        initialProjectTimeMs,
+        timeTiedRelief
+      ),
+    [bossData.currentHp, bossData.maxHp, battleState.timeRemaining, initialProjectTimeMs, timeTiedRelief]
+  );
+
+  const bossHpPercent = (displayBossHp / Math.max(1, bossData.maxHp)) * 100;
   const playerHpPercent = (playerBattleData.currentHp / playerBattleData.maxHp) * 100;
   
   // Update player HP when energy changes
@@ -430,8 +611,9 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
       onSubtaskToggle(quest.title, task.id - 1);
     }
 
-    // Calculate damage (guaranteed damage from completing real work)
-    const taskDamage = task.damage;
+    const weapon = getWeaponDef(battleWeaponId);
+    // Guaranteed damage from completing real work (weapon may emphasize tasks)
+    const taskDamage = Math.max(1, Math.round(task.damage * weapon.taskDamageMult));
     const newBossHp = Math.max(0, bossData.currentHp - taskDamage);
     
     // Apply damage to boss
@@ -449,8 +631,15 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
     // Add battle log entry
     addBattleLog(`✓ Task completed: "${task.description}" - ${taskDamage} damage dealt!`, 'player');
 
-    // Check for boss phase transition
-    const newPhase = calculateBossPhase(newBossHp, bossData.maxHp);
+    // Phase from displayed HP (deadline pressure + task damage)
+    const displayAfterTask = getDisplayBossHp(
+      newBossHp,
+      battleState.timeRemaining,
+      bossData.maxHp,
+      initialProjectTimeMs,
+      weapon.timeTiedHpRelief
+    );
+    const newPhase = calculateBossPhase(displayAfterTask, bossData.maxHp);
     if (newPhase !== bossData.phase) {
       const phaseNames: { [key: number]: 'Confident' | 'FOCUSED' | 'ENRAGED' | 'DESPERATE' } = { 1: 'Confident', 2: 'FOCUSED', 3: 'ENRAGED' };
       const newMood = phaseNames[newPhase] || 'Confident';
@@ -464,16 +653,11 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
     const allTasksCompleted = hasTasks ? updatedTasks.every(t => t.completed) : false;
     
     if (allTasksCompleted) {
-      // Immediate victory when all tasks are completed via quest actions
+      // All subtasks done: unlock final blow only — quest completes after FINISH IT
       setBossData(prev => ({ ...prev, currentHp: 0 }));
-      setBattleState(prev => ({ ...prev, battlePhase: 'victory' }));
-      addBattleLog(`🎉 VICTORY! ${bossData.name} was defeated!`, 'system');
-      if (!isTutorialBoss) {
-        clearBattleState();
-        setTimeout(() => {
-          onQuestComplete(quest.title);
-        }, 1500);
-      }
+      setFinalBlowReady(true);
+      addBattleLog(`✅ All project tasks complete!`, 'system');
+      addBattleLog(`⚔️ Deliver the FINAL BLOW to finish ${bossData.name}!`, 'system');
     } else if (newBossHp <= 0) {
       // Boss "defeated" but not finished - survives at 1 HP
       if (hasTasks) {
@@ -490,6 +674,10 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
       setTimeout(() => {
         executeBossCounterAttack('task');
       }, 800);
+    }
+
+    if (weapon.momentumCooldownAfterTask) {
+      setMomentumRushReady(true);
     }
 
     setTimeout(() => {
@@ -510,6 +698,24 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
     localStorage.removeItem(battleStateKey);
     console.log('🗑️ Cleared battle state for:', quest.id);
   };
+
+  const commitBattleLoadout = (id: BattleWeaponId) => {
+    const def = getWeaponDef(id);
+    setBattleWeaponId(id);
+    setWeaponPickerOpen(false);
+    setPlayerBattleData(prev => ({ ...prev, weapon: def.label }));
+    setBattleLog([
+      { turn: 1, event: `${def.icon} Equipped ${def.label} — ${def.summary}`, type: 'system' },
+      { turn: 1, event: `⚔️ ${bossData.name} awaits.`, type: 'system' }
+    ]);
+    setMomentumRushReady(false);
+  };
+
+  useEffect(() => {
+    if (weaponPickerOpen) return;
+    const def = getWeaponDef(battleWeaponId);
+    setPlayerBattleData(prev => (prev.weapon === def.label ? prev : { ...prev, weapon: def.label }));
+  }, [battleWeaponId, weaponPickerOpen]);
 
   const handleAddNewSubquest = async () => {
     if (!newSubquestText.trim() || isAddingSubquest) return;
@@ -547,7 +753,7 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
         
         // Reset input
         setNewSubquestText('');
-        setShowAddSubquestInput(false);
+        setShowSubquestModal(false);
         
       } else {
         // For real quests, use QuestSystemIntegration
@@ -586,7 +792,7 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
         
         // Reset input
         setNewSubquestText('');
-        setShowAddSubquestInput(false);
+        setShowSubquestModal(false);
       }
       
     } catch (error) {
@@ -725,10 +931,19 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
       case 'blockage': {
         // Turn blocking attacks
         if (selectedMove.name === 'Emergency Meeting') {
-          setBattleState(prev => ({ ...prev, turnsBlocked: 2, blockReason: 'Emergency Meeting in progress...' }));
+          const red = getWeaponDef(battleWeaponId).blockTurnReduction;
+          const blockTurns = Math.max(1, 2 - red);
+          setBattleState(prev => ({
+            ...prev,
+            turnsBlocked: blockTurns,
+            blockReason: 'Emergency Meeting in progress...'
+          }));
           const energyLoss = selectedMove.energyCost || 20;
           setPlayerBattleData(prev => ({ ...prev, currentHp: Math.max(0, prev.currentHp - energyLoss) }));
-          addBattleLog(`📅 Blocked for 2 turns! Forced to attend meeting. (-${energyLoss} energy)`, 'system');
+          addBattleLog(
+            `📅 Blocked for ${blockTurns} turn(s)! Forced to attend meeting. (-${energyLoss} energy)`,
+            'system'
+          );
         } else if (selectedMove.name === 'Scope Creep') {
           // This would add a new subtask, but we'll just add a debuff for now
           setPlayerEffects(prev => [...prev, {
@@ -840,62 +1055,27 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
     }
   }, [battleState.currentTurn]);
 
-  // Decrease cooldowns each turn
+  // When all subtasks are complete (synced from props or local state), unlock final blow — never auto-complete quest
   useEffect(() => {
-    const newCooldowns: { [key: number]: number } = {};
-    Object.keys(moveCooldowns).forEach(key => {
-      const moveId = parseInt(key);
-      const remaining = moveCooldowns[moveId] - 1;
-      if (remaining > 0) {
-        newCooldowns[moveId] = remaining;
-      }
-    });
-    setMoveCooldowns(newCooldowns);
-  }, [battleState.currentTurn]);
-
-  // Normalize boss HP when all tasks are complete (quests can bring HP to 0)
-  useEffect(() => {
+    if (battleState.battlePhase !== 'battle') return;
     const hasTasks = (questTasks?.length || 0) > 0;
     if (!hasTasks) return;
     const allDone = questTasks.every(t => t.completed);
     if (allDone) {
-      // Force HP to 0
       setBossData(prev => (prev.currentHp !== 0 ? { ...prev, currentHp: 0 } : prev));
-      // Auto-transition to victory for an immediate payoff
+      setFinalBlowReady(true);
+    } else {
       setFinalBlowReady(false);
-      setBattleState(prev => ({ ...prev, battlePhase: 'victory' }));
-      if (!isTutorialBoss) {
-        clearBattleState();
-        setTimeout(() => {
-          onQuestComplete(quest.title);
-        }, 1500);
-      }
     }
-  }, [questTasks, isTutorialBoss, onQuestComplete, quest.title]);
-
-  // Also watch quest.subtasks from props (external completion)
-  useEffect(() => {
-    const sub = quest.subtasks;
-    if (!sub || sub.length === 0) return;
-    const allDone = sub.every(s => s.completed);
-    if (allDone && battleState.battlePhase === 'battle') {
-      setBossData(prev => (prev.currentHp !== 0 ? { ...prev, currentHp: 0 } : prev));
-      setBattleState(prev => ({ ...prev, battlePhase: 'victory' }));
-      if (!isTutorialBoss) {
-        clearBattleState();
-        setTimeout(() => {
-          onQuestComplete(quest.title);
-        }, 1500);
-      }
-    }
-  }, [quest.subtasks, battleState.battlePhase, isTutorialBoss, onQuestComplete, quest.title]);
+  }, [questTasks, battleState.battlePhase]);
 
   // Trigger XP animation when victory occurs
   useEffect(() => {
     if (battleState.battlePhase === 'victory') {
       const baseXp = quest.xp || 100;
       const completionBonus = (questTasks.every(t => t.completed) ? (quest.xp || 0) * 0.2 : 0);
-      const gained = Math.round(baseXp + completionBonus);
+      const finisherXp = getWeaponDef(battleWeaponId).finisherBonusXp;
+      const gained = Math.round(baseXp + completionBonus + moveRewardTotals.xp + finisherXp);
       const before = playerData.xp || 0;
       const required = playerData.xpRequired || 100;
       const after = before + gained;
@@ -923,7 +1103,15 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
       }, 16);
       return () => clearInterval(timer);
     }
-  }, [battleState.battlePhase]);
+  }, [
+    battleState.battlePhase,
+    quest.xp,
+    questTasks,
+    playerData.xp,
+    playerData.xpRequired,
+    moveRewardTotals.xp,
+    battleWeaponId
+  ]);
 
   // Periodic task sync - detect externally added tasks every 5 turns
   useEffect(() => {
@@ -961,27 +1149,37 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
     }
   }, [battleState.currentTurn, quest.id, questTasks.length, quest.xp]);
 
-  const executeBattleMove = (move: typeof battleMoves[0]) => {
-    if (isAnimating) return;  // Remove locked check - all moves available
-    
-    // Check if move is on cooldown
-    if (moveCooldowns[move.id]) {
-      addBattleLog(`⏳ ${move.name} is on cooldown! (${moveCooldowns[move.id]} turns remaining)`, 'system');
+  const executeBattleMove = (move: (typeof battleMoves)[number]) => {
+    if (isAnimating) return;
+    if (battleState.turnsBlocked > 0) {
+      addBattleLog(`⛔ ${battleState.blockReason} Can't use moves right now.`, 'system');
       return;
     }
-    
-    // Check if player has enough energy
-    const energyCost = 15; // Base energy cost for moves
-    if (playerBattleData.currentHp < energyCost) {
-      addBattleLog("⚠️ Not enough energy! Complete tasks to defeat the boss.", 'system');
+
+    const readyAt = moveReadyAt[move.id] ?? 0;
+    if (nowMs < readyAt) {
+      addBattleLog(`⏳ ${move.name} recharges in ${formatCooldownRemaining(readyAt, nowMs)}`, 'system');
       return;
     }
 
     setIsAnimating(true);
 
+    const projectMs = initialProjectTimeMs ?? Math.max(battleState.timeRemaining, 3 * 24 * 60 * 60 * 1000);
+    const baseCooldownMs = getMoveCooldownMs(projectMs, move.cooldownShareOfProject);
+    const weapon = getWeaponDef(battleWeaponId);
+    let effectiveCooldownMs = Math.round(baseCooldownMs * weapon.moveCooldownMult);
+    if (weapon.momentumCooldownAfterTask && momentumRushReady) {
+      effectiveCooldownMs = Math.round(effectiveCooldownMs * 0.85);
+      setMomentumRushReady(false);
+    }
+
     // Calculate damage based on player's actual stat values (0-100)
-    const statKey = move.stat as keyof typeof playerData.stats;
-    const statValue = (playerData.stats?.[statKey] as number) || 1;
+    const statKey = move.stat as keyof NonNullable<typeof playerData.stats>;
+    let statValue = (playerData.stats?.[statKey] as number | undefined);
+    if (statValue == null && move.stat === 'calm') {
+      statValue = playerData.stats?.mindfulness;
+    }
+    statValue = statValue ?? 1;
     
     // Proper scaling: 
     // - Stat 1 = 10% of base damage (minimum viable)
@@ -990,10 +1188,13 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
     const statMultiplier = Math.max(0.1, statValue / 100);
     const moveDamage = Math.round(move.dmg * statMultiplier);
     
-    // Critical hit chance: 10% base + 0.5% per stat point
-    const critChance = 10 + (statValue * 0.5);
+    // Critical hit chance: 10% base + 0.5% per stat point + weapon bonus
+    const critChance = 10 + (statValue * 0.5) + weapon.moveCritBonus;
     const isCritical = Math.random() * 100 < critChance;
-    const finalDamage = Math.round(moveDamage * (isCritical ? 2.0 : 1.0));
+    const finalDamage = Math.max(
+      1,
+      Math.round(moveDamage * (isCritical ? 2.0 : 1.0) * weapon.moveDamageMult)
+    );
 
     // Apply damage to boss
     const newBossHp = Math.max(0, bossData.currentHp - finalDamage);
@@ -1020,19 +1221,36 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
     
     // Auto-clear damage display after animation
     setTimeout(() => setDamageDisplay(null), 1500);
-    
-    // Deduct energy cost
-    setPlayerBattleData(prev => ({ ...prev, currentHp: Math.max(0, prev.currentHp - energyCost) }));
 
     // Increment turn counter
     setBattleState(prev => ({ ...prev, currentTurn: prev.currentTurn + 1 }));
 
-    // Set move on cooldown
-    setMoveCooldowns(prev => ({ ...prev, [move.id]: move.cooldown }));
+    setMoveReadyAt(prev => ({ ...prev, [move.id]: Date.now() + effectiveCooldownMs }));
 
-    // Add battle log entry
+    const xpPerMove = MOVE_REWARD_XP + weapon.extraMoveRewardXp;
+    const coinsPerMove = MOVE_REWARD_COINS + weapon.extraMoveRewardCoins;
+
+    let bonusXpGranted = 0;
+    let bonusCoinsGranted = 0;
+    setMoveRewardTotals(prev => {
+      const canXp = Math.max(0, MOVE_REWARD_XP_CAP - prev.xp);
+      const canCoins = Math.max(0, MOVE_REWARD_COINS_CAP - prev.coins);
+      bonusXpGranted = Math.min(xpPerMove, canXp);
+      bonusCoinsGranted = Math.min(coinsPerMove, canCoins);
+      if (bonusXpGranted <= 0 && bonusCoinsGranted <= 0) return prev;
+      return {
+        xp: prev.xp + bonusXpGranted,
+        coins: prev.coins + bonusCoinsGranted
+      };
+    });
+
+    // Add battle log entry (moves cost no energy — real work is tasks)
     const critText = isCritical ? " CRITICAL HIT!" : "";
-    addBattleLog(`⚔️ Used ${move.name}${critText} - ${finalDamage} damage! (-${energyCost} energy)`, 'player');
+    const bonusParts: string[] = [];
+    if (bonusXpGranted > 0) bonusParts.push(`+${bonusXpGranted} bonus XP`);
+    if (bonusCoinsGranted > 0) bonusParts.push(`+${bonusCoinsGranted} bonus coins`);
+    const bonusText = bonusParts.length > 0 ? ` (${bonusParts.join(', ')})` : '';
+    addBattleLog(`⚔️ Used ${move.name}${critText} - ${finalDamage} damage!${bonusText}`, 'player');
     
     // Check if move grants a buff
     if (move.name === 'Deep Work') {
@@ -1073,8 +1291,14 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
       addBattleLog(`🔥 Momentum! Tasks cost -3 energy for 3 turns!`, 'system');
     }
 
-    // Check for boss phase transition
-    const newPhase = calculateBossPhase(newBossHp, bossData.maxHp);
+    const displayAfterMove = getDisplayBossHp(
+      newBossHp,
+      battleState.timeRemaining,
+      bossData.maxHp,
+      initialProjectTimeMs,
+      weapon.timeTiedHpRelief
+    );
+    const newPhase = calculateBossPhase(displayAfterMove, bossData.maxHp);
     if (newPhase !== bossData.phase) {
       const phaseNames: { [key: number]: 'Confident' | 'FOCUSED' | 'ENRAGED' | 'DESPERATE' } = { 1: 'Confident', 2: 'FOCUSED', 3: 'ENRAGED' };
       const newMood = phaseNames[newPhase] || 'Confident';
@@ -1092,17 +1316,12 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
       setFinalBlowReady(true);
       addBattleLog(`⚔️ All tasks complete! Deliver the FINAL BLOW!`, 'system');
     } else if (newBossHp <= 0) {
-      // If all tasks are already complete, allow this move to finish the fight
+      // Moves never award quest victory; if all tasks done, final blow handles finish
       const allDoneNow = hasTasksMove && questTasks.every(t => t.completed);
       if (allDoneNow) {
         setBossData(prev => ({ ...prev, currentHp: 0 }));
-        setBattleState(prev => ({ ...prev, battlePhase: 'victory' }));
-        if (!isTutorialBoss) {
-          clearBattleState();
-          setTimeout(() => {
-            onQuestComplete(quest.title);
-          }, 1500);
-        }
+        setFinalBlowReady(true);
+        addBattleLog(`⚔️ All tasks complete! Deliver the FINAL BLOW!`, 'system');
       } else {
         // Otherwise, moves can never reduce below 1 HP; tasks must finish it
         setBossData(prev => ({ ...prev, currentHp: 1, phase: 3, mood: 'DESPERATE' }));
@@ -1128,6 +1347,18 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
 
   const deliverFinalBlow = () => {
     if (!finalBlowReady || finalBlowAnimating) return;
+    const hasSubtasks = (questTasks?.length || 0) > 0;
+    if (hasSubtasks) {
+      if (!questTasks.every(t => t.completed)) {
+        addBattleLog(`⛔ Complete every subtask before the final blow!`, 'system');
+        return;
+      }
+      const sub = quest.subtasks;
+      if (sub && sub.length > 0 && !sub.every(s => s.completed)) {
+        addBattleLog(`⛔ Complete every subtask before the final blow!`, 'system');
+        return;
+      }
+    }
     setFinalBlowAnimating(true);
     setBossShaking(true);
     setShowCriticalFlash(true);
@@ -1138,20 +1369,33 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
     setTimeout(() => {
       setBossData(prev => ({ ...prev, currentHp: 0 }));
       setBattleState(prev => ({ ...prev, battlePhase: 'victory' }));
-      // Clear saved state and notify completion after a short delay
       if (!isTutorialBoss) {
         clearBattleState();
-        setTimeout(() => {
-          onQuestComplete(quest.title);
-        }, 2000);
       }
     }, 900);
+  };
+
+  const buildVictoryExtras = (): TacticalBattleCompletionExtras => ({
+    moveBonusXp: moveRewardTotals.xp,
+    moveBonusCoins: moveRewardTotals.coins,
+    finisherBonusXp: getWeaponDef(battleWeaponId).finisherBonusXp,
+    battleWeaponId,
+    timeRemainingMs: battleState.timeRemaining,
+    initialProjectTimeMs,
+    turnsTaken: battleState.currentTurn
+  });
+
+  const handleVictoryContinue = () => {
+    if (!isTutorialBoss) {
+      onQuestComplete(quest.title, buildVictoryExtras());
+    }
+    onClose();
   };
 
   // Defeat Screen
   if (battleState.battlePhase === 'defeat') {
     return (
-      <div className={styles.defeatScreen}>
+      <div className={`${styles.defeatScreen} ${styles.tacticalBattlePixel}`}>
         <div className={styles.defeatContent}>
           <div className={styles.defeatHeader}>
             <h1 className={styles.defeatTitle}>💀 DEFEAT 💀</h1>
@@ -1168,8 +1412,17 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
               <span className={styles.defeatValue}>{questTasks.filter(t => t.completed).length}/{questTasks.length}</span>
             </div>
             <div className={styles.defeatStat}>
-              <span className={styles.defeatLabel}>Boss HP Remaining:</span>
-              <span className={styles.defeatValue}>{bossData.currentHp}/{bossData.maxHp}</span>
+              <span className={styles.defeatLabel}>Boss HP (shown):</span>
+              <span className={styles.defeatValue}>
+                {getDisplayBossHp(
+                  bossData.currentHp,
+                  battleState.timeRemaining,
+                  bossData.maxHp,
+                  initialProjectTimeMs,
+                  timeTiedRelief
+                )}
+                /{bossData.maxHp}
+              </span>
             </div>
           </div>
 
@@ -1188,15 +1441,21 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
                     currentTurn: 1,
                     playerTurn: true,
                     battlePhase: 'battle',
-                    timeRemaining: quest.due ? Math.max(0, new Date(quest.due).getTime() - Date.now()) : 3 * 24 * 60 * 60 * 1000,
+                    timeRemaining: 3 * 60 * 60 * 1000,
                     timePressureLevel: 'normal',
                     turnsBlocked: 0,
                     blockReason: ''
                   });
                   setBossData(prev => ({ ...prev, currentHp: prev.maxHp, phase: 1, mood: 'Confident' as 'Confident' | 'FOCUSED' | 'ENRAGED' | 'DESPERATE' }));
                   setPlayerBattleData(prev => ({ ...prev, currentHp: Math.max(1, playerData.stats?.energy || 70) }));
-                  setMoveCooldowns({});
+                  setMoveReadyAt({});
+                  setMoveRewardTotals({ xp: 0, coins: 0 });
+                  setFinalBlowReady(false);
+                  setInitialProjectTimeMs(Math.max(3 * 60 * 60 * 1000, 60 * 1000));
                   setPlayerEffects([]);
+                  setMomentumRushReady(false);
+                  setBattleWeaponId('balanced');
+                  setWeaponPickerOpen(true);
                   setBattleLog([{ turn: 1, event: `Battle restarted against ${quest.title}!`, type: 'system' }]);
                   addBattleLog('🔄 Training mode: Battle reset!', 'system');
                 }}
@@ -1219,14 +1478,18 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
 
   // Victory Screen
   if (battleState.battlePhase === 'victory') {
+    const finisherBonusXp = getWeaponDef(battleWeaponId).finisherBonusXp;
     const rewards = {
       xp: quest.xp || 100,
       coins: (quest.xp || 100) * 2,
-      completionBonus: questTasks.every(t => t.completed) ? quest.xp * 0.2 : 0
+      completionBonus: questTasks.every(t => t.completed) ? (quest.xp || 0) * 0.2 : 0,
+      moveBonusXp: moveRewardTotals.xp,
+      moveBonusCoins: moveRewardTotals.coins,
+      finisherBonusXp
     };
 
     return (
-      <div className={styles.victoryScreen}>
+      <div className={`${styles.victoryScreen} ${styles.tacticalBattlePixel}`}>
         {/* Confetti celebration effect */}
         {Array.from({ length: 50 }).map((_, i) => (
           <div
@@ -1246,6 +1509,34 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
             <p className={styles.victorySubtitle}>{bossData.name} has been defeated!</p>
           </div>
 
+          <div className={styles.victoryRecap}>
+            <div className={styles.victoryRecapTitle}>Raid recap</div>
+            <div className={styles.victoryRecapGrid}>
+              <div>
+                <span className={styles.victoryRecapLabel}>Loadout</span>
+                <span className={styles.victoryRecapValue}>
+                  {getWeaponDef(battleWeaponId).icon} {getWeaponDef(battleWeaponId).label}
+                </span>
+              </div>
+              <div>
+                <span className={styles.victoryRecapLabel}>Time left @ finish</span>
+                <span className={styles.victoryRecapValue}>{formatMsForRecap(battleState.timeRemaining)}</span>
+              </div>
+              <div>
+                <span className={styles.victoryRecapLabel}>Project window (start)</span>
+                <span className={styles.victoryRecapValue}>
+                  {initialProjectTimeMs != null ? formatMsForRecap(initialProjectTimeMs) : '—'}
+                </span>
+              </div>
+              <div>
+                <span className={styles.victoryRecapLabel}>Move bonuses (session)</span>
+                <span className={styles.victoryRecapValue}>
+                  +{rewards.moveBonusXp} XP · +{rewards.moveBonusCoins} coins
+                </span>
+              </div>
+            </div>
+          </div>
+
           {/* XP BAR ANIMATION */}
           <div className={styles.xpSection}>
             <div className={styles.xpHeader}>Experience</div>
@@ -1255,7 +1546,16 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
                 {Math.min(100, Math.round(xpAnimProgress))}% to Level {(playerData.level || 1)}
               </div>
             </div>
-            <div className={styles.xpGain}>+{Math.round((rewards.xp || 0) + (rewards.completionBonus || 0))} XP</div>
+            <div className={styles.xpGain}>
+              +
+              {Math.round(
+                (rewards.xp || 0) +
+                  (rewards.completionBonus || 0) +
+                  rewards.moveBonusXp +
+                  rewards.finisherBonusXp
+              )}{' '}
+              XP
+            </div>
           </div>
 
           <div className={styles.victoryStats}>
@@ -1271,6 +1571,20 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
               <span className={styles.victoryLabel}>Final Energy:</span>
               <span className={styles.victoryValue}>{playerBattleData.currentHp}/{playerBattleData.maxHp}</span>
             </div>
+            {(rewards.moveBonusXp > 0 || rewards.moveBonusCoins > 0) && (
+              <div className={styles.victoryStat}>
+                <span className={styles.victoryLabel}>Battle move bonuses:</span>
+                <span className={styles.victoryValue}>
+                  +{rewards.moveBonusXp} XP · +{rewards.moveBonusCoins} coins
+                </span>
+              </div>
+            )}
+            {rewards.finisherBonusXp > 0 && (
+              <div className={styles.victoryStat}>
+                <span className={styles.victoryLabel}>Weapon (finisher):</span>
+                <span className={styles.victoryValue}>+{rewards.finisherBonusXp} XP</span>
+              </div>
+            )}
           </div>
 
           <div className={styles.victoryRewards}>
@@ -1290,6 +1604,24 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
                   <span className={styles.rewardText}>+{Math.round(rewards.completionBonus)} XP Bonus (All Tasks!)</span>
                 </div>
               )}
+              {rewards.moveBonusXp > 0 && (
+                <div className={styles.rewardItem}>
+                  <span className={styles.rewardIcon}>⚔️</span>
+                  <span className={styles.rewardText}>+{rewards.moveBonusXp} XP (battle moves, capped)</span>
+                </div>
+              )}
+              {rewards.moveBonusCoins > 0 && (
+                <div className={styles.rewardItem}>
+                  <span className={styles.rewardIcon}>🪙</span>
+                  <span className={styles.rewardText}>+{rewards.moveBonusCoins} coins (battle moves, capped)</span>
+                </div>
+              )}
+              {rewards.finisherBonusXp > 0 && (
+                <div className={styles.rewardItem}>
+                  <span className={styles.rewardIcon}>🔨</span>
+                  <span className={styles.rewardText}>+{rewards.finisherBonusXp} XP (Hammer of Closure)</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -1304,15 +1636,21 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
                     currentTurn: 1,
                     playerTurn: true,
                     battlePhase: 'battle',
-                    timeRemaining: quest.due ? Math.max(0, new Date(quest.due).getTime() - Date.now()) : 3 * 24 * 60 * 60 * 1000,
+                    timeRemaining: 3 * 60 * 60 * 1000,
                     timePressureLevel: 'normal',
                     turnsBlocked: 0,
                     blockReason: ''
                   });
                   setBossData(prev => ({ ...prev, currentHp: prev.maxHp, phase: 1, mood: 'Confident' as 'Confident' | 'FOCUSED' | 'ENRAGED' | 'DESPERATE' }));
                   setPlayerBattleData(prev => ({ ...prev, currentHp: Math.max(1, playerData.stats?.energy || 70) }));
-                  setMoveCooldowns({});
+                  setMoveReadyAt({});
+                  setMoveRewardTotals({ xp: 0, coins: 0 });
+                  setFinalBlowReady(false);
+                  setInitialProjectTimeMs(Math.max(3 * 60 * 60 * 1000, 60 * 1000));
                   setPlayerEffects([]);
+                  setMomentumRushReady(false);
+                  setBattleWeaponId('balanced');
+                  setWeaponPickerOpen(true);
                   setBattleLog([{ turn: 1, event: `Battle restarted against ${quest.title}!`, type: 'system' }]);
                   addBattleLog('🔄 Training mode: Battle reset!', 'system');
                 }}
@@ -1324,8 +1662,8 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
               </button>
             </div>
           ) : (
-            <button className={styles.victoryButton} onClick={onClose}>
-              Continue
+            <button type="button" className={styles.victoryButton} onClick={handleVictoryContinue}>
+              Continue — apply rewards
             </button>
           )}
         </div>
@@ -1341,8 +1679,63 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
   }
 
   return (
-    <div className={styles.tacticalBattle} ref={containerRef}>
-      
+    <div className={`${styles.tacticalBattle} ${styles.tacticalBattlePixel}`} ref={containerRef}>
+      {weaponPickerOpen && (
+        <div className={styles.weaponPickerOverlay} aria-hidden="false">
+          <div className={styles.weaponPickerModal}>
+            <div className={styles.weaponPickerTitle}>Choose your weapon</div>
+            <p className={styles.weaponPickerSubtitle}>
+              Loadout applies for this battle only. Weapons match your{' '}
+              <strong>PlayerData inventory</strong> (name e.g. <code className={styles.weaponFmHint}>Rapier</code> or{' '}
+              <code className={styles.weaponFmHint}>battle_weapon: rapier</code>). If none match, the full catalog is
+              shown.
+            </p>
+            <div className={styles.weaponGrid}>
+              {loadoutWeaponRows.map(({ id }) => {
+                const w = getWeaponDef(id);
+                const selected = battleWeaponId === id;
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    className={`${styles.weaponCard} ${selected ? styles.weaponCardSelected : ''}`}
+                    title={`${w.label} — ${w.summary}`}
+                    onClick={() => setBattleWeaponId(id)}
+                  >
+                    <span className={styles.weaponCardIcon}>{w.icon}</span>
+                    <span className={styles.weaponCardName}>{w.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+            {(() => {
+              const w = getWeaponDef(battleWeaponId);
+              const row = loadoutWeaponRows.find(r => r.id === battleWeaponId);
+              const note = row?.inventoryNote?.trim();
+              const bodyText = note ? `${note}\n\n${w.blurb}` : w.blurb;
+              return (
+                <div className={styles.weaponPickerPreview}>
+                  <div className={styles.weaponPickerPreviewBar} aria-hidden />
+                  <div className={styles.weaponPickerPreviewBody}>
+                    <div className={styles.weaponPickerPreviewTitle}>
+                      {w.label} — {w.summary}
+                    </div>
+                    <div className={styles.weaponPickerPreviewText}>{bodyText}</div>
+                  </div>
+                </div>
+              );
+            })()}
+            <button
+              type="button"
+              className={styles.weaponPickerConfirm}
+              onClick={() => commitBattleLoadout(battleWeaponId)}
+            >
+              Lock in & fight
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* FULL-SCREEN DAMAGE DISPLAY */}
       {damageDisplay && (
         <div className={styles.fullScreenDamage}>
@@ -1362,6 +1755,10 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
         <div className={styles.turnCounter}>
           <div className={styles.turnLabel}>TURN</div>
           <div className={styles.turnNumber}>{battleState.currentTurn}</div>
+        </div>
+        <div className={styles.battleStatusTitle}>
+          <span className={styles.battleStatusTitleMain}>Boss Battle</span>
+          <span className={styles.battleStatusTitleSub}>{quest.title}</span>
         </div>
         {/* NEXT BOSS ACTION TELEGRAPH */}
         {nextBossAction && (
@@ -1422,88 +1819,7 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
       {/* TOP: TACTICAL ARENA (60% of screen) */}
       <div className={styles.arenaSection}>
         
-        {/* BOSS COMBATANT */}
-        <div className={`${styles.combatantBoss} ${bossShaking ? styles.bossShake : ''}`}>
-          <div className={styles.characterSprite}>
-            <div className={`${styles.spriteContainer} ${attackFlashing ? styles.attackFlash : ''}`}>
-              <div className={styles.bossEmoji}>{bossData.emoji}</div>
-            </div>
-          </div>
-          
-          <div className={styles.tacticalStatsBox}>
-            <div className={styles.combatStats}>
-              <div className={styles.statItem}>
-                <span className={styles.statLabel}>HIT</span>
-                <span className={styles.statValue}>{bossData.hit}</span>
-              </div>
-              <div className={styles.statItem}>
-                <span className={styles.statLabel}>DMG</span>
-                <span className={styles.statValue}>{bossData.dmg}</span>
-              </div>
-              <div className={styles.statItem}>
-                <span className={styles.statLabel}>CRT</span>
-                <span className={styles.statValue}>{bossData.crt}</span>
-              </div>
-            </div>
-            
-            <div className={styles.weaponInfo}>
-              <span className={styles.weaponIcon}>⚔️</span>
-              <span className={styles.weaponName}>{bossData.weapon}</span>
-            </div>
-            
-            <div className={styles.hpBarContainer}>
-              <div className={styles.hpBarSegmented}>
-                {Array.from({ length: 10 }).map((_, i) => (
-                  <div 
-                    key={i} 
-                    className={`${styles.hpSegment} ${i < Math.ceil(bossHpPercent / 10) ? styles.filled : ''}`}
-                  />
-                ))}
-                {/* PHASE MARKERS - show at 75%, 50%, 25% HP */}
-                <div className={styles.phaseMarker} style={{ left: '25%' }} title="Phase 2 at 75% HP">
-                  <div className={styles.phaseMarkerLine}></div>
-                  <div className={styles.phaseMarkerLabel}>P2</div>
-                </div>
-                <div className={styles.phaseMarker} style={{ left: '50%' }} title="Phase 3 at 50% HP">
-                  <div className={styles.phaseMarkerLine}></div>
-                  <div className={styles.phaseMarkerLabel}>P3</div>
-                </div>
-                <div className={styles.phaseMarker} style={{ left: '75%' }} title="Phase 4 at 25% HP">
-                  <div className={styles.phaseMarkerLine}></div>
-                  <div className={styles.phaseMarkerLabel}>P4</div>
-                </div>
-              </div>
-              <div className={styles.hpText}>{bossData.currentHp} / {bossData.maxHp}</div>
-            </div>
-            
-            <div className={styles.characterName}>{bossData.name}</div>
-            <div className={styles.characterPhase}>Phase {bossData.phase} - {bossData.mood}</div>
-            
-            {/* BOSS STATUS EFFECTS */}
-            {bossData.activeEffects && bossData.activeEffects.length > 0 && (
-              <div className={styles.statusEffectsContainer}>
-                <div className={styles.statusEffectsTitle}>Active Effects:</div>
-                <div className={styles.statusEffectsList}>
-                  {bossData.activeEffects.map((effect, index) => (
-                    <div 
-                      key={index} 
-                      className={`${styles.statusEffect} ${effect.type === 'buff' ? styles.buff : styles.debuff}`}
-                      title={effect.name}
-                    >
-                      <span className={styles.effectIcon}>{effect.type === 'buff' ? '✨' : '💢'}</span>
-                      <span className={styles.effectName}>{effect.name}</span>
-                      {effect.duration !== 999 && (
-                        <span className={styles.effectBadge} title={`${effect.duration} turns remaining`}>{effect.duration}</span>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-        
-        {/* PLAYER COMBATANT */}
+        {/* PLAYER COMBATANT (left — faces the boss) */}
         <div className={styles.combatantPlayer}>
           <div className={styles.characterSprite}>
             <div className={styles.spriteContainer}>
@@ -1638,6 +1954,92 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
           </div>
         </div>
         
+        {/* BOSS COMBATANT (right) */}
+        <div className={`${styles.combatantBoss} ${bossShaking ? styles.bossShake : ''}`}>
+          <div className={styles.characterSprite}>
+            <div className={`${styles.spriteContainer} ${attackFlashing ? styles.attackFlash : ''}`}>
+              <div className={styles.bossEmoji}>{bossData.emoji}</div>
+            </div>
+          </div>
+          
+          <div className={styles.tacticalStatsBox}>
+            <div className={styles.combatStats}>
+              <div className={styles.statItem}>
+                <span className={styles.statLabel}>HIT</span>
+                <span className={styles.statValue}>{bossData.hit}</span>
+              </div>
+              <div className={styles.statItem}>
+                <span className={styles.statLabel}>DMG</span>
+                <span className={styles.statValue}>{bossData.dmg}</span>
+              </div>
+              <div className={styles.statItem}>
+                <span className={styles.statLabel}>CRT</span>
+                <span className={styles.statValue}>{bossData.crt}</span>
+              </div>
+            </div>
+            
+            <div className={styles.weaponInfo}>
+              <span className={styles.weaponIcon}>⚔️</span>
+              <span className={styles.weaponName}>{bossData.weapon}</span>
+            </div>
+            
+            <div className={styles.hpBarContainer}>
+              <div className={styles.hpBarSegmented}>
+                {Array.from({ length: 10 }).map((_, i) => (
+                  <div 
+                    key={i} 
+                    className={`${styles.hpSegment} ${i < Math.ceil(bossHpPercent / 10) ? styles.filled : ''}`}
+                  />
+                ))}
+                <div className={styles.phaseMarker} style={{ left: '25%' }} title="Phase 2 at 75% HP">
+                  <div className={styles.phaseMarkerLine}></div>
+                  <div className={styles.phaseMarkerLabel}>P2</div>
+                </div>
+                <div className={styles.phaseMarker} style={{ left: '50%' }} title="Phase 3 at 50% HP">
+                  <div className={styles.phaseMarkerLine}></div>
+                  <div className={styles.phaseMarkerLabel}>P3</div>
+                </div>
+                <div className={styles.phaseMarker} style={{ left: '75%' }} title="Phase 4 at 25% HP">
+                  <div className={styles.phaseMarkerLine}></div>
+                  <div className={styles.phaseMarkerLabel}>P4</div>
+                </div>
+              </div>
+              <div className={styles.hpText}>
+                {displayBossHp} / {bossData.maxHp}
+                {displayBossHp < bossData.currentHp && (
+                  <span className={styles.hpDeadlineNote} title="Shown HP is capped by time remaining on the project">
+                    {' '}(deadline pressure)
+                  </span>
+                )}
+              </div>
+            </div>
+            
+            <div className={styles.characterName}>{bossData.name}</div>
+            <div className={styles.characterPhase}>Phase {bossData.phase} - {bossData.mood}</div>
+            
+            {bossData.activeEffects && bossData.activeEffects.length > 0 && (
+              <div className={styles.statusEffectsContainer}>
+                <div className={styles.statusEffectsTitle}>Active Effects:</div>
+                <div className={styles.statusEffectsList}>
+                  {bossData.activeEffects.map((effect, index) => (
+                    <div 
+                      key={index} 
+                      className={`${styles.statusEffect} ${effect.type === 'buff' ? styles.buff : styles.debuff}`}
+                      title={effect.name}
+                    >
+                      <span className={styles.effectIcon}>{effect.type === 'buff' ? '✨' : '💢'}</span>
+                      <span className={styles.effectName}>{effect.name}</span>
+                      {effect.duration !== 999 && (
+                        <span className={styles.effectBadge} title={`${effect.duration} turns remaining`}>{effect.duration}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+        
       </div>
       
       {/* FINAL BLOW OVERLAY */}
@@ -1648,7 +2050,9 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
             <button className={styles.finalBlowButton} onClick={deliverFinalBlow} disabled={finalBlowAnimating}>
               💥 FINISH IT
             </button>
-            <div className={styles.finalBlowHint}>All tasks are complete. End the fight in style.</div>
+            <div className={styles.finalBlowHint}>
+              All subtasks are done. The quest completes only after you land this blow.
+            </div>
           </div>
         </div>
       )}
@@ -1675,34 +2079,51 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
           
           <div className={styles.movesGrid}>
               {battleMoves.map(move => {
-                const onCooldown = moveCooldowns[move.id] > 0;
-                const cooldownRemaining = moveCooldowns[move.id] || 0;
-                
-                // Calculate current effectiveness based on stat
-                const statKey = move.stat as keyof typeof playerData.stats;
-                const statValue = (playerData.stats?.[statKey] as number) || 1;
-                const effectiveness = Math.round((statValue / 100) * 100); // Show as percentage
+                const projectMs =
+                  initialProjectTimeMs ?? Math.max(battleState.timeRemaining, 3 * 24 * 60 * 60 * 1000);
+                const wMove = getWeaponDef(battleWeaponId);
+                const moveCdMs = Math.round(
+                  getMoveCooldownMs(projectMs, move.cooldownShareOfProject) * wMove.moveCooldownMult
+                );
+                const readyAt = moveReadyAt[move.id] ?? 0;
+                const onCooldown = nowMs < readyAt;
+                const cdFrac =
+                  onCooldown && moveCdMs > 0
+                    ? Math.min(1, Math.max(0, 1 - (readyAt - nowMs) / moveCdMs))
+                    : 0;
+
+                const statKey = move.stat as keyof NonNullable<typeof playerData.stats>;
+                let statValue = playerData.stats?.[statKey] as number | undefined;
+                if (statValue == null && move.stat === 'calm') {
+                  statValue = playerData.stats?.mindfulness;
+                }
+                statValue = statValue ?? 1;
+                const effectiveness = Math.round((statValue / 100) * 100);
                 const estimatedDamage = Math.round(move.dmg * Math.max(0.1, statValue / 100));
-                
+
                 return (
                   <button 
                     key={move.id}
                     className={`${styles.moveButton} ${onCooldown ? styles.onCooldown : ''}`}
-                    disabled={isAnimating || playerBattleData.currentHp < 15 || onCooldown}
+                    disabled={isAnimating || battleState.turnsBlocked > 0 || onCooldown}
                     onClick={() => executeBattleMove(move)}
-                    title={onCooldown ? `Cooldown: ${cooldownRemaining} turns` : `${effectiveness}% effective (${statValue} ${move.stat})\nEstimated: ${estimatedDamage} damage\nCosts 15 energy`}
+                    title={
+                      onCooldown
+                        ? `Recharge: ${formatCooldownRemaining(readyAt, nowMs)}`
+                        : `${effectiveness}% effective (${statValue} ${move.stat})\n~${estimatedDamage} damage\nNo energy cost · +${MOVE_REWARD_XP} XP / +${MOVE_REWARD_COINS} coins per use (capped)`
+                    }
                   >
                     <div className={styles.moveIcon}>{move.icon}</div>
                     <div className={styles.moveName}>{move.name}</div>
                     {onCooldown ? (
                       <div 
                         className={styles.cooldownRing}
-                        title={`${cooldownRemaining} turns remaining`}
+                        title={`Ready in ${formatCooldownRemaining(readyAt, nowMs)}`}
                         style={{
-                          background: `conic-gradient(#FFD700 ${(1 - (cooldownRemaining / (move.cooldown || 1))) * 360}deg, rgba(255,255,255,0.1) 0)`
+                          background: `conic-gradient(#FFD700 ${cdFrac * 360}deg, rgba(255,255,255,0.1) 0)`
                         }}
                       >
-                        <div className={styles.cooldownInner}>{cooldownRemaining}</div>
+                        <div className={styles.cooldownInner}>{formatCooldownRemaining(readyAt, nowMs)}</div>
                       </div>
                     ) : (
                       <>
@@ -1710,7 +2131,7 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
                         <div className={styles.moveStat}>
                           {effectiveness}% ({move.stat.toUpperCase()} {statValue})
                         </div>
-                        <div className={styles.moveCost}>⚡ 15 Energy</div>
+                        <div className={styles.moveCost}>No NRG · real-time CD</div>
                       </>
                     )}
                   </button>
@@ -1798,54 +2219,13 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
             <span className={styles.panelTitle}>Quest Tasks</span>
             <button 
               className={styles.addSubquestButton}
-              onClick={() => setShowAddSubquestInput(!showAddSubquestInput)}
+              type="button"
+              onClick={() => setShowSubquestModal(true)}
               title="Add new subquest (Boss will grow stronger!)"
             >
               + Subquest
             </button>
           </div>
-          
-          {/* ADD SUBQUEST INPUT */}
-          {showAddSubquestInput && (
-            <div className={styles.addSubquestContainer}>
-              <input
-                type="text"
-                value={newSubquestText}
-                onChange={(e) => setNewSubquestText(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    handleAddNewSubquest();
-                  }
-                }}
-                placeholder="Describe the new subquest..."
-                className={styles.addSubquestInput}
-                disabled={isAddingSubquest}
-                autoFocus
-              />
-              <div className={styles.addSubquestActions}>
-                <button 
-                  onClick={handleAddNewSubquest}
-                  disabled={!newSubquestText.trim() || isAddingSubquest}
-                  className={styles.addSubquestConfirm}
-                >
-                  {isAddingSubquest ? '⏳' : '✓'} Add
-                </button>
-                <button 
-                  onClick={() => {
-                    setShowAddSubquestInput(false);
-                    setNewSubquestText('');
-                  }}
-                  className={styles.addSubquestCancel}
-                >
-                  ✕ Cancel
-                </button>
-              </div>
-              <div className={styles.addSubquestWarning}>
-                ⚠️ Boss will gain HP equal to this subquest's value!
-              </div>
-            </div>
-          )}
           
           <div className={styles.tasksList}>
             {questTasks.map(task => (
@@ -1908,6 +2288,55 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
             <div className={styles.exitActions}>
               <button className={styles.exitConfirm} onClick={onClose}>Exit</button>
               <button className={styles.exitCancel} onClick={() => setShowExitConfirm(false)}>Stay</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showSubquestModal && (
+        <div className={styles.subquestOverlay}>
+          <div className={styles.subquestModal}>
+            <div className={styles.subquestModalTitle}>Add subquest</div>
+            <div className={styles.subquestModalHint}>
+              The boss gains HP for new work. Describe what you are adding.
+            </div>
+            <input
+              type="text"
+              value={newSubquestText}
+              onChange={(e) => setNewSubquestText(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleAddNewSubquest();
+                }
+              }}
+              placeholder="Describe the new subquest..."
+              className={styles.subquestModalInput}
+              disabled={isAddingSubquest}
+              autoFocus
+            />
+            <div className={styles.subquestModalWarning}>
+              Boss will gain HP equal to this subquest&apos;s share of the quest.
+            </div>
+            <div className={styles.subquestModalActions}>
+              <button
+                type="button"
+                className={styles.subquestModalCancel}
+                onClick={() => {
+                  setShowSubquestModal(false);
+                  setNewSubquestText('');
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className={styles.subquestModalConfirm}
+                onClick={handleAddNewSubquest}
+                disabled={!newSubquestText.trim() || isAddingSubquest}
+              >
+                {isAddingSubquest ? '⏳ Adding…' : 'Add subquest'}
+              </button>
             </div>
           </div>
         </div>

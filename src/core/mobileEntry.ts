@@ -1,5 +1,6 @@
 import { Plugin, Notice } from "obsidian";
 import { GamificationPluginSettings, DEFAULT_SETTINGS } from './settings';
+import { isDialogueCorrupted } from '../features/shop/utils/shopkeeperDialogueDefaults';
 
 // Ultra-minimal mobile plugin that avoids all complex imports
 export default class MobileGamifiedObsidianPlugin extends Plugin {
@@ -14,6 +15,13 @@ export default class MobileGamifiedObsidianPlugin extends Plugin {
         try {
             // Minimal settings loading
             this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+
+            // Migration: clear corrupted shopkeeper dialogue overrides
+            if (isDialogueCorrupted(this.settings.shopkeeperDialogueOverrides)) {
+                this.settings.shopkeeperDialogueOverrides = {};
+                await this.saveData(this.settings);
+            }
+
             console.log('📱 MOBILE PLUGIN: Settings loaded');
 
             // Add minimal command

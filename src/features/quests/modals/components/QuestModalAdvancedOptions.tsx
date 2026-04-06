@@ -22,8 +22,10 @@ interface QuestModalAdvancedOptionsProps {
     // Customization tab props
     questGiverImagePath: string;
     setQuestGiverImagePath: (path: string) => void;
-    questGiverName: string;
-    setQuestGiverName: (name: string) => void;
+    questBanner: string;
+    setQuestBanner: (banner: string) => void;
+    bannerAlign: string;
+    setBannerAlign: (align: string) => void;
     
     // Features tab props
     subtasks: Array<{ text: string; completed: boolean; description?: string }>;
@@ -55,8 +57,10 @@ export const QuestModalAdvancedOptions: React.FC<QuestModalAdvancedOptionsProps>
     setEstimatedMinutes,
     questGiverImagePath,
     setQuestGiverImagePath,
-    questGiverName,
-    setQuestGiverName,
+    questBanner,
+    setQuestBanner,
+    bannerAlign,
+    setBannerAlign,
     subtasks,
     newSubtask,
     setNewSubtask,
@@ -376,33 +380,6 @@ export const QuestModalAdvancedOptions: React.FC<QuestModalAdvancedOptionsProps>
 
                     {activeAdvancedTab === 'customization' && (
                         <div>
-                            {/* Quest Giver Name */}
-                            <div style={{ marginBottom: 16 }}>
-                                <label style={{
-                                    display: "block",
-                                    marginBottom: 8,
-                                    fontWeight: 600,
-                                    color: "var(--text-normal)",
-                                }}>
-                                    Quest Giver Name
-                                </label>
-                                <input
-                                    type="text"
-                                    value={questGiverName}
-                                    onChange={(e) => setQuestGiverName(e.target.value)}
-                                    placeholder="Enter quest giver name..."
-                                    style={{
-                                        width: "100%",
-                                        padding: 12,
-                                        borderRadius: 8,
-                                        border: "1px solid var(--background-modifier-border)",
-                                        backgroundColor: "var(--background-primary)",
-                                        color: "var(--text-normal)",
-                                        fontSize: 14,
-                                    }}
-                                />
-                            </div>
-
                             {/* Quest Banner */}
                             <div style={{ marginBottom: 16 }}>
                                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
@@ -412,12 +389,7 @@ export const QuestModalAdvancedOptions: React.FC<QuestModalAdvancedOptionsProps>
                                     }}>
                                         🖼️ Quest Banner
                                     </label>
-                                    <button 
-                                        type="button"
-                                        onClick={() => {
-                                            // TODO: Implement banner upload functionality
-                                            alert("Banner upload feature coming soon!");
-                                        }}
+                                    <label
                                         style={{
                                             fontSize: 12,
                                             padding: "4px 8px",
@@ -428,8 +400,52 @@ export const QuestModalAdvancedOptions: React.FC<QuestModalAdvancedOptionsProps>
                                             cursor: "pointer"
                                         }}
                                     >
-                                        Add Banner
-                                    </button>
+                                        Change Banner
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            style={{ display: "none" }}
+                                            onChange={(event) => {
+                                                const file = event.target.files?.[0];
+                                                if (!file) return;
+
+                                                try {
+                                                    const reader = new FileReader();
+                                                    reader.onload = () => {
+                                                        const result = reader.result as string;
+                                                        if (result) {
+                                                            setQuestBanner(result);
+                                                        }
+                                                        // Clear the value so selecting the same file again still triggers onChange
+                                                        event.target.value = "";
+                                                    };
+                                                    reader.onerror = (error) => {
+                                                        console.error("Error uploading banner:", error);
+                                                    };
+                                                    reader.readAsDataURL(file);
+                                                } catch (error) {
+                                                    console.error("Error uploading banner:", error);
+                                                }
+                                            }}
+                                        />
+                                    </label>
+                                    {questBanner && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setQuestBanner("")}
+                                            style={{
+                                                fontSize: 12,
+                                                padding: "4px 8px",
+                                                backgroundColor: "transparent",
+                                                border: "1px solid var(--background-modifier-border)",
+                                                borderRadius: 4,
+                                                color: "var(--text-muted)",
+                                                cursor: "pointer"
+                                            }}
+                                        >
+                                            Remove
+                                        </button>
+                                    )}
                                 </div>
                                 <div style={{
                                     padding: 16,
@@ -440,40 +456,91 @@ export const QuestModalAdvancedOptions: React.FC<QuestModalAdvancedOptionsProps>
                                     color: "var(--text-muted)",
                                     fontSize: 14,
                                 }}>
-                                    🖼️ Banner preview will appear here
-                                    <br />
-                                    <small>Upload an image to customize your quest banner</small>
+                                    {questBanner ? (
+                                        <div
+                                            style={{
+                                                width: "100%",
+                                                maxHeight: 160,
+                                                borderRadius: 8,
+                                                overflow: "hidden",
+                                                border: "1px solid var(--background-modifier-border)",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                backgroundColor: "black",
+                                            }}
+                                        >
+                                            <img
+                                                src={questBanner}
+                                                alt="Quest banner preview"
+                                                style={{
+                                                    maxWidth: "100%",
+                                                    maxHeight: 160,
+                                                    objectFit: "cover",
+                                                    display: "block",
+                                                }}
+                                            />
+                                        </div>
+                                    ) : (
+                                        <>
+                                            🖼️ Banner preview will appear here
+                                            <br />
+                                            <small>Upload an image to customize your quest banner</small>
+                                        </>
+                                    )}
                                 </div>
-                            </div>
-
-                            {/* Quest Theme */}
-                            <div style={{ marginBottom: 16 }}>
-                                <label style={{
-                                    display: "block",
-                                    marginBottom: 8,
-                                    fontWeight: 600,
-                                    color: "var(--text-normal)",
-                                }}>
-                                    🎨 Quest Theme
-                                </label>
-                                <select
+                                {/* Banner focus controls */}
+                                <div
                                     style={{
-                                        width: "100%",
-                                        padding: 12,
-                                        borderRadius: 8,
-                                        border: "1px solid var(--background-modifier-border)",
-                                        backgroundColor: "var(--background-primary)",
-                                        color: "var(--text-normal)",
-                                        fontSize: 14,
+                                        marginTop: 8,
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        gap: 8,
+                                        flexWrap: "wrap",
                                     }}
                                 >
-                                    <option value="default">Default Theme</option>
-                                    <option value="fantasy">Fantasy Adventure</option>
-                                    <option value="sci-fi">Sci-Fi Mission</option>
-                                    <option value="medieval">Medieval Quest</option>
-                                    <option value="modern">Modern Task</option>
-                                    <option value="mystery">Mystery Investigation</option>
-                                </select>
+                                    <span
+                                        style={{
+                                            fontSize: 12,
+                                            color: "var(--text-muted)",
+                                        }}
+                                    >
+                                        Banner Focus:
+                                    </span>
+                                    {[
+                                        { id: "top", label: "Top" },
+                                        { id: "center", label: "Center" },
+                                        { id: "bottom", label: "Bottom" },
+                                    ].map((option) => (
+                                        <button
+                                            key={option.id}
+                                            type="button"
+                                            onClick={() => setBannerAlign(option.id)}
+                                            style={{
+                                                padding: "4px 10px",
+                                                borderRadius: 999,
+                                                border:
+                                                    bannerAlign === option.id
+                                                        ? "1px solid var(--interactive-accent)"
+                                                        : "1px solid var(--background-modifier-border)",
+                                                backgroundColor:
+                                                    bannerAlign === option.id
+                                                        ? "var(--interactive-accent)"
+                                                        : "var(--background-secondary)",
+                                                color:
+                                                    bannerAlign === option.id
+                                                        ? "var(--text-on-accent)"
+                                                        : "var(--text-normal)",
+                                                fontSize: 11,
+                                                cursor: "pointer",
+                                                fontWeight: 500,
+                                            }}
+                                        >
+                                            {option.label}
+                                        </button>
+                                    ))}
+                                </div>
                             </div>
 
                             {/* Quest Color Scheme */}

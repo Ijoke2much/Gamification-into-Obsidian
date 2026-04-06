@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { Notice } from 'obsidian';
-import { HabitData, getTreeStageForStreak, checkAndUpdateTreeMilestones, saveHabitsToFile, loadHabitsFromFile, calculateStreak, isCompletedToday } from '../../../features/habits/utils/habitsUtils';
+import { showGameNotice } from '../../../shared/utils/noticeUtils';
+import { HabitData, getTreeStageForStreak, checkAndUpdateTreeMilestones, saveHabitsToFile, loadHabitsFromFile, calculateStreak, isCompletedToday, getLocalDateString, calculateStreakFromCompletedDates } from '../../../features/habits/utils/habitsUtils';
 import { calculateTreeRewards, DEFAULT_TREE_REWARD_CONFIG, getTreeItemDrop, checkSpecialBonuses } from '../../../features/habits/utils/treeRewardSystem';
 import { SeasonalTreeEventManager } from '../../../features/habits/utils/seasonalTreeEvents';
 import { TreeVisualEffectsManager } from '../../../features/habits/utils/treeVisualEffects';
 import { PlayerData } from '../../../data/models/PlayerData';
 import GamifiedObsidianPlugin from '../../../core/main';
-import { updatePlayerData } from '../../../shared/utils/progressUpdater';
+import { distributeCPFromQuest, updatePlayerData } from '../../../shared/utils/progressUpdater';
 import { MaterialInventoryManager } from '../../../shared/services/materialInventoryManager';
 import { currencyDisplay } from '../../../shared/services/currencyDisplayService';
 import styles from './HabitsTab.module.css';
@@ -27,14 +27,35 @@ import treeStage5 from '../../../assets/trees/tree_stage_5.png';
 // Tree stages
 const treeStages = [treeStage1, treeStage2, treeStage3, treeStage4, treeStage5];
 
-// Helper function to get next milestone text
+// Shared definition of tree stage thresholds so labels stay in sync with logic
+const TREE_STAGE_THRESHOLDS = [
+    { minStreak: 0, name: 'Seed' },
+    { minStreak: 4, name: 'Sprout' },
+    { minStreak: 8, name: 'Sapling' },
+    { minStreak: 15, name: 'Young Tree' },
+    { minStreak: 22, name: 'Mature Tree' },
+    { minStreak: 30, name: 'World Tree' },
+];
+
+// Helper function to get next milestone text, based on actual next stage
 function getNextMilestoneText(streak: number): string {
-    if (streak >= 30) return "Max level reached! 🌳✨";
-    if (streak >= 22) return "30 days for World Tree";
-    if (streak >= 15) return "22 days for Mature Tree";
-    if (streak >= 8) return "15 days for Young Tree";
-    if (streak >= 4) return "8 days for Sapling";
-    return "4 days for Sprout";
+    const currentStageIndex = getTreeStageForStreak(streak); // 0–5
+    const nextStage = TREE_STAGE_THRESHOLDS[currentStageIndex + 1];
+
+    // Already at or beyond the final stage
+    if (!nextStage) {
+        return "Max level reached! 🌳✨";
+    }
+
+    const daysRemaining = Math.max(0, nextStage.minStreak - streak);
+
+    // If somehow already at or past the next threshold but stage hasn't visually updated yet
+    if (daysRemaining === 0) {
+        return `Reached ${nextStage.name}!`;
+    }
+
+    const dayLabel = daysRemaining === 1 ? 'day' : 'days';
+    return `${daysRemaining} ${dayLabel} until ${nextStage.name}`;
 }
 
 
@@ -43,10 +64,15 @@ interface HabitFormData {
     skill: string;
     skills?: string[];
     skillColor: string;
+    habitType: 'build' | 'avoid';
     difficulty: number;
     xpMultiplier: number;
     cpMultiplier: number;
     coinsMultiplier: number;
+    primarySkillIcon?: string;
+    // New: schedule configuration mirrored from HabitForm
+    scheduleType?: 'daily' | 'weekly';
+    scheduleDays?: number[];
 }
 
 interface HabitsTabProps {
@@ -65,6 +91,7 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
     const [loading, setLoading] = useState(true);
     const [showAddHabit, setShowAddHabit] = useState(false);
     const [editingHabit, setEditingHabit] = useState<HabitData | null>(null);
+    const [activeTab, setActiveTab] = useState<'today' | 'all' | 'done' | 'archived'>('today');
     const [expandedHeatmaps, setExpandedHeatmaps] = useState<{[key: string]: boolean}>({});
     const [currentMonthOffset, setCurrentMonthOffset] = useState<{[key: string]: number}>({});
     const [treeSectionsOpen, setTreeSectionsOpen] = useState<{[key: string]: boolean}>({}); // Individual state for each habit
@@ -77,15 +104,34 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
     const [activeEvents, setActiveEvents] = useState<any[]>([]);
     const [eventEffects, setEventEffects] = useState<any>(null);
 
-    // Load habits on component mount
+    // Load habits on component mount and normalize streaks from completed dates
     useEffect(() => {
         const loadHabits = async () => {
             try {
                 const loadedHabits = await loadHabitsFromFile(plugin.app.vault);
-                setHabits(loadedHabits);
+
+                // Recompute streaks so they always match the visible checked days
+                const normalizedHabits = loadedHabits.map(habit => {
+                    const newStreak = calculateStreakFromCompletedDates(habit.completedDates || []);
+
+                    // Find the most recent completion date (if any)
+                    const dates = habit.completedDates || [];
+                    const latestDate = dates.length > 0
+                        ? dates.slice().sort().slice(-1)[0]
+                        : habit.lastCompleted;
+
+                    return {
+                        ...habit,
+                        streak: newStreak,
+                        longestStreak: Math.max(habit.longestStreak || 0, newStreak),
+                        lastCompleted: latestDate || habit.lastCompleted
+                    };
+                });
+
+                setHabits(normalizedHabits);
             } catch (error) {
                 console.error('Error loading habits:', error);
-                new Notice('Error loading habits');
+                showGameNotice('Error loading habits');
             } finally {
                 setLoading(false);
             }
@@ -218,9 +264,7 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
         if (habits.length > 0) {
             const newTreeRewards: {[habitId: string]: { xp: number; cp: number; coins: number }} = {};
             habits.forEach(habit => {
-                const completedToday = isCompletedToday(habit);
-                const streak = calculateStreak(habit, completedToday);
-                const treeStage = getTreeStageForStreak(streak);
+                const treeStage = getTreeStageForStreak(habit.streak);
                 if (treeStage > 0) {
                     const baseReward = habit.reward || { xp: 10, cp: 5, coins: 25 };
                     const rewards = calculateTreeRewards(
@@ -245,7 +289,7 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
         for (let i = 6; i >= 0; i--) {
             const date = new Date(today);
             date.setDate(date.getDate() - i);
-            const dateStr = date.toISOString().split('T')[0];
+            const dateStr = getLocalDateString(date);
             const dayName = date.toLocaleDateString('en-US', { weekday: 'short' });
             const isCompleted = completedDates.includes(dateStr);
             
@@ -260,15 +304,24 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
         return weekDays;
     };
 
+    // Minimum month offset: don't go further back than the month the habit was created
+    const getMinMonthOffset = (created: string): number => {
+        const now = new Date();
+        const createdDate = new Date(created);
+        const currentMonthIndex = now.getFullYear() * 12 + now.getMonth();
+        const createdMonthIndex = createdDate.getFullYear() * 12 + createdDate.getMonth();
+        return createdMonthIndex - currentMonthIndex; // 0 if created this month, -1 if last month, etc.
+    };
+
     // Generate scrollable heatmap data for months
     const generateScrollableHeatmapData = (completedDates: string[], habitId: string) => {
         const monthOffset = currentMonthOffset[habitId] || 0;
         const months = [];
         const now = new Date();
         
-        // Generate 3 months: current month + next 2 months
+        // Generate 3 months: current month + offset window (can be past, current, or future)
         for (let i = 0; i < 3; i++) {
-            // Calculate the correct month and year (current month + offset + i months ahead)
+            // Calculate the correct month and year (current month + offset + i months)
             const totalMonthsAhead = monthOffset + i;
             const currentYear = now.getFullYear();
             const currentMonth = now.getMonth();
@@ -276,10 +329,15 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
             let targetYear = currentYear;
             let targetMonth = currentMonth + totalMonthsAhead;
             
-            // Handle year rollover
+            // Handle year rollover (forward)
             while (targetMonth >= 12) {
                 targetMonth -= 12;
                 targetYear += 1;
+            }
+            // Handle year rollover (backward for past months)
+            while (targetMonth < 0) {
+                targetMonth += 12;
+                targetYear -= 1;
             }
             
             const monthDate = new Date(targetYear, targetMonth, 1);
@@ -301,12 +359,17 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
         return months;
     };
 
-    // Navigate months in heatmap
-    const navigateMonth = (habitId: string, direction: number) => {
-        setCurrentMonthOffset(prev => ({
-            ...prev,
-            [habitId]: Math.max(0, (prev[habitId] || 0) + direction)
-        }));
+    // Navigate months in heatmap (allow past months, but not before habit creation)
+    const navigateMonth = (habitId: string, direction: number, created?: string) => {
+        const minOffset = created ? getMinMonthOffset(created) : 0;
+        setCurrentMonthOffset(prev => {
+            const current = prev[habitId] || 0;
+            const next = current + direction;
+            return {
+                ...prev,
+                [habitId]: Math.max(minOffset, next)
+            };
+        });
     };
 
 
@@ -329,12 +392,12 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
         const updatedHabits = habits.filter(habit => habit.id !== habitId);
         setHabits(updatedHabits);
         await saveHabitsToFile(plugin.app.vault, updatedHabits);
-        new Notice('Habit deleted successfully!');
+        showGameNotice('Habit deleted successfully!');
     };
 
     // Handle habit completion toggle
     const handleToggleCompletion = async (habitId: string, date?: string) => {
-        const targetDate = date || new Date().toISOString().split('T')[0];
+        const targetDate = date || getLocalDateString();
         const dayOfWeek = new Date(targetDate).getDay();
         const toggleKey = `${habitId}-${targetDate}`;
         
@@ -349,16 +412,17 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
                 if (isCurrentlyCompleted) {
                     // Remove completion
                     newCompletedDates = currentCompletedDates.filter(d => d !== targetDate);
-                    newStreak = Math.max(0, habit.streak - 1);
                 } else {
                     // Add completion
                     newCompletedDates = [...currentCompletedDates, targetDate];
-                    newStreak = calculateStreak(habit, true);
                 }
+
+                // Always derive streak from the set of completed dates so it matches the visible history
+                newStreak = calculateStreakFromCompletedDates(newCompletedDates);
 
                 // Update weekly progress if it's for today
                 const newWeeklyProgress = [...habit.weeklyProgress];
-                if (targetDate === new Date().toISOString().split('T')[0]) {
+                if (targetDate === getLocalDateString()) {
                     newWeeklyProgress[dayOfWeek] = !isCurrentlyCompleted;
                 }
 
@@ -417,7 +481,7 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
                                 newStage,
                                 () => {
                                     // Stage transition complete - could trigger additional effects
-                                    new Notice(`🌳 Tree evolved to Stage ${newStage + 1}!`, 4000);
+                                    showGameNotice(`🌳 Tree evolved to Stage ${newStage + 1}!`, 4000);
                                 }
                             );
                         }, 2000);
@@ -474,6 +538,23 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
                 totalCoins *= bonus.effect.value;
             }
         });
+
+        // Distribute CP into the habit's skill(s) → class → master class
+        // (This is separate from player CP; it updates the SkillTree .md progress files.)
+        const cpToDistribute = Math.round(Number(totalCP) || 0);
+        if (cpToDistribute > 0) {
+            const skillsRaw = (habit.skills && habit.skills.length > 0)
+                ? habit.skills
+                : (habit.skill ? [habit.skill] : []);
+            const skills = skillsRaw.map(s => String(s || '').trim()).filter(Boolean);
+            if (skills.length > 0) {
+                try {
+                    await distributeCPFromQuest(plugin.app.vault, { skills, cp: cpToDistribute });
+                } catch (e) {
+                    console.error('Failed to distribute CP from habit completion:', e);
+                }
+            }
+        }
         
         // Update player data
         await updatePlayerData(plugin.app.vault, totalXP, totalCoins, totalCP);
@@ -510,7 +591,7 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
         );
         
         if (itemDrop) {
-            new Notice(
+            showGameNotice(
                 `🎁 Item Drop! You found: ${itemDrop.icon} ${itemDrop.name} - ${itemDrop.description}`,
                 6000
             );
@@ -518,7 +599,7 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
         
         // Show special bonus notifications
         specialBonuses.forEach(bonus => {
-            new Notice(
+            showGameNotice(
                 `⭐ Special Bonus! ${bonus.icon} ${bonus.name} - ${bonus.description}`,
                 5000
             );
@@ -527,7 +608,7 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
         // Show seasonal event bonus notification
         if (hasActiveEvent && seasonalMultiplier > 1.0) {
             const eventNames = activeEvents.map(e => e.name).join(', ');
-            new Notice(
+            showGameNotice(
                 `🌟 Seasonal Bonus! ${Math.round((seasonalMultiplier - 1) * 100)}% extra rewards from: ${eventNames}`,
                 4000
             );
@@ -535,7 +616,7 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
         
         // Show reward notification
         const rewardMessage = `🌳 Habit Complete! +${Math.round(totalXP)} XP, +${Math.round(totalCP)} CP, +${Math.round(totalCoins)} Coins`;
-        new Notice(rewardMessage, 3000);
+        showGameNotice(rewardMessage, 3000);
 
         // Trigger achievement events
         try {
@@ -555,7 +636,7 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
             // Check if all habits in a category are completed
             const categoryHabits = habits.filter(h => h.skill === habit.skill);
             const completedCategoryHabits = categoryHabits.filter(h => 
-                (h.completedDates || []).includes(new Date().toISOString().split('T')[0])
+                (h.completedDates || []).includes(getLocalDateString())
             );
             
             if (completedCategoryHabits.length === categoryHabits.length && categoryHabits.length > 0) {
@@ -584,8 +665,9 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
             id: habitFormData.name.toLowerCase().replace(/\s+/g, '_') + '_' + Date.now(),
             name: habitFormData.name,
             description: habitFormData.skill,
-            emoji: '⭐',
+            emoji: habitFormData.primarySkillIcon || '⭐',
             color: habitFormData.skillColor,
+            habitType: habitFormData.habitType || 'build',
             streak: 0,
             lastCompleted: '',
             reward: {
@@ -595,13 +677,18 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
             },
             weeklyProgress: [false, false, false, false, false, false, false],
             totalCompletions: 0,
-            created: new Date().toISOString().split('T')[0],
+            created: getLocalDateString(),
             skill: habitFormData.skill,
             skills: habitFormData.skills && habitFormData.skills.length > 0 ? habitFormData.skills : [habitFormData.skill],
             skillColor: habitFormData.skillColor,
             longestStreak: 0,
             completedDates: [],
-            difficulty: habitFormData.difficulty
+            difficulty: habitFormData.difficulty,
+            archived: false,
+            scheduleType: habitFormData.scheduleType || 'daily',
+            scheduleDays: (habitFormData.scheduleDays && habitFormData.scheduleDays.length > 0)
+                ? habitFormData.scheduleDays
+                : [0, 1, 2, 3, 4, 5, 6]
         };
 
         const updatedHabits = [...habits, habit];
@@ -610,10 +697,10 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
         try {
             await saveHabitsToFile(plugin.app.vault, updatedHabits);
             setShowAddHabit(false);
-            new Notice('Habit added successfully!');
+            showGameNotice('Habit added successfully!');
         } catch (error) {
             console.error('Error saving habit:', error);
-            new Notice('Error saving habit');
+            showGameNotice('Error saving habit');
         }
     };
 
@@ -635,6 +722,7 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
             ...editingHabit,
             name: habitFormData.name,
             description: habitFormData.skill,
+            habitType: habitFormData.habitType || editingHabit.habitType || 'build',
             skill: habitFormData.skill,
             skills: habitFormData.skills && habitFormData.skills.length > 0 ? habitFormData.skills : [habitFormData.skill],
             skillColor: habitFormData.skillColor,
@@ -643,7 +731,14 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
                 xp: habitFormData.xpMultiplier * habitFormData.difficulty,
                 cp: habitFormData.cpMultiplier * habitFormData.difficulty,
                 coins: habitFormData.coinsMultiplier * habitFormData.difficulty
-            }
+            },
+            emoji: habitFormData.primarySkillIcon || editingHabit.emoji || '⭐',
+            scheduleType: habitFormData.scheduleType || editingHabit.scheduleType || 'daily',
+            scheduleDays: (habitFormData.scheduleDays && habitFormData.scheduleDays.length > 0)
+                ? habitFormData.scheduleDays
+                : (editingHabit.scheduleDays && editingHabit.scheduleDays.length > 0
+                    ? editingHabit.scheduleDays
+                    : [0, 1, 2, 3, 4, 5, 6])
         };
 
         const updatedHabits = habits.map(habit => 
@@ -655,10 +750,10 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
         
         try {
             await saveHabitsToFile(plugin.app.vault, updatedHabits);
-            new Notice('Habit updated successfully!');
+            showGameNotice('Habit updated successfully!');
         } catch (error) {
             console.error('Error saving habit:', error);
-            new Notice('Error saving habit');
+            showGameNotice('Error saving habit');
         }
     };
 
@@ -667,11 +762,56 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
         setEditingHabit(null);
     };
 
+    const handleToggleArchive = async (habitId: string, nextArchived: boolean) => {
+        const now = getLocalDateString();
+        const updatedHabits = habits.map(h => {
+            if (h.id !== habitId) return h;
+            return {
+                ...h,
+                archived: nextArchived,
+                archivedAt: nextArchived ? now : undefined
+            };
+        });
+
+        setHabits(updatedHabits);
+
+        try {
+            await saveHabitsToFile(plugin.app.vault, updatedHabits);
+            showGameNotice(nextArchived ? 'Habit archived' : 'Habit restored');
+        } catch (error) {
+            console.error('Error saving archived state:', error);
+            showGameNotice('Error saving habit');
+        }
+    };
+
     if (loading) {
         return <div className={styles.loading}>Loading habits...</div>;
     }
 
-    const completedTodayCount = habits.filter(habit => isCompletedToday(habit)).length;
+    const todayStr = getLocalDateString();
+    const dow = new Date().getDay();
+
+    const visibleHabits = habits.filter(h => h.archived !== true);
+    const completedTodayCount = visibleHabits.filter(habit => isCompletedToday(habit)).length;
+
+    const filteredHabits = habits.filter((habit) => {
+        const isArchived = habit.archived === true;
+
+        if (activeTab === 'archived') return isArchived;
+        if (isArchived) return false; // hide archived everywhere else
+
+        if (activeTab === 'all') return true;
+        if (activeTab === 'done') {
+            return (habit.completedDates || []).includes(todayStr) || habit.lastCompleted === todayStr;
+        }
+
+        // today: scheduled today
+        const scheduleType = habit.scheduleType || 'daily';
+        const scheduleDays = habit.scheduleDays && habit.scheduleDays.length > 0
+            ? habit.scheduleDays
+            : [0, 1, 2, 3, 4, 5, 6];
+        return scheduleType === 'daily' || scheduleDays.includes(dow);
+    });
 
     return (
         <div className={styles.container}>
@@ -682,7 +822,7 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
                         <span style={{ fontSize: '1.25rem' }}>📅</span>
                         <h2 className="text-xl font-bold">Habits</h2>
                     </div>
-                    <p className="text-orange-100">{completedTodayCount}/{habits.length} habits completed today</p>
+                    <p className="text-orange-100">{completedTodayCount}/{visibleHabits.length} habits completed today</p>
                 </div>
                 <button
                     onClick={() => setShowAddHabit(!showAddHabit)}
@@ -691,6 +831,14 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
                     <AddIcon size={16} />
                     ADD
                 </button>
+            </div>
+
+            {/* Tabs (compact) */}
+            <div className={styles.tabsRow}>
+                <button className={`${styles.tab} ${activeTab === 'today' ? styles.tabActive : ''}`} onClick={() => setActiveTab('today')}>Today</button>
+                <button className={`${styles.tab} ${activeTab === 'all' ? styles.tabActive : ''}`} onClick={() => setActiveTab('all')}>All</button>
+                <button className={`${styles.tab} ${activeTab === 'done' ? styles.tabActive : ''}`} onClick={() => setActiveTab('done')}>Done</button>
+                <button className={`${styles.tab} ${activeTab === 'archived' ? styles.tabActive : ''}`} onClick={() => setActiveTab('archived')}>Archived</button>
             </div>
 
             {/* Seasonal Events Banner */}
@@ -745,21 +893,58 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
                     initialData={{
                         name: editingHabit.name,
                         skill: editingHabit.skill || editingHabit.description || '',
+                        habitType: editingHabit.habitType || 'build',
                         skillColor: editingHabit.skillColor || editingHabit.color || '#3b82f6',
                         difficulty: editingHabit.difficulty || 1,
                         xpMultiplier: Math.round((editingHabit.reward.xp / (editingHabit.difficulty || 1)) * 10) / 10,
                         cpMultiplier: Math.round((editingHabit.reward.cp / (editingHabit.difficulty || 1)) * 10) / 10,
-                        coinsMultiplier: Math.round((editingHabit.reward.coins / (editingHabit.difficulty || 1)) * 10) / 10
+                        coinsMultiplier: Math.round((editingHabit.reward.coins / (editingHabit.difficulty || 1)) * 10) / 10,
+                        primarySkillIcon: editingHabit.emoji,
+                        scheduleType: editingHabit.scheduleType || 'daily',
+                        scheduleDays: editingHabit.scheduleDays && editingHabit.scheduleDays.length > 0
+                            ? editingHabit.scheduleDays
+                            : [0, 1, 2, 3, 4, 5, 6]
                     }}
                 />
             )}
 
-            {/* Habits List */}
+            {/* Habits List / Empty State */}
+            {filteredHabits.length === 0 ? (
+                <div className={styles.emptyState}>
+                    <div className={styles.emptyIcon}>{activeTab === 'archived' ? '📦' : '📋'}</div>
+                    <h3 className={styles.emptyTitle}>
+                        {activeTab === 'archived'
+                            ? 'No archived habits'
+                            : activeTab === 'done'
+                                ? 'No done habits'
+                                : activeTab === 'today'
+                                    ? 'Nothing scheduled today'
+                                    : 'No habits yet'}
+                    </h3>
+                    <p className={styles.emptyText}>
+                        {activeTab === 'archived'
+                            ? 'Archived habits will appear here.'
+                            : activeTab === 'done'
+                                ? 'Complete a habit to see it here.'
+                                : activeTab === 'today'
+                                    ? 'Try switching to All, or adjust your weekly schedule.'
+                                    : 'Start building better habits today!'}
+                    </p>
+                    {activeTab !== 'archived' && (
+                        <button
+                            onClick={() => setShowAddHabit(true)}
+                            className={styles.emptyButton}
+                        >
+                            Create Habit
+                        </button>
+                    )}
+                </div>
+            ) : (
             <div className={styles.habitsList}>
-                {habits.map(habit => {
+                {filteredHabits.map(habit => {
                     const weeklyData = generateWeeklyView(habit.completedDates || []);
                     const scrollableHeatmapData = generateScrollableHeatmapData(habit.completedDates || [], habit.id);
-                    const today = new Date().toISOString().split('T')[0];
+                    const today = getLocalDateString();
                     const isCompletedToday = (habit.completedDates || []).includes(today);
                     const isHeatmapExpanded = expandedHeatmaps[habit.id];
                     
@@ -799,6 +984,13 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
                                             className={styles.editButton}
                                         >
                                             <EditIcon size={16} />
+                                        </button>
+                                        <button
+                                            onClick={() => handleToggleArchive(habit.id, activeTab !== 'archived')}
+                                            className={styles.archiveButton}
+                                            title={activeTab === 'archived' ? 'Unarchive' : 'Archive'}
+                                        >
+                                            <span style={{ fontSize: '1rem' }}>{activeTab === 'archived' ? '↩️' : '📦'}</span>
                                         </button>
                                         <button
                                             onClick={() => handleDeleteHabit(habit.id)}
@@ -1021,23 +1213,39 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
                                 </div>
                                 
                                 <div className={styles.weeklyGrid}>
-                                    {weeklyData.map((day, index) => (
-                                        <div key={index} className={styles.dayColumn}>
-                                            <div className={styles.dayLabel}>{day.dayName}</div>
-                                            <div 
-                                                className={`${styles.dayCircle} ${
-                                                    day.isCompleted 
-                                                        ? styles.completed 
-                                                        : day.isToday 
-                                                            ? styles.today 
-                                                            : styles.incomplete
-                                                }`}
-                                                onClick={() => handleToggleCompletion(habit.id, day.date)}
-                                            >
-                                                {day.isCompleted ? '✓' : day.isToday ? '○' : ''}
+                                    {weeklyData.map((day, index) => {
+                                        const isAvoidHabit = habit.habitType === 'avoid';
+                                        const isPastDay = day.date < today;
+                                        const scheduleType = habit.scheduleType || 'daily';
+                                        const scheduleDays = habit.scheduleDays && habit.scheduleDays.length > 0
+                                            ? habit.scheduleDays
+                                            : [0, 1, 2, 3, 4, 5, 6];
+                                        const weekdayIndex = new Date(day.date).getDay();
+                                        const isScheduled =
+                                            scheduleType === 'daily' || scheduleDays.includes(weekdayIndex);
+
+                                        const baseClass = day.isCompleted
+                                            ? styles.completed
+                                            : isAvoidHabit && isPastDay
+                                                ? styles.avoidMiss
+                                                : day.isToday
+                                                    ? styles.today
+                                                    : styles.incomplete;
+
+                                        const dayStatusClass = isScheduled ? baseClass : styles.unscheduled;
+
+                                        return (
+                                            <div key={index} className={styles.dayColumn}>
+                                                <div className={styles.dayLabel}>{day.dayName}</div>
+                                                <div 
+                                                    className={`${styles.dayCircle} ${dayStatusClass}`}
+                                                    onClick={isScheduled ? () => handleToggleCompletion(habit.id, day.date) : undefined}
+                                                >
+                                                    {isScheduled && (day.isCompleted ? '✓' : day.isToday ? '○' : '')}
+                                                </div>
                                             </div>
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             </div>
 
@@ -1048,17 +1256,22 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
                                         <div className={styles.heatmapTitle}>Activity</div>
                                         <div className={styles.monthNavigation}>
                                             <button
-                                                onClick={() => navigateMonth(habit.id, -1)}
+                                                onClick={() => navigateMonth(habit.id, -1, habit.created)}
                                                 className={styles.monthNavButton}
-                                                disabled={currentMonthOffset[habit.id] === 0}
+                                                disabled={(currentMonthOffset[habit.id] || 0) <= getMinMonthOffset(habit.created || getLocalDateString())}
                                             >
                                                 <span style={{ fontSize: '1rem' }}>⬅️</span>
                                             </button>
                                             <span className={styles.monthOffset}>
-                                                {currentMonthOffset[habit.id] ? `+${currentMonthOffset[habit.id]} months ahead` : 'Current'}
+                                                {(() => {
+                                                    const offset = currentMonthOffset[habit.id] || 0;
+                                                    if (offset === 0) return 'Current';
+                                                    if (offset > 0) return `+${offset} months ahead`;
+                                                    return `${Math.abs(offset)} month${Math.abs(offset) === 1 ? '' : 's'} ago`;
+                                                })()}
                                             </span>
                                             <button
-                                                onClick={() => navigateMonth(habit.id, 1)}
+                                                onClick={() => navigateMonth(habit.id, 1, habit.created)}
                                                 className={styles.monthNavButton}
                                             >
                                                 <span style={{ fontSize: '1rem' }}>➡️</span>
@@ -1072,14 +1285,42 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
                                                 <div key={monthIndex} className={styles.monthColumn}>
                                                     <h4 className={styles.monthName}>{month.name}</h4>
                                                     <div className={styles.monthDaysGrid}>
-                                                        {month.days.map((day, dayIndex) => (
-                                                            <div
-                                                                key={dayIndex}
-                                                                className={`${styles.monthDay} ${day.isCompleted ? styles.monthDayCompleted : styles.monthDayIncomplete}`}
-                                                                title={`${day.date} - ${day.isCompleted ? 'Completed' : 'Not completed'}`}
-                                                                onClick={() => handleToggleCompletion(habit.id, day.date)}
-                                                            />
-                                                        ))}
+                                                        {month.days.map((day, dayIndex) => {
+                                                            const isAvoidHabit = habit.habitType === 'avoid';
+                                                            const isPastDay = day.date < today;
+                                                            const isCompleted = day.isCompleted;
+                                                            const scheduleType = habit.scheduleType || 'daily';
+                                                            const scheduleDays = habit.scheduleDays && habit.scheduleDays.length > 0
+                                                                ? habit.scheduleDays
+                                                                : [0, 1, 2, 3, 4, 5, 6];
+                                                            const weekdayIndex = new Date(day.date).getDay();
+                                                            const isScheduled =
+                                                                scheduleType === 'daily' || scheduleDays.includes(weekdayIndex);
+
+                                                            const baseDayClass = isCompleted
+                                                                ? styles.monthDayCompleted
+                                                                : isAvoidHabit && isPastDay
+                                                                    ? styles.monthDayAvoidMiss
+                                                                    : styles.monthDayIncomplete;
+
+                                                            const dayClass = isScheduled ? baseDayClass : styles.monthDayUnscheduled;
+                                                            const dayTitle = `${day.date} - ${
+                                                                isCompleted
+                                                                    ? 'Completed'
+                                                                    : isAvoidHabit && isPastDay
+                                                                        ? 'Avoidance failed'
+                                                                        : 'Not completed'
+                                                            }`;
+
+                                                            return (
+                                                                <div
+                                                                    key={dayIndex}
+                                                                    className={`${styles.monthDay} ${dayClass}`}
+                                                                    title={dayTitle}
+                                                                    onClick={isScheduled ? () => handleToggleCompletion(habit.id, day.date) : undefined}
+                                                                />
+                                                            );
+                                                        })}
                                                     </div>
                                                 </div>
                                             ))}
@@ -1101,21 +1342,9 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
                     );
                 })}
             </div>
-
-            {/* Empty State */}
-            {habits.length === 0 && (
-                <div className={styles.emptyState}>
-                    <div className={styles.emptyIcon}>📋</div>
-                    <h3 className={styles.emptyTitle}>No Habits Yet</h3>
-                    <p className={styles.emptyText}>Start building better habits today!</p>
-                    <button
-                        onClick={() => setShowAddHabit(true)}
-                        className={styles.emptyButton}
-                    >
-                        Create First Habit
-                    </button>
-                </div>
             )}
+
+            {/* (Empty state handled above) */}
         </div>
     );
 };

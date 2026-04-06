@@ -22,6 +22,7 @@ import { saveAndActivateBoss } from './enhancedBossCreation';
 import { getAllSkills, SkillMetadata } from '../../../shared/utils/skillDiscovery';
 import { currencyDisplay } from '../../../shared/services/currencyDisplayService';
 import { useQuestManagement } from '../../../data/hooks/useQuestManagement';
+import { applyTacticalBattleBonuses } from '../../../shared/utils/questCompletionPipeline';
 
 // Enhanced Productivity Systems
 import { productivityEquipmentSystem, ProductivityEquipment } from '../../../features/quests/systems/productivityEquipmentSystem';
@@ -62,7 +63,7 @@ export const BossBattleUI: React.FC<BossBattleUIProps> = ({ plugin }) => {
     const [currentScreen, setCurrentScreen] = useState<'main' | 'battle'>('main');
     
     // Load quests to get real subtasks
-    const { quests } = useQuestManagement(plugin);
+    const { quests, handleCompleteQuest } = useQuestManagement(plugin);
     const [linkedTasks, setLinkedTasks] = useState<LinkedTask[]>([]);
     const [taskIntegrationService, setTaskIntegrationService] = useState<TaskIntegrationService | null>(null);
     
@@ -236,6 +237,21 @@ export const BossBattleUI: React.FC<BossBattleUIProps> = ({ plugin }) => {
         const handler = () => setActiveTab('creation');
         window.addEventListener('openBossCreation', handler);
         return () => window.removeEventListener('openBossCreation', handler);
+    }, []);
+
+    useEffect(() => {
+        const onSystem = (e: Event) => {
+            const tab = (e as CustomEvent<{ tab?: string }>).detail?.tab;
+            if (tab === 'analytics') setActiveTab('analytics');
+            else setActiveTab('selection');
+        };
+        const onAnalytics = () => setActiveTab('analytics');
+        window.addEventListener('openBossSystem', onSystem as EventListener);
+        window.addEventListener('openBossAnalytics', onAnalytics as EventListener);
+        return () => {
+            window.removeEventListener('openBossSystem', onSystem as EventListener);
+            window.removeEventListener('openBossAnalytics', onAnalytics as EventListener);
+        };
     }, []);
 
     // Load skills and quests when tab changes to creation
@@ -4187,7 +4203,7 @@ export const BossBattleUI: React.FC<BossBattleUIProps> = ({ plugin }) => {
                     quest={selectedBoss.quest}
                     playerData={playerData}
                     plugin={plugin}
-                    onQuestComplete={(questTitle) => {
+                    onQuestComplete={(questTitle, _extras) => {
                         console.log('Quest completed:', questTitle);
                         setCurrentScreen('main');
                     }}
@@ -5091,27 +5107,31 @@ export const BossBattleUI: React.FC<BossBattleUIProps> = ({ plugin }) => {
         
         // Convert boss to quest format for TacticalBattleUI
         const questFromBoss: Quest = {
-            id: selectedBoss.boss.id,
-            title: selectedBoss.boss.title,
-            className: 'boss',
-            stats: [],
-            xp: selectedBoss.boss.rewards?.xp || 100,
-            cp: selectedBoss.boss.rewards?.cp || 50,
-            coins: selectedBoss.boss.rewards?.coins || 25,
-            priority: 'medium',
-            difficulty: 'medium',
-            due: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
-            skills: [],
-            description: selectedBoss.boss.description || 'A challenging boss battle',
+            id: sourceQuest?.id || selectedBoss.boss.id,
+            title: sourceQuest?.title || selectedBoss.boss.title,
+            className: sourceQuest?.className || 'boss',
+            stats: sourceQuest?.stats || [],
+            xp: sourceQuest?.xp ?? selectedBoss.boss.rewards?.xp ?? 100,
+            cp: sourceQuest?.cp ?? selectedBoss.boss.rewards?.cp ?? 50,
+            coins: sourceQuest?.coins ?? selectedBoss.boss.rewards?.coins ?? 25,
+            priority: sourceQuest?.priority || 'medium',
+            difficulty: sourceQuest?.difficulty || 'medium',
+            due:
+                sourceQuest?.due ||
+                new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+            skills: sourceQuest?.skills || [],
+            description: sourceQuest?.description || selectedBoss.boss.description || 'A challenging boss battle',
             subtasks: sourceQuest?.subtasks || [
                 { text: 'Complete practice task 1', completed: false },
                 { text: 'Complete practice task 2', completed: false },
                 { text: 'Complete practice task 3', completed: false }
-            ], // Use real subtasks if found, or default training tasks
+            ],
             completed: false,
-            tags: ['boss', 'battle', 'practice'],
-            estimatedTime: '60',
-            energyCost: 20
+            tags: sourceQuest?.tags?.length ? sourceQuest.tags : ['boss', 'battle', 'practice'],
+            estimatedTime: sourceQuest?.estimatedTime || '60',
+            energyCost: sourceQuest?.energyCost ?? 20,
+            filePath: sourceQuest?.filePath,
+            battle_weapon: sourceQuest?.battle_weapon
         };
 
         // Convert player stats to PlayerData format (use real player data if available)
@@ -5147,8 +5167,28 @@ export const BossBattleUI: React.FC<BossBattleUIProps> = ({ plugin }) => {
                 quest={questFromBoss}
                 playerData={battlePlayerData}
                 plugin={plugin}
-                onQuestComplete={(questTitle) => {
-                    console.log('Quest completed:', questTitle);
+                onQuestComplete={async (questTitle, extras) => {
+                    if (extras) {
+                        const bonusXp = (extras.moveBonusXp ?? 0) + (extras.finisherBonusXp ?? 0);
+                        const bonusCoins = extras.moveBonusCoins ?? 0;
+                        await applyTacticalBattleBonuses(bonusXp, bonusCoins);
+                        if (bonusXp > 0 || bonusCoins > 0) {
+                            new Notice(`Raid bonuses applied: +${bonusXp} XP, +${bonusCoins} coins`, 4500);
+                        }
+                    }
+                    const q =
+                        sourceQuest ||
+                        quests.find(
+                            (x) => x.title === questTitle || x.id === questTitle || x.title === questFromBoss.title
+                        );
+                    if (q?.filePath) {
+                        await handleCompleteQuest(q.id);
+                    } else {
+                        new Notice(
+                            'Raid bonuses saved. Quest note not linked — complete the quest in the tracker if needed.',
+                            6000
+                        );
+                    }
                     closeUnifiedBattle();
                 }}
                 onQuestFail={(questTitle) => {

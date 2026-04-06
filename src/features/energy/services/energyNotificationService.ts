@@ -2,6 +2,7 @@
 // Provides intelligent notifications for energy management
 
 import { Notice } from 'obsidian';
+import { showGameNotice } from '../../../shared/utils/noticeUtils';
 import { playerStore, PlayerStateChange } from '../../../shared/state/playerStore';
 import { PlayerData } from '../../../data/models/PlayerData';
 import { EnergyManagementSystem, EnergyRecommendation } from '../utils/energyManagementSystem';
@@ -279,7 +280,7 @@ export class EnergyNotificationService {
         const icon = severity === 'critical' ? '🚨' :
             severity === 'warning' ? '⚠️' : 'ℹ️';
 
-        new Notice(`${icon} ${title}\n${message}`, duration);
+        showGameNotice(`${icon} ${title}\n${message}`, duration);
     }
 
     /**

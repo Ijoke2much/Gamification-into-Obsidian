@@ -1,4 +1,4 @@
-import { Plugin, App, PluginSettingTab, Setting, TFile, Modal, Notice } from "obsidian";
+import { Plugin, App, PluginSettingTab, Setting, Modal, Notice } from "obsidian";
 import React from 'react';
 import { PlayerTab, PLAYER_TAB_VIEW_TYPE } from "../views/tabs/player/PlayerTab";
 import { StatsTab, STATS_TAB_VIEW_TYPE } from "../views/tabs/stats/StatsTab";
@@ -18,11 +18,15 @@ import { currencyDisplay } from '../shared/services/currencyDisplayService';
 import { GamifiedTaskScanner } from '../features/quests/services/gamifiedTaskScanner';
 import { QuestCompletionTracker } from '../features/quests/services/questCompletionTracker';
 import { ShopIntegration, setShopIntegration } from '../features/shop/utils/shopIntegration';
+import { isDialogueCorrupted } from '../features/shop/utils/shopkeeperDialogueDefaults';
 import { TaskIntegrationService } from '../features/quests/utils/taskIntegrationService';
 import { QuestSystemIntegration } from '../features/quests';
+import { EnhancedQuestSystem } from '../features/quests/components/EnhancedQuestSystem';
 import { PerformanceOptimizer } from '../shared/utils/performanceOptimizer';
+import { showGameNotice } from '../shared/utils/noticeUtils';
 import { EnergyResetService } from '../features/energy/services/energyResetService';
 import { EnergyNotificationService } from '../features/energy/services/energyNotificationService';
+import { getFirstLeafOfTypeInMainWorkspace, isLeafInVaultMainWorkspace } from '../shared/utils/workspaceLeafUtils';
 
 export const TASK_VIEW_TYPE = "gamified-task-view";
 
@@ -38,8 +42,9 @@ export default class GamifiedObsidianPlugin extends Plugin {
 	private completionTracker?: QuestCompletionTracker;
 	private shopIntegration?: ShopIntegration;
 	private taskIntegrationService?: TaskIntegrationService;
-	public questSystem: any = null;
-	private advancedQuestDashboard: any = null;
+	public questSystem: QuestSystemIntegration | null = null;
+	public enhancedQuestSystem?: EnhancedQuestSystem;
+	private advancedQuestDashboard: unknown = null;
 	private performanceOptimizer!: PerformanceOptimizer;
 	private energyResetService?: EnergyResetService;
 	private energyNotificationService?: EnergyNotificationService;
@@ -60,7 +65,6 @@ export default class GamifiedObsidianPlugin extends Plugin {
 	}
 
 	private initializeMobileOptimizations(): void {
-		console.log('📱 Initializing mobile optimizations...');
 
 		// Don't add mobile class to body - only to our plugin containers
 		// This prevents interfering with Obsidian's native mobile UI
@@ -150,8 +154,6 @@ export default class GamifiedObsidianPlugin extends Plugin {
 		document.addEventListener('touchend', this.preventZoomHandler, false);
 
 		// Don't modify viewport meta tag - let Obsidian handle it
-
-		console.log('✅ Mobile optimizations initialized');
 	}
 
 	private cleanupMobileOptimizations(): void {
@@ -172,8 +174,6 @@ export default class GamifiedObsidianPlugin extends Plugin {
 		if (this.preventZoomHandler) {
 			document.removeEventListener('touchend', this.preventZoomHandler);
 		}
-
-		console.log('🧹 Mobile optimizations cleaned up');
 	}
 
 	private preventZoomHandler?: (event: TouchEvent) => void;
@@ -181,20 +181,18 @@ export default class GamifiedObsidianPlugin extends Plugin {
 	private setupMobileErrorHandling(): void {
 		// Add mobile-specific error handling
 		window.addEventListener('error', (event) => {
-			console.error('📱 Mobile Error:', event.error);
 			// Show user-friendly error message on mobile
 			if (event.error && event.error.message) {
 				const errorMessage = event.error.message.toLowerCase();
 				if (errorMessage.includes('memory') || errorMessage.includes('quota')) {
-					console.warn('📱 Mobile memory issue detected, enabling performance mode');
 					this.enableMobilePerformanceMode();
 				}
 			}
 		});
 
 		// Handle unhandled promise rejections
-		window.addEventListener('unhandledrejection', (event) => {
-			console.error('📱 Mobile Promise Rejection:', event.reason);
+		window.addEventListener('unhandledrejection', () => {
+			// Mobile-specific rejection handling
 		});
 	}
 
@@ -220,7 +218,6 @@ export default class GamifiedObsidianPlugin extends Plugin {
 			}
 		`;
 		document.head.appendChild(performanceStyle);
-		console.log('🚀 Mobile performance mode enabled');
 	}
 
 	private applyMobileOptimizationsAfterLoad(): void {
@@ -245,8 +242,6 @@ export default class GamifiedObsidianPlugin extends Plugin {
 			pluginViews.forEach(view => {
 				view.classList.add('gamification-mobile');
 			});
-
-			console.log('📱 Mobile optimizations applied after load (plugin-specific)');
 		}, 100);
 	}
 
@@ -260,92 +255,29 @@ export default class GamifiedObsidianPlugin extends Plugin {
 				this.setupMobileErrorHandling();
 			}
 		} catch (error) {
-			console.error('❌ Failed to initialize mobile optimizations:', error);
+			// Failed to initialize mobile optimizations - continue without mobile features
 		}
 
-		// Initialize Performance Optimizer first
+		// Initialize Performance Optimizer (non-blocking so plugin load stays fast)
 		this.performanceOptimizer = PerformanceOptimizer.getInstance(this.app);
-		await this.performanceOptimizer.initialize();
+		this.performanceOptimizer.initialize().catch(() => {
+			// Performance optimizer is optional; continue without it if initialization fails
+		});
 
-		// Load plugin settings
-		await this.loadSettings();
-
-		// Initialize the new state management and services
-		try {
-			// Set the vault on the player store
-			playerStore.setVault(this.app.vault);
-
-			// Initialize buff service
-			buffService;
-
-			// Initialize reward service
-			rewardService;
-
-			// Configuration is now handled by syncSettingsToRuntimeConfig()
-			// Sync settings to runtime config on startup
-			this.syncSettingsToRuntimeConfig();
-
-			// Set up periodic level checking to ensure UI stays in sync
-			this.setupPeriodicLevelCheck();
-
-			// Initialize achievement event service for game event tracking (lazy)
-			import('../features/achievements/services/achievementEventService').catch(error => {
-				console.warn('Failed to load achievement service:', error);
-			});
-
-			// Initialize quest tracking services
-			this.taskScanner = new GamifiedTaskScanner(this.app);
-			this.completionTracker = new QuestCompletionTracker(this.app);
-
-			// Start automatic tracking
-			// this.taskScanner.startAutoScan(); // Disabled - was causing repetitive notifications every 10 seconds
-			this.completionTracker.startTracking();
-
-			// Initialize shop integration system
-			this.shopIntegration = new ShopIntegration(this);
-			setShopIntegration(this.shopIntegration);
-
-			// Initialize shop system (async, don't block main initialization)
-			this.shopIntegration.initialize().catch(error => {
-				console.warn('Failed to initialize shop integration:', error);
-			});
-
-			// Initialize task integration service
-			this.taskIntegrationService = TaskIntegrationService.getInstance(
-				this.app.vault,
-				this.app.metadataCache
-			);
-
-			// Initialize Energy Services
-			this.energyResetService = EnergyResetService.getInstance(this.app);
-			await this.energyResetService.initialize();
-
-			this.energyNotificationService = EnergyNotificationService.getInstance();
-			await this.energyNotificationService.initialize();
-
-			// Initialize Advanced Quest System
-			try {
-				this.questSystem = await QuestSystemIntegration.initializeQuestSystem(this.app);
-				// Check if advanced features are enabled
-				if (QuestSystemIntegration.isAdvancedFeaturesEnabled()) {
-					this.setupAdvancedQuestFeatures();
-				}
-			} catch (error) {
-				console.warn('[Main] Failed to initialize advanced quest system, using basic quest system:', error);
-			}
-
-		} catch (error) {
-			console.error("❌ Failed to initialize new services:", error);
-		}
+		// Defer heavy initialization so Obsidian stays responsive while the plugin
+		// finishes loading. This runs in the background without blocking onload.
+		this.initializeServicesInBackground().catch(() => {
+			// Service initialization is best-effort; the plugin should remain usable
+			// even if some background services fail to start.
+		});
 
 		this.registerView(PLAYER_TAB_VIEW_TYPE, (leaf) => new PlayerTab(leaf, this));
 		this.registerView(STATS_TAB_VIEW_TYPE, (leaf) => new StatsTab(leaf, this));
 		this.registerView(BOSS_VIEW_TYPE, (leaf) => new BossView(leaf, this));
 
-		// Always open the Player tab on plugin reload
-		await this.app.workspace.onLayoutReady(async () => {
-			this.activatePlayerTabView();
-			// Apply mobile optimizations after layout is ready
+		// Defer opening heavy React views until the user explicitly opens them.
+		// We still apply mobile optimizations once the workspace layout is ready.
+		this.app.workspace.onLayoutReady(async () => {
 			if (this.detectMobileDevice()) {
 				this.applyMobileOptimizationsAfterLoad();
 			}
@@ -368,22 +300,18 @@ export default class GamifiedObsidianPlugin extends Plugin {
 		// 		const modal = new AdvancedQuestModal(this.app, {
 		// 			questSystem: this.questSystem,
 		// 			onQuestUpdate: (quest) => {
-		// 				console.log('Quest updated:', quest);
 		// 				new Notice('Quest updated successfully');
 		// 			},
 		// 			onQuestCreate: (quest) => {
-		// 				console.log('Quest created:', quest);
 		// 				new Notice('Quest created successfully');
 		// 			},
 		// 			onQuestDelete: (questId) => {
-		// 				console.log('Quest deleted:', questId);
 		// 				new Notice('Quest deleted successfully');
 		// 			}
 		// 		});
 		// 
 		// 		modal.open();
 		// 	} catch (error) {
-		// 		console.error('Failed to open advanced quest dashboard:', error);
 		// 		new Notice('Failed to open advanced quest dashboard');
 		// 	}
 		// });
@@ -436,13 +364,12 @@ export default class GamifiedObsidianPlugin extends Plugin {
 			name: 'Open Gamified Task Tab',
 			callback: () => {
 				this.app.workspace.onLayoutReady(async () => {
-					const leaf = this.app.workspace.getRightLeaf(false);
-					if (leaf) {
-						leaf.setViewState({
-							type: GAMIFIED_TASK_TAB_VIEW_TYPE,
-							active: true,
-						});
-					}
+					const leaf = this.app.workspace.getLeaf('tab');
+					await leaf.setViewState({
+						type: GAMIFIED_TASK_TAB_VIEW_TYPE,
+						active: true,
+					});
+					this.app.workspace.revealLeaf(leaf);
 				});
 			},
 		});
@@ -512,13 +439,12 @@ export default class GamifiedObsidianPlugin extends Plugin {
 				try {
 					const result = await playerStore.checkLevelAndRefresh();
 					if (result?.leveledUp) {
-						new Notice(`🎉 Level up! You are now level ${result.level}!`, 3000);
+						showGameNotice(`🎉 Level up! You are now level ${result.level}!`, 3000);
 					} else {
-						new Notice(`✅ Level check complete. Current level: ${result?.level || 'Unknown'}`, 3000);
+						showGameNotice(`✅ Level check complete. Current level: ${result?.level || 'Unknown'}`, 3000);
 					}
 				} catch (error) {
-					console.error('Manual level check failed:', error);
-					new Notice('❌ Level check failed', 3000);
+					showGameNotice('❌ Level check failed', 3000);
 				}
 			},
 		});
@@ -529,7 +455,7 @@ export default class GamifiedObsidianPlugin extends Plugin {
 			name: 'Show Performance Monitor',
 			callback: () => {
 				// This will be handled by the TabView component
-				new Notice('🔧 Performance monitor available in the Player tab', 3000);
+				showGameNotice('🔧 Performance monitor available in the Player tab', 3000);
 			},
 		});
 
@@ -539,11 +465,10 @@ export default class GamifiedObsidianPlugin extends Plugin {
 			name: 'Get Performance Statistics',
 			callback: () => {
 				if (this.performanceOptimizer) {
-					const stats = this.performanceOptimizer.getStats();
-
-					new Notice('📊 Performance stats logged to console', 3000);
+					this.performanceOptimizer.getStats();
+					showGameNotice('📊 Performance stats available in console', 3000);
 				} else {
-					new Notice('❌ Performance optimizer not initialized', 3000);
+					showGameNotice('❌ Performance optimizer not initialized', 3000);
 				}
 			},
 		});
@@ -575,6 +500,12 @@ export default class GamifiedObsidianPlugin extends Plugin {
 
 	async loadSettings() {
 		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+
+		// Migration: clear corrupted shopkeeper dialogue overrides (runs at plugin load)
+		if (isDialogueCorrupted(this.settings.shopkeeperDialogueOverrides)) {
+			this.settings.shopkeeperDialogueOverrides = {};
+			await this.saveData(this.settings);
+		}
 
 		// Initialize currency display service with current settings
 		currencyDisplay.initialize(this.settings);
@@ -665,13 +596,57 @@ export default class GamifiedObsidianPlugin extends Plugin {
 		});
 	}
 
+	/** Focus or create the Player view in the main editor tab stack (not sidebar). */
+	async focusPlayerInMainWorkspace(): Promise<void> {
+		const { workspace } = this.app;
+		let leaf = getFirstLeafOfTypeInMainWorkspace(workspace, PLAYER_TAB_VIEW_TYPE);
+		if (!leaf) {
+			leaf = workspace.getLeaf('tab');
+			await leaf.setViewState({
+				type: PLAYER_TAB_VIEW_TYPE,
+				active: true,
+			});
+		}
+		await workspace.revealLeaf(leaf);
+		workspace.setActiveLeaf(leaf, { focus: true });
+	}
+
+	/** Boss-only leaf in the main editor stack (or pop-out): BossBattleUI without Player tab ribbon. */
+	async focusBossViewInMainWorkspace(): Promise<void> {
+		const { workspace } = this.app;
+		const activeLeaf = workspace.activeLeaf;
+		// If Player is focused in the main area, replace that tab with Boss (no ribbon, no extra tab).
+		if (
+			activeLeaf &&
+			isLeafInVaultMainWorkspace(activeLeaf, workspace) &&
+			activeLeaf.getViewState().type === PLAYER_TAB_VIEW_TYPE
+		) {
+			await activeLeaf.setViewState({
+				type: BOSS_VIEW_TYPE,
+				active: true,
+			});
+			await workspace.revealLeaf(activeLeaf);
+			workspace.setActiveLeaf(activeLeaf, { focus: true });
+			return;
+		}
+		let leaf = getFirstLeafOfTypeInMainWorkspace(workspace, BOSS_VIEW_TYPE);
+		if (!leaf) {
+			leaf = workspace.getLeaf('tab');
+		}
+		await leaf.setViewState({
+			type: BOSS_VIEW_TYPE,
+			active: true,
+		});
+		await workspace.revealLeaf(leaf);
+		workspace.setActiveLeaf(leaf, { focus: true });
+	}
+
 	async activatePlayerTabView() {
 		await this.app.workspace.onLayoutReady(async () => {
 			const { workspace } = this.app;
 			const leaf = workspace.getLeavesOfType(PLAYER_TAB_VIEW_TYPE)[0];
 			if (!leaf) {
-				const newLeaf = workspace.getRightLeaf(false);
-				if (!newLeaf) return;
+				const newLeaf = workspace.getLeaf('tab');
 				await newLeaf.setViewState({
 					type: PLAYER_TAB_VIEW_TYPE,
 					active: true,
@@ -701,22 +676,10 @@ export default class GamifiedObsidianPlugin extends Plugin {
 		});
 	}
 
-	async activateBossView() {
+	/** Opens the dedicated Boss Battle view (no Player tab ribbon) in the main workspace. */
+	async activateBossView(): Promise<void> {
 		await this.app.workspace.onLayoutReady(async () => {
-			const { workspace } = this.app;
-			let leaf = workspace.getLeavesOfType(BOSS_VIEW_TYPE)[0];
-
-			if (!leaf) {
-				// Create a new main tab for the boss view
-				leaf = workspace.getLeaf(true);
-				if (!leaf) return;
-				await leaf.setViewState({
-					type: BOSS_VIEW_TYPE,
-					active: true,
-				});
-			}
-
-			workspace.revealLeaf(leaf);
+			await this.focusBossViewInMainWorkspace();
 		});
 	}
 
@@ -763,10 +726,14 @@ export default class GamifiedObsidianPlugin extends Plugin {
 		this.app.workspace.detachLeavesOfType(BOSS_VIEW_TYPE);
 		// this.app.workspace.detachLeavesOfType(DATACORE_TASK_VIEW_TYPE);
 
+		if (this.enhancedQuestSystem) {
+			this.enhancedQuestSystem.destroy();
+			this.enhancedQuestSystem = undefined;
+		}
+
 		// Clean up advanced quest system
 		if (this.questSystem) {
 			// Cleanup any event listeners or timers
-			console.log('[Main] Cleaning up advanced quest system');
 		}
 	}
 
@@ -789,11 +756,10 @@ export default class GamifiedObsidianPlugin extends Plugin {
 			// Use the player store's level check method
 			const result = await playerStore.checkLevelAndRefresh();
 			if (result && result.leveledUp) {
-				console.log('[Main] Player leveled up during periodic check:', result);
 				// The player store will automatically notify UI components
 			}
 		} catch (error) {
-			console.error('[Main] Periodic level check failed:', error);
+			// Periodic level check failed - will retry on next interval
 		}
 	}
 
@@ -842,70 +808,152 @@ export default class GamifiedObsidianPlugin extends Plugin {
 
 	private async showAdvancedQuestDashboard() {
 		try {
-			const { AdvancedQuestDashboard } = await import('../features/quests/components/AdvancedQuestDashboard');
+			await import('../features/quests/components/AdvancedQuestDashboard');
 
 			const modal = new AdvancedQuestModal(this.app, {
 				questSystem: this.questSystem,
-				onQuestUpdate: (quest: any) => {
+				onQuestUpdate: () => {
 					// Handle quest updates
-					console.log('Quest updated:', quest);
 				},
-				onQuestCreate: (quest: any) => {
+				onQuestCreate: () => {
 					// Handle quest creation
-					console.log('Quest created:', quest);
 				},
-				onQuestDelete: (questId: string) => {
+				onQuestDelete: () => {
 					// Handle quest deletion
-					console.log('Quest deleted:', questId);
 				}
 			});
 
 			modal.open();
 		} catch (error) {
-			console.error('[Main] Failed to show advanced quest dashboard:', error);
-			new Notice('Failed to load advanced quest dashboard');
+			showGameNotice('Failed to load advanced quest dashboard');
 		}
 	}
 
 	private async generateQuestAnalytics() {
 		try {
-			const analytics = await QuestSystemIntegration.generateAnalytics();
-			console.log('Generated analytics:', analytics);
+			await QuestSystemIntegration.generateAnalytics();
 
 			// Show analytics in a modal or notification
 			const insights = QuestSystemIntegration.getAnalyticsInsights();
 			if (insights) {
-				new Notice(`Analytics generated! Completion rate: ${(insights.overview.completionRate * 100).toFixed(1)}%`);
+				showGameNotice(`Analytics generated! Completion rate: ${(insights.overview.completionRate * 100).toFixed(1)}%`);
 			}
 		} catch (error) {
-			console.error('[Main] Failed to generate analytics:', error);
-			new Notice('Failed to generate analytics');
+			showGameNotice('Failed to generate analytics');
 		}
 	}
 
 	private async syncQuestVaults() {
 		try {
 			await QuestSystemIntegration.syncWithVaults();
-			new Notice('Quest vaults synced successfully');
+			showGameNotice('Quest vaults synced successfully');
 		} catch (error) {
-			console.error('[Main] Failed to sync vaults:', error);
-			new Notice('Failed to sync quest vaults');
+			showGameNotice('Failed to sync quest vaults');
 		}
 	}
 
 	private async showQuestTemplates() {
 		try {
 			const suggestions = await QuestSystemIntegration.getTemplateSuggestions();
-			console.log('Template suggestions:', suggestions);
 
 			if (suggestions.length > 0) {
-				new Notice(`${suggestions.length} template suggestions available`);
+				showGameNotice(`${suggestions.length} template suggestions available`);
 			} else {
-				new Notice('No template suggestions available');
+				showGameNotice('No template suggestions available');
 			}
 		} catch (error) {
-			console.error('[Main] Failed to get template suggestions:', error);
-			new Notice('Failed to load template suggestions');
+			showGameNotice('Failed to load template suggestions');
+		}
+	}
+
+	private async initializeServicesInBackground() {
+		try {
+			// Load plugin settings
+			await this.loadSettings();
+
+			// Set the vault on the player store
+			playerStore.setVault(this.app.vault);
+
+			// Initialize buff service
+			buffService;
+
+			// Initialize reward service
+			rewardService;
+
+			// Configuration is now handled by syncSettingsToRuntimeConfig()
+			// Sync settings to runtime config on startup
+			this.syncSettingsToRuntimeConfig();
+
+			// Set up periodic level checking to ensure UI stays in sync
+			this.setupPeriodicLevelCheck();
+
+			// Initialize achievement event service for game event tracking (lazy)
+			import('../features/achievements/services/achievementEventService').catch(() => {
+				// Achievement service loading is optional
+			});
+
+			// Initialize quest tracking services
+			this.taskScanner = new GamifiedTaskScanner(this.app);
+			this.completionTracker = new QuestCompletionTracker(this.app);
+
+			// Start automatic tracking
+			// this.taskScanner.startAutoScan(); // Disabled - was causing repetitive notifications every 10 seconds
+			this.completionTracker.startTracking();
+
+			// Initialize shop integration system
+			this.shopIntegration = new ShopIntegration(this);
+			setShopIntegration(this.shopIntegration);
+
+			// Initialize shop system (async, don't block main initialization)
+			this.shopIntegration.initialize().catch(() => {
+				// Shop integration is optional
+			});
+
+			// Initialize task integration service
+			this.taskIntegrationService = TaskIntegrationService.getInstance(
+				this.app.vault,
+				this.app.metadataCache
+			);
+
+			// Initialize Energy Services (non-blocking; they will start in the background)
+			this.energyResetService = EnergyResetService.getInstance(this.app);
+			this.energyResetService.initialize().catch(() => {
+				// Energy reset service is optional; failures are logged internally
+			});
+
+			this.energyNotificationService = EnergyNotificationService.getInstance();
+			this.energyNotificationService.initialize().catch(() => {
+				// Notification service is optional; continue without if it fails
+			});
+
+			// Initialize Advanced Quest System in the background so it doesn't block plugin load
+			QuestSystemIntegration.initializeQuestSystem(this.app)
+				.then((questSystem) => {
+					this.questSystem = questSystem;
+					// Check if advanced features are enabled
+					if (QuestSystemIntegration.isAdvancedFeaturesEnabled()) {
+						this.setupAdvancedQuestFeatures();
+					}
+				})
+				.catch(() => {
+					// Advanced quest system is optional; fall back to basic quest features
+				});
+
+			// Initialize Enhanced Quest System for banner caching and display
+			this.enhancedQuestSystem = new EnhancedQuestSystem(this);
+			this.enhancedQuestSystem.initialize().catch((err) => {
+				console.error('Enhanced Quest System init failed:', err);
+			});
+
+			// Migrate legacy habits file into per-habit notes if needed
+			try {
+				const { migrateHabitsToPerFile } = await import('../features/habits/utils/habitsUtils');
+				await migrateHabitsToPerFile(this.app.vault);
+			} catch (e) {
+				// Habit migration is best-effort; failures are logged in the utility
+			}
+		} catch (error) {
+			// Failed to initialize new services - using defaults
 		}
 	}
 }
@@ -935,7 +983,7 @@ class GamificationSettingTab extends PluginSettingTab {
 				root.render(
 					React.createElement(SettingsUI, {
 						settings: this.plugin.settings,
-						onSettingsChange: (newSettings: any) => {
+						onSettingsChange: (newSettings: GamificationPluginSettings) => {
 							this.plugin.settings = newSettings;
 						},
 						onSave: async () => {
@@ -946,8 +994,7 @@ class GamificationSettingTab extends PluginSettingTab {
 					})
 				);
 			});
-		}).catch((error) => {
-			console.error('Failed to load modern settings UI:', error);
+		}).catch(() => {
 			// Fallback to old settings UI
 			this.displayLegacySettings(containerEl);
 		});
@@ -1761,7 +1808,7 @@ class GamificationSettingTab extends PluginSettingTab {
 				notify.success("Test Buff Applied!", "Check the Player tab to see the active buff", 4000);
 
 			} catch (error) {
-				console.error('Error applying test buff:', error);
+				// Error applying test buff - silent failure
 			}
 		});
 
@@ -1782,15 +1829,15 @@ class GamificationSettingTab extends PluginSettingTab {
 
 // Advanced Quest Modal Component
 class AdvancedQuestModal extends Modal {
-	private questSystem: any;
-	private onQuestUpdate?: (quest: any) => void;
-	private onQuestCreate?: (quest: any) => void;
+	private questSystem: QuestSystemIntegration | null;
+	private onQuestUpdate?: () => void;
+	private onQuestCreate?: () => void;
 	private onQuestDelete?: (questId: string) => void;
 
 	constructor(app: App, options: {
-		questSystem: any;
-		onQuestUpdate?: (quest: any) => void;
-		onQuestCreate?: (quest: any) => void;
+		questSystem: QuestSystemIntegration | null;
+		onQuestUpdate?: () => void;
+		onQuestCreate?: () => void;
 		onQuestDelete?: (questId: string) => void;
 	}) {
 		super(app);
@@ -1835,15 +1882,15 @@ class AdvancedQuestModal extends Modal {
 				<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
 					<div style="background: rgba(255,255,255,0.1); padding: 12px; border-radius: 8px;">
 						<div style="font-size: 14px; opacity: 0.8;">Total Quests</div>
-						<div style="font-size: 24px; font-weight: bold;">${this.questSystem?.getQuests()?.length || 0}</div>
+						<div style="font-size: 24px; font-weight: bold;">-</div>
 					</div>
 					<div style="background: rgba(255,255,255,0.1); padding: 12px; border-radius: 8px;">
 						<div style="font-size: 14px; opacity: 0.8;">Completed</div>
-						<div style="font-size: 24px; font-weight: bold;">${this.questSystem?.getQuests()?.filter((q: any) => q.completed)?.length || 0}</div>
+						<div style="font-size: 24px; font-weight: bold;">-</div>
 					</div>
 					<div style="background: rgba(255,255,255,0.1); padding: 12px; border-radius: 8px;">
 						<div style="font-size: 14px; opacity: 0.8;">Active</div>
-						<div style="font-size: 24px; font-weight: bold;">${this.questSystem?.getQuests()?.filter((q: any) => !q.completed)?.length || 0}</div>
+						<div style="font-size: 24px; font-weight: bold;">-</div>
 					</div>
 				</div>
 			</div>
@@ -1904,12 +1951,10 @@ class AdvancedQuestModal extends Modal {
 		if (analyticsBtn) {
 			analyticsBtn.addEventListener('click', async () => {
 				try {
-					const analytics = await QuestSystemIntegration.generateAnalytics();
-					new Notice('Analytics generated successfully!');
-					console.log('Generated analytics:', analytics);
+					await QuestSystemIntegration.generateAnalytics();
+					showGameNotice('Analytics generated successfully!');
 				} catch (error) {
-					console.error('Failed to generate analytics:', error);
-					new Notice('Failed to generate analytics');
+					showGameNotice('Failed to generate analytics');
 				}
 			});
 		}
@@ -1920,10 +1965,9 @@ class AdvancedQuestModal extends Modal {
 			syncBtn.addEventListener('click', async () => {
 				try {
 					await QuestSystemIntegration.syncWithVaults();
-					new Notice('Vaults synced successfully!');
+					showGameNotice('Vaults synced successfully!');
 				} catch (error) {
-					console.error('Failed to sync vaults:', error);
-					new Notice('Failed to sync vaults');
+					showGameNotice('Failed to sync vaults');
 				}
 			});
 		}
@@ -1934,11 +1978,9 @@ class AdvancedQuestModal extends Modal {
 			templatesBtn.addEventListener('click', async () => {
 				try {
 					const suggestions = await QuestSystemIntegration.getTemplateSuggestions();
-					new Notice(`Found ${suggestions.length} template suggestions`);
-					console.log('Template suggestions:', suggestions);
+					showGameNotice(`Found ${suggestions.length} template suggestions`);
 				} catch (error) {
-					console.error('Failed to get template suggestions:', error);
-					new Notice('Failed to get template suggestions');
+					showGameNotice('Failed to get template suggestions');
 				}
 			});
 		}

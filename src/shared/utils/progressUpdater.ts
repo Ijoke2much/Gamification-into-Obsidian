@@ -4,6 +4,7 @@
 
 import * as yaml from "js-yaml";
 import { TFile, Vault, Notice } from "obsidian";
+import { showGameNotice } from './noticeUtils';
 import matter from "gray-matter";
 
 // Types for dynamic PlayerData fields
@@ -322,7 +323,7 @@ export async function updatePlayerData(vault: Vault, xp: number, coins: number, 
       oldLevel = frontmatter.level = (typeof frontmatter.level === 'number' ? frontmatter.level : Number(frontmatter.level) || 1) + 1;
       frontmatter.xpRequired = getXpRequired(frontmatter.level as number);
 
-      new Notice(`🎉 LEVEL UP! You are now level ${frontmatter.level}!`, 0);
+      showGameNotice(`🎉 LEVEL UP! You are now level ${frontmatter.level}!`, 0);
       levelUps++;
     }
 
@@ -399,7 +400,7 @@ export async function updateSkillProgress(vault: Vault, skillPath: string, cp: n
       leveledUp = true;
     }
     await writeYamlFrontmatter(vault, skillPath, frontmatter);
-    new Notice(`Gained ${cp} CP for skill: ${frontmatter.name || skillPath}`, 0);
+    showGameNotice(`Gained ${cp} CP for skill: ${frontmatter.name || skillPath}`, 0);
     document.dispatchEvent(new Event('stats-updated'));
 
     // --- AUTO-UPDATE ASSOCIATED STATS ---
@@ -428,7 +429,7 @@ export async function updateClassProgress(vault: Vault, classPath: string, cp: n
     await writeYamlFrontmatter(vault, classPath, frontmatter);
     // Reduced notification spam - only show level ups, not every CP gain
     if (leveledUp) {
-      new Notice(`${frontmatter.name || classPath} class leveled up! Now level ${frontmatter.level}!`, 0);
+      showGameNotice(`${frontmatter.name || classPath} class leveled up! Now level ${frontmatter.level}!`, 0);
     }
     document.dispatchEvent(new Event('stats-updated'));
     return leveledUp;
@@ -454,7 +455,7 @@ export async function updateMasterClassProgress(vault: Vault, masterClassPath: s
     await writeYamlFrontmatter(vault, masterClassPath, frontmatter);
     // Reduced notification spam - only show level ups, not every CP gain
     if (leveledUp) {
-      new Notice(`${frontmatter.name || masterClassPath} master class leveled up! Now level ${frontmatter.level}!`, 0);
+      showGameNotice(`${frontmatter.name || masterClassPath} master class leveled up! Now level ${frontmatter.level}!`, 0);
     }
     document.dispatchEvent(new Event('stats-updated'));
     return leveledUp;
@@ -483,7 +484,7 @@ export async function updateStatProgress(vault: Vault, statPath: string, cp: num
     await writeYamlFrontmatter(vault, statPath, frontmatter);
     // Reduced notification spam - only show level ups, not every CP gain
     if (leveledUp) {
-      new Notice(`${frontmatter.name || statPath} stat leveled up! Now level ${frontmatter.level}!`, 0);
+      showGameNotice(`${frontmatter.name || statPath} stat leveled up! Now level ${frontmatter.level}!`, 0);
     }
     document.dispatchEvent(new Event('stats-updated'));
     return leveledUp;
@@ -646,7 +647,7 @@ export async function distributeCPFromQuest(vault: Vault, quest: { skills?: stri
 
     // Show a summary notification for all level-ups
     if (levelUps.length > 0) {
-      new Notice(`Level ups: ${levelUps.join(', ')}`, 0);
+      showGameNotice(`Level ups: ${levelUps.join(', ')}`, 0);
     }
   } catch (err) {
     console.error(`[distributeCPFromQuest] Error:`, err);
@@ -716,7 +717,7 @@ export async function checkAndFixPlayerLevel(vault: Vault, playerStoreInstance?:
         xpRequired: currentXPRequired
       }));
 
-      new Notice(`🎉 Level up! You are now level ${currentLevel}!`, 3000);
+      showGameNotice(`🎉 Level up! You are now level ${currentLevel}!`, 3000);
     }
 
     return {

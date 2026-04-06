@@ -44,13 +44,13 @@ class PerformanceOptimizer {
     async initialize(): Promise<void> {
         console.log('[PerformanceOptimizer] Initializing...');
 
-        // Pre-warm cache with commonly accessed data
-        await this.preWarmCache();
+        // Skip heavy cache pre-warming on startup to keep Obsidian responsive.
+        // Caches will instead be populated lazily on first use via getCached().
 
         // Set up periodic cache cleanup
         setInterval(() => this.cleanupCache(), 5 * 60 * 1000); // Every 5 minutes
 
-        console.log('[PerformanceOptimizer] Initialized successfully');
+        console.log('[PerformanceOptimizer] Initialized without pre-warm');
     }
 
     private async preWarmCache(): Promise<void> {

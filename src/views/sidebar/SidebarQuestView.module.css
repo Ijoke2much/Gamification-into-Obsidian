@@ -1,0 +1,915 @@
+.container {
+  padding: 10px;
+  background: radial-gradient(circle at 20% 0%, rgba(76, 58, 134, 0.16), transparent 30%), var(--background-primary);
+  color: var(--text-normal);
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.panelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.headerActions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+
+.viewModeBtn {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  border-radius: 7px;
+  padding: 4px 8px;
+  font-size: 15px;
+  line-height: 1;
+  border: 1px solid transparent;
+  transition: background 0.15s, border-color 0.15s;
+  color: var(--text-muted);
+}
+
+.viewModeBtn:hover {
+  background: var(--background-modifier-hover);
+  border-color: var(--background-modifier-border);
+  color: var(--text-normal);
+}
+
+.viewModeBtnActive {
+  background: linear-gradient(135deg, rgba(91, 156, 255, 0.25), rgba(140, 100, 240, 0.2));
+  border-color: rgba(91, 156, 255, 0.5);
+  color: var(--text-normal);
+}
+
+.bossLoading {
+  padding: 32px;
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.panelTitle {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--text-normal);
+}
+
+.linkButton {
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  color: var(--text-muted);
+  border-radius: 6px;
+  font-size: 11px;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.topRow {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.addButton {
+  flex: 1;
+  border: 1px solid rgba(91, 156, 255, 0.5);
+  background: linear-gradient(135deg, rgba(74, 143, 255, 0.25), rgba(83, 217, 255, 0.2));
+  color: var(--text-normal);
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 12px;
+  padding: 8px;
+  cursor: pointer;
+}
+
+.energyChip {
+  border: 1px solid rgba(255, 211, 112, 0.45);
+  background: rgba(255, 211, 112, 0.12);
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 6px 10px;
+  white-space: nowrap;
+}
+
+.section {
+  border: 1px solid var(--background-modifier-border);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0));
+  border-radius: 10px;
+  padding: 8px 8px 10px;
+}
+
+.calendarSection {
+  border-color: rgba(92, 118, 169, 0.36);
+  background: linear-gradient(180deg, rgba(18, 33, 66, 0.72), rgba(10, 22, 46, 0.58));
+}
+
+.calendarSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.calendarInner {
+  padding-top: 4px;
+}
+
+.calendarCollapseBtn {
+  border: 1px solid rgba(120, 147, 198, 0.35);
+  background: rgba(18, 35, 69, 0.66);
+  color: rgba(214, 227, 252, 0.86);
+  border-radius: 8px;
+  width: 26px;
+  height: 24px;
+  cursor: pointer;
+}
+
+.calendarControlRow {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.calendarNavSquare {
+  border: 1px solid rgba(112, 140, 194, 0.38);
+  background: rgba(29, 48, 88, 0.72);
+  color: rgba(214, 228, 253, 0.9);
+  border-radius: 10px;
+  width: 40px;
+  height: 40px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.calendarHeadingBlock {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.calendarMonthHeading {
+  font-size: 20px;
+  font-weight: 700;
+  color: rgba(239, 245, 255, 0.98);
+}
+
+.calendarMonthSub {
+  font-size: 11px;
+  color: rgba(173, 193, 227, 0.84);
+}
+
+.calendarPillRow {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.calendarPill {
+  border: 1px solid rgba(112, 140, 194, 0.38);
+  background: rgba(22, 39, 73, 0.74);
+  color: rgba(210, 225, 248, 0.9);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.calendarPillActive {
+  background: linear-gradient(135deg, rgba(18, 186, 145, 0.86), rgba(15, 166, 132, 0.8));
+  border-color: rgba(90, 222, 186, 0.55);
+  color: #f7fffb;
+}
+
+.calendarEnergyWrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.calendarEnergyTrack {
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(17, 33, 67, 0.65);
+  border: 1px solid rgba(107, 132, 184, 0.28);
+  overflow: hidden;
+  flex: 1;
+}
+
+.calendarEnergyFill {
+  height: 100%;
+  background: linear-gradient(90deg, #ff5d5d 0%, #ffa231 35%, #ffd74a 62%, #44d07f 100%);
+}
+
+.calendarEnergyText {
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(221, 233, 255, 0.88);
+}
+
+.sectionTitle {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+.weekdayRow {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  font-size: 11px;
+  color: rgba(107, 153, 255, 0.92);
+  margin-bottom: 0;
+  background: rgba(12, 31, 66, 0.56);
+  border: 1px solid rgba(81, 117, 183, 0.3);
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+}
+
+.weekdayRow span {
+  text-align: center;
+  font-weight: 600;
+  padding: 10px 0 8px;
+}
+
+.calendarGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0;
+  border: 1px solid rgba(81, 117, 183, 0.3);
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  overflow: hidden;
+}
+
+.dayButton {
+  -webkit-appearance: none;
+  appearance: none;
+  border: 1px solid rgba(56, 84, 138, 0.34) !important;
+  border-radius: 0;
+  background: rgba(10, 27, 58, 0.52) !important;
+  box-shadow: inset 0 -18px 35px rgba(5, 16, 38, 0.25) !important;
+  color: rgba(238, 245, 255, 0.95);
+  font-size: 14px;
+  font-weight: 600;
+  height: 62px;
+  width: 100%;
+  padding: 8px;
+  margin: 0;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.dayButton:hover {
+  background: rgba(14, 34, 72, 0.7) !important;
+  border-color: rgba(101, 140, 218, 0.5) !important;
+}
+
+.dayButton:focus {
+  outline: none;
+}
+
+.dayButton:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 1px rgba(145, 186, 255, 0.35) inset !important;
+}
+
+.dayToday {
+  box-shadow: inset 0 0 0 1px rgba(97, 188, 255, 0.4) !important;
+}
+
+.daySelected {
+  background: rgba(56, 81, 139, 0.44) !important;
+  border-color: rgba(93, 146, 255, 0.95) !important;
+  box-shadow: inset 0 0 0 2px rgba(91, 146, 255, 0.5), 0 0 14px rgba(85, 142, 255, 0.24) !important;
+}
+
+.dayOutsideMonth {
+  color: rgba(141, 160, 195, 0.5);
+  background: rgba(15, 30, 57, 0.44) !important;
+}
+
+.dayNumber {
+  z-index: 1;
+}
+
+.dayDotWrap {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  transform: none;
+  display: flex;
+}
+
+.dayDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  box-shadow: 0 0 8px rgba(183, 212, 255, 0.35);
+}
+
+.dayDotAny {
+  background: rgba(175, 194, 255, 0.85);
+}
+
+.dayDotTimed {
+  background: rgba(97, 205, 255, 0.95);
+}
+
+.timelineHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.timelineHeaderActions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.timelineNowBtn {
+  border: 1px solid rgba(145, 186, 255, 0.42);
+  background: rgba(28, 48, 88, 0.66);
+  color: rgba(222, 236, 255, 0.95);
+  border-radius: 8px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+
+.timelineNowBtn:hover {
+  border-color: rgba(173, 205, 255, 0.62);
+  background: rgba(35, 62, 112, 0.78);
+}
+
+.timelineHeaderIcon {
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 14px;
+  line-height: 1;
+}
+
+.timelinePlanner {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 8px;
+  max-height: 340px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(141, 175, 232, 0.45) rgba(25, 38, 66, 0.35);
+}
+
+.timelinePlanner::-webkit-scrollbar {
+  width: 7px;
+}
+
+.timelinePlanner::-webkit-scrollbar-track {
+  background: rgba(25, 38, 66, 0.35);
+  border-radius: 999px;
+}
+
+.timelinePlanner::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(118, 156, 219, 0.58), rgba(95, 130, 189, 0.54));
+  border-radius: 999px;
+}
+
+.timelinePlanner::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(145, 186, 255, 0.66), rgba(112, 154, 224, 0.62));
+}
+
+.timelineHourColumn {
+  display: grid;
+  grid-template-rows: repeat(24, 44px);
+  align-items: start;
+}
+
+.timelineHourLabel {
+  font-size: 11px;
+  color: rgba(181, 197, 224, 0.74);
+  text-align: right;
+  padding-top: 2px;
+}
+
+.timelineTrack {
+  position: relative;
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgba(17, 27, 47, 0.28), rgba(17, 27, 47, 0.12));
+  border: 1px solid rgba(120, 145, 187, 0.2);
+  min-height: calc(44px * 24);
+  overflow: hidden;
+}
+
+.timelineNowMarker {
+  position: absolute;
+  left: 0;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+  transform: translateY(-50%);
+  pointer-events: none;
+  z-index: 4;
+}
+
+.timelineNowMarkerLabel {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: rgba(255, 193, 157, 0.96);
+  text-transform: uppercase;
+  background: rgba(68, 34, 23, 0.62);
+  border: 1px solid rgba(255, 169, 132, 0.6);
+  border-radius: 999px;
+  padding: 2px 6px;
+}
+
+.timelineNowMarkerLine {
+  height: 1px;
+  flex: 1;
+  background: linear-gradient(90deg, rgba(255, 173, 136, 0.9), rgba(255, 173, 136, 0.25));
+}
+
+.timelineHourLine {
+  height: 44px;
+  border-top: 1px solid rgba(140, 164, 205, 0.16);
+}
+
+.timelineHourLine:first-child {
+  border-top: none;
+}
+
+.timelineEmpty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(176, 190, 214, 0.7);
+  font-size: 12px;
+}
+
+.timelineEmptyContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.timelineEmptyAdd {
+  border: 1px solid rgba(113, 164, 235, 0.45);
+  background: rgba(31, 63, 118, 0.42);
+  color: rgba(229, 240, 255, 0.92);
+  border-radius: 8px;
+  padding: 5px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.timelineEmptyAdd:hover {
+  border-color: rgba(150, 193, 255, 0.62);
+  background: rgba(40, 78, 142, 0.5);
+}
+
+.timelineQuestBlock {
+  all: unset;
+  box-sizing: border-box;
+  text-align: left;
+  --tb-bg-a: rgba(142, 164, 236, 0.82);
+  --tb-bg-b: rgba(115, 140, 220, 0.78);
+  --tb-dot: rgba(230, 238, 255, 0.2);
+  --tb-border: rgba(171, 194, 246, 0.72);
+  --tb-left: rgba(197, 218, 255, 0.9);
+  border: 1px solid var(--tb-border);
+  border-left: 3px solid var(--tb-left);
+  background:
+    radial-gradient(circle at 4px 4px, var(--tb-dot) 1.2px, transparent 1.4px) 0 0 / 10px 10px,
+    linear-gradient(160deg, var(--tb-bg-a), var(--tb-bg-b));
+  border-radius: 10px;
+  padding: 8px 10px;
+  cursor: pointer;
+  color: var(--text-normal);
+  transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: flex-start;
+  gap: 4px;
+  min-height: 44px;
+  width: 100%;
+  position: absolute;
+  left: 0;
+  right: auto;
+  overflow: hidden;
+}
+
+.timelineQuestBlockDense {
+  border-color: rgba(216, 232, 255, 0.88);
+  box-shadow:
+    0 0 0 1px rgba(228, 238, 255, 0.2) inset,
+    0 2px 8px rgba(12, 22, 44, 0.28);
+}
+
+.timelineQuestBlockTight {
+  padding: 7px 8px;
+  border-radius: 9px;
+}
+
+.timelineQuestBlockWithOverlapBadge {
+  padding-top: 20px;
+}
+
+.timelineQuestBlock:focus-visible {
+  outline: 1px solid rgba(145, 186, 255, 0.75);
+  box-shadow: 0 0 0 1px rgba(145, 186, 255, 0.35) inset;
+}
+
+.timelineQuestBlock:hover {
+  transform: translateY(-1px) scale(1.005);
+  border-color: var(--tb-left);
+  box-shadow: 0 4px 10px rgba(24, 53, 90, 0.24);
+  background:
+    radial-gradient(circle at 4px 4px, var(--tb-dot) 1.2px, transparent 1.4px) 0 0 / 10px 10px,
+    linear-gradient(160deg, var(--tb-bg-a), var(--tb-bg-b));
+  filter: brightness(1.04);
+}
+
+.timelineQuestTitle {
+  font-size: 12px;
+  font-weight: 650;
+  margin-bottom: 0;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: rgba(250, 252, 255, 0.99);
+  text-align: left !important;
+  align-self: flex-start;
+  line-height: 1.25;
+  text-shadow: 0 0 1px rgba(0, 0, 0, 0.25);
+  padding-right: 74px;
+}
+
+.timelineQuestTime {
+  font-size: 10px;
+  color: rgba(190, 206, 233, 0.78);
+  margin-bottom: 0;
+  letter-spacing: 0.01em;
+  margin-top: auto;
+  text-align: left !important;
+  align-self: flex-start;
+  line-height: 1.2;
+  padding-right: 74px;
+}
+
+.timelineQuestBlockTight .timelineQuestTitle {
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+.timelineQuestBlockTight .timelineQuestTime {
+  font-size: 9px;
+  line-height: 1.15;
+}
+
+.timelineOverlapBadge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  z-index: 2;
+  border: 1px solid rgba(218, 233, 255, 0.6);
+  background: rgba(22, 37, 70, 0.7);
+  color: rgba(235, 244, 255, 0.94);
+  border-radius: 999px;
+  padding: 1px 6px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  pointer-events: none;
+}
+
+.timelineQuestActions {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  display: inline-flex;
+  gap: 4px;
+  opacity: 0;
+  transform: translateY(-2px);
+  pointer-events: none;
+  transition: opacity 0.16s ease, transform 0.16s ease;
+}
+
+.timelineQuestBlock:hover .timelineQuestActions,
+.timelineQuestBlock:focus-within .timelineQuestActions {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.timelineActionBtn {
+  border: 1px solid rgba(146, 177, 224, 0.42);
+  background: rgba(16, 33, 67, 0.8);
+  color: rgba(233, 241, 255, 0.94);
+  border-radius: 6px;
+  min-width: 24px;
+  height: 22px;
+  padding: 0 5px;
+  font-size: 10px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.timelineActionBtn:hover {
+  border-color: rgba(173, 205, 255, 0.62);
+  background: rgba(24, 46, 88, 0.9);
+}
+
+.timelineQuestBlockSuggested {
+  border-style: dashed;
+  opacity: 0.86;
+}
+
+.timelineQuestBlockFloating {
+  border-left-width: 4px;
+}
+
+.timelineThemeViolet {
+  --tb-bg-a: rgba(183, 167, 244, 0.88);
+  --tb-bg-b: rgba(158, 141, 230, 0.84);
+  --tb-dot: rgba(241, 236, 255, 0.23);
+  --tb-border: rgba(205, 188, 255, 0.78);
+  --tb-left: rgba(232, 220, 255, 0.95);
+}
+
+.timelineThemeBlue {
+  --tb-bg-a: rgba(150, 188, 248, 0.9);
+  --tb-bg-b: rgba(128, 170, 238, 0.85);
+  --tb-dot: rgba(230, 242, 255, 0.22);
+  --tb-border: rgba(174, 208, 255, 0.78);
+  --tb-left: rgba(210, 232, 255, 0.96);
+}
+
+.timelineThemePink {
+  --tb-bg-a: rgba(242, 144, 186, 0.9);
+  --tb-bg-b: rgba(230, 126, 172, 0.86);
+  --tb-dot: rgba(255, 234, 245, 0.24);
+  --tb-border: rgba(255, 175, 212, 0.76);
+  --tb-left: rgba(255, 207, 230, 0.96);
+}
+
+.timelineThemeAmber {
+  --tb-bg-a: rgba(245, 188, 101, 0.9);
+  --tb-bg-b: rgba(236, 166, 72, 0.86);
+  --tb-dot: rgba(255, 243, 221, 0.24);
+  --tb-border: rgba(252, 208, 141, 0.76);
+  --tb-left: rgba(255, 226, 180, 0.96);
+}
+
+.timelineThemeGreen {
+  --tb-bg-a: rgba(166, 215, 148, 0.9);
+  --tb-bg-b: rgba(143, 202, 124, 0.86);
+  --tb-dot: rgba(236, 252, 229, 0.24);
+  --tb-border: rgba(187, 230, 168, 0.78);
+  --tb-left: rgba(219, 246, 202, 0.97);
+}
+
+.timelineFreeSummary {
+  margin-top: 8px;
+  font-size: 11px;
+  color: rgba(184, 198, 223, 0.72);
+  text-align: right;
+}
+
+.filterRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.filterSelect {
+  background: var(--background-secondary);
+  color: var(--text-normal);
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  font-size: 11px;
+  padding: 5px 6px;
+  min-width: 0;
+}
+
+.inboxGroup {
+  margin-bottom: 10px;
+}
+
+.inboxGroupTitle {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(231, 210, 149, 0.9);
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.inboxGroupHeaderButton {
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+}
+
+.groupTitleText {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.groupChevron {
+  color: rgba(210, 223, 245, 0.75);
+  font-size: 11px;
+  width: 10px;
+}
+
+.groupCount {
+  font-size: 10px;
+  border: 1px solid rgba(126, 146, 183, 0.35);
+  border-radius: 999px;
+  padding: 0 6px;
+  color: rgba(196, 210, 234, 0.76);
+}
+
+.inboxList {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.inboxDropActive {
+  outline: 1px dashed rgba(145, 186, 255, 0.5);
+  outline-offset: 4px;
+  border-radius: 10px;
+}
+
+.dropHint {
+  border: 1px dashed rgba(145, 186, 255, 0.5);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 11px;
+  color: rgba(201, 223, 255, 0.92);
+  background: rgba(37, 67, 120, 0.22);
+  text-align: center;
+}
+
+.inboxItem {
+  border: 1px solid rgba(126, 146, 183, 0.24);
+  background: linear-gradient(180deg, rgba(114, 133, 170, 0.16), rgba(114, 133, 170, 0.11));
+  border-radius: 10px;
+  padding: 9px 10px;
+  cursor: pointer;
+  text-align: left;
+  color: var(--text-normal);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.inboxItem:hover {
+  border-color: rgba(145, 186, 255, 0.48);
+  box-shadow: 0 4px 12px rgba(15, 30, 58, 0.2);
+}
+
+.inboxItemFocus {
+  border-color: rgba(234, 201, 109, 0.8);
+  box-shadow: 0 0 0 1px rgba(234, 201, 109, 0.35) inset, 0 0 16px rgba(234, 201, 109, 0.25);
+}
+
+.inboxItemLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1;
+}
+
+.dragHandle {
+  color: rgba(193, 208, 234, 0.58);
+  font-size: 10px;
+  letter-spacing: -1px;
+  cursor: grab;
+}
+
+.inboxCheck {
+  color: rgba(189, 205, 233, 0.7);
+  font-size: 14px;
+  line-height: 1;
+}
+
+.inboxItemTitle {
+  font-size: 12px;
+  font-weight: 650;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: rgba(238, 245, 255, 0.96);
+}
+
+.inboxItemRight {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.badgePriority {
+  background: rgba(248, 113, 113, 0.14);
+  border-color: rgba(248, 113, 113, 0.42);
+}
+
+.badgeDifficulty {
+  background: rgba(147, 197, 253, 0.16);
+  border-color: rgba(147, 197, 253, 0.44);
+}
+
+.badgeTag {
+  background: rgba(56, 189, 248, 0.16);
+  border-color: rgba(56, 189, 248, 0.4);
+}
+
+.badgeDue {
+  background: rgba(234, 201, 109, 0.18);
+  border-color: rgba(234, 201, 109, 0.45);
+  color: rgba(242, 225, 168, 0.95);
+}
+
+.badgeEnergy {
+  background: rgba(56, 189, 248, 0.16);
+  border-color: rgba(56, 189, 248, 0.36);
+  color: rgba(172, 224, 255, 0.95);
+}
+
+.badgeXpCompact {
+  background: rgba(168, 85, 247, 0.18);
+  border-color: rgba(168, 85, 247, 0.4);
+  color: rgba(220, 189, 255, 0.96);
+}
+
+.badgeCoinCompact {
+  background: rgba(34, 197, 94, 0.15);
+  border-color: rgba(34, 197, 94, 0.35);
+  color: rgba(182, 243, 206, 0.95);
+}
+
+.badgeTagCompact {
+  background: rgba(129, 140, 248, 0.15);
+  border-color: rgba(129, 140, 248, 0.34);
+  color: rgba(198, 205, 255, 0.95);
+}
+
+.rowChevron {
+  color: rgba(203, 217, 242, 0.7);
+  font-size: 13px;
+  margin-left: 4px;
+}
+
+.emptyState {
+  font-size: 11px;
+  color: var(--text-faint);
+  padding: 6px 0;
+}
+
+.emptyStateDropActive {
+  border: 1px dashed rgba(145, 186, 255, 0.52);
+  border-radius: 8px;
+  padding: 8px;
+  text-align: center;
+  color: rgba(201, 223, 255, 0.92);
+  background: rgba(37, 67, 120, 0.18);
+}

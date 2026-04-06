@@ -9,28 +9,74 @@ import {
 } from "../utils/ShopParser";
 import { AddItemModal } from "src/features/player/modals/AddItemModal";
 import { AvatarPickerModal } from "src/features/player/modals/AvatarPickerModal";
-import { Notice, TFile } from "obsidian";
+import { EditShopkeeperDialogueModal } from "../modals/EditShopkeeperDialogueModal";
+import { PurchaseConfirmationModal } from "../modals/PurchaseConfirmationModal";
+import { Notice, TFile, Modal } from "obsidian";
+import {
+    getShopkeeperDialogue,
+    fillDialogueTemplate,
+    isDialogueCorrupted,
+    ensureSafeForDisplay,
+    sanitizeDialogueString,
+} from "../utils/shopkeeperDialogueDefaults";
 import { addOrIncrementInventoryItem } from "../../inventory/utils/updateInventoryFile";
 import { readPlayerData, writePlayerData } from "src/features/player/utils/playerDataUtils";
+import { currencyDisplay } from "../../../shared/services/currencyDisplayService";
 
 interface Props {
     plugin: GamifiedObsidianPlugin;
     rebuildShopTab: () => void; // callback to refresh parent
 }
 
-// Typewriter effect hook
+// Fixed category tabs with icons (transferred from Shop/Artifacts)
+const SHOP_CATEGORIES = [
+    { key: "All", label: "All", icon: "🛒" },
+    { key: "Materials", label: "Materials", icon: "📦" },
+    { key: "Equipment", label: "Equipment", icon: "⚔️" },
+    { key: "Artifacts", label: "Artifacts", icon: "🏺" },
+    { key: "Weapons", label: "Weapons", icon: "🗡️" },
+    { key: "Misc", label: "Misc", icon: "📋" },
+] as const;
+
+// Map item category (from Shop.md) to our canonical tab – case-insensitive
+function normalizeCategoryForFilter(itemCategory: string | undefined): string {
+    const c = (itemCategory || "").trim().toLowerCase();
+    if (!c) return "Misc";
+    if (c === "material" || c === "materials") return "Materials";
+    if (c === "equipment") return "Equipment";
+    if (c === "artifact" || c === "artifacts") return "Artifacts";
+    if (c === "weapon" || c === "weapons") return "Weapons";
+    if (c === "misc") return "Misc";
+    return "Misc"; // anything else (consumable, snack, etc.)
+}
+
+// Category color for card top strip (inspired by product-card style)
+function getCategoryColor(category: string): string {
+    const c = category || "Misc";
+    switch (c) {
+        case "Materials": return "#0ea5e9";   // blue
+        case "Equipment": return "#22c55e";   // green
+        case "Artifacts": return "#a855f7";  // purple
+        case "Weapons": return "#ef4444";    // red
+        default: return "#64748b";            // gray for Misc
+    }
+}
+
+// Typewriter effect hook - guards against undefined char to prevent "undefined" in output
 function useTypewriter(text: string, speed = 30) {
     const [displayed, setDisplayed] = useState("");
     const [isAnimating, setIsAnimating] = useState(false);
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const safeText = String(text ?? "").replace(/undefined/g, "");
 
     useEffect(() => {
         setDisplayed("");
         setIsAnimating(true);
         let i = 0;
         function type() {
-            if (i < text.length) {
-                setDisplayed((prev) => prev + text[i]);
+            if (i < safeText.length) {
+                const ch = safeText[i];
+                if (ch !== undefined) setDisplayed((prev) => prev + ch);
                 i++;
                 timeoutRef.current = setTimeout(type, speed);
             } else {
@@ -41,11 +87,11 @@ function useTypewriter(text: string, speed = 30) {
         return () => {
             if (timeoutRef.current) clearTimeout(timeoutRef.current);
         };
-    }, [text, speed]);
+    }, [safeText, speed]);
 
     const revealAll = () => {
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
-        setDisplayed(text);
+        setDisplayed(safeText);
         setIsAnimating(false);
     };
 
@@ -53,8 +99,11 @@ function useTypewriter(text: string, speed = 30) {
 }
 
 export default function ShopTab({ plugin, rebuildShopTab }: Props) {
-    const currencyName = plugin.settings.currencyName || "Coins";
-    const currencySymbol = plugin.settings.currencySymbol || "🪙";
+    // Ensure currency display service is initialized for consistent labels
+    currencyDisplay.initialize(plugin.settings);
+    const currencyName = currencyDisplay.getCurrencyName();
+    const currencyNameLower = currencyDisplay.getCurrencyNameLowercase();
+    const currencySymbol = currencyDisplay.getCurrencySymbol();
     const [items, setItems] = useState<ShopItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [shopkeeperImg, setShopkeeperImg] = useState<string>("");
@@ -71,21 +120,29 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
         setCoins(playerData?.coins ?? 0);
     };
 
-    // Dialogue state
-    const [dialogue, setDialogue] = useState<string>(
-        "Welcome to the Slop Shop! What would you like to buy today?"
-    );
+    // Dialogue state (uses overrides from settings)
+    const getDialogue = (key: Parameters<typeof getShopkeeperDialogue>[0]) =>
+        getShopkeeperDialogue(key, plugin.settings.shopkeeperDialogueOverrides);
+    const getResolvedGreeting = () =>
+        ensureSafeForDisplay(
+            fillDialogueTemplate(getDialogue("greeting"), {
+                currency: currencyNameLower ?? "coins",
+            }),
+            "greeting"
+        );
+    const [dialogue, setDialogue] = useState<string>(getResolvedGreeting());
     const [dialogueOptions, setDialogueOptions] = useState<Array<{
         label: string;
         onClick: () => void;
     }> | null>(null);
 
     // Typewriter effect for dialogue
+    const safeDialogue = sanitizeDialogueString(dialogue);
     const {
         displayed: animatedDialogue,
         isAnimating,
         revealAll,
-    } = useTypewriter(dialogue, 24);
+    } = useTypewriter(safeDialogue, 24);
 
     const imagePath =
         customImagePath || plugin.settings.shopkeeperImagePath || "assets/shopkeeper.jpg";
@@ -137,6 +194,15 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
         loadItems();
     }, []);
 
+    // Migration: clear corrupted dialogue overrides (e.g. "undefined", "elcooe") and reset to defaults
+    useEffect(() => {
+        if (isDialogueCorrupted(plugin.settings.shopkeeperDialogueOverrides)) {
+            plugin.settings.shopkeeperDialogueOverrides = {};
+            plugin.saveSettings();
+            setDialogue(getResolvedGreeting());
+        }
+    }, []);
+
     // Listen for shop data updates and refresh
     useEffect(() => {
         const handleShopDataUpdate = () => {
@@ -167,6 +233,49 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
         await fetchCoins();
     };
 
+    const openDebugDialogueModal = () => {
+        const overrides = plugin.settings.shopkeeperDialogueOverrides ?? {};
+        const raw = getDialogue("greeting");
+        const filled = fillDialogueTemplate(raw, { currency: currencyNameLower ?? "coins" });
+        const resolved = getResolvedGreeting();
+        const firstChars = safeDialogue.slice(0, 10).split("").map((c, i) =>
+            `[${i}]="${c}" U+${c.charCodeAt(0).toString(16).toUpperCase().padStart(4, "0")}`
+        ).join(" ");
+        const info = [
+            "=== Shopkeeper Dialogue Debug ===",
+            "",
+            "1. overrides (saved): " + JSON.stringify(overrides),
+            "2. getDialogue('greeting'): " + JSON.stringify(raw),
+            "3. after fillDialogueTemplate: " + JSON.stringify(filled),
+            "4. getResolvedGreeting(): " + JSON.stringify(resolved),
+            "5. dialogue state: " + JSON.stringify(dialogue),
+            "6. safeDialogue (to typewriter): " + JSON.stringify(safeDialogue),
+            "7. First 10 chars: " + firstChars,
+            "8. animatedDialogue length: " + animatedDialogue.length,
+        ].join("\n");
+        const modal = new Modal(plugin.app);
+        modal.contentEl.createEl("h2", { text: "Dialogue Debug" });
+        const pre = modal.contentEl.createEl("pre", {
+            attr: { style: "font-size:11px; overflow:auto; max-height:60vh; white-space:pre-wrap;" },
+        });
+        pre.setText(info);
+        modal.open();
+    };
+
+    const openEditDialogueModal = () => {
+        const modal = new EditShopkeeperDialogueModal(
+            plugin.app,
+            plugin,
+            async (overrides) => {
+                plugin.settings.shopkeeperDialogueOverrides = overrides;
+                await plugin.saveSettings();
+                setDialogue(getResolvedGreeting());
+                new Notice("Shopkeeper dialogue updated!");
+            }
+        );
+        modal.open();
+    };
+
     const openShopkeeperPicker = async () => {
         const avatarFolder = plugin.settings.avatarFolder || "assets/";
         const files = plugin.app.vault
@@ -183,7 +292,7 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
                 plugin.settings.shopkeeperImagePath = selectedPath;
                 await plugin.saveSettings();
                 setCustomImagePath(selectedPath);
-                setDialogue("Shopkeeper image updated!");
+                setDialogue(getDialogue("imageUpdated"));
             });
             if (modal && typeof modal.open === 'function') {
                 modal.open();
@@ -202,9 +311,27 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
             await loadItems();
             if (rebuildShopTab) rebuildShopTab();
             setDialogue(
-                `A new item, ${newItem.name}, has been added to the shop!`
+                fillDialogueTemplate(getDialogue("addItem"), { item: newItem.name })
             );
         });
+        modal.open();
+    };
+
+    const openAddArtifactModal = () => {
+        const modal = new AddItemModal(
+            plugin.app,
+            plugin,
+            async (newItem: ShopItem) => {
+                new Notice(`Added "${newItem.name}" as an artifact!`, 0);
+                await loadItems();
+                if (rebuildShopTab) rebuildShopTab();
+                setDialogue(
+                    fillDialogueTemplate(getDialogue("addArtifact"), { item: newItem.name })
+                );
+            },
+            undefined,
+            "artifact"
+        );
         modal.open();
     };
 
@@ -221,146 +348,114 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
         modal.open();
     };
 
-    const handleBuyClick = (item: ShopItem) => {
-        setDialogue(
-            `Are you sure you want to buy ${item.name} for ${item.price} ${currencyName.toLowerCase()}?`
-        );
-        setDialogueOptions([
-            {
-                label: "Yes",
-                onClick: async () => {
-                    await buyItem(item);
-                    setDialogueOptions(null);
-                },
-            },
-            {
-                label: "No",
-                onClick: () => {
-                    setDialogue(
-                        "Maybe next time! Let me know if you change your mind."
-                    );
-                    setDialogueOptions(null);
-                },
-            },
-        ]);
+    const getEffectsPreview = (item: ShopItem) =>
+        item.effects?.map((effect) => {
+            if (typeof effect === "string") return effect;
+            if (effect.type === "stat") return `+${effect.amount} ${effect.stat}`;
+            if (effect.type === "coins") return `+${effect.amount} ${currencyName}`;
+            if (effect.type === "xp") return `+${effect.amount} XP`;
+            if (effect.type === "unlock") return `Unlocks: ${effect.skill}`;
+            if (effect.type === "meta") return effect.description;
+            return "Unknown effect";
+        }).join(", ") || "No special effects";
+
+    const executePurchase = async (item: ShopItem, price: number) => {
+        const playerData = await readPlayerData(plugin.app.vault);
+        if (!playerData) return;
+        playerData.coins -= price;
+
+        try {
+            const { CoinTransactionTracker } = await import(
+                "../../../shared/utils/coinTransactionTracker"
+            );
+            await CoinTransactionTracker.recordTransaction(
+                plugin.app.vault,
+                -price,
+                "shop",
+                `Purchased ${item.name}`,
+                { itemName: item.name, category: item.category }
+            );
+        } catch (error) {
+            console.warn("[ShopTab] Failed to record coin transaction:", error);
+        }
+
+        await addOrIncrementInventoryItem(plugin.app, item, 1);
+        const allItems = await getAllShopItems(plugin);
+        const idx = allItems.findIndex((i) => i.name === item.name);
+        if (idx !== -1 && typeof allItems[idx].stock === "number") {
+            allItems[idx].stock = Math.max(0, (allItems[idx].stock || 0) - 1);
+            if (allItems[idx].stock === 0) allItems.splice(idx, 1);
+            await writeShopItems(plugin, allItems);
+        }
+        await writePlayerData(plugin.app.vault, playerData);
+
+        new Notice(`Successfully purchased ${item.name}!`);
+
+        try {
+            const { achievementEventService } = await import(
+                "../../../features/achievements/services/achievementEventService"
+            );
+            await achievementEventService.processGameEvent({
+                type: "item_purchased",
+                data: { item, totalPurchases: 1 },
+                timestamp: new Date(),
+            });
+        } catch (error) {
+            console.warn("[ShopTab] Failed to trigger achievement events:", error);
+        }
+
+        await fetchCoins();
+        await loadItems();
     };
 
-    const buyItem = async (item: ShopItem) => {
+    const handleBuyClick = async (item: ShopItem) => {
         const playerData = await readPlayerData(plugin.app.vault);
         if (!playerData) {
             new Notice("Player data not found!");
             return;
         }
-        // Reputation modifies effective price (±20% cap)
         const rep = Math.max(-100, Math.min(100, Number(playerData.questReputation ?? 0)));
         const repFactor = 1 - Math.max(-0.2, Math.min(0.2, rep / 500));
         const price = Math.max(1, Math.round(item.price * repFactor));
-        
+
         if (playerData.coins < price) {
-            new Notice(`Not enough ${currencyName.toLowerCase()}! You need ${price - playerData.coins} more.`);
-            setDialogue(`Not enough ${currencyName.toLowerCase()}! You need ${(price - playerData.coins).toLocaleString()} more to buy that ${item.name}.`);
+            new Notice(`Not enough ${currencyNameLower}! You need ${price - playerData.coins} more.`);
+            setDialogue(
+                fillDialogueTemplate(getDialogue("insufficientFunds"), {
+                    currency: currencyNameLower,
+                    amount: (price - playerData.coins).toLocaleString(),
+                    item: item.name,
+                })
+            );
             setDialogueOptions([
-                { label: "I understand", onClick: () => setDialogueOptions(null) }
+                { label: "I understand", onClick: () => setDialogueOptions(null) },
             ]);
             return;
         }
-        
-        // Show purchase confirmation with item details
-        const effectsPreview = item.effects?.map(effect => {
-            if (typeof effect === 'string') return effect;
-            if (effect.type === 'stat') return `+${effect.amount} ${effect.stat}`;
-            if (effect.type === 'coins') return `+${effect.amount} ${currencyName}`;
-            if (effect.type === 'xp') return `+${effect.amount} XP`;
-            if (effect.type === 'unlock') return `Unlocks: ${effect.skill}`;
-            if (effect.type === 'meta') return effect.description;
-            return 'Unknown effect';
-        }).join(', ') || 'No special effects';
-        
-        setDialogue(`Are you sure you want to buy "${item.name}" for ${price.toLocaleString()} ${currencyName.toLowerCase()}?\n\nEffects: ${effectsPreview}`);
-        setDialogueOptions([
-            { 
-                label: `Yes, buy for ${currencySymbol}${price.toLocaleString()}`, 
-                onClick: () => confirmPurchase(item, price) 
+
+        const effectsText = getEffectsPreview(item);
+        const modal = new PurchaseConfirmationModal({
+            app: plugin.app,
+            plugin,
+            item,
+            price,
+            effectsText,
+            shopkeeperImg: shopkeeperImg || "",
+            overrides: plugin.settings.shopkeeperDialogueOverrides,
+            currencyName,
+            currencyNameLower,
+            currencySymbol,
+            onPurchase: async () => {
+                await executePurchase(item, price);
             },
-            { 
-                label: "No, maybe later", 
-                onClick: () => {
-                    setDialogue("Come back anytime!");
-                    setDialogueOptions(null);
-                }
-            }
-        ]);
-    };
-    
-    const confirmPurchase = async (item: ShopItem, price: number) => {
-        const playerData = await readPlayerData(plugin.app.vault);
-        if (!playerData) return;
-        playerData.coins -= price;
-        
-        // Record coin transaction
-        try {
-          const { CoinTransactionTracker } = await import('../../../shared/utils/coinTransactionTracker');
-          await CoinTransactionTracker.recordTransaction(
-            plugin.app.vault,
-            -price,
-            'shop',
-            `Purchased ${item.name}`,
-            { itemName: item.name, category: item.category }
-          );
-        } catch (error) {
-          console.warn('[ShopTab] Failed to record coin transaction:', error);
-        }
-        
-        // Add item to inventory (use plugin.app as first argument)
-        // addOrIncrementInventoryItem now handles ShopItem directly
-        await addOrIncrementInventoryItem(plugin.app, item, 1);
-        // --- Decrement shop stock and update Shop.md ---
-        const allItems = await getAllShopItems(plugin);
-        const idx = allItems.findIndex((i) => i.name === item.name);
-        if (idx !== -1 && typeof allItems[idx].stock === "number") {
-            allItems[idx].stock = Math.max(0, (allItems[idx].stock || 0) - 1);
-            // Remove the item if stock is now zero
-            if (allItems[idx].stock === 0) {
-                allItems.splice(idx, 1);
-            }
-            await writeShopItems(plugin, allItems);
-        }
-        await writePlayerData(plugin.app.vault, playerData);
-        
-        // Show success message with dialogue
-        new Notice(`Successfully purchased ${item.name}!`);
-        setDialogue(`Excellent choice! You've purchased "${item.name}" for ${price.toLocaleString()} ${currencyName.toLowerCase()}. It's been added to your inventory!`);
-        setDialogueOptions([
-            { label: "Thanks!", onClick: () => setDialogueOptions(null) },
-            { label: "What else do you have?", onClick: () => {
-                setDialogue("Take a look around! I've got plenty of interesting items for sale.");
-                setDialogueOptions(null);
-            }}
-        ]);
-        
-        // Trigger achievement events for item purchase
-        try {
-            const { achievementEventService } = await import('../../../features/achievements/services/achievementEventService');
-            await achievementEventService.processGameEvent({
-                type: 'item_purchased',
-                data: { item, totalPurchases: 1 }, // TODO: Track actual total purchases
-                timestamp: new Date()
-            });
-        } catch (error) {
-            console.warn('[ShopTab] Failed to trigger achievement events:', error);
-        }
-        
-        // reload coins and items after purchase
-        await fetchCoins();
-        await loadItems();
+            onWhatElse: () => {
+                setDialogue(getDialogue("purchaseFollowUp"));
+            },
+        });
+        modal.open();
     };
 
-    // Get unique categories and rarities from items
-    const categories = useMemo(() => {
-        const set = new Set<string>();
-        items.forEach((item) => item.category && set.add(item.category));
-        return ["All", ...Array.from(set)];
-    }, [items]);
+    // Rarities from items (categories are fixed: SHOP_CATEGORIES)
     const rarities = useMemo(() => {
         const set = new Set<string>();
         items.forEach((item) => item.rarity && set.add(item.rarity));
@@ -372,7 +467,7 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
         let filtered = items;
         if (categoryFilter !== "All") {
             filtered = filtered.filter(
-                (item) => item.category === categoryFilter
+                (item) => normalizeCategoryForFilter(item.category) === categoryFilter
             );
         }
         if (rarityFilter !== "All") {
@@ -410,78 +505,127 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
         return <p>Loading shop...</p>;
     }
 
-    if (items.length === 0) {
-        return (
-            <div>
+    return (
+        <>
+            <style>{`
+                .gami-shop-card {
+                    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+                }
+                .gami-shop-card:hover {
+                    border-color: #f97316 !important;
+                    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.25) !important;
+                }
+                .gami-shop-grid {
+                    display: grid;
+                    grid-template-columns: repeat(2, minmax(0, 1fr));
+                    gap: 8px;
+                }
+                @media (min-width: 500px) {
+                    .gami-shop-grid {
+                        grid-template-columns: repeat(3, minmax(0, 1fr));
+                    }
+                }
+            `}</style>
+        <div className="gami-shop-tab" style={{ maxWidth: 800, margin: "0 auto", padding: 12 }}>
+            {/* Gradient header: Shop title + currency badge (sidebar-friendly) */}
+            <div
+                className="gami-shop-header"
+                style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    background: "linear-gradient(90deg, #7c3aed 0%, #a78bfa 50%, #c4b5fd 100%)",
+                    borderRadius: 10,
+                    padding: "10px 14px",
+                    marginBottom: 12,
+                    boxShadow: "0 2px 8px rgba(124,58,237,0.4)",
+                }}
+            >
+                <span style={{ fontWeight: 700, fontSize: "1.1em", color: "#fff", letterSpacing: "0.04em" }}>
+                    🛒 Shop
+                </span>
                 <div
                     style={{
-                        background: "#222",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 6,
+                        background: "rgba(255,255,255,0.25)",
+                        padding: "4px 10px",
+                        borderRadius: 999,
+                        fontWeight: 600,
                         color: "#ffd700",
-                        borderRadius: 12,
-                        padding: "16px 20px",
-                        margin: "16px auto",
-                        maxWidth: 500,
-                        fontSize: "1.1em",
-                        boxShadow: "0 2px 8px #0003",
-                        textAlign: "center",
                     }}
                 >
-                    Sorry, the shop is empty! Come back later for more items.
+                    <span>{currencySymbol}</span>
+                    <span>{coins.toLocaleString()}</span>
                 </div>
-                <button
-                    onClick={openAddItemModal}
-                    className="mt-2 px-4 py-2 bg-blue-600 rounded text-white"
-                >
-                    Add New Item
-                </button>
             </div>
-        );
-    }
 
-    return (
-        <div style={{ maxWidth: 600, margin: "0 auto", padding: 16 }}>
-            {/* Shopkeeper/NPC Banner */}
-            <div style={{ textAlign: "center", marginBottom: 12 }}>
+            {/* Shopkeeper/NPC Banner – compact */}
+            <div style={{ textAlign: "center", marginBottom: 10 }}>
                 {imgError ? (
-                    <div
-                        style={{
-                            fontSize: "2em",
-                            marginBottom: 8,
-                            color: "#888",
-                        }}
-                    >
-                        🧙‍♂️
-                    </div>
+                    <div style={{ fontSize: "1.8em", color: "#888" }}>🧙‍♂️</div>
                 ) : (
                     <img
                         src={shopkeeperImg}
                         alt="Shopkeeper"
                         style={{
-                            maxHeight: 180,
+                            maxHeight: 100,
                             maxWidth: "100%",
                             objectFit: "contain",
-                            marginBottom: 8,
-                            borderRadius: 12,
-                            boxShadow: "0 2px 8px #0003",
+                            borderRadius: 10,
+                            boxShadow: "0 2px 6px #0003",
                         }}
                     />
                 )}
-                <div
-                    style={{
-                        fontWeight: "bold",
-                        fontSize: "1.3em",
-                        letterSpacing: 1,
-                    }}
-                >
-                    The Slop Shop
-                </div>
-                <div style={{ marginTop: 8 }}>
+                <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 6, flexWrap: "wrap" }}>
                     <button
                         onClick={openShopkeeperPicker}
-                        className="px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded text-white"
+                        className="gami-shop-keeper-btn"
+                        style={{
+                            padding: "4px 10px",
+                            fontSize: "0.75em",
+                            borderRadius: 6,
+                            border: "none",
+                            background: "#374151",
+                            color: "#e5e7eb",
+                            cursor: "pointer",
+                        }}
                         title="Change the shopkeeper image"
                     >
-                        Change Shopkeeper Image
+                        Change image
+                    </button>
+                    <button
+                        onClick={openEditDialogueModal}
+                        className="gami-shop-keeper-btn"
+                        style={{
+                            padding: "4px 10px",
+                            fontSize: "0.75em",
+                            borderRadius: 6,
+                            border: "none",
+                            background: "#374151",
+                            color: "#e5e7eb",
+                            cursor: "pointer",
+                        }}
+                        title="Edit shopkeeper dialogue"
+                    >
+                        Edit dialogue
+                    </button>
+                    <button
+                        onClick={openDebugDialogueModal}
+                        className="gami-shop-keeper-btn"
+                        style={{
+                            padding: "4px 10px",
+                            fontSize: "0.75em",
+                            borderRadius: 6,
+                            border: "none",
+                            background: "#1e3a5f",
+                            color: "#93c5fd",
+                            cursor: "pointer",
+                        }}
+                        title="Debug dialogue (diagnostic info)"
+                    >
+                        Debug
                     </button>
                 </div>
             </div>
@@ -490,8 +634,8 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
             <div
                 className="shop-dialogue-box"
                 style={{
-                    margin: "16px 0",
-                    padding: "12px",
+                    margin: "10px 0",
+                    padding: "10px",
                     background: "#222",
                     color: "#fff",
                     borderRadius: "8px",
@@ -535,277 +679,346 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
                 </div>
             )}
 
-            {/* Coins Display */}
-            <div
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontWeight: "bold",
-                    fontSize: "1.1em",
-                    marginBottom: 16,
-                    background: "#222",
-                    color: "#ffd700",
-                    borderRadius: 8,
-                    padding: "8px 0",
-                    boxShadow: "0 1px 4px #0002",
-                }}
-            >
-                <span style={{ fontSize: "1.2em", marginRight: 8 }}>{currencySymbol}</span>
-                {currencyName}: {coins.toLocaleString()}
-            </div>
-
-            {/* Add New Item Button */}
-            <div style={{ textAlign: "center", marginBottom: 20 }}>
+            {/* Add Item Buttons */}
+            <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 14, flexWrap: "wrap" }}>
                 <button
                     onClick={openAddItemModal}
-                    className="px-5 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg text-white font-semibold shadow"
-                    style={{ fontSize: "1em" }}
+                    className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 rounded text-white font-semibold shadow"
+                    style={{ fontSize: "0.9em" }}
                 >
-                    ＋ Add New Item
+                    ＋ Add Item
+                </button>
+                <button
+                    onClick={openAddArtifactModal}
+                    className="px-4 py-1.5 bg-purple-600 hover:bg-purple-700 rounded text-white font-semibold shadow"
+                    style={{ fontSize: "0.9em" }}
+                >
+                    🏺 New Artifact
                 </button>
             </div>
 
-            {/* Filtering and Sorting Controls */}
+            {/* Category tabs – rectangular, with icons */}
             <div
+                className="gami-shop-category-tabs"
                 style={{
                     display: "flex",
-                    gap: 12,
-                    marginBottom: 20,
                     flexWrap: "wrap",
+                    gap: 6,
+                    marginBottom: 10,
                     justifyContent: "center",
                 }}
             >
-                <label>
-                    Category:
-                    <select
-                        value={categoryFilter}
-                        onChange={(e) => setCategoryFilter(e.target.value)}
-                        style={{ marginLeft: 4 }}
-                    >
-                        {categories.map((cat) => (
-                            <option key={cat} value={cat}>
-                                {cat}
-                            </option>
-                        ))}
-                    </select>
-                </label>
-                <label>
-                    Rarity:
-                    <select
-                        value={rarityFilter}
-                        onChange={(e) => setRarityFilter(e.target.value)}
-                        style={{ marginLeft: 4 }}
-                    >
-                        {rarities.map((rar) => (
-                            <option key={rar} value={rar}>
-                                {rar}
-                            </option>
-                        ))}
-                    </select>
-                </label>
-                <label>
-                    Sort by:
-                    <select
-                        value={sortBy}
-                        onChange={(e) => setSortBy(e.target.value)}
-                        style={{ marginLeft: 4 }}
-                    >
-                        <option>Price (Low → High)</option>
-                        <option>Price (High → Low)</option>
-                        <option>Name (A-Z)</option>
-                        <option>Name (Z-A)</option>
-                        <option>Rarity (A-Z)</option>
-                        <option>Rarity (Z-A)</option>
-                    </select>
-                </label>
-            </div>
-
-            {/* Shop Items Grid */}
-            <div
-                style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-                    gap: 16,
-                }}
-            >
-                {filteredSortedItems.map((item) => (
-                    <div
-                        key={item.name}
+                {SHOP_CATEGORIES.map((cat) => (
+                    <button
+                        key={cat.key}
+                        type="button"
+                        onClick={() => setCategoryFilter(cat.key)}
                         style={{
-                            background: "#292929",
-                            borderRadius: 12,
-                            padding: 16,
-                            boxShadow: "0 2px 8px #0003",
+                            padding: "5px 10px",
+                            borderRadius: 4,
+                            border: `1px solid ${categoryFilter === cat.key ? "#7c3aed" : "#4b5563"}`,
+                            background: categoryFilter === cat.key ? "#7c3aed" : "transparent",
+                            color: categoryFilter === cat.key ? "#fff" : "#e5e7eb",
+                            fontSize: "0.8em",
+                            fontWeight: 500,
+                            cursor: "pointer",
                             display: "flex",
-                            flexDirection: "column",
                             alignItems: "center",
-                            minHeight: 140,
+                            gap: 4,
                         }}
                     >
-                        {/* Item Icon/Emoji (if available) */}
-                        {item.icon &&
-                        (item.icon.match(/^https?:\/\//) ||
-                            item.icon.match(/\.(png|jpe?g|gif|svg)$/i)) ? (
-                            <img
-                                src={item.icon}
-                                alt="icon"
-                                className="item-icon"
-                                style={{
-                                    width: 48,
-                                    height: 48,
-                                    objectFit: "contain",
-                                    margin: "0 auto",
-                                    display: "block",
-                                }}
-                            />
-                        ) : item.icon ? (
-                            <div
-                                className="item-icon"
-                                style={{ fontSize: 36, textAlign: "center" }}
-                            >
-                                {item.icon}
-                            </div>
-                        ) : null}
-                        <div
-                            style={{
-                                fontWeight: "bold",
-                                fontSize: "1.1em",
-                                marginBottom: 2,
-                            }}
-                        >
-                            {item.name}
-                        </div>
-                        {item.description && (
-                            <div
-                                style={{
-                                    color: "#ffd700",
-                                    fontWeight: 500,
-                                    marginBottom: 6,
-                                }}
-                            >
-                                {item.description}
-                            </div>
-                        )}
-                        {item.effects && item.effects.length > 0 && (
-                            <div
-                                style={{
-                                    color: "#90EE90",
-                                    fontSize: 12,
-                                    marginBottom: 6,
-                                    textAlign: "center",
-                                    lineHeight: 1.3,
-                                }}
-                            >
-                                Effects: {item.effects.map(effect => {
-                                    if (typeof effect === 'string') return effect;
-                                    if (effect.type === 'stat') return `+${effect.amount} ${effect.stat}`;
-                                    if (effect.type === 'coins') return `+${effect.amount} ${currencyName}`;
-                                    if (effect.type === 'xp') return `+${effect.amount} XP`;
-                                    if (effect.type === 'unlock') return `Unlocks: ${effect.skill}`;
-                                    if (effect.type === 'meta') return effect.description;
-                                    return 'Unknown effect';
-                                }).join(' • ')}
-                            </div>
-                        )}
-                        {item.stock && item.stock > 0 && (
-                            <div
-                                className="item-stock"
-                                style={{
-                                    fontSize: 14,
-                                    color: "#888",
-                                    marginBottom: 4,
-                                }}
-                            >
-                                Stock: {item.stock}
-                            </div>
-                        )}
-                        <div
-                            style={{
-                                color: "#ffd700",
-                                fontWeight: 500,
-                                marginBottom: 6,
-                            }}
-                        >
-                            {item.price} {currencyName.toLowerCase()}
-                        </div>
-                        <div style={{ marginBottom: 10 }}>
-                            {item.tags.map((tag) => (
-                                <span
-                                    key={tag}
-                                    style={{
-                                        backgroundColor: "#444",
-                                        color: "white",
-                                        borderRadius: 5,
-                                        padding: "2px 6px",
-                                        marginRight: 5,
-                                        fontSize: "0.75em",
-                                    }}
-                                >
-                                    #{tag}
-                                </span>
-                            ))}
-                        </div>
-                        {(item.effects && item.effects.length > 0) || (((): number => { const r = getRawEffectLines(item); return r ? r.length : 0; })() > 0) ? (
-                            <div className="shop-item-effects" style={{ display: 'flex', flexWrap: 'wrap', gap: 6, justifyContent: 'center', marginBottom: 8 }}>
-                                {item.effects?.map((effect, idx) => (
-                                    <span key={`eff-${idx}`} style={{
-                                        background: '#1f3b4d',
-                                        color: '#cbe9ff',
-                                        border: '1px solid #2c5b73',
-                                        borderRadius: 9999,
-                                        padding: '2px 8px',
-                                        fontSize: '0.75em'
-                                    }}>
-                                        {renderEffect(effect)}
-                                    </span>
-                                ))}
-                                {getRawEffectLines(item)?.map((raw, idx) => (
-                                    <span key={`raw-${idx}`} style={{
-                                        background: raw.startsWith('debuff:') ? '#4d1f1f' : '#1f4d2a',
-                                        color: '#fff',
-                                        border: '1px solid rgba(255,255,255,0.15)',
-                                        borderRadius: 9999,
-                                        padding: '2px 8px',
-                                        fontSize: '0.75em'
-                                    }}>
-                                        {renderRawEffect(raw, currencyName)}
-                                    </span>
-                                ))}
-                            </div>
-                        ) : null}
-                        <div
-                            style={{
-                                display: "flex",
-                                gap: 8,
-                                width: "100%",
-                                marginTop: "auto",
-                            }}
-                        >
-                            <button
-                                onClick={() => handleBuyClick(item)}
-                                className="px-4 py-1 rounded bg-green-600 hover:bg-green-700 text-white font-semibold"
-                                style={{ flex: 1 }}
-                            >
-                                Buy
-                            </button>
-                            <button
-                                className="mod-cta"
-                                style={{
-                                    flex: 1,
-                                    background: "#f5c542",
-                                    color: "#222",
-                                    fontWeight: 500,
-                                }}
-                                onClick={() => openEditItemModal(item)}
-                            >
-                                Edit Item
-                            </button>
-                        </div>
-                    </div>
+                        <span>{cat.icon}</span>
+                        <span>{cat.label}</span>
+                    </button>
                 ))}
             </div>
+            {/* Rarity + Sort dropdowns */}
+            <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap", justifyContent: "center" }}>
+                <select
+                    value={rarityFilter}
+                    onChange={(e) => setRarityFilter(e.target.value)}
+                    style={{ padding: "4px 8px", fontSize: "0.8em", borderRadius: 4, background: "#1f2937", color: "#e5e7eb", border: "1px solid #374151" }}
+                >
+                    {rarities.map((rar) => (
+                        <option key={rar} value={rar}>{rar}</option>
+                    ))}
+                </select>
+                <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value)}
+                    style={{ padding: "4px 8px", fontSize: "0.8em", borderRadius: 4, background: "#1f2937", color: "#e5e7eb", border: "1px solid #374151" }}
+                >
+                    <option>Price (Low → High)</option>
+                    <option>Price (High → Low)</option>
+                    <option>Name (A-Z)</option>
+                    <option>Name (Z-A)</option>
+                    <option>Rarity (A-Z)</option>
+                    <option>Rarity (Z-A)</option>
+                </select>
+            </div>
+
+            {/* Main content: unified grid */}
+            {items.length === 0 ? (
+                <div style={{ textAlign: "center", marginTop: 16 }}>
+                    <div
+                        style={{
+                            background: "#222",
+                            color: "#ffd700",
+                            borderRadius: 10,
+                            padding: "14px 18px",
+                            margin: "14px auto",
+                            maxWidth: 400,
+                            fontSize: "0.95em",
+                            boxShadow: "0 2px 6px #0003",
+                        }}
+                    >
+                        Sorry, the shop is empty! Come back later for more items.
+                    </div>
+                    <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 10 }}>
+                        <button onClick={openAddItemModal} className="px-4 py-2 bg-blue-600 rounded text-white">Add Item</button>
+                        <button onClick={openAddArtifactModal} className="px-4 py-2 bg-purple-600 rounded text-white">New Artifact</button>
+                    </div>
+                </div>
+            ) : (
+                <div className="gami-shop-grid">
+                    {filteredSortedItems.map((item) => {
+                        const itemCategory = normalizeCategoryForFilter(item.category);
+                        const categoryColor = getCategoryColor(itemCategory);
+                        const rawEffects = getRawEffectLines(item);
+                        const hasEffects = (item.effects && item.effects.length > 0) || (rawEffects && rawEffects.length > 0);
+                        const isNew = item.tags?.some(t => t.toLowerCase() === "new") ?? false;
+                        return (
+                            <div
+                                key={item.name}
+                                className="gami-shop-card"
+                                style={{
+                                    background: "#1e1e1e",
+                                    borderRadius: 8,
+                                    overflow: "hidden",
+                                    boxShadow: "0 2px 6px #0003",
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    alignItems: "stretch",
+                                    minHeight: 225,
+                                    border: "1px solid #333",
+                                    position: "relative",
+                                }}
+                            >
+                                {/* NEW badge */}
+                                {isNew && (
+                                    <div
+                                        style={{
+                                            position: "absolute",
+                                            top: 6,
+                                            right: 6,
+                                            background: "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)",
+                                            color: "#1f2937",
+                                            fontSize: "0.6em",
+                                            fontWeight: 800,
+                                            padding: "2px 6px",
+                                            borderRadius: 4,
+                                            letterSpacing: "0.05em",
+                                            zIndex: 1,
+                                            boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+                                        }}
+                                    >
+                                        NEW
+                                    </div>
+                                )}
+                                {/* Category strip – top */}
+                                <div
+                                    style={{
+                                        background: categoryColor,
+                                        color: "#fff",
+                                        fontSize: "0.7em",
+                                        fontWeight: 600,
+                                        padding: "4px 8px",
+                                        textAlign: "center",
+                                        textTransform: "uppercase",
+                                        letterSpacing: "0.05em",
+                                    }}
+                                >
+                                    {itemCategory}
+                                </div>
+                                {/* Main icon area – takes most of the space, centered and bigger */}
+                                <div
+                                    style={{
+                                        flex: 1,
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        padding: "6px 8px 4px",
+                                        minHeight: 72,
+                                    }}
+                                >
+                                    {item.icon &&
+                                    (item.icon.match(/^https?:\/\//) || item.icon.match(/\.(png|jpe?g|gif|svg)$/i)) ? (
+                                        <div
+                                            style={{
+                                                display: "flex",
+                                                justifyContent: "center",
+                                                alignItems: "center",
+                                                width: "100%",
+                                                flex: 1,
+                                                minHeight: 64,
+                                            }}
+                                        >
+                                            <img
+                                                src={item.icon}
+                                                alt=""
+                                                style={{ width: 72, height: 72, objectFit: "contain" }}
+                                            />
+                                        </div>
+                                    ) : item.icon ? (
+                                        <div
+                                            style={{
+                                                display: "flex",
+                                                justifyContent: "center",
+                                                alignItems: "center",
+                                                width: "100%",
+                                                flex: 1,
+                                                minHeight: 64,
+                                                fontSize: 64,
+                                                lineHeight: 1,
+                                            }}
+                                        >
+                                            {item.icon}
+                                        </div>
+                                    ) : (
+                                        <div
+                                            style={{
+                                                display: "flex",
+                                                justifyContent: "center",
+                                                alignItems: "center",
+                                                width: "100%",
+                                                flex: 1,
+                                                minHeight: 64,
+                                                fontSize: 48,
+                                                color: "#4b5563",
+                                            }}
+                                        >
+                                            🎁
+                                        </div>
+                                    )}
+                                    <div
+                                        style={{
+                                            fontWeight: 600,
+                                            fontSize: "0.85em",
+                                            textAlign: "center",
+                                            lineHeight: 1.2,
+                                            overflow: "hidden",
+                                            textOverflow: "ellipsis",
+                                            maxHeight: "2.2em",
+                                            marginTop: 4,
+                                        }}
+                                    >
+                                        {item.name}
+                                    </div>
+                                    {item.stock != null && item.stock > 0 && (
+                                        <div style={{ fontSize: "0.65em", color: "#6b7280", marginTop: 2 }}>
+                                            Stock: {item.stock}
+                                        </div>
+                                    )}
+                                </div>
+                                {/* Description section – dedicated area below icon/name */}
+                                <div
+                                    style={{
+                                        minHeight: 44,
+                                        padding: "8px 8px",
+                                        background: "rgba(0,0,0,0.2)",
+                                        borderTop: "1px solid #333",
+                                        borderBottom: "1px solid #333",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                    }}
+                                >
+                                    <div
+                                        style={{
+                                            fontSize: "0.75em",
+                                            color: "#9ca3af",
+                                            textAlign: "center",
+                                            lineHeight: 1.3,
+                                            overflow: "hidden",
+                                            textOverflow: "ellipsis",
+                                            maxHeight: "2.6em",
+                                            width: "100%",
+                                        }}
+                                    >
+                                        {item.description ||
+                                            (hasEffects
+                                                ? (item.effects?.map(e => renderEffect(e)).join(" • ") ||
+                                                    rawEffects?.slice(0, 1).map(r => renderRawEffect(r, currencyName)).join(" • ") ||
+                                                    "")
+                                                : <span style={{ opacity: 0.5 }}>No description</span>)}
+                                    </div>
+                                </div>
+                                {/* Bottom – price strip + actions */}
+                                <div
+                                    style={{
+                                        background: "#252525",
+                                        borderTop: "1px solid #333",
+                                        padding: "6px 8px",
+                                    }}
+                                >
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            gap: 6,
+                                            marginBottom: 8,
+                                            color: "#ffd700",
+                                            fontWeight: 600,
+                                            fontSize: "0.9em",
+                                        }}
+                                    >
+                                        <span>{currencySymbol}</span>
+                                        <span>{item.price} {currencyNameLower}</span>
+                                    </div>
+                                    <div style={{ display: "flex", gap: 6 }}>
+                                        <button
+                                            onClick={() => handleBuyClick(item)}
+                                            style={{
+                                                flex: 1,
+                                                padding: "6px 8px",
+                                                fontSize: "0.8em",
+                                                borderRadius: 4,
+                                                border: "none",
+                                                background: "#16a34a",
+                                                color: "#fff",
+                                                fontWeight: 600,
+                                                cursor: "pointer",
+                                            }}
+                                        >
+                                            Buy
+                                        </button>
+                                        <button
+                                            onClick={() => openEditItemModal(item)}
+                                            style={{
+                                                flex: 1,
+                                                padding: "6px 8px",
+                                                fontSize: "0.8em",
+                                                borderRadius: 4,
+                                                border: "1px solid #4b5563",
+                                                background: "#374151",
+                                                color: "#e5e7eb",
+                                                fontWeight: 500,
+                                                cursor: "pointer",
+                                            }}
+                                        >
+                                            Edit
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
         </div>
+        </>
     );
 }
 

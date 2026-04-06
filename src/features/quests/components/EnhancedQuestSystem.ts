@@ -23,81 +23,64 @@ export class EnhancedQuestSystem {
      * Initialize the enhanced quest system
      */
     async initialize(): Promise<void> {
-        console.log('🚀 Initializing Enhanced Quest System...');
-
-        // Start the fallback banner injection system
         this.startFallbackBannerSystem();
-
-        // Preload banner cache
         await this.preloadBannerCache();
-
-        console.log('✅ Enhanced Quest System initialized');
     }
 
     /**
-     * Preload banner cache for better performance
+     * Preload banner cache for better performance.
+     * Reads from all configured quest files (defaultQuestFilePath + questSaveLocations).
      */
     private async preloadBannerCache(): Promise<void> {
         try {
-            console.log('📸 Starting banner cache preload...');
-            const questsFile = this.plugin.app.vault.getAbstractFileByPath('GamifiedTasks.md');
-            if (questsFile && questsFile instanceof TFile) {
+            const configuredPaths = new Set<string>();
+            const defaultPath = this.plugin.settings?.defaultQuestFilePath || 'GamifiedTasks.md';
+            if (defaultPath) configuredPaths.add(defaultPath);
+            (this.plugin.settings?.questSaveLocations ?? []).forEach((loc: { filePath?: string }) => {
+                if (loc.filePath) configuredPaths.add(loc.filePath);
+            });
+
+            for (const filePath of configuredPaths) {
+                const questsFile = this.plugin.app.vault.getAbstractFileByPath(filePath);
+                if (!questsFile || !(questsFile instanceof TFile)) continue;
+
                 const content = await this.plugin.app.vault.read(questsFile);
                 const lines = content.split('\n');
 
                 for (const line of lines) {
-                    if (line.includes('🖼️')) {
-                        console.log('🔍 Processing banner line:', line);
+                    if (!line.includes('🖼️')) continue;
 
-                        const bannerMatch = line.match(/🖼️([^\s]+)/);
+                    const bannerMatch = line.match(/🖼️([^\s]+)/);
+                    const titlePatterns = [
+                        /- \[.\] ([^#⭐✨🔁🛠️🌱🖼️]+?)(?:\s+#|\s+⭐)/,
+                        /- \[.\] ([^#⭐✨🔁🛠️🌱🖼️\n]+)/,
+                        /- \[.\] (.+?) #/,
+                        /- \[.\] ([^#]+)/,
+                        /^[^-]*- \[.\] ([^#⭐]+)/
+                    ];
 
-                        // Try multiple patterns to extract quest title - UPDATED for actual format
-                        const titlePatterns = [
-                            /- \[.\] ([^#⭐✨🔁🛠️🌱🖼️]+?)(?:\s+#|\s+⭐)/, // "- [ ] tfr3gr3g3rg #gamified-task" 
-                            /- \[.\] ([^#⭐✨🔁🛠️🌱🖼️\n]+)/, // Before any emoji/special chars
-                            /- \[.\] (.+?) #/, // Standard format (legacy)
-                            /- \[.\] ([^#]+)/, // Before hashtag
-                            /^[^-]*- \[.\] ([^#⭐]+)/ // Fallback
-                        ];
-
-                        let questTitle = null;
-                        for (const pattern of titlePatterns) {
-                            const match = line.match(pattern);
-                            if (match && match[1]) {
-                                questTitle = match[1].trim();
-                                break;
-                            }
+                    let questTitle: string | null = null;
+                    for (const pattern of titlePatterns) {
+                        const match = line.match(pattern);
+                        if (match && match[1]) {
+                            questTitle = match[1].trim();
+                            break;
                         }
+                    }
 
-                        if (bannerMatch && questTitle) {
-                            const bannerPath = bannerMatch[1];
-                            console.log(`📸 Caching banner for quest: "${questTitle}" -> ${bannerPath}`);
-
-                            // Load and cache banner
-                            const dataUrl = await this.loadBannerAsDataUrl(bannerPath);
-                            if (dataUrl) {
-                                // Cache with both the exact title and a cleaned version
-                                this.bannerCache.set(questTitle, dataUrl);
-
-                                // Also cache with cleaned title for better matching
-                                const cleanTitle = questTitle.replace(/\s+/g, ' ').trim();
-                                this.bannerCache.set(cleanTitle, dataUrl);
-
-                                console.log(`✅ Cached banner for: "${questTitle}"`);
-                            } else {
-                                console.log(`❌ Failed to load banner: ${bannerPath}`);
-                            }
-                        } else {
-                            console.log('❌ Could not extract title or banner from line:', line);
+                    if (bannerMatch && questTitle) {
+                        const bannerPath = bannerMatch[1];
+                        const dataUrl = await this.loadBannerAsDataUrl(bannerPath);
+                        if (dataUrl) {
+                            this.bannerCache.set(questTitle, dataUrl);
+                            const cleanTitle = questTitle.replace(/\s+/g, ' ').trim();
+                            this.bannerCache.set(cleanTitle, dataUrl);
                         }
                     }
                 }
-
-                console.log(`📸 Banner cache preload completed - ${this.bannerCache.size} banners cached`);
-                console.log('📋 Cached quest titles:', Array.from(this.bannerCache.keys()));
             }
         } catch (error) {
-            console.error('❌ Failed to preload banner cache:', error);
+            console.error('Failed to preload banner cache:', error);
         }
     }
 
@@ -140,8 +123,6 @@ export class EnhancedQuestSystem {
      * This runs continuously and injects banners into quest cards that don't have them
      */
     private startFallbackBannerSystem(): void {
-        console.log('🔄 Starting fallback banner injection system...');
-
         // Initial injection
         this.injectBannersIntoQuestCards();
 
@@ -185,9 +166,6 @@ export class EnhancedQuestSystem {
      */
     private async injectBannersIntoQuestCards(): Promise<void> {
         try {
-            console.log('🔍 Starting comprehensive banner injection scan...');
-
-            // Find all potential quest card elements using multiple strategies
             const questCardSelectors = [
                 '.quest-card',
                 '.cinematic-quest-card',
@@ -199,79 +177,51 @@ export class EnhancedQuestSystem {
 
             const elements = new Set<HTMLElement>();
 
-            // Strategy 1: Find by CSS selectors
             questCardSelectors.forEach(selector => {
-                document.querySelectorAll(selector).forEach(el => {
-                    elements.add(el as HTMLElement);
-                    console.log('📍 Found by selector', selector, ':', el.textContent?.substring(0, 50));
-                });
+                document.querySelectorAll(selector).forEach(el => elements.add(el as HTMLElement));
             });
 
-            // Strategy 2: Find by text content - UPDATED to match actual quest format
             Array.from(document.querySelectorAll('*')).forEach(element => {
                 const text = element.textContent || '';
                 if (text.includes('MAIN QUEST') || text.includes('FITNESS QUEST') ||
                     text.includes('SIDE QUEST') || text.includes('DAILY QUEST') ||
                     text.includes('SKILL:') || text.includes('DIFFICULTY:') ||
-                    text.includes('#gamified-task') ||  // Match actual quest format
-                    text.includes('🛠️') ||              // Match skill emoji
-                    text.includes('⭐') ||              // Match XP emoji
-                    text.includes('✨')) {              // Match CP emoji
+                    text.includes('#gamified-task') || text.includes('🛠️') ||
+                    text.includes('⭐') || text.includes('✨')) {
                     elements.add(element as HTMLElement);
-                    console.log('📍 Found by text content:', text.substring(0, 100));
                 }
             });
-
-            console.log(`🔍 Found ${elements.size} potential quest card elements`);
-
-            let bannersInjected = 0;
 
             for (const element of elements) {
                 const text = element.textContent || '';
 
-                // Enhanced duplication detection - check multiple conditions
                 const hasExistingBanner =
-                    element.querySelector('.enhanced-quest-banner') ||           // Our injected banner
-                    element.querySelector('.quest-banner') ||                    // CSS banner
-                    element.querySelector('[style*="background-image"]') ||      // Inline background
-                    element.closest('.enhanced-quest-banner') ||                 // Parent has banner
-                    element.style.backgroundImage ||                             // Element has background
-                    element.getAttribute('data-has-banner') === 'true' ||        // Manual flag
-                    element.parentElement?.querySelector('.enhanced-quest-banner'); // Sibling has banner
+                    element.querySelector('.enhanced-quest-banner') ||
+                    element.querySelector('.quest-banner') ||
+                    element.querySelector('[style*="background-image"]') ||
+                    element.closest('.enhanced-quest-banner') ||
+                    element.style.backgroundImage ||
+                    element.getAttribute('data-has-banner') === 'true' ||
+                    element.parentElement?.querySelector('.enhanced-quest-banner');
 
-                if (hasExistingBanner) {
-                    console.log('⏭️ Skipping element - already has banner:', text.substring(0, 50));
-                    continue;
-                }
+                if (hasExistingBanner) continue;
 
-                // Check if this looks like a quest card - UPDATED to match actual format
                 if (text.includes('MAIN QUEST') || text.includes('FITNESS QUEST') ||
                     text.includes('SIDE QUEST') || text.includes('DAILY QUEST') ||
-                    text.includes('#gamified-task') ||  // Match your actual quest format
-                    (text.includes('🛠️') && text.includes('⭐'))) {  // Match quest with emojis
+                    text.includes('#gamified-task') || (text.includes('🛠️') && text.includes('⭐'))) {
 
-                    // Extract quest title using improved method
                     const questTitle = this.extractQuestTitle(text);
-                    console.log('🎯 Processing quest:', questTitle);
-
                     if (questTitle) {
-                        // Check if we have a banner for this quest
                         const bannerDataUrl = this.bannerCache.get(questTitle);
-                        console.log('🖼️ Banner available for quest:', questTitle, !!bannerDataUrl);
-
                         if (bannerDataUrl) {
                             await this.injectBannerIntoElement(element, bannerDataUrl, questTitle);
-                            // Mark element as having a banner to prevent future duplication
                             element.setAttribute('data-has-banner', 'true');
-                            bannersInjected++;
                         }
                     }
                 }
             }
-
-            console.log(`✅ Banner injection completed - ${bannersInjected} banners injected`);
         } catch (error) {
-            console.error('❌ Error in banner injection:', error);
+            console.error('Error in banner injection:', error);
         }
     }
 
@@ -279,9 +229,6 @@ export class EnhancedQuestSystem {
      * Extract quest title from text content
      */
     private extractQuestTitle(text: string): string | null {
-        console.log('🔍 Extracting title from text:', text.substring(0, 100));
-
-        // Try different patterns to extract quest title based on ACTUAL quest structure
         const patterns = [
             // Pattern: "- [ ] tfr3gr3g3rg #gamified-task ⭐84..." - extract between checkbox and #
             /- \[.\] ([^#⭐✨🔁🛠️🌱🖼️]+?)(?:\s+#|\s+⭐)/,
@@ -366,7 +313,6 @@ export class EnhancedQuestSystem {
                 element.appendChild(bannerContainer);
             }
 
-            console.log('✅ Banner injected for quest:', questTitle);
         } catch (error) {
             console.error('Failed to inject banner:', error);
         }
@@ -430,7 +376,6 @@ export class EnhancedQuestSystem {
             this.observer = null;
         }
         this.bannerCache.clear();
-        console.log('🧹 Enhanced Quest System destroyed');
     }
 }
 

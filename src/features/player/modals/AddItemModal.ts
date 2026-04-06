@@ -3,6 +3,9 @@ import { App, Modal, Setting, Notice } from "obsidian";
 import type GamifiedObsidianPlugin from "src/core/main";
 import { ShopItem, getAllShopTemplates } from "src/features/shop/utils/ShopParser";
 
+// High-level item mode used to drive defaults and UX
+type ItemMode = "generic" | "artifact" | "weapon";
+
 export class AddItemModal extends Modal {
 	plugin: GamifiedObsidianPlugin;
 	onSubmit: (item: ShopItem) => void;
@@ -28,6 +31,9 @@ export class AddItemModal extends Modal {
 	private builderDuration: string = "30m";
 	private builderAmount: string = "100";
 
+	// Item mode (normal shop item vs artifact / weapon)
+	private mode: ItemMode = "generic";
+
 	private isEdit = false;
 	private originalItem?: ShopItem;
 
@@ -37,10 +43,17 @@ export class AddItemModal extends Modal {
 	private categoryInput!: HTMLInputElement;
 	private rarityDropdown!: HTMLSelectElement;
 
-	constructor(app: App, plugin: GamifiedObsidianPlugin, onSubmit: (item: ShopItem) => void, itemToEdit?: ShopItem) {
+	constructor(
+		app: App,
+		plugin: GamifiedObsidianPlugin,
+		onSubmit: (item: ShopItem) => void,
+		itemToEdit?: ShopItem,
+		mode: ItemMode = "generic"
+	) {
 		super(app);
 		this.plugin = plugin;
 		this.onSubmit = onSubmit;
+		this.mode = mode;
 		if (itemToEdit) {
 			this.isEdit = true;
 			this.originalItem = itemToEdit;
@@ -52,6 +65,24 @@ export class AddItemModal extends Modal {
 			this.icon = itemToEdit.icon || "";
 			this.stock = itemToEdit.stock ?? 0;
 			this.effectLines = ((itemToEdit as ShopItem & { rawEffectLines?: string[] }).rawEffectLines) || [];
+
+			// If no explicit mode was provided, try to infer from category/tags
+			if (mode === "generic") {
+				const cat = (this.category || "").toLowerCase();
+				const tags = (itemToEdit.tags || []).map(t => t.toLowerCase());
+				if (cat === "artifact" || tags.includes("artifact")) {
+					this.mode = "artifact";
+				} else if (cat === "weapon" || tags.includes("weapon")) {
+					this.mode = "weapon";
+				}
+			}
+		} else {
+			// New item: set a sensible default category based on mode
+			if (this.mode === "artifact") {
+				this.category = "artifact";
+			} else if (this.mode === "weapon") {
+				this.category = "weapon";
+			}
 		}
 	}
 
@@ -268,6 +299,17 @@ export class AddItemModal extends Modal {
 			}
 		`;
 
+		// Hide Obsidian's default close button; we use our own styled one instead
+		try {
+			const modalEl = contentEl.closest(".modal") as HTMLElement | null;
+			const defaultClose = modalEl?.querySelector(".modal-close-button") as HTMLElement | null;
+			if (defaultClose) {
+				defaultClose.style.display = "none";
+			}
+		} catch {
+			// Fail silently if modal structure changes
+		}
+
 		// Force mobile modal positioning after creating the style
 		const isMobile = window.innerWidth <= 768 || /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent.toLowerCase());
 
@@ -447,6 +489,32 @@ export class AddItemModal extends Modal {
 				text.onChange(value => this.category = value.trim());
 			});
 
+		// --- Item Type / Mode ---
+		new Setting(contentEl)
+			.setName("Item Type")
+			.setDesc("Use 'artifact' for real-world rewards or 'weapon' for boss items")
+			.addDropdown(drop => {
+				drop.addOption("generic", "Normal item");
+				drop.addOption("artifact", "Artifact (real-world reward)");
+				drop.addOption("weapon", "Weapon (boss item)");
+				drop.setValue(this.mode);
+				drop.onChange(value => {
+					this.mode = value as ItemMode;
+					// When switching modes, set a sensible default category if none chosen yet
+					if (this.mode === "artifact") {
+						if (!this.category || this.category.toLowerCase() === "weapon") {
+							this.category = "artifact";
+							if (this.categoryInput) this.categoryInput.value = this.category;
+						}
+					} else if (this.mode === "weapon") {
+						if (!this.category || this.category.toLowerCase() === "artifact") {
+							this.category = "weapon";
+							if (this.categoryInput) this.categoryInput.value = this.category;
+						}
+					}
+				});
+			});
+
 		// --- Rarity Dropdown ---
 		new Setting(contentEl)
 			.setName("Rarity")
@@ -489,14 +557,23 @@ export class AddItemModal extends Modal {
 			});
 
 		// --- Effects Editor ---
-		// Preset quick-add
+		// Preset quick-add (includes productivity buffs, coins, and artifact-style rewards)
 		const PRESET_OPTIONS: Record<string, string> = {
+			// Core progression presets
 			"XP +50% (30m)": "buff:xp;mult=1.5;dur=30m",
 			"CP +50% (30m)": "buff:cp;mult=1.5;dur=30m",
 			"Rewards +25% (1h)": "buff:rewards;mult=1.25;dur=1h",
 			"Trade +10% (1h)": "buff:trade;mult=1.1;dur=1h",
 			"XP +100": "xp:+100",
 			"Coins +50": "coins:+50",
+
+			// Real-world artifact presets (understood by artifact: parser in inventory)
+			"Anime Night (30m)": "artifact:Watch anime episode:30:entertainment",
+			"Coffee Break (15m)": "artifact:Coffee break:15:rest",
+			"Walk Outside (20m)": "artifact:Walk outside:20:movement",
+
+			// Boss / weapon-style presets (one-time boosts usable in boss fights via existing buff engine)
+			"Boss Damage +50% (1 battle)": "buff:rewards;mult=1.5;dur=1h;source=boss_weapon",
 		};
 
 		new Setting(contentEl)

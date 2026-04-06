@@ -61,8 +61,8 @@ const TacticalBattleDemo: React.FC<TacticalBattleDemoProps> = ({ onClose }) => {
     lastDailyReset: new Date().toISOString()
   };
 
-  const handleQuestComplete = (questTitle: string) => {
-    console.log(`Quest completed: ${questTitle}`);
+  const handleQuestComplete = (questTitle: string, extras?: unknown) => {
+    console.log(`Quest completed: ${questTitle}`, extras);
     alert(`Victory! ${questTitle} completed!`);
     onClose();
   };

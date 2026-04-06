@@ -191,51 +191,49 @@ export async function readPlayerData(vault: Vault): Promise<PlayerData | null> {
     }
   }
 
-  // Debug: List all files to see what Obsidian actually has
-  const allFiles = vault.getAllLoadedFiles();
-  console.log("[readPlayerData] All files in vault:", allFiles.length);
-
-  // Enhanced debugging for mobile
+  // Debug: List all files to see what Obsidian actually has (mobile-only to avoid
+  // expensive full-vault scans on desktop, which can slow down plugin reloads).
   if (isMobile) {
+    const allFiles = vault.getAllLoadedFiles();
+    console.log("[readPlayerData] All files in vault:", allFiles.length);
+
     console.log("📱 [Mobile] First 10 files:", allFiles.slice(0, 10).map(f => f.path));
-  }
 
-  const skillTreeFiles = allFiles.filter(f => f.path.includes('SkillTree') || f.path.includes('PlayerData'));
-  console.log("[readPlayerData] SkillTree/PlayerData related files:", skillTreeFiles.map(f => ({ path: f.path, type: f.constructor.name })));
+    const skillTreeFiles = allFiles.filter(f => f.path.includes('SkillTree') || f.path.includes('PlayerData'));
+    console.log("[readPlayerData] SkillTree/PlayerData related files:", skillTreeFiles.map(f => ({ path: f.path, type: f.constructor.name })));
 
-  // More lenient check for mobile - vault might load differently
-  const minFiles = isMobile ? 1 : 5;
-  if (allFiles.length < minFiles) {
-    console.log(`[readPlayerData] Vault seems not fully loaded (only ${allFiles.length} files), returning null for retry`);
-    if (isMobile) {
+    // More lenient check for mobile - vault might load differently
+    const minFiles = 1;
+    if (allFiles.length < minFiles) {
+      console.log(`[readPlayerData] Vault seems not fully loaded (only ${allFiles.length} files), returning null for retry`);
       console.log("📱 [Mobile] Vault loading issue detected, will retry...");
       console.log("📱 [Mobile] This might be an iCloud sync issue - files may still be downloading");
-    }
-    return null;
-  }
-
-  // On mobile, if we have enough files but still can't find PlayerData, skip the early checks
-  if (isMobile && allFiles.length >= 10) {
-    console.log("📱 [Mobile] Sufficient files loaded, proceeding with PlayerData search...");
-  }
-
-  // Special handling for iCloud on mobile - files might be in different locations
-  if (isMobile && allFiles.length > 0) {
-    console.log("📱 [Mobile] iCloud context detected, checking for file variations...");
-
-    // Look for any PlayerData file regardless of exact path
-    const anyPlayerDataFile = allFiles.find(f =>
-      f.path.toLowerCase().includes('playerdata') && f.path.endsWith('.md')
-    );
-
-    if (anyPlayerDataFile) {
-      console.log("📱 [Mobile] Found PlayerData file at alternative location:", anyPlayerDataFile.path);
-      // Update filePath to use the found location
-      filePath = anyPlayerDataFile.path;
+      return null;
     }
 
-    // Force direct file access on mobile since we know the file exists
-    console.log("📱 [Mobile] Forcing direct file access for:", filePath);
+    // On mobile, if we have enough files but still can't find PlayerData, skip the early checks
+    if (allFiles.length >= 10) {
+      console.log("📱 [Mobile] Sufficient files loaded, proceeding with PlayerData search...");
+    }
+
+    // Special handling for iCloud on mobile - files might be in different locations
+    if (allFiles.length > 0) {
+      console.log("📱 [Mobile] iCloud context detected, checking for file variations...");
+
+      // Look for any PlayerData file regardless of exact path
+      const anyPlayerDataFile = allFiles.find(f =>
+        f.path.toLowerCase().includes('playerdata') && f.path.endsWith('.md')
+      );
+
+      if (anyPlayerDataFile) {
+        console.log("📱 [Mobile] Found PlayerData file at alternative location:", anyPlayerDataFile.path);
+        // Update filePath to use the found location
+        filePath = anyPlayerDataFile.path;
+      }
+
+      // Force direct file access on mobile since we know the file exists
+      console.log("📱 [Mobile] Forcing direct file access for:", filePath);
+    }
   }
 
   let file = vault.getAbstractFileByPath(filePath);

@@ -268,7 +268,7 @@
     gap: 8px;
     font-size: 11px;
     color: rgba(255, 255, 255, 0.7);
-    white-space: nowrap;
+    flex-wrap: wrap;
 }
 
 .quickFilterResultsCount {
@@ -290,6 +290,41 @@
 .quickFilterClearButton:hover {
     background: rgba(239, 68, 68, 0.35);
     transform: translateY(-1px);
+}
+
+/* Pagination */
+.paginationControls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.paginationButton {
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    background: rgba(59, 130, 246, 0.2);
+    color: rgba(255, 255, 255, 0.9);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.paginationButton:hover:not(:disabled) {
+    background: rgba(59, 130, 246, 0.35);
+    transform: translateY(-1px);
+}
+
+.paginationButton:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.paginationInfo {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.7);
 }
 
 /* Quest List */

@@ -923,6 +923,48 @@ const TimelineSettingsSection: React.FC<{
           />
           Enable Time Blocks
         </label>
+        <label>
+          Timeline Color Mode:
+          <select
+            value={settings.timelineViewSettings?.colorMode || 'adaptive'}
+            onChange={(e) => onSettingChange('timelineViewSettings.colorMode', e.target.value)}
+          >
+            <option value="adaptive">Adaptive (priority + difficulty + tag)</option>
+            <option value="priority">Priority</option>
+            <option value="difficulty">Difficulty</option>
+            <option value="tag">Tag</option>
+          </select>
+        </label>
+        <label className={styles.checkboxLabel}>
+          <input
+            type="checkbox"
+            checked={settings.timelineViewSettings?.useCustomDayRange ?? false}
+            onChange={(e) => onSettingChange('timelineViewSettings.useCustomDayRange', e.target.checked)}
+          />
+          Use custom timeline day range
+        </label>
+        <label>
+          Day Start Hour (0-23):
+          <input
+            type="number"
+            min="0"
+            max="23"
+            disabled={!(settings.timelineViewSettings?.useCustomDayRange ?? false)}
+            value={settings.timelineViewSettings?.dayStartHour ?? 0}
+            onChange={(e) => onSettingChange('timelineViewSettings.dayStartHour', parseInt(e.target.value) || 0)}
+          />
+        </label>
+        <label>
+          Day End Hour (0-23):
+          <input
+            type="number"
+            min="0"
+            max="23"
+            disabled={!(settings.timelineViewSettings?.useCustomDayRange ?? false)}
+            value={settings.timelineViewSettings?.dayEndHour ?? 23}
+            onChange={(e) => onSettingChange('timelineViewSettings.dayEndHour', parseInt(e.target.value) || 23)}
+          />
+        </label>
       </div>
     </Card>
 
@@ -1247,6 +1289,78 @@ const FileSettingsSection: React.FC<{
             placeholder="SkillTree/Master-Class/Stats"
           />
         </label>
+        <label>
+          Default Quest File:
+          <input
+            type="text"
+            value={settings.defaultQuestFilePath || 'GamifiedTasks.md'}
+            onChange={(e) => onSettingChange('defaultQuestFilePath', e.target.value || 'GamifiedTasks.md')}
+            placeholder="GamifiedTasks.md"
+          />
+        </label>
+      </div>
+      {/* Saved quest locations that appear in the quest creation modal */}
+      <h4>Quest Save Locations</h4>
+      <p className={styles.helperText}>
+        Configure named locations that will show up in the quest creation modal&apos;s &quot;Save Quest To&quot; dropdown.
+      </p>
+      <div className={styles.settingGroup}>
+        {(settings.questSaveLocations ?? []).length === 0 && (
+          <div className={styles.helperText}>
+            No saved quest locations yet. New quests will use the default quest file above.
+          </div>
+        )}
+        {(settings.questSaveLocations ?? []).map((loc, index) => (
+          <div key={loc.id || index} className={styles.questLocationRow}>
+            <input
+              type="text"
+              value={loc.label}
+              onChange={(e) => {
+                const locations = [...(settings.questSaveLocations ?? [])];
+                locations[index] = { ...locations[index], label: e.target.value };
+                onSettingChange('questSaveLocations', locations);
+              }}
+              placeholder="Location label (e.g. Work Quests)"
+            />
+            <input
+              type="text"
+              value={loc.filePath}
+              onChange={(e) => {
+                const locations = [...(settings.questSaveLocations ?? [])];
+                locations[index] = { ...locations[index], filePath: e.target.value };
+                onSettingChange('questSaveLocations', locations);
+              }}
+              placeholder="File path (e.g. Quests/WorkQuests.md)"
+            />
+            <button
+              type="button"
+              className={styles.removeButton}
+              onClick={() => {
+                const locations = [...(settings.questSaveLocations ?? [])];
+                locations.splice(index, 1);
+                onSettingChange('questSaveLocations', locations);
+              }}
+            >
+              Remove
+            </button>
+          </div>
+        ))}
+        <button
+          type="button"
+          className={styles.addButton}
+          onClick={() => {
+            const locations = [...(settings.questSaveLocations ?? [])];
+            const id = `loc-${Date.now()}-${locations.length}`;
+            locations.push({
+              id,
+              label: 'New Quest Location',
+              filePath: settings.defaultQuestFilePath || 'GamifiedTasks.md',
+            });
+            onSettingChange('questSaveLocations', locations);
+          }}
+        >
+          ➕ Add Quest Location
+        </button>
       </div>
     </Card>
   </div>

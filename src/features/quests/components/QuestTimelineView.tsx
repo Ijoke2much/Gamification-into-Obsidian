@@ -790,7 +790,9 @@ export const QuestTimelineView: React.FC<QuestTimelineViewProps> = ({
                 overflowX: 'hidden',
                 width: '100%'
               }}>
-                {dayCol.scheduled.length === 0 ? (
+                {/* Only show the empty-state overlay when there are truly no quests
+                   for this date (neither scheduled blocks nor all-day quests). */}
+                {dayCol.scheduled.length === 0 && dayCol.allDay.length === 0 ? (
                   <div className={styles.emptyTimeline}>
                     <div className={styles.emptyMessage}>
                       <div className={styles.emptyIcon}>📅</div>

@@ -25,6 +25,14 @@ interface BossData {
 }
 
 const SidebarBossViewComponent: React.FC<SidebarBossViewProps> = ({ app, plugin }) => {
+	const openBossInMainWorkspace = (afterBossUiReady?: () => void) => {
+		void plugin.activateBossView().then(() => {
+			if (afterBossUiReady) {
+				window.setTimeout(afterBossUiReady, 120);
+			}
+		});
+	};
+
 	const [activeBosses, setActiveBosses] = useState<BossData[]>([]);
 	const [recentDefeated, setRecentDefeated] = useState<BossData[]>([]);
 	const [loading, setLoading] = useState(true);
@@ -114,12 +122,8 @@ const SidebarBossViewComponent: React.FC<SidebarBossViewProps> = ({ app, plugin 
 		}
 	};
 
-	const handleBossBattle = (boss: BossData) => {
-		// Open the full boss battle view
-		const event = new CustomEvent('openBossBattle', {
-			detail: { bossId: boss.id, questId: boss.questId }
-		});
-		window.dispatchEvent(event);
+	const handleBossBattle = (_boss: BossData) => {
+		openBossInMainWorkspace();
 	};
 
 	const renderBossCard = (boss: BossData, isActive: boolean = true) => {
@@ -215,11 +219,11 @@ const SidebarBossViewComponent: React.FC<SidebarBossViewProps> = ({ app, plugin 
 				<button
 					className={styles.fullViewButton}
 					onClick={() => {
-						// Open the full boss view
-						const event = new CustomEvent('openBossSystem', {
-							detail: { tab: 'selection' }
+						openBossInMainWorkspace(() => {
+							window.dispatchEvent(
+								new CustomEvent('openBossSystem', { detail: { tab: 'selection' } })
+							);
 						});
-						window.dispatchEvent(event);
 					}}
 				>
 					Full View
@@ -227,7 +231,7 @@ const SidebarBossViewComponent: React.FC<SidebarBossViewProps> = ({ app, plugin 
 			</div>
 
 			{/* Analytics Section */}
-			<SidebarBossAnalytics />
+			<SidebarBossAnalytics plugin={plugin} />
 
 			{/* Active Bosses Section */}
 			{renderSection("⚔️ Active Battles", activeBosses, "No active boss battles", true)}
@@ -240,8 +244,9 @@ const SidebarBossViewComponent: React.FC<SidebarBossViewProps> = ({ app, plugin 
 				<button
 					className={styles.actionButton}
 					onClick={() => {
-						const event = new CustomEvent('openBossCreation');
-						window.dispatchEvent(event);
+						openBossInMainWorkspace(() => {
+							window.dispatchEvent(new CustomEvent('openBossCreation'));
+						});
 					}}
 				>
 					<span>➕</span>
@@ -250,10 +255,11 @@ const SidebarBossViewComponent: React.FC<SidebarBossViewProps> = ({ app, plugin 
 				<button
 					className={styles.actionButton}
 					onClick={() => {
-						const event = new CustomEvent('openBossAnalytics', {
-							detail: { tab: 'analytics' }
+						openBossInMainWorkspace(() => {
+							window.dispatchEvent(
+								new CustomEvent('openBossAnalytics', { detail: { tab: 'analytics' } })
+							);
 						});
-						window.dispatchEvent(event);
 					}}
 				>
 					<span>📊</span>

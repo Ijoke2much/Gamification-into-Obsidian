@@ -1,0 +1,481 @@
+```datacorejsx
+const React = dc.React;
+const useState = dc.useState;
+
+return function GameCards() {
+  // States
+  const [filter, setFilter] = useState("All");
+  const [search, setSearch] = useState("");
+  const [editGame, setEditGame] = useState(null);
+
+  // Get all possible visible properties dynamically (from first game) or fallback to default list
+  const games = dc.useQuery('@page and path("02_Area-pillars/Hobbies/Video-games Hub/Games")');
+
+  // Collect all keys from first game frontmatter if available
+  const allProps = games.length > 0 ? Object.keys(games[0].frontmatter || {}) : [];
+
+  // Add common properties in case some are missing in first game
+  const defaultProps = ["status", "platform", "progress", "rating", "releaseDate", "format", "Cover"];
+  const uniquePropsSet = new Set([...allProps, ...defaultProps]);
+  const uniqueProps = Array.from(uniquePropsSet);
+
+  // Initialize visibleProps state with all props true by default
+  const [visibleProps, setVisibleProps] = useState(() => {
+    const obj = {};
+    uniqueProps.forEach(p => {
+      obj[p] = true;
+    });
+    return obj;
+  });
+
+  // Filter logic
+  const filteredGames = games.filter(game => {
+    if (filter !== "All" && (String(game.value("status") ?? "").toLowerCase() !== filter.toLowerCase())) {
+      return false;
+    }
+    const title = String(game.value("title") || game.$file.basename).toLowerCase();
+    if (search && !title.includes(search.toLowerCase())) {
+      return false;
+    }
+    return true;
+  });
+
+  // Wiki link → path
+  function extractPathFromWikiLink(wikiLink) {
+    if (!wikiLink || typeof wikiLink !== "string") return null;
+    let path = wikiLink.replace(/^\[\[(.+)\]\]$/, "$1");
+    if (path.includes("|")) path = path.split("|")[0];
+    return path;
+  }
+
+  // Create new game
+  const createNewGameNote = async () => {
+    const basePath = "02_Area-pillars/Hobbies/Video-games Hub/Games";
+    const filePath = `${ basePath }/New Game ${Date.now()}.md`;
+
+await dc.app.vault.create(
+    filePath,
+    `---
+title: New Game
+status: Backlog
+progress: 0
+platform:
+releaseDate:
+format: Digital
+rating: 0
+---
+`
+);
+
+dc.app.workspace.openLinkText(filePath, "/", false);
+  };
+
+// ---------------- EDIT MODAL ----------------
+
+function EditModal({ game, onClose }) {
+    // Use all keys dynamically for state, fallback with empty strings
+    const initialValues = {};
+    uniqueProps.forEach(p => {
+        initialValues[p] = game.value(p) ?? "";
+    });
+
+    const [values, setValues] = useState(initialValues);
+
+    async function save() {
+        try {
+            const fileOrFolder = dc.app.vault.getAbstractFileByPath(game.$path);
+
+            // Duck typing check for TFile
+            function isTFile(obj) {
+                return obj && typeof obj === "object" && typeof obj.path === "string" && typeof obj.extension === "string";
+            }
+
+            if (!fileOrFolder) {
+                console.error("File not found for path:", game.$path);
+                return;
+            }
+            if (!isTFile(fileOrFolder)) {
+                console.error("Path is not a file:", game.$path);
+                return;
+            }
+
+            await dc.app.fileManager.processFrontMatter(fileOrFolder, fm => {
+                uniqueProps.forEach(p => {
+                    if (values[p] === "" || values[p] === null || values[p] === undefined) {
+                        delete fm[p];
+                    } else if (p === "progress" || p === "rating") {
+                        fm[p] = Number(values[p]) || 0;
+                    } else if (p === "releaseDate") {
+                        if (values[p]) {
+                            const valStr = String(values[p]);
+                            const match = valStr.match(/^(\d{4}-\d{2}-\d{2})/);
+                            if (match) {
+                                fm[p] = match[1];
+                            } else {
+                                fm[p] = valStr;
+                            }
+                        } else {
+                            delete fm[p];
+                        }
+                    } else {
+                        fm[p] = values[p];
+                    }
+                });
+            });
+
+            onClose();
+        } catch (error) {
+            console.error("Error saving frontmatter:", error);
+        }
+    }
+
+
+    // Reuse Star component for rating
+    const Star = ({ i }) => (
+        <span
+            onClick={() => setValues({ ...values, rating: i })}
+            style={{
+                cursor: "pointer",
+                color: i <= values.rating ? "gold" : "gray",
+                fontSize: 20,
+                marginRight: 2,
+            }}
+        >
+            ★
+        </span>
+    );
+
+    return (
+        <div
+            onClick={onClose}
+            style={{
+                position: "fixed",
+                inset: 0,
+                background: "rgba(0,0,0,0.5)",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                zIndex: 1000,
+                padding: 20,
+            }}
+        >
+            <div
+                onClick={e => e.stopPropagation()}
+                style={{
+                    background: "var(--background-primary)",
+                    padding: 20,
+                    borderRadius: 10,
+                    maxWidth: 400,
+                    width: "100%",
+                    maxHeight: "40vh",
+                    overflowY: "auto",
+                    boxSizing: "border-box",
+                }}
+            >
+                <h3 style={{ marginTop: 0, marginBottom: 12, color: "var(--interactive-accent)" }}>
+                    Edit Game
+                </h3>
+
+                {uniqueProps.map((prop) => {
+                    // Status dropdown
+                    if (prop === "status") {
+                        return (
+                            <div key={prop} style={{ marginBottom: 12 }}>
+                                <label htmlFor={prop} style={{ fontWeight: "bold" }}>
+                                    Status:
+                                </label>
+                                <select
+                                    id={prop}
+                                    value={values[prop] || "Backlog"}
+                                    onChange={e => setValues({ ...values, [prop]: e.target.value })}
+                                    style={{ width: "100%" }}
+                                >
+                                    <option>Backlog</option>
+                                    <option>Playing</option>
+                                    <option>Completed</option>
+                                </select>
+                            </div>
+                        );
+                    }
+
+                    // Rating stars
+                    if (prop === "rating") {
+                        return (
+                            <div key={prop} style={{ marginBottom: 12 }}>
+                                <label style={{ fontWeight: "bold" }}>Rating:</label>
+                                <div>
+                                    {[1, 2, 3, 4, 5].map(i => (
+                                        <span
+                                            key={i}
+                                            onClick={() => setValues({ ...values, rating: i })}
+                                            style={{
+                                                cursor: "pointer",
+                                                color: i <= values.rating ? "gold" : "gray",
+                                                fontSize: 20,
+                                                marginRight: 2,
+                                            }}
+                                        >
+                                            ★
+                                        </span>
+                                    ))}
+                                </div>
+                            </div>
+                        );
+                    }
+
+                    // Progress slider
+                    if (prop === "progress") {
+                        return (
+                            <div key={prop} style={{ marginBottom: 12 }}>
+                                <label htmlFor={prop} style={{ fontWeight: "bold" }}>
+                                    {prop.charAt(0).toUpperCase() + prop.slice(1)}: {values[prop]}%
+                                </label>
+                                <input
+                                    id={prop}
+                                    type="range"
+                                    min={1}
+                                    max={100}
+                                    value={values[prop] || 1}
+                                    onChange={e => setValues({ ...values, [prop]: e.target.value })}
+                                    style={{ width: "100%" }}
+                                />
+                            </div>
+                        );
+                    }
+
+                    // Release Date input (date picker)
+                    if (prop === "releaseDate") {
+                        return (
+                            <div key={prop} style={{ marginBottom: 12 }}>
+                                <label htmlFor={prop} style={{ fontWeight: "bold" }}>
+                                    Release Date:
+                                </label>
+                                <input
+                                    id={prop}
+                                    type="date"
+                                    value={values[prop] || ""}
+                                    onChange={e => setValues({ ...values, [prop]: e.target.value })}
+                                    style={{ width: "100%" }}
+                                />
+                            </div>
+                        );
+                    }
+
+                    // Format dropdown
+                    if (prop === "format") {
+                        return (
+                            <div key={prop} style={{ marginBottom: 12 }}>
+                                <label htmlFor={prop} style={{ fontWeight: "bold" }}>
+                                    Format:
+                                </label>
+                                <select
+                                    id={prop}
+                                    value={values[prop] || "Digital"}
+                                    onChange={e => setValues({ ...values, [prop]: e.target.value })}
+                                    style={{ width: "100%" }}
+                                >
+                                    <option>Disc</option>
+                                    <option>Digital</option>
+                                </select>
+                            </div>
+                        );
+                    }
+
+                    // Default text input for other props
+                    return (
+                        <div key={prop} style={{ marginBottom: 12 }}>
+                            <label htmlFor={prop} style={{ fontWeight: "bold" }}>
+                                {prop.charAt(0).toUpperCase() + prop.slice(1)}:
+                            </label>
+                            <input
+                                id={prop}
+                                type="text"
+                                value={values[prop] || ""}
+                                onChange={e => setValues({ ...values, [prop]: e.target.value })}
+                                style={{ width: "100%" }}
+                            />
+                        </div>
+                    );
+                })}
+
+
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: 8 }}>
+                    <button onClick={onClose}>Cancel</button>
+                    <button onClick={save} style={{ color: "var(--interactive-accent)", fontWeight: "bold" }}>
+                        Save
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+// ---------------- CARD ----------------
+
+const Card = ({ game }) => {
+    const coverPath = extractPathFromWikiLink(game.value("Cover"));
+    const title = game.value("title") || game.$file.basename;
+
+    return (
+        <div
+            onClick={() => dc.app.workspace.openLinkText(title, "/", false)}
+            style={{
+                borderRadius: 16,
+                background: "var(--background-primary)",
+                boxShadow: "0 2px 8px rgba(0,0,0,.2)",
+                cursor: "pointer",
+                position: "relative",
+                overflow: "hidden",
+
+                border: "1px solid var(--interactive-accent)",
+                transition: "transform 0.2s ease, box-shadow 0.2s ease",
+                transformOrigin: "center center",
+                overflow: "hidden",
+            }}
+            onMouseEnter={e => {
+                e.currentTarget.style.transform = "scale(1.05)";
+                e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.3)";
+            }}
+            onMouseLeave={e => {
+                e.currentTarget.style.transform = "scale(1)";
+                e.currentTarget.style.boxShadow = "0 2px 8px rgba(0,0,0,.2)";
+            }}
+        >
+            {coverPath && (
+                <img
+                    src={dc.app.vault.adapter.getResourcePath(coverPath)}
+                    style={{ width: "100%", aspectRatio: "16/9", objectFit: "cover" }}
+                />
+            )}
+
+            <div
+                onClick={e => { e.stopPropagation(); setEditGame(game); }}
+                style={{ position: "absolute", top: 8, right: 8, cursor: "pointer" }}
+                title="Edit Game"
+            >
+                ✏️
+            </div>
+
+            <div style={{ padding: 12 }}>
+                <strong style={{ fontSize: 18, marginBottom: 6, display: "block", color: "var(--interactive-accent)" }}>
+                    {title}
+                </strong>
+
+                {uniqueProps.map((prop) => {
+                    if (!visibleProps[prop]) return null;
+                    const val = game.value(prop);
+
+                    if (prop === "progress") {
+                        return (
+                            <div key={prop} style={{ marginTop: 6 }}>
+                                <div style={{ fontSize: 12, fontWeight: "bold", color: "var(--text-muted)" }}>Progress:</div>
+                                <div style={{ height: 6, background: "#333", borderRadius: 6, marginTop: 4 }}>
+                                    <div style={{ width: `${val ?? 0}%`, height: 6, background: "var(--interactive-accent)", borderRadius: 6 }} />
+                                </div>
+                                <div style={{ fontSize: 11 }}>{val ?? 0}%</div>
+                            </div>
+                        );
+                    }
+
+                    if (prop === "rating") {
+                        return (
+                            <div key={prop} style={{ marginTop: 6, fontSize: 14, color: "gold" }}>
+                                <strong>Rating:</strong> {"★".repeat(val ?? 0)}
+                            </div>
+                        );
+                    }
+
+                    if (prop === "Cover") {
+                        return null; // cover already shown as image
+                    }
+
+                    if (prop === "releaseDate" && val) {
+                        // Ensure val is a string before calling .match
+                        const valStr = String(val);
+                        const match = valStr.match(/^(\d{4}-\d{2}-\d{2})/);
+                        const dateOnly = match ? match[1] : valStr;
+
+                        return (
+                            <div key={prop} style={{ fontSize: 12, marginTop: 6 }}>
+                                <strong>Release Date:</strong> {dateOnly}
+                            </div>
+                        );
+                    }
+
+
+                    if (val === undefined || val === null || val === "") {
+                        return null; // skip empty values
+                    }
+
+                    return (
+                        <div key={prop} style={{ fontSize: 12, marginTop: 6 }}>
+                            <strong>{prop.charAt(0).toUpperCase() + prop.slice(1)}:</strong> {val.toString()}
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+};
+
+
+
+// ---------------- RENDER ----------------
+
+return (
+    <div>
+        {/* Filters */}
+        <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+            {["All", "Playing", "Completed", "Backlog"].map(f => (
+                <button key={f} onClick={() => setFilter(f)}>{f}</button>
+            ))}
+
+            <input
+                placeholder="Search…"
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                style={{ marginLeft: "auto" }}
+            />
+
+            <button onClick={createNewGameNote}>➕ New Game</button>
+        </div>
+
+        {/* Property Toggles */}
+        <div style={{ marginBottom: 12, fontSize: 12 }}>
+            {uniqueProps.map(k => (
+                <label
+                    key={k}
+                    style={{
+                        marginRight: 20,
+                        cursor: "pointer",
+                        userSelect: "none",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: 4,
+                    }}
+                    htmlFor={`prop-toggle-${k}`}
+                >
+                    <input
+                        id={`prop-toggle-${k}`}
+                        type="checkbox"
+                        checked={visibleProps[k]}
+                        onChange={() => setVisibleProps({ ...visibleProps, [k]: !visibleProps[k] })}
+                        style={{ cursor: "pointer" }}
+                    />
+                    {k.charAt(0).toUpperCase() + k.slice(1)}
+                </label>
+            ))}
+        </div>
+
+        {/* Grid */}
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px,1fr))", gap: 16 }}>
+            {filteredGames.map(g => <Card key={g.$path} game={g} />)}
+        </div>
+
+        {editGame && <EditModal game={editGame} onClose={() => setEditGame(null)} />}
+    </div>
+);
+};
+
+```
+

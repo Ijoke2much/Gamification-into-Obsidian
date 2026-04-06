@@ -1,4 +1,5 @@
 import { TFile, Vault, Notice } from 'obsidian';
+import { showGameNotice } from '../../utils/noticeUtils';
 
 // --- ✅ LOCAL TYPES ---
 interface HabitReward {
@@ -30,6 +31,15 @@ export interface HabitData {
 // --- ✅ CONSTANTS ---
 export const HABIT_FILE_PATH = 'SkillTree/Habits.md';
 
+// --- ✅ DATE HELPER ---
+// Local YYYY-MM-DD so habits reset at the user's local midnight
+const getLocalDateString = (date: Date = new Date()): string => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+};
+
 export const DEFAULT_HABITS: HabitData[] = [
     {
         id: 'meditation',
@@ -42,7 +52,7 @@ export const DEFAULT_HABITS: HabitData[] = [
         reward: { xp: 15, cp: 10, coins: 5 },
         weeklyProgress: [false, false, false, false, false, false, false],
         totalCompletions: 0,
-        created: new Date().toISOString().split('T')[0]
+        created: getLocalDateString()
     },
     {
         id: 'reading',
@@ -55,7 +65,7 @@ export const DEFAULT_HABITS: HabitData[] = [
         reward: { xp: 20, cp: 15, coins: 8 },
         weeklyProgress: [false, false, false, false, false, false, false],
         totalCompletions: 0,
-        created: new Date().toISOString().split('T')[0]
+        created: getLocalDateString()
     },
     {
         id: 'exercise',
@@ -68,7 +78,7 @@ export const DEFAULT_HABITS: HabitData[] = [
         reward: { xp: 25, cp: 20, coins: 10 },
         weeklyProgress: [false, false, false, false, false, false, false],
         totalCompletions: 0,
-        created: new Date().toISOString().split('T')[0]
+        created: getLocalDateString()
     }
 ];
 
@@ -177,7 +187,7 @@ export const saveHabitsToFile = async (vault: Vault, habits: HabitData[]): Promi
         }
     } catch (error) {
         console.error('Error saving habits:', error);
-        new Notice('Failed to save habits');
+        showGameNotice('Failed to save habits');
     }
 };
 
@@ -186,7 +196,7 @@ export const calculateStreak = (habit: HabitData, completedToday: boolean): numb
     if (completedToday) {
         const yesterday = new Date();
         yesterday.setDate(yesterday.getDate() - 1);
-        const yesterdayStr = yesterday.toISOString().split('T')[0];
+        const yesterdayStr = getLocalDateString(yesterday);
 
         if (habit.lastCompleted === yesterdayStr || habit.streak === 0) {
             return habit.streak + 1;
@@ -198,7 +208,7 @@ export const calculateStreak = (habit: HabitData, completedToday: boolean): numb
 };
 
 export const isCompletedToday = (habit: HabitData): boolean => {
-    const today = new Date().toISOString().split('T')[0];
+    const today = getLocalDateString();
     return habit.lastCompleted === today;
 };
 

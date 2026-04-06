@@ -1,4 +1,5 @@
 import { App, Vault, TFile, Notice } from "obsidian";
+import { showGameNotice } from '../../../shared/utils/noticeUtils';
 import { ShopItem, ShopLikeItem } from "../../shop/utils/ShopParser";
 import { readPlayerData, updatePlayerData } from "../../player/utils/playerDataUtils";
 import type { PlayerData, Artifact } from "../../../data/models/PlayerData";
@@ -356,7 +357,7 @@ export async function useItem(app: App, itemName: string): Promise<void> {
           console.warn('[useItem] Failed to record coin transaction:', error);
         }
 
-        try { new Notice(`${currencySymbol} +${amount} ${currencyName.toLowerCase()}`, 2000); } catch {
+        try { showGameNotice(`${currencySymbol} +${amount} ${currencyName.toLowerCase()}`, 2000); } catch {
           // Ignore notice errors silently
         }
         appliedSomething = true;
@@ -371,7 +372,7 @@ export async function useItem(app: App, itemName: string): Promise<void> {
         // Use progressUpdater path for proper level logic
         const { updatePlayerData: upd } = await import("../../../shared/utils/progressUpdater");
         await upd(app.vault, amount, 0, 0);
-        try { new Notice(`⭐ +${amount} XP`, 2000); } catch {
+        try { showGameNotice(`⭐ +${amount} XP`, 2000); } catch {
           // Ignore notice errors silently
         }
         appliedSomething = true;
@@ -410,7 +411,7 @@ export async function useItem(app: App, itemName: string): Promise<void> {
         await updatePlayerData(app.vault, newData);
 
         try {
-          new Notice(`🏺 Real-world activity activated: ${activity} (${durationMinutes} minutes)`, 3000);
+          showGameNotice(`🏺 Real-world activity activated: ${activity} (${durationMinutes} minutes)`, 3000);
         } catch {
           // Ignore notice errors silently
         }
@@ -431,7 +432,7 @@ export async function useItem(app: App, itemName: string): Promise<void> {
       const expiresAt = ms > 0 ? Date.now() + ms : undefined;
       if (mult > 0 && (expiresAt || mult !== 1)) {
         await addBuff(app.vault, { type, multiplier: mult, expiresAt, source });
-        try { new Notice(`✨ Buff applied: ${type} x${mult} for ${durStr}`, 2500); } catch {
+        try { showGameNotice(`✨ Buff applied: ${type} x${mult} for ${durStr}`, 2500); } catch {
           // Ignore notice errors silently
         }
         appliedSomething = true;
@@ -449,7 +450,7 @@ export async function useItem(app: App, itemName: string): Promise<void> {
       const expiresAt = ms > 0 ? Date.now() + ms : undefined;
       if (mult > 0 && mult <= 1 && (expiresAt || mult !== 1)) {
         await addDebuff(app.vault, { type, multiplier: mult, expiresAt, source });
-        try { new Notice(`⚠️ Debuff applied: ${type} x${mult} for ${durStr}`, 2500); } catch {
+        try { showGameNotice(`⚠️ Debuff applied: ${type} x${mult} for ${durStr}`, 2500); } catch {
           // Ignore notice errors silently
         }
         appliedSomething = true;
@@ -463,15 +464,15 @@ export async function useItem(app: App, itemName: string): Promise<void> {
     item.usesRemaining = Math.max(0, (item.usesRemaining || 0) - 1);
     if (item.usesRemaining > 0) {
       await writeInventory(app.vault, inventory);
-      try { new Notice(`${itemName} used. (${item.usesRemaining} uses left)`, 1500); } catch {}
+      try { showGameNotice(`${itemName} used. (${item.usesRemaining} uses left)`, 1500); } catch {}
     } else {
       await dropItem(app, itemName);
-      try { new Notice(`${itemName} broke.`, 1500); } catch {}
+      try { showGameNotice(`${itemName} broke.`, 1500); } catch {}
     }
   } else {
     await dropItem(app, itemName);
     if (!appliedSomething) {
-      try { new Notice(`${itemName} used.`, 1500); } catch {
+      try { showGameNotice(`${itemName} used.`, 1500); } catch {
         // Ignore notice errors silently
       }
     }

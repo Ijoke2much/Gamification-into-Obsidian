@@ -139,24 +139,22 @@
 }
 
 .button {
-    background: #219ebc;
-    color: #fff;
-    border-radius: 6px;
-    padding: 4px 12px;
-    font-size: 12px;
+    /* Used for the Stats label inside its card. The card itself
+       provides the shape and background; this is just text + icon. */
+    background: transparent;
+    color: inherit;
     border: none;
+    padding: 0;
+    font-size: 14px;
     cursor: pointer;
-    transition: background 0.15s;
-    /* Mobile touch target optimization */
-    min-height: 44px;
-    min-width: 44px;
     display: flex;
     align-items: center;
     justify-content: center;
+    gap: 6px;
 }
 
 .button:hover {
-    background: #126782;
+    color: var(--text-accent);
 }
 
 .debugBlock {

@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import styles from './SidebarBossAnalytics.module.css';
+import type GamifiedObsidianPlugin from '../../../core/main';
 
 interface SidebarBossAnalyticsProps {
     className?: string;
+    plugin: GamifiedObsidianPlugin;
 }
 
 export const SidebarBossAnalytics: React.FC<SidebarBossAnalyticsProps> = ({
-    className
+    className,
+    plugin,
 }) => {
     const [collapsed, setCollapsed] = useState(false);
 
@@ -78,11 +81,15 @@ export const SidebarBossAnalytics: React.FC<SidebarBossAnalyticsProps> = ({
                         <button 
                             className={styles.fullViewButton}
                             onClick={() => {
-                                // This will open the full Boss Analytics tab
-                                const event = new CustomEvent('openBossAnalytics', {
-                                    detail: { tab: 'analytics' }
+                                void plugin.activateBossView().then(() => {
+                                    window.setTimeout(() => {
+                                        window.dispatchEvent(
+                                            new CustomEvent('openBossAnalytics', {
+                                                detail: { tab: 'analytics' },
+                                            })
+                                        );
+                                    }, 120);
                                 });
-                                window.dispatchEvent(event);
                             }}
                         >
                             Full Analytics →

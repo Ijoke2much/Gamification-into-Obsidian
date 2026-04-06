@@ -97,6 +97,26 @@
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
+/* Habit name row with icon preview */
+.nameRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.iconPreview {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+
 .input:focus {
     outline: none;
     border-color: #3b82f6;
@@ -110,7 +130,7 @@
 /* Form Select */
 .select {
     width: 100%;
-    padding: 12px 16px;
+    padding: 4px 16px;
     border-radius: 8px;
     border: 1px solid rgba(255, 255, 255, 0.2);
     background: rgba(0, 0, 0, 0.4);
@@ -224,6 +244,38 @@
     font-size: 12px;
     color: #e0e6f7;
     font-weight: 500;
+}
+
+/* Schedule day chips (for weekly schedule) */
+.scheduleDaysRow {
+    display: flex;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.dayChip {
+    flex: 1;
+    padding: 6px 0;
+    border-radius: 999px;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    background: rgba(0, 0, 0, 0.3);
+    color: #e5e7eb;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.dayChip:hover {
+    border-color: #3b82f6;
+    background: rgba(59, 130, 246, 0.15);
+}
+
+.dayChipSelected {
+    border-color: #3b82f6;
+    background: rgba(59, 130, 246, 0.35);
+    color: #ffffff;
+    box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.4);
 }
 
 /* Form Actions */

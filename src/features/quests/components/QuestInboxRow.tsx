@@ -9,6 +9,8 @@ interface QuestInboxRowProps {
   onToggleSelect: (questTitle: string) => void;
   onOpen: (quest: Quest) => void;
   currentEnergy: number;
+  currencyName: string;
+  currencyAmount?: number;
 }
 
 export const QuestInboxRow: React.FC<QuestInboxRowProps> = ({
@@ -17,6 +19,8 @@ export const QuestInboxRow: React.FC<QuestInboxRowProps> = ({
   onToggleSelect,
   onOpen,
   currentEnergy,
+  currencyName,
+  currencyAmount,
 }) => {
   const handleRowClick = () => {
     onOpen(quest);
@@ -90,6 +94,11 @@ export const QuestInboxRow: React.FC<QuestInboxRowProps> = ({
       <div className={styles.right}>
         <span className={[styles.badge, styles.dueBadge].join(' ')}>{dueLabel}</span>
         <span className={[styles.badge, styles.energyBadge].join(' ')}>{energyLabel}</span>
+        {typeof currencyAmount === 'number' && currencyAmount > 0 && (
+          <span className={[styles.badge, styles.currencyBadge].join(' ')}>
+            {currencyName} {currencyAmount}
+          </span>
+        )}
         {(quest.xp || quest.cp) && (
           <span className={styles.rewards}>
             {quest.xp ? `+${quest.xp} XP` : ''}

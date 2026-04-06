@@ -1596,13 +1596,43 @@
    ========================== */
 
 .battleStatusBar {
+    position: relative;
+    z-index: 10050;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 30px;
-    padding: 15px 20px;
+    flex-wrap: wrap;
+    gap: 12px 20px;
+    padding: 12px 16px;
     background: transparent;
     overflow: visible;
+}
+
+.battleStatusTitle {
+    flex: 1 1 160px;
+    min-width: 0;
+    text-align: center;
+    padding: 0 8px;
+}
+
+.battleStatusTitleMain {
+    display: block;
+    font-size: 15px;
+    font-weight: 800;
+    color: #f1f5f9;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.battleStatusTitleSub {
+    display: block;
+    margin-top: 2px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #94a3b8;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
 
 /* Next Boss Action telegraph */
@@ -2384,6 +2414,1064 @@
     color: white;
     font-weight: 800;
     cursor: pointer;
+}
+
+.hpDeadlineNote {
+    font-size: 10px;
+    font-weight: 600;
+    color: #fbbf24;
+    opacity: 0.95;
+}
+
+/* Add subquest modal (matches exit modal weight) */
+.subquestOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+
+.subquestModal {
+    background: #111827;
+    border: 3px solid #38bdf8;
+    border-radius: 12px;
+    padding: 18px 20px;
+    width: min(400px, 92vw);
+    text-align: left;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+
+.subquestModalTitle {
+    font-size: 18px;
+    font-weight: 900;
+    color: #38bdf8;
+    margin-bottom: 8px;
+    text-align: center;
+}
+
+.subquestModalHint {
+    font-size: 12px;
+    color: #e5e7eb;
+    margin-bottom: 10px;
+    line-height: 1.4;
+}
+
+.subquestModalInput {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 2px solid #4b5563;
+    background: #0f172a;
+    color: #f9fafb;
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.subquestModalWarning {
+    font-size: 11px;
+    color: #fbbf24;
+    margin-bottom: 14px;
+}
+
+.subquestModalActions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.subquestModalCancel {
+    background: #374151;
+    border: 2px solid #6b7280;
+    border-radius: 8px;
+    padding: 8px 16px;
+    color: #e5e7eb;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.subquestModalConfirm {
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+    border: 2px solid #7dd3fc;
+    border-radius: 8px;
+    padding: 8px 16px;
+    color: white;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.subquestModalConfirm:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Battle loadout (weapon) picker — top band transparent so status bar stays visible; modal catches clicks */
+.weaponPickerOverlay {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(
+        to bottom,
+        transparent 0,
+        transparent 56px,
+        rgba(0, 0, 0, 0.82) 56px,
+        rgba(0, 0, 0, 0.82) 100%
+    );
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    z-index: 10020;
+    padding: 64px 16px 24px;
+    overflow: auto;
+    pointer-events: none;
+    box-sizing: border-box;
+}
+
+.weaponPickerModal {
+    pointer-events: auto;
+    /* Sans stack so long names + summaries stay readable (avoids inherited pixel font from .tacticalBattlePixel) */
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.4;
+    background: linear-gradient(180deg, #0f172a 0%, #111827 100%);
+    border: 4px solid #FFD700;
+    border-radius: 16px;
+    padding: 22px 20px 20px;
+    max-width: 720px;
+    width: 100%;
+    max-height: calc(100vh - 64px);
+    overflow: auto;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.65);
+}
+
+.weaponPickerTitle {
+    font-size: 22px;
+    font-weight: 900;
+    color: #FFD700;
+    text-align: center;
+    margin-bottom: 8px;
+    letter-spacing: 0.04em;
+}
+
+.weaponPickerSubtitle {
+    font-size: 12px;
+    color: #cbd5e1;
+    text-align: center;
+    line-height: 1.45;
+    margin: 0 0 18px;
+}
+
+.weaponGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.weaponCard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    text-align: center;
+    gap: 8px;
+    min-height: 88px;
+    padding: 12px 10px 14px;
+    border-radius: 12px;
+    border: 3px solid #374151;
+    background: #1e293b;
+    color: #e2e8f0;
+    cursor: pointer;
+    transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+    font-family: inherit;
+}
+
+.weaponCard:hover {
+    border-color: #94a3b8;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+}
+
+.weaponCardSelected {
+    border-color: #FFD700;
+    box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.35);
+    background: #1a2332;
+}
+
+.weaponCardIcon {
+    font-size: 24px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.weaponCardName {
+    font-size: 12px;
+    font-weight: 800;
+    color: #f8fafc;
+    line-height: 1.25;
+    word-break: break-word;
+    hyphens: auto;
+}
+
+/* HTML-style preview: gold strip + detail card (mirrors pixel preview layout) */
+.weaponPickerPreview {
+    position: relative;
+    margin: 4px 0 14px;
+    min-height: 96px;
+}
+
+.weaponPickerPreviewBar {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 40px;
+    border-radius: 10px;
+    background: linear-gradient(180deg, #ffd700 0%, #d97706 100%);
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    box-shadow: 0 4px 0 #00000055;
+}
+
+.weaponPickerPreviewBody {
+    position: relative;
+    z-index: 1;
+    max-width: 92%;
+    margin: 0 auto 10px 0;
+    padding: 12px 14px;
+    background: #1e293b;
+    border: 2px solid #475569;
+    border-radius: 10px;
+    box-shadow: 4px 4px 0 #000;
+}
+
+.weaponPickerPreviewTitle {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
+    margin-bottom: 8px;
+    line-height: 1.35;
+}
+
+.weaponPickerPreviewText {
+    font-size: 12px;
+    line-height: 1.5;
+    color: #e2e8f0;
+    white-space: pre-line;
+}
+
+.weaponFmHint {
+    font-size: 10px;
+    background: rgba(0, 0, 0, 0.45);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #fde68a;
+}
+
+.weaponPickerConfirm {
+    display: block;
+    width: 100%;
+    margin-top: 4px;
+    padding: 14px 20px;
+    font-size: 16px;
+    font-weight: 900;
+    color: #111827;
+    border: 3px solid #fff8;
+    border-radius: 12px;
+    cursor: pointer;
+    background: linear-gradient(135deg, #FFD700 0%, #f59e0b 100%);
+    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.35);
+}
+
+.weaponPickerConfirm:hover {
+    filter: brightness(1.05);
+}
+
+/* Post-battle recap (victory) */
+.victoryRecap {
+    margin: 12px 0 18px;
+    padding: 14px 16px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 3px solid #f59e0b;
+    border-radius: 12px;
+    text-align: left;
+}
+
+.victoryRecapTitle {
+    font-size: 14px;
+    font-weight: 900;
+    color: #fbbf24;
+    margin-bottom: 10px;
+    letter-spacing: 0.04em;
+}
+
+.victoryRecapGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+    font-size: 12px;
+}
+
+.victoryRecapLabel {
+    display: block;
+    color: #9ca3af;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 4px;
+}
+
+.victoryRecapValue {
+    display: block;
+    color: #f3f4f6;
+    font-weight: 700;
+    line-height: 1.35;
+}
+
+/*
+ * Pixel boss raid theme — ported from preview/pixel-boss-battle-preview.html
+ */
+.tacticalBattle.tacticalBattlePixel {
+    font-family: "Press Start 2P", ui-monospace, "Cascadia Code", "Courier New", monospace;
+    font-size: 10px;
+    line-height: 1.6;
+    color: #e8e8f0;
+    background: #0d1020;
+    background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 4px, rgba(255, 255, 255, 0.03) 4px, rgba(255, 255, 255, 0.03) 5px),
+        linear-gradient(180deg, #1e3a5f 0%, #0d1f2d 50%, #1a2f1a 100%);
+    -webkit-font-smoothing: none;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    overflow: hidden;
+    min-height: 0;
+}
+
+.tacticalBattlePixel .battleStatusBar {
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: #1a1f35;
+    border-bottom: 3px solid #333;
+    justify-content: flex-start;
+}
+
+.tacticalBattlePixel .battleStatusTitleMain {
+    font-size: 8px;
+    color: #e8e8f0;
+    letter-spacing: 0.1em;
+}
+
+.tacticalBattlePixel .battleStatusTitleSub {
+    font-size: 6px;
+    color: #8892b0;
+    max-width: min(42vw, 220px);
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.tacticalBattlePixel .turnCounter {
+    flex-direction: column;
+    padding: 8px 12px;
+    min-width: 0;
+    border-radius: 0;
+    border: 3px solid #c6c6c6;
+    background: #000;
+    box-shadow: none;
+}
+
+.tacticalBattlePixel .turnLabel {
+    font-size: 7px;
+    color: #8892b0;
+    letter-spacing: 0;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+}
+
+.tacticalBattlePixel .turnNumber {
+    font-size: 18px;
+    font-family: inherit;
+    color: #ffd700;
+    text-shadow: none;
+    line-height: 1;
+}
+
+.tacticalBattlePixel .nextActionBox {
+    flex: 1;
+    min-width: 200px;
+    border-radius: 0;
+    border: 3px solid #7c3aed;
+    background: #1a1030;
+    box-shadow: none;
+    padding: 8px 12px;
+    gap: 10px;
+}
+
+.tacticalBattlePixel .nextActionLabel {
+    font-size: 7px;
+    color: #8892b0;
+    letter-spacing: 0;
+}
+
+.tacticalBattlePixel .nextActionName {
+    font-size: inherit;
+    font-weight: normal;
+    color: #e8e8f0;
+}
+
+.tacticalBattlePixel .nextActionEta {
+    font-size: 7px;
+    color: #f59e0b;
+    margin-left: 4px;
+}
+
+.tacticalBattlePixel .nextActionIcon {
+    font-size: 24px;
+}
+
+.tacticalBattlePixel .autosaveBadge {
+    font-size: 7px;
+    color: #8892b0;
+    background: #000;
+    border: 2px solid #444;
+    border-radius: 0;
+    padding: 6px 8px;
+}
+
+.tacticalBattlePixel .countdownTimer {
+    min-height: 0;
+    margin-left: auto;
+    padding: 0;
+    flex: 0 0 auto;
+}
+
+.tacticalBattlePixel .countdownBoxes {
+    gap: 8px;
+}
+
+.tacticalBattlePixel .countdownBox {
+    min-width: 44px;
+    min-height: 0;
+    padding: 6px 8px;
+    border-radius: 0;
+    border: 2px solid #c6c6c6;
+    background: #000;
+    box-shadow: none;
+    gap: 2px;
+}
+
+.tacticalBattlePixel .countdownNumber {
+    font-size: 14px;
+    font-family: inherit;
+    color: #f59e0b;
+    text-shadow: none;
+    padding: 0;
+}
+
+.tacticalBattlePixel .countdownLabel {
+    font-size: 6px;
+    color: #8892b0;
+    letter-spacing: 0;
+    text-transform: uppercase;
+}
+
+.tacticalBattlePixel .arenaSection {
+    flex: 1 1 0;
+    min-height: 0;
+    align-items: stretch;
+    align-content: stretch;
+    overflow: hidden;
+    background: transparent;
+    gap: 24px;
+    padding: 16px;
+    grid-template-rows: minmax(0, 1fr);
+    background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 4px, rgba(255, 255, 255, 0.03) 4px, rgba(255, 255, 255, 0.03) 5px),
+        linear-gradient(180deg, #1e3a5f 0%, #0d1f2d 50%, #1a2f1a 100%);
+}
+
+.tacticalBattlePixel .arenaSection::before {
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+    background-size: 24px 24px;
+    opacity: 0.5;
+}
+
+.tacticalBattlePixel .combatantBoss,
+.tacticalBattlePixel .combatantPlayer {
+    gap: 12px;
+    min-height: 0;
+    align-self: stretch;
+}
+
+/* Boss column: scroll when stats/effects exceed arena height */
+.tacticalBattlePixel .combatantBoss {
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding-right: 4px;
+    max-height: 100%;
+}
+
+.tacticalBattlePixel .characterSprite {
+    width: 140px;
+    height: 140px;
+}
+
+.tacticalBattlePixel .spriteContainer {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+    background: #000;
+    border: 4px solid #c6c6c6;
+    box-shadow: 4px 4px 0 #000;
+}
+
+.tacticalBattlePixel .combatantBoss .spriteContainer {
+    border-color: #c0392b;
+    box-shadow: 4px 4px 0 #5c1a1a;
+}
+
+.tacticalBattlePixel .bossEmoji,
+.tacticalBattlePixel .playerEmoji {
+    font-size: 72px;
+    filter: none;
+    line-height: 1;
+}
+
+.tacticalBattlePixel .playerAvatar {
+    width: 140px;
+    height: 140px;
+    border-radius: 0;
+    object-fit: cover;
+    border: 4px solid #c6c6c6;
+    box-shadow: 4px 4px 0 #000;
+    animation: none;
+}
+
+.tacticalBattlePixel .tacticalStatsBox {
+    width: 100%;
+    max-width: 320px;
+    background: #1a1f35;
+    border-radius: 0;
+    padding: 12px;
+    border: 4px solid #ffd700;
+    box-shadow: 4px 4px 0 #000;
+}
+
+.tacticalBattlePixel .combatantBoss .tacticalStatsBox {
+    border-color: #e74c3c;
+}
+
+.tacticalBattlePixel .combatStats {
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.tacticalBattlePixel .statItem {
+    background: #000;
+    border: 2px solid #444;
+    border-radius: 0;
+    padding: 6px;
+    gap: 4px;
+}
+
+.tacticalBattlePixel .statLabel {
+    font-size: 6px;
+    color: #ffd700;
+    letter-spacing: 0;
+}
+
+.tacticalBattlePixel .statValue {
+    font-size: 14px;
+    color: #e8e8f0;
+    text-shadow: none;
+    font-weight: normal;
+}
+
+.tacticalBattlePixel .weaponInfo {
+    margin-bottom: 10px;
+    padding: 6px;
+    border: 2px dashed #555;
+    border-radius: 0;
+    background: transparent;
+    gap: 6px;
+    font-size: 8px;
+}
+
+.tacticalBattlePixel .weaponIcon {
+    font-size: inherit;
+}
+
+.tacticalBattlePixel .weaponName {
+    font-size: inherit;
+    font-weight: normal;
+    color: #e8e8f0;
+}
+
+.tacticalBattlePixel .hpBarContainer {
+    margin-bottom: 8px;
+}
+
+.tacticalBattlePixel .hpBarSegmented {
+    background: #000;
+    border: 2px solid #333;
+    border-radius: 0;
+    padding: 4px;
+    gap: 2px;
+}
+
+.tacticalBattlePixel .hpSegment {
+    height: 14px;
+    border-radius: 0;
+    background: #222;
+    transition: none;
+}
+
+.tacticalBattlePixel .combatantPlayer .hpSegment.filled {
+    background: #3ecf8e;
+    box-shadow: none;
+}
+
+.tacticalBattlePixel .combatantBoss .hpSegment.filled {
+    background: #e74c3c;
+    box-shadow: none;
+}
+
+.tacticalBattlePixel .phaseMarkerLine {
+    width: 2px;
+    background: #fff;
+    opacity: 0.6;
+    box-shadow: none;
+}
+
+.tacticalBattlePixel .phaseMarkerLabel {
+    font-size: 5px;
+    padding: 1px 3px;
+    border-radius: 0;
+    border: 1px solid #666;
+    background: #000;
+    color: #c6c6c6;
+    top: -14px;
+    text-shadow: none;
+}
+
+.tacticalBattlePixel .hpText {
+    font-size: 9px;
+    text-align: center;
+    color: #e8e8f0;
+    font-weight: normal;
+}
+
+.tacticalBattlePixel .hpDeadlineNote {
+    color: #f59e0b;
+}
+
+.tacticalBattlePixel .characterName {
+    font-size: 9px;
+    text-align: center;
+    margin-bottom: 2px;
+    text-shadow: none;
+    font-weight: normal;
+    color: #e8e8f0;
+}
+
+.tacticalBattlePixel .characterPhase,
+.tacticalBattlePixel .characterLevel {
+    font-size: 7px;
+    color: #f59e0b;
+    text-align: center;
+    font-weight: normal;
+}
+
+.tacticalBattlePixel .statusEffectsContainer {
+    margin-top: 6px;
+    font-size: 6px;
+}
+
+.tacticalBattlePixel .blockWarning {
+    font-size: 6px;
+}
+
+.tacticalBattlePixel .controlsSection {
+    background: #0a0c14;
+    border-top: 4px solid #c6c6c6;
+    gap: 10px;
+    padding: 12px;
+    grid-template-columns: 1.1fr 1fr 0.9fr 1fr;
+    align-items: stretch;
+    min-height: 0;
+}
+
+@media (max-width: 899px) {
+    .tacticalBattlePixel .controlsSection {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto;
+    }
+}
+
+.tacticalBattlePixel .movesPanel,
+.tacticalBattlePixel .logPanel,
+.tacticalBattlePixel .statsPanel,
+.tacticalBattlePixel .tasksPanel {
+    border: 3px solid #c6c6c6;
+    background: #1a1f35;
+    border-radius: 0;
+    min-height: 0;
+    height: 100%;
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-self: stretch;
+    overflow: hidden;
+}
+
+.tacticalBattlePixel .statsPanel {
+    border-radius: 0;
+}
+
+.tacticalBattlePixel .panelHeader {
+    flex-shrink: 0;
+    margin: 0;
+    margin-bottom: 0;
+    padding: 8px 10px;
+    background: #000;
+    border-bottom: 2px solid #c6c6c6;
+    border-radius: 0;
+    color: #ffd700;
+    font-size: 8px;
+    gap: 6px;
+}
+
+.tacticalBattlePixel .panelIcon {
+    font-size: inherit;
+}
+
+.tacticalBattlePixel .panelTitle {
+    font-size: 8px;
+    font-weight: normal;
+    color: #ffd700;
+    text-shadow: none;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.tacticalBattlePixel .movesPanel {
+    flex: 1 1 auto;
+}
+
+.tacticalBattlePixel .movesGrid {
+    flex: 1 1 auto;
+    min-height: 0;
+    gap: 8px;
+    padding: 8px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    align-items: stretch;
+    justify-items: stretch;
+}
+
+.tacticalBattlePixel .moveButton {
+    background: #111;
+    border: 3px solid #555;
+    border-radius: 0;
+    padding: 8px 8px 10px;
+    box-shadow: 3px 3px 0 #000;
+    text-align: left;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 4px;
+    min-height: 0;
+    height: 100%;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    transition: border-color 0.1s ease, color 0.1s ease;
+}
+
+.tacticalBattlePixel .moveButton:hover:not(:disabled) {
+    transform: none;
+    border-color: #ffd700;
+    color: #ffd700;
+    background: #111;
+    box-shadow: 3px 3px 0 #000;
+}
+
+.tacticalBattlePixel .moveButton::before {
+    display: none;
+}
+
+.tacticalBattlePixel .moveButton.onCooldown,
+.tacticalBattlePixel .moveButton:disabled {
+    opacity: 0.55;
+}
+
+.tacticalBattlePixel .moveIcon {
+    font-size: 16px;
+    filter: none;
+    line-height: 1;
+    margin: 0;
+}
+
+.tacticalBattlePixel .moveName {
+    font-size: 7px;
+    font-weight: normal;
+    color: #e8e8f0;
+    text-shadow: none;
+    margin: 0;
+    line-height: 1.35;
+}
+
+.tacticalBattlePixel .moveDamage {
+    font-size: 6px;
+    color: #3ecf8e;
+    margin-top: 2px;
+    text-shadow: none;
+    line-height: 1.35;
+}
+
+.tacticalBattlePixel .moveStat {
+    font-size: 6px;
+    color: #8892b0;
+    text-shadow: none;
+    line-height: 1.35;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.tacticalBattlePixel .moveCost {
+    font-size: 6px;
+    color: #8892b0;
+    margin-top: auto;
+    padding-top: 6px;
+    width: 100%;
+    line-height: 1.35;
+    border-top: 1px solid #333;
+}
+
+.tacticalBattlePixel .cooldownRing {
+    position: static;
+    width: auto;
+    height: auto;
+    border: none;
+    border-radius: 0;
+    background: none !important;
+    box-shadow: none;
+    margin-top: auto;
+    align-self: stretch;
+    padding-top: 4px;
+}
+
+.tacticalBattlePixel .cooldownInner {
+    width: auto;
+    height: auto;
+    border-radius: 0;
+    border: 2px dashed #555;
+    background: #000;
+    font-size: 6px;
+    padding: 6px;
+    color: #f59e0b;
+}
+
+.tacticalBattlePixel .logContent {
+    padding: 8px;
+    gap: 6px;
+    max-height: none;
+    min-height: 0;
+    flex: 1;
+    overflow-y: auto;
+    font-size: 6px;
+    line-height: 1.8;
+    color: #8892b0;
+}
+
+.tacticalBattlePixel .logEntry {
+    border-radius: 0;
+    border: 2px solid #444;
+    background: #0d0d12;
+    padding: 8px;
+}
+
+.tacticalBattlePixel .logEntry.player {
+    border-color: #2a5a3a;
+    background: #0d1510;
+}
+
+.tacticalBattlePixel .logEntry.boss {
+    border-color: #5c2a2a;
+    background: #150d0d;
+}
+
+.tacticalBattlePixel .logEntry.system {
+    border-color: #3a4a5c;
+    background: #0d1015;
+}
+
+.tacticalBattlePixel .logTurn {
+    font-size: 6px;
+    color: #ffd700;
+    margin-bottom: 2px;
+}
+
+.tacticalBattlePixel .logEvent {
+    font-size: 6px;
+    color: #e8e8f0;
+    line-height: 1.7;
+}
+
+.tacticalBattlePixel .logEntry.player .logEvent {
+    color: #6cf;
+}
+
+.tacticalBattlePixel .logEntry.boss .logEvent {
+    color: #f88;
+}
+
+.tacticalBattlePixel .allStatsGrid {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    gap: 6px;
+    padding: 8px;
+}
+
+.tacticalBattlePixel .statMiniItem {
+    background: #000;
+    border: 2px solid #444;
+    border-radius: 0;
+    padding: 6px;
+}
+
+.tacticalBattlePixel .statMiniLabel {
+    font-size: 6px;
+    color: #ffd700;
+    letter-spacing: 0;
+}
+
+.tacticalBattlePixel .statMiniValue {
+    font-size: 12px;
+    color: #e8e8f0;
+    text-shadow: none;
+}
+
+.tacticalBattlePixel .tasksList {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 8px;
+    gap: 6px;
+}
+
+.tacticalBattlePixel .taskButton {
+    background: #0d0d12;
+    border: 2px solid #444;
+    border-radius: 0;
+    padding: 8px;
+    box-shadow: none;
+    gap: 4px;
+}
+
+.tacticalBattlePixel .taskButton::before {
+    display: none;
+}
+
+.tacticalBattlePixel .taskButton:hover:not(:disabled) {
+    transform: none;
+    border-color: #ffd700;
+    box-shadow: none;
+}
+
+.tacticalBattlePixel .taskButton.completed {
+    opacity: 0.45;
+    border-color: #374151;
+    background: #0d0d12;
+}
+
+.tacticalBattlePixel .taskDescription {
+    font-size: 7px;
+    text-shadow: none;
+    color: #e8e8f0;
+}
+
+.tacticalBattlePixel .taskNumber {
+    font-size: 7px;
+    padding: 2px 6px;
+    border-radius: 0;
+    background: #000;
+    border: 1px solid #555;
+}
+
+.tacticalBattlePixel .taskDamage {
+    font-size: 6px;
+    color: #3ecf8e;
+    background: transparent;
+    padding: 0;
+}
+
+.tacticalBattlePixel .tasksHeader {
+    padding: 0 8px 6px;
+}
+
+.tacticalBattlePixel .addSubquestButton {
+    font-size: 7px;
+    padding: 6px 10px;
+    border-radius: 0;
+    border: 3px solid #ffd700;
+    background: #1e293b;
+    color: #ffd700;
+    box-shadow: 3px 3px 0 #000;
+}
+
+.tacticalBattlePixel .addSubquestButton:hover {
+    transform: none;
+    filter: brightness(1.08);
+}
+
+.tacticalBattlePixel .closeButton {
+    top: auto;
+    bottom: 12px;
+    right: 12px;
+    padding: 10px 14px;
+    font-size: 7px;
+    font-family: inherit;
+    font-weight: normal;
+    border-radius: 0;
+    border: 3px solid #fff;
+    background: #8b0000;
+    color: #fff;
+    box-shadow: 4px 4px 0 #000;
+    min-width: 0;
+    text-shadow: none;
+}
+
+.tacticalBattlePixel .closeButton:hover {
+    transform: none;
+    background: #a40000;
+    border-color: #fff;
+    box-shadow: 4px 4px 0 #000;
+}
+
+.tacticalBattlePixel .splitter {
+    background: #333;
+    border-top-color: #555;
+    border-bottom-color: #000;
+}
+
+.tacticalBattlePixel .splitter::before {
+    background: #c6c6c6;
+}
+
+.defeatScreen.tacticalBattlePixel,
+.victoryScreen.tacticalBattlePixel {
+    font-family: "Press Start 2P", ui-monospace, "Cascadia Code", "Courier New", monospace;
+    font-size: 10px;
+    background: #0d1020;
 }
 
 /* ==========================
