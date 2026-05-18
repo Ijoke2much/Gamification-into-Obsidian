@@ -1,17 +1,17 @@
 // src/ui/components/ShopTab.tsx
 import React, { useEffect, useState, useMemo, useRef } from "react";
 import type GamifiedObsidianPlugin from "../../../core/main";
+import { pixelNotice } from '../../../shared/utils/noticeUtils';
 import {
     ShopItem,
     ShopItemEffect,
     getAllShopItems,
     writeShopItems,
 } from "../utils/ShopParser";
-import { AddItemModal } from "src/features/player/modals/AddItemModal";
 import { AvatarPickerModal } from "src/features/player/modals/AvatarPickerModal";
 import { EditShopkeeperDialogueModal } from "../modals/EditShopkeeperDialogueModal";
 import { PurchaseConfirmationModal } from "../modals/PurchaseConfirmationModal";
-import { Notice, TFile, Modal } from "obsidian";
+import { TFile, Modal } from 'obsidian';
 import {
     getShopkeeperDialogue,
     fillDialogueTemplate,
@@ -22,6 +22,7 @@ import {
 import { addOrIncrementInventoryItem } from "../../inventory/utils/updateInventoryFile";
 import { readPlayerData, writePlayerData } from "src/features/player/utils/playerDataUtils";
 import { currencyDisplay } from "../../../shared/services/currencyDisplayService";
+import shopStyles from "./ShopTab.module.css";
 
 interface Props {
     plugin: GamifiedObsidianPlugin;
@@ -270,7 +271,7 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
                 plugin.settings.shopkeeperDialogueOverrides = overrides;
                 await plugin.saveSettings();
                 setDialogue(getResolvedGreeting());
-                new Notice("Shopkeeper dialogue updated!");
+                pixelNotice("Shopkeeper dialogue updated!");
             }
         );
         modal.open();
@@ -303,49 +304,6 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
             console.error('📱 Mobile avatar picker error:', error);
             setDialogue("Avatar picker not available on mobile");
         }
-    };
-
-    const openAddItemModal = () => {
-        const modal = new AddItemModal(plugin.app, plugin, async (newItem: ShopItem) => {
-            new Notice(`Added "${newItem.name}" to the shop!`, 0);
-            await loadItems();
-            if (rebuildShopTab) rebuildShopTab();
-            setDialogue(
-                fillDialogueTemplate(getDialogue("addItem"), { item: newItem.name })
-            );
-        });
-        modal.open();
-    };
-
-    const openAddArtifactModal = () => {
-        const modal = new AddItemModal(
-            plugin.app,
-            plugin,
-            async (newItem: ShopItem) => {
-                new Notice(`Added "${newItem.name}" as an artifact!`, 0);
-                await loadItems();
-                if (rebuildShopTab) rebuildShopTab();
-                setDialogue(
-                    fillDialogueTemplate(getDialogue("addArtifact"), { item: newItem.name })
-                );
-            },
-            undefined,
-            "artifact"
-        );
-        modal.open();
-    };
-
-    const openEditItemModal = (item: ShopItem) => {
-        const modal = new AddItemModal(
-            plugin.app,
-            plugin,
-            async (editedItem: ShopItem) => {
-                await loadItems();
-                if (rebuildShopTab) rebuildShopTab();
-            },
-            item
-        );
-        modal.open();
     };
 
     const getEffectsPreview = (item: ShopItem) =>
@@ -389,7 +347,7 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
         }
         await writePlayerData(plugin.app.vault, playerData);
 
-        new Notice(`Successfully purchased ${item.name}!`);
+        pixelNotice(`Successfully purchased ${item.name}!`);
 
         try {
             const { achievementEventService } = await import(
@@ -411,7 +369,7 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
     const handleBuyClick = async (item: ShopItem) => {
         const playerData = await readPlayerData(plugin.app.vault);
         if (!playerData) {
-            new Notice("Player data not found!");
+            pixelNotice("Player data not found!");
             return;
         }
         const rep = Math.max(-100, Math.min(100, Number(playerData.questReputation ?? 0)));
@@ -419,7 +377,7 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
         const price = Math.max(1, Math.round(item.price * repFactor));
 
         if (playerData.coins < price) {
-            new Notice(`Not enough ${currencyNameLower}! You need ${price - playerData.coins} more.`);
+            pixelNotice(`Not enough ${currencyNameLower}! You need ${price - playerData.coins} more.`);
             setDialogue(
                 fillDialogueTemplate(getDialogue("insufficientFunds"), {
                     currency: currencyNameLower,
@@ -502,7 +460,11 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
     }, [items, categoryFilter, rarityFilter, sortBy]);
 
     if (loading) {
-        return <p>Loading shop...</p>;
+        return (
+            <p className={`gami-shop-tab ${shopStyles.pixelShopShell} ${shopStyles.shopLoading}`} data-pixel-shell="shop">
+                Loading shop...
+            </p>
+        );
     }
 
     return (
@@ -512,8 +474,12 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
                     transition: border-color 0.2s ease, box-shadow 0.2s ease;
                 }
                 .gami-shop-card:hover {
-                    border-color: #f97316 !important;
-                    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.25) !important;
+                    border-color: #f97316;
+                    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.25);
+                }
+                [data-pixel-shell="shop"] .gami-shop-card:hover {
+                    border-color: inherit;
+                    box-shadow: inherit;
                 }
                 .gami-shop-grid {
                     display: grid;
@@ -526,7 +492,11 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
                     }
                 }
             `}</style>
-        <div className="gami-shop-tab" style={{ maxWidth: 800, margin: "0 auto", padding: 12 }}>
+        <div
+            className={`gami-shop-tab ${shopStyles.pixelShopShell}`}
+            data-pixel-shell="shop"
+            style={{ maxWidth: 800, margin: "0 auto", padding: 12 }}
+        >
             {/* Gradient header: Shop title + currency badge (sidebar-friendly) */}
             <div
                 className="gami-shop-header"
@@ -654,6 +624,7 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
 
             {dialogueOptions && (
                 <div
+                    className="gami-shop-dialogue-options"
                     style={{
                         display: "flex",
                         gap: "8px",
@@ -679,25 +650,6 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
                 </div>
             )}
 
-            {/* Add Item Buttons */}
-            <div style={{ display: "flex", gap: 8, justifyContent: "center", marginBottom: 14, flexWrap: "wrap" }}>
-                <button
-                    onClick={openAddItemModal}
-                    className="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 rounded text-white font-semibold shadow"
-                    style={{ fontSize: "0.9em" }}
-                >
-                    ＋ Add Item
-                </button>
-                <button
-                    onClick={openAddArtifactModal}
-                    className="px-4 py-1.5 bg-purple-600 hover:bg-purple-700 rounded text-white font-semibold shadow"
-                    style={{ fontSize: "0.9em" }}
-                >
-                    🏺 New Artifact
-                </button>
-            </div>
-
-            {/* Category tabs – rectangular, with icons */}
             <div
                 className="gami-shop-category-tabs"
                 style={{
@@ -712,6 +664,7 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
                     <button
                         key={cat.key}
                         type="button"
+                        data-active={categoryFilter === cat.key ? "true" : "false"}
                         onClick={() => setCategoryFilter(cat.key)}
                         style={{
                             padding: "5px 10px",
@@ -735,6 +688,7 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
             {/* Rarity + Sort dropdowns */}
             <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap", justifyContent: "center" }}>
                 <select
+                    className="gami-shop-select"
                     value={rarityFilter}
                     onChange={(e) => setRarityFilter(e.target.value)}
                     style={{ padding: "4px 8px", fontSize: "0.8em", borderRadius: 4, background: "#1f2937", color: "#e5e7eb", border: "1px solid #374151" }}
@@ -744,6 +698,7 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
                     ))}
                 </select>
                 <select
+                    className="gami-shop-select"
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
                     style={{ padding: "4px 8px", fontSize: "0.8em", borderRadius: 4, background: "#1f2937", color: "#e5e7eb", border: "1px solid #374151" }}
@@ -759,8 +714,9 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
 
             {/* Main content: unified grid */}
             {items.length === 0 ? (
-                <div style={{ textAlign: "center", marginTop: 16 }}>
+                <div className="gami-shop-empty-wrap" style={{ textAlign: "center", marginTop: 16 }}>
                     <div
+                        className="gami-shop-empty-msg"
                         style={{
                             background: "#222",
                             color: "#ffd700",
@@ -774,9 +730,8 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
                     >
                         Sorry, the shop is empty! Come back later for more items.
                     </div>
-                    <div style={{ display: "flex", gap: 8, justifyContent: "center", marginTop: 10 }}>
-                        <button onClick={openAddItemModal} className="px-4 py-2 bg-blue-600 rounded text-white">Add Item</button>
-                        <button onClick={openAddArtifactModal} className="px-4 py-2 bg-purple-600 rounded text-white">New Artifact</button>
+                    <div style={{ fontSize: "0.8em", color: "#94a3b8", marginTop: 12, maxWidth: 400, marginLeft: "auto", marginRight: "auto", lineHeight: 1.4 }}>
+                        To add or edit listings, open <strong>Gamification</strong> settings → <strong>Rewards &amp; Progression</strong> → <strong>Game data hub</strong>.
                     </div>
                 </div>
             ) : (
@@ -807,6 +762,7 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
                                 {/* NEW badge */}
                                 {isNew && (
                                     <div
+                                        className="gami-shop-card-new"
                                         style={{
                                             position: "absolute",
                                             top: 6,
@@ -827,6 +783,7 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
                                 )}
                                 {/* Category strip – top */}
                                 <div
+                                    className="gami-shop-card-category"
                                     style={{
                                         background: categoryColor,
                                         color: "#fff",
@@ -902,6 +859,7 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
                                         </div>
                                     )}
                                     <div
+                                        className="gami-shop-card-title"
                                         style={{
                                             fontWeight: 600,
                                             fontSize: "0.85em",
@@ -923,6 +881,7 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
                                 </div>
                                 {/* Description section – dedicated area below icon/name */}
                                 <div
+                                    className="gami-shop-card-desc"
                                     style={{
                                         minHeight: 44,
                                         padding: "8px 8px",
@@ -956,6 +915,7 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
                                 </div>
                                 {/* Bottom – price strip + actions */}
                                 <div
+                                    className="gami-shop-card-footer"
                                     style={{
                                         background: "#252525",
                                         borderTop: "1px solid #333",
@@ -993,22 +953,6 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
                                             }}
                                         >
                                             Buy
-                                        </button>
-                                        <button
-                                            onClick={() => openEditItemModal(item)}
-                                            style={{
-                                                flex: 1,
-                                                padding: "6px 8px",
-                                                fontSize: "0.8em",
-                                                borderRadius: 4,
-                                                border: "1px solid #4b5563",
-                                                background: "#374151",
-                                                color: "#e5e7eb",
-                                                fontWeight: 500,
-                                                cursor: "pointer",
-                                            }}
-                                        >
-                                            Edit
                                         </button>
                                     </div>
                                 </div>

@@ -85,6 +85,14 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
         settings: ['enableSeasonalShop', 'shopRotationDays', 'enableSpecialEvents', 'dragonFestivalEnabled', 'mysticalMarketEnabled']
       },
       {
+        id: 'game-data-hub',
+        name: 'Game data hub',
+        icon: '🧰',
+        description: 'Create and edit shop items (Shop.md); future home for crafting definitions',
+        color: '#673AB7',
+        settings: []
+      },
+      {
         id: 'tree',
         name: 'Tree Rewards',
         icon: '🌳',

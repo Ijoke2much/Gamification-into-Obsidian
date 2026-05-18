@@ -1,4 +1,5 @@
-import { Plugin, App, PluginSettingTab, Setting, Modal, Notice } from "obsidian";
+import "../shared/styles/gamified-notices.css";
+import { Plugin, App, PluginSettingTab, Setting, Modal } from "obsidian";
 import React from 'react';
 import { PlayerTab, PLAYER_TAB_VIEW_TYPE } from "../views/tabs/player/PlayerTab";
 import { StatsTab, STATS_TAB_VIEW_TYPE } from "../views/tabs/stats/StatsTab";
@@ -23,7 +24,7 @@ import { TaskIntegrationService } from '../features/quests/utils/taskIntegration
 import { QuestSystemIntegration } from '../features/quests';
 import { EnhancedQuestSystem } from '../features/quests/components/EnhancedQuestSystem';
 import { PerformanceOptimizer } from '../shared/utils/performanceOptimizer';
-import { showGameNotice } from '../shared/utils/noticeUtils';
+import { showGameNotice, pixelNotice } from '../shared/utils/noticeUtils';
 import { EnergyResetService } from '../features/energy/services/energyResetService';
 import { EnergyNotificationService } from '../features/energy/services/energyNotificationService';
 import { getFirstLeafOfTypeInMainWorkspace, isLeafInVaultMainWorkspace } from '../shared/utils/workspaceLeafUtils';
@@ -293,26 +294,26 @@ export default class GamifiedObsidianPlugin extends Plugin {
 		// this.addRibbonIcon('target', 'Advanced Quest Dashboard', async (evt: MouseEvent) => {
 		// 	try {
 		// 		if (!this.questSystem) {
-		// 			new Notice('Advanced quest system not initialized');
+		// 			pixelNotice('Advanced quest system not initialized');
 		// 			return;
 		// 		}
 		// 
 		// 		const modal = new AdvancedQuestModal(this.app, {
 		// 			questSystem: this.questSystem,
 		// 			onQuestUpdate: (quest) => {
-		// 				new Notice('Quest updated successfully');
+		// 				pixelNotice('Quest updated successfully');
 		// 			},
 		// 			onQuestCreate: (quest) => {
-		// 				new Notice('Quest created successfully');
+		// 				pixelNotice('Quest created successfully');
 		// 			},
 		// 			onQuestDelete: (questId) => {
-		// 				new Notice('Quest deleted successfully');
+		// 				pixelNotice('Quest deleted successfully');
 		// 			}
 		// 		});
 		// 
 		// 		modal.open();
 		// 	} catch (error) {
-		// 		new Notice('Failed to open advanced quest dashboard');
+		// 		pixelNotice('Failed to open advanced quest dashboard');
 		// 	}
 		// });
 
@@ -574,7 +575,6 @@ export default class GamifiedObsidianPlugin extends Plugin {
 				stressReduce: this.settings.dailyRestoreStressReduce ?? 10,
 			}
 		});
-
 
 	}
 
@@ -989,8 +989,10 @@ class GamificationSettingTab extends PluginSettingTab {
 						onSave: async () => {
 							await this.plugin.saveSettings();
 							// @ts-ignore
-							new window.Notice('Settings saved successfully!');
-						}
+							pixelNotice('Settings saved successfully!');
+						},
+						app: this.app,
+						plugin: this.plugin,
 					})
 				);
 			});
@@ -1085,7 +1087,7 @@ class GamificationSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 						// Reload plugin to register/unregister views
 						// @ts-ignore
-						new window.Notice("Restart Obsidian to apply quest board changes.");
+						pixelNotice("Restart Obsidian to apply quest board changes.");
 					})
 			);
 
@@ -1427,7 +1429,7 @@ class GamificationSettingTab extends PluginSettingTab {
 						this.plugin.settings.enableSeasonalShop = value;
 						await this.plugin.saveSettings();
 						// @ts-ignore
-						new window.Notice("Restart Obsidian to apply shop changes.");
+						pixelNotice("Restart Obsidian to apply shop changes.");
 					})
 			);
 
@@ -1493,7 +1495,7 @@ class GamificationSettingTab extends PluginSettingTab {
 						const { resetYamlFrontmatterForType } = await import("../shared/utils/progressUpdater");
 						await resetYamlFrontmatterForType(this.app.vault, this.plugin.settings.skillFolder, "skill");
 						// @ts-ignore
-						new window.Notice("All skills have been reset. Settings will remain open for your convenience.");
+						pixelNotice("All skills have been reset. Settings will remain open for your convenience.");
 					})
 			);
 
@@ -1509,7 +1511,7 @@ class GamificationSettingTab extends PluginSettingTab {
 						const { resetYamlFrontmatterForType } = await import("../shared/utils/progressUpdater");
 						await resetYamlFrontmatterForType(this.app.vault, this.plugin.settings.classFolder, "class");
 						// @ts-ignore
-						new window.Notice("All classes have been reset. Settings will remain open for your convenience.");
+						pixelNotice("All classes have been reset. Settings will remain open for your convenience.");
 					})
 			);
 
@@ -1525,7 +1527,7 @@ class GamificationSettingTab extends PluginSettingTab {
 						const { resetYamlFrontmatterForType } = await import("../shared/utils/progressUpdater");
 						await resetYamlFrontmatterForType(this.app.vault, this.plugin.settings.masterClassFolder, "master");
 						// @ts-ignore
-						new window.Notice("All master classes have been reset. Settings will remain open for your convenience.");
+						pixelNotice("All master classes have been reset. Settings will remain open for your convenience.");
 					})
 			);
 
@@ -1541,7 +1543,7 @@ class GamificationSettingTab extends PluginSettingTab {
 						const { resetYamlFrontmatterForType } = await import("../shared/utils/progressUpdater");
 						await resetYamlFrontmatterForType(this.app.vault, this.plugin.settings.statFolder, "stat");
 						// @ts-ignore
-						new window.Notice("All stats have been reset. Settings will remain open for your convenience.");
+						pixelNotice("All stats have been reset. Settings will remain open for your convenience.");
 					})
 			);
 
@@ -1564,7 +1566,7 @@ class GamificationSettingTab extends PluginSettingTab {
 						frontmatter.total_exp = 0;
 						await writeYamlFrontmatter(this.app.vault, playerPath, frontmatter);
 						// @ts-ignore
-						new window.Notice("PlayerData.md has been reset. Settings will remain open for your convenience.");
+						pixelNotice("PlayerData.md has been reset. Settings will remain open for your convenience.");
 					})
 			);
 

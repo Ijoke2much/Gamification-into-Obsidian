@@ -15,13 +15,16 @@ import { listPlayerDataBackups, restorePlayerDataBackup } from '../../player/uti
 import { DEFAULT_PLAYER } from '../../../data/models/PlayerData';
 import type { App } from 'obsidian';
 import { TFile, TFolder } from 'obsidian';
+import type GamifiedObsidianPlugin from '../../../core/main';
 import styles from './SettingsUI.module.css';
+import { GameDataHubPanel } from './GameDataHubPanel';
 
 interface SettingsUIProps {
   settings: GamificationPluginSettings;
   onSettingsChange: (settings: GamificationPluginSettings) => void;
   onSave: () => Promise<void>;
   app?: App; // Obsidian App instance for file operations
+  plugin?: GamifiedObsidianPlugin;
 }
 
 type ViewMode = 'groups' | 'category';
@@ -30,7 +33,8 @@ export const SettingsUI: React.FC<SettingsUIProps> = ({
   settings,
   onSettingsChange,
   onSave,
-  app
+  app,
+  plugin,
 }) => {
   const [viewMode, setViewMode] = useState<ViewMode>('groups');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
@@ -256,6 +260,17 @@ export const SettingsUI: React.FC<SettingsUIProps> = ({
           )}
           {currentCategory.id === 'shop' && (
             <ShopSettingsSection settings={settings} onSettingChange={updateSetting} />
+          )}
+          {currentCategory.id === 'game-data-hub' && (
+            plugin ? (
+              <GameDataHubPanel plugin={plugin} />
+            ) : (
+              <div className={styles.settingsSection}>
+                <Card className={styles.settingsCard}>
+                  <p>Reload this settings panel from the Gamification plugin to use the Game data hub.</p>
+                </Card>
+              </div>
+            )
           )}
           {currentCategory.id === 'tree' && (
             <TreeSettingsSection settings={settings} onSettingChange={updateSetting} />
@@ -785,6 +800,10 @@ const ShopSettingsSection: React.FC<{
   <div className={styles.settingsSection}>
     <Card className={styles.settingsCard}>
       <h3>🛒 Shop System Settings</h3>
+      <p className={styles.helperText} style={{ marginTop: 0, marginBottom: '16px' }}>
+        To add or edit shop items (written to Shop.md), go to{' '}
+        <strong>Rewards &amp; Progression → Game data hub</strong> in these settings.
+      </p>
       <div className={styles.settingGroup}>
         <label className={styles.checkboxLabel}>
           <input

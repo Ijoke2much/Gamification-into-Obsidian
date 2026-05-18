@@ -1,0 +1,118 @@
+.panel h3 {
+	margin: 0 0 0.85rem;
+	font-size: 1.35rem;
+	font-weight: 700;
+	color: var(--text-normal);
+}
+
+.intro {
+	margin: 0 0 1rem;
+	color: var(--text-muted);
+	line-height: 1.45;
+	max-width: 52rem;
+}
+
+.actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.6rem;
+	margin-bottom: 1rem;
+}
+
+.actionBtn {
+	padding: 0.5rem 1rem;
+	border-radius: 8px;
+	border: 1px solid var(--background-modifier-border);
+	background: var(--interactive-normal);
+	color: var(--text-normal);
+	font-weight: 600;
+	cursor: pointer;
+	font-size: 0.9rem;
+}
+
+.actionBtn:hover {
+	background: var(--interactive-hover);
+}
+
+.actionBtnPrimary {
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+	border-color: transparent;
+}
+
+.actionBtnPrimary:hover {
+	background: var(--interactive-accent-hover);
+}
+
+.actionBtnMuted {
+	opacity: 0.85;
+}
+
+.tableWrap {
+	overflow-x: auto;
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 10px;
+	max-height: min(420px, 55vh);
+	overflow-y: auto;
+}
+
+.table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.88rem;
+}
+
+.table th,
+.table td {
+	padding: 0.55rem 0.65rem;
+	text-align: left;
+	border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.table th {
+	position: sticky;
+	top: 0;
+	background: var(--background-secondary);
+	z-index: 1;
+	font-weight: 700;
+	color: var(--text-normal);
+}
+
+.table tr:last-child td {
+	border-bottom: none;
+}
+
+.table tbody tr:hover {
+	background: var(--background-modifier-hover);
+}
+
+.editBtn {
+	padding: 0.25rem 0.6rem;
+	font-size: 0.82rem;
+	border-radius: 6px;
+	border: 1px solid var(--background-modifier-border);
+	background: var(--background-secondary);
+	color: var(--text-normal);
+	cursor: pointer;
+	font-weight: 500;
+}
+
+.editBtn:hover {
+	background: var(--interactive-hover);
+}
+
+.empty {
+	padding: 1.25rem;
+	text-align: center;
+	color: var(--text-muted);
+}
+
+.warn {
+	padding: 0.75rem 1rem;
+	margin-bottom: 1rem;
+	border-radius: 8px;
+	border-left: 4px solid var(--color-orange);
+	background: var(--background-modifier-message);
+	font-size: 0.88rem;
+	color: var(--text-normal);
+}
