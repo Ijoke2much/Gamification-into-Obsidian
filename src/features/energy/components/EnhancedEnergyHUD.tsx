@@ -4,20 +4,39 @@ import { playerStore, PlayerStateChange } from '../../../shared/state/playerStor
 import { PlayerData } from '../../../data/models/PlayerData';
 import { BatteryProgressBar } from '../../../shared/components/ui/BatteryProgressBar';
 import { EnergyManagementSystem, EnergyRecommendation, EnergyActivity } from '../utils/energyManagementSystem';
+import type { WellbeingStatKey } from '../../../shared/utils/energyHudConfig';
+import { ENERGY_HUD_MODE_STATS } from '../../../shared/utils/energyHudConfig';
 import styles from './EnhancedEnergyHUD.module.css';
+
+/** Native tooltips: energy = physical drain; others = mental/emotional “shape of the day.” */
+const HUD_STAT_TIPS: Record<string, string> = {
+    energy:
+        "How drained you feel physically. Quests spend this separately from stress or focus—the same quest can cost energy and still lower stress (e.g. cleaning).",
+    focus: "How sharp or mentally on-task you feel.",
+    motivation: "How driven or ready for action you feel.",
+    calm: "How settled or at ease you feel.",
+    stress:
+        "How tense or overwhelmed you feel (lower is usually calmer). This is not the same as physical energy.",
+};
 
 interface EnhancedEnergyHUDProps {
     className?: string;
     showRecommendations?: boolean;
     compact?: boolean;
     autoRefresh?: boolean;
+    variant?: 'default' | 'pixel';
+    visibleStats?: WellbeingStatKey[];
+    hudTitle?: string;
 }
 
 export const EnhancedEnergyHUD: React.FC<EnhancedEnergyHUDProps> = ({
     className = '',
     showRecommendations = true,
     compact = false,
-    autoRefresh = true
+    autoRefresh = true,
+    variant = 'default',
+    visibleStats = ENERGY_HUD_MODE_STATS.full,
+    hudTitle = 'Energy Management',
 }) => {
     const [playerData, setPlayerData] = useState<PlayerData | null>(null);
     const [recommendations, setRecommendations] = useState<EnergyRecommendation[]>([]);
@@ -84,8 +103,11 @@ export const EnhancedEnergyHUD: React.FC<EnhancedEnergyHUDProps> = ({
         }
     };
 
+    const hudRootClass = `${styles.energyHUD} ${variant === 'pixel' ? styles.pixelSkin : ''} ${className}`.trim();
+    const batteryPixel = variant === 'pixel';
+
     if (!playerData?.stats) {
-        return <div className={`${styles.energyHUD} ${className}`}>Loading energy data...</div>;
+        return <div className={hudRootClass}>Loading energy data...</div>;
     }
 
     const stats = playerData.stats;
@@ -105,11 +127,13 @@ export const EnhancedEnergyHUD: React.FC<EnhancedEnergyHUDProps> = ({
     const motivation = getStatWithOverride('motivation', stats.motivation || 50);
     const calm = getStatWithOverride('calm', stats.calm || 50);
     const stress = getStatWithOverride('stress', stats.stress || 50);
+    const showStat = (stat: WellbeingStatKey) => visibleStats.includes(stat);
     
     const getActiveOverrides = () => {
         const active: Array<{ stat: string; value: number; expiresAt: string }> = [];
         if (manualOverrides) {
             Object.entries(manualOverrides).forEach(([stat, override]) => {
+                if (!showStat(stat as WellbeingStatKey)) return;
                 if (override?.value != null && override?.expiresAt && new Date(override.expiresAt) > now) {
                     active.push({ stat, value: override.value, expiresAt: override.expiresAt });
                 }
@@ -212,7 +236,12 @@ export const EnhancedEnergyHUD: React.FC<EnhancedEnergyHUDProps> = ({
             >
                 <div className={styles.recHeader}>
                     <span className={styles.recTitle}>{rec.title}</span>
-                    <span className={styles.recDuration}>{rec.duration}min</span>
+                    <div className={styles.recHeaderMeta}>
+                        <span className={styles.recDuration}>{rec.duration}min</span>
+                        <span className={styles.confidence}>
+                            Confidence: {rec.confidence}%
+                        </span>
+                    </div>
                 </div>
                 <p className={styles.recDescription}>{rec.description}</p>
                 
@@ -245,30 +274,32 @@ export const EnhancedEnergyHUD: React.FC<EnhancedEnergyHUDProps> = ({
                         </div>
                     </div>
                 )}
-                
-                <div className={styles.confidence}>
-                    <span>Confidence: {rec.confidence}%</span>
-                </div>
             </div>
         );
     };
 
     if (compact) {
+        const compactStatDefs = ([
+            { key: 'energy', value: energy, icon: '⚡', tip: HUD_STAT_TIPS.energy },
+            { key: 'focus', value: focus, icon: '🎯', tip: HUD_STAT_TIPS.focus },
+            { key: 'motivation', value: motivation, icon: '💪', tip: HUD_STAT_TIPS.motivation },
+            { key: 'calm', value: calm, icon: '🧘', tip: HUD_STAT_TIPS.calm },
+            { key: 'stress', value: stress, icon: '😰', tip: HUD_STAT_TIPS.stress },
+        ] as const).filter((item) => showStat(item.key));
+
         return (
-            <div className={`${styles.energyHUD} ${styles.compact} ${className}`}>
+            <div className={`${styles.energyHUD} ${styles.compact} ${variant === 'pixel' ? styles.pixelSkin : ''} ${className}`.trim()}>
                 <div className={styles.compactStats}>
-                    <div className={`${styles.compactStat} ${styles[getStatColor(energy)]}`}>
-                        <span className={styles.compactIcon}>⚡</span>
-                        <span className={styles.compactValue}>{energy}</span>
+                    {compactStatDefs.map((item) => (
+                    <div
+                        key={item.key}
+                        className={`${styles.compactStat} ${styles[getStatColor(item.value, item.key === 'stress')]}`}
+                        title={item.tip}
+                    >
+                        <span className={styles.compactIcon}>{item.icon}</span>
+                        <span className={styles.compactValue}>{item.value}</span>
                     </div>
-                    <div className={`${styles.compactStat} ${styles[getStatColor(focus)]}`}>
-                        <span className={styles.compactIcon}>🎯</span>
-                        <span className={styles.compactValue}>{focus}</span>
-                    </div>
-                    <div className={`${styles.compactStat} ${styles[getStatColor(motivation)]}`}>
-                        <span className={styles.compactIcon}>💪</span>
-                        <span className={styles.compactValue}>{motivation}</span>
-                    </div>
+                    ))}
                 </div>
                 {recommendations.length > 0 && (
                     <div className={styles.compactAlert}>
@@ -283,11 +314,16 @@ export const EnhancedEnergyHUD: React.FC<EnhancedEnergyHUDProps> = ({
     const energyTrend = getEnergyTrend();
 
     return (
-        <div className={`${styles.energyHUD} ${className}`}>
+        <div className={hudRootClass}>
             {/* Header with trend and last update */}
             <div className={styles.header}>
                 <div className={styles.titleSection}>
-                    <h3 className={styles.title}>Energy Management</h3>
+                    <h3
+                        className={styles.title}
+                        title="Physical energy (drain) is separate from stress, motivation, focus, and calm—how regulated, driven, or sharp you feel."
+                    >
+                        {hudTitle}
+                    </h3>
                     <div className={`${styles.trend} ${energyTrend.class}`}>
                         <span className={styles.trendIcon}>{energyTrend.icon}</span>
                         <span className={styles.trendText}>{energyTrend.text}</span>
@@ -318,8 +354,9 @@ export const EnhancedEnergyHUD: React.FC<EnhancedEnergyHUDProps> = ({
 
             {/* Enhanced stat bars */}
             <div className={styles.statsContainer}>
+                {showStat('energy') && (
                 <div className={styles.statRow}>
-                    <div className={styles.statInfo}>
+                    <div className={styles.statInfo} title={HUD_STAT_TIPS.energy}>
                         <span className={styles.statIcon}>⚡</span>
                         <span className={styles.statName}>Energy</span>
                         <span className={styles.statValue}>{energy}/100</span>
@@ -329,24 +366,30 @@ export const EnhancedEnergyHUD: React.FC<EnhancedEnergyHUDProps> = ({
                             percent={energy} 
                             segments={10} 
                             width={200} 
-                            height={20}
-                            className={getStatColor(energy)}
+                            height={22}
+                            statType="energy"
+                            pixel={batteryPixel}
+                            statLabel="Energy"
                         />
                     </div>
                     <button 
+                        type="button"
+                        className={batteryPixel ? styles.statEditBtn : undefined}
                         onClick={() => { 
                             setManualStatValue(energy); 
                             setShowStatModal({ stat: 'energy', value: energy }); 
                         }} 
                         title="Adjust energy manually"
-                        style={{ marginLeft: 8, fontSize: 12, padding: '2px 6px' }}
+                        style={batteryPixel ? undefined : { marginLeft: 8, fontSize: 12, padding: '2px 6px' }}
                     >
                         ✎
                     </button>
                 </div>
+                )}
 
+                {showStat('focus') && (
                 <div className={styles.statRow}>
-                    <div className={styles.statInfo}>
+                    <div className={styles.statInfo} title={HUD_STAT_TIPS.focus}>
                         <span className={styles.statIcon}>🎯</span>
                         <span className={styles.statName}>Focus</span>
                         <span className={styles.statValue}>{focus}/100</span>
@@ -356,24 +399,30 @@ export const EnhancedEnergyHUD: React.FC<EnhancedEnergyHUDProps> = ({
                             percent={focus} 
                             segments={10} 
                             width={200} 
-                            height={20}
-                            className={getStatColor(focus)}
+                            height={22}
+                            statType="focus"
+                            pixel={batteryPixel}
+                            statLabel="Focus"
                         />
                     </div>
                     <button 
+                        type="button"
+                        className={batteryPixel ? styles.statEditBtn : undefined}
                         onClick={() => { 
                             setManualStatValue(focus); 
                             setShowStatModal({ stat: 'focus', value: focus }); 
                         }} 
                         title="Adjust focus manually"
-                        style={{ marginLeft: 8, fontSize: 12, padding: '2px 6px' }}
+                        style={batteryPixel ? undefined : { marginLeft: 8, fontSize: 12, padding: '2px 6px' }}
                     >
                         ✎
                     </button>
                 </div>
+                )}
 
+                {showStat('motivation') && (
                 <div className={styles.statRow}>
-                    <div className={styles.statInfo}>
+                    <div className={styles.statInfo} title={HUD_STAT_TIPS.motivation}>
                         <span className={styles.statIcon}>💪</span>
                         <span className={styles.statName}>Motivation</span>
                         <span className={styles.statValue}>{motivation}/100</span>
@@ -383,24 +432,30 @@ export const EnhancedEnergyHUD: React.FC<EnhancedEnergyHUDProps> = ({
                             percent={motivation} 
                             segments={10} 
                             width={200} 
-                            height={20}
-                            className={getStatColor(motivation)}
+                            height={22}
+                            statType="motivation"
+                            pixel={batteryPixel}
+                            statLabel="Motivation"
                         />
                     </div>
                     <button 
+                        type="button"
+                        className={batteryPixel ? styles.statEditBtn : undefined}
                         onClick={() => { 
                             setManualStatValue(motivation); 
                             setShowStatModal({ stat: 'motivation', value: motivation }); 
                         }} 
                         title="Adjust motivation manually"
-                        style={{ marginLeft: 8, fontSize: 12, padding: '2px 6px' }}
+                        style={batteryPixel ? undefined : { marginLeft: 8, fontSize: 12, padding: '2px 6px' }}
                     >
                         ✎
                     </button>
                 </div>
+                )}
 
+                {showStat('calm') && (
                 <div className={styles.statRow}>
-                    <div className={styles.statInfo}>
+                    <div className={styles.statInfo} title={HUD_STAT_TIPS.calm}>
                         <span className={styles.statIcon}>🧘</span>
                         <span className={styles.statName}>Calm</span>
                         <span className={styles.statValue}>{calm}/100</span>
@@ -410,24 +465,30 @@ export const EnhancedEnergyHUD: React.FC<EnhancedEnergyHUDProps> = ({
                             percent={calm} 
                             segments={10} 
                             width={200} 
-                            height={20}
-                            className={getStatColor(calm)}
+                            height={22}
+                            statType="calm"
+                            pixel={batteryPixel}
+                            statLabel="Calm"
                         />
                     </div>
                     <button 
+                        type="button"
+                        className={batteryPixel ? styles.statEditBtn : undefined}
                         onClick={() => { 
                             setManualStatValue(calm); 
                             setShowStatModal({ stat: 'calm', value: calm }); 
                         }} 
                         title="Adjust calm manually"
-                        style={{ marginLeft: 8, fontSize: 12, padding: '2px 6px' }}
+                        style={batteryPixel ? undefined : { marginLeft: 8, fontSize: 12, padding: '2px 6px' }}
                     >
                         ✎
                     </button>
                 </div>
+                )}
 
+                {showStat('stress') && (
                 <div className={styles.statRow}>
-                    <div className={styles.statInfo}>
+                    <div className={styles.statInfo} title={HUD_STAT_TIPS.stress}>
                         <span className={styles.statIcon}>😰</span>
                         <span className={styles.statName}>Stress</span>
                         <span className={styles.statValue}>{stress}/100</span>
@@ -437,21 +498,26 @@ export const EnhancedEnergyHUD: React.FC<EnhancedEnergyHUDProps> = ({
                             percent={stress} 
                             segments={10} 
                             width={200} 
-                            height={20}
-                            className={getStatColor(stress, true)}
+                            height={22}
+                            statType="stress"
+                            pixel={batteryPixel}
+                            statLabel="Stress"
                         />
                     </div>
                     <button 
+                        type="button"
+                        className={batteryPixel ? styles.statEditBtn : undefined}
                         onClick={() => { 
                             setManualStatValue(stress); 
                             setShowStatModal({ stat: 'stress', value: stress }); 
                         }} 
                         title="Adjust stress manually"
-                        style={{ marginLeft: 8, fontSize: 12, padding: '2px 6px' }}
+                        style={batteryPixel ? undefined : { marginLeft: 8, fontSize: 12, padding: '2px 6px' }}
                     >
                         ✎
                     </button>
                 </div>
+                )}
             </div>
 
             {/* Energy management recommendations */}

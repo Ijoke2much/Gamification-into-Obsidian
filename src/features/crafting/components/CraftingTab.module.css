@@ -1,10 +1,29 @@
 .craftingTab {
     padding: 12px;
-    max-width: 350px;
+    max-width: 640px;
     margin: 0 auto;
     color: #ffffff;
     overflow-y: auto;
     height: 100%;
+}
+
+.craftingContainer {
+    padding: 12px;
+    max-width: 640px;
+    margin: 0 auto;
+    color: #ffffff;
+    box-sizing: border-box;
+}
+
+.craftingHeader {
+    text-align: center;
+    margin: 0 0 12px 0;
+    font-size: 18px;
+    font-weight: 700;
+    background: linear-gradient(135deg, #6495ed, #a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .header {
@@ -1303,4 +1322,129 @@
         box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
         text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
     }
+}
+
+/* ========================================
+   PIXEL / RPG SHELL
+   ======================================== */
+
+.pixelCraftingShell {
+    --pixel-bg: #1b1d2f;
+    --pixel-panel: #252742;
+    --pixel-panel-alt: #2e3152;
+    --pixel-border-dark: #0f1120;
+    --pixel-border-light: #5b61a2;
+    --pixel-accent: #8ecae6;
+    --pixel-highlight: #ffd166;
+    --pixel-text: #ecefff;
+    --pixel-muted: #bac2e3;
+    --pixel-shadow: 3px 3px 0 var(--pixel-border-dark);
+    --pixel-shadow-pressed: 1px 1px 0 var(--pixel-border-dark);
+    --pixel-card-radius: 0;
+    isolation: isolate;
+}
+
+.craftingContainer.pixelCraftingShell {
+    padding: 12px;
+    max-width: 640px;
+    margin: 0 auto;
+    color: var(--pixel-text);
+    font-family: "Press Start 2P", "VT323", "Courier New", monospace;
+    font-size: 11px;
+    line-height: 1.6;
+    background: var(--pixel-bg) !important;
+    border: 2px solid var(--pixel-border-dark);
+    box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light);
+    box-sizing: border-box;
+}
+
+.craftingContainer.pixelCraftingShell > h2,
+.craftingContainer.pixelCraftingShell .craftingHeader {
+    font-family: "Press Start 2P", "VT323", monospace !important;
+    font-size: 11px !important;
+    text-align: center;
+    margin: 0 0 12px 0 !important;
+    color: var(--pixel-accent) !important;
+    text-shadow: 2px 2px 0 var(--pixel-border-dark) !important;
+    background: none !important;
+    -webkit-text-fill-color: var(--pixel-accent) !important;
+}
+
+.craftingContainer.pixelCraftingShell .tabNavigation {
+    border-radius: var(--pixel-card-radius) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    background: var(--pixel-panel) !important;
+    box-shadow: var(--pixel-shadow-pressed) !important;
+    padding: 4px !important;
+    gap: 4px !important;
+}
+
+.craftingContainer.pixelCraftingShell .tabButton {
+    border-radius: var(--pixel-card-radius) !important;
+    border: 2px solid transparent !important;
+    font-family: "Press Start 2P", monospace !important;
+    font-size: 7px !important;
+    color: var(--pixel-muted) !important;
+    background: transparent !important;
+}
+
+.craftingContainer.pixelCraftingShell .activeTab {
+    background: var(--pixel-accent) !important;
+    color: var(--pixel-border-dark) !important;
+    border-color: var(--pixel-border-dark) !important;
+    box-shadow: var(--pixel-shadow-pressed) !important;
+}
+
+.craftingContainer.pixelCraftingShell .section {
+    border-radius: var(--pixel-card-radius) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    background: var(--pixel-panel) !important;
+    box-shadow: var(--pixel-shadow-pressed) !important;
+    backdrop-filter: none !important;
+}
+
+.craftingContainer.pixelCraftingShell .sectionTitle {
+    font-family: "Press Start 2P", monospace !important;
+    font-size: 8px !important;
+    color: var(--pixel-accent) !important;
+}
+
+.craftingContainer.pixelCraftingShell .materialCard,
+.craftingContainer.pixelCraftingShell .recipeCard,
+.craftingContainer.pixelCraftingShell .sessionCard,
+.craftingContainer.pixelCraftingShell .skillCard,
+.craftingContainer.pixelCraftingShell .stationCard,
+.craftingContainer.pixelCraftingShell .fragmentCard,
+.craftingContainer.pixelCraftingShell .templateCard {
+    border-radius: var(--pixel-card-radius) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    background: var(--pixel-panel-alt) !important;
+    box-shadow: var(--pixel-shadow-pressed) !important;
+    backdrop-filter: none !important;
+}
+
+.craftingContainer.pixelCraftingShell .materialName,
+.craftingContainer.pixelCraftingShell .recipeName,
+.craftingContainer.pixelCraftingShell .skillLevel {
+    font-family: "VT323", monospace !important;
+    font-size: 15px !important;
+}
+
+.craftingContainer.pixelCraftingShell .craftButton,
+.craftingContainer.pixelCraftingShell .generateButton {
+    border-radius: var(--pixel-card-radius) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    font-family: "Press Start 2P", monospace !important;
+    font-size: 8px !important;
+    box-shadow: var(--pixel-shadow) !important;
+}
+
+.craftingContainer.pixelCraftingShell .materialRequirement {
+    border-radius: var(--pixel-card-radius) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+}
+
+.craftingContainer.pixelCraftingShell .progressBar,
+.craftingContainer.pixelCraftingShell .progressFill {
+    border-radius: var(--pixel-card-radius) !important;
 }

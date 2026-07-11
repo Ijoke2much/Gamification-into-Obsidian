@@ -57,8 +57,8 @@ export const TimelineModal: React.FC<TimelineModalProps> = ({
   // Render modal using portal to attach to document.body
   // This ensures it appears outside the sidebar DOM hierarchy
   const modalContent = (
-    <div className={styles.modalOverlay} onClick={onClose}>
-      <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+    <div className={`${styles.modalOverlay} ${styles.pixelTimelineOverlay}`} data-pixel-modal="quest-timeline" onClick={onClose}>
+      <div className={`${styles.modalContent} ${styles.pixelTimelinePanel}`} data-pixel-shell="quest-timeline" onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
           <h2 className={styles.modalTitle}>
             {initialViewMode === 'workweek' ? '📊 Work Week View' : '📆 Full Week View'}

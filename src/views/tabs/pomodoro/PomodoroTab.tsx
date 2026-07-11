@@ -54,6 +54,37 @@ interface PomodoroTabProps {
   reloadPlayerData: () => void;
 }
 
+/** Map vault quest material tokens (e.g. "💎3 Materials") into loot rows for the reward panel. */
+function lootEntryFromQuestMaterialString(material: string): {
+  name: string;
+  icon: string;
+  quality: string;
+  rarity: string;
+} {
+  const icon =
+    material.includes('💎') ? '💎' :
+    material.includes('🔮') ? '🔮' :
+    material.includes('⚔️') ? '⚔️' :
+    material.includes('🛡️') ? '🛡️' :
+    material.includes('🏆') ? '🏆' :
+    material.includes('🔥') ? '🔥' :
+    material.includes('⚡') ? '⚡' :
+    material.includes('🌟') ? '🌟' :
+    '🎁';
+
+  const stripped = material.replace(/^(💎|🔮|⚔️|🛡️|🏆|🔥|⚡|🌟|🎁)/u, '').trim();
+  const name = stripped || material.trim();
+
+  let quality = 'normal';
+  if (/magic/i.test(material)) quality = 'refined';
+  else if (/weapon/i.test(material)) quality = 'masterwork';
+  else if (/armor/i.test(material)) quality = 'refined';
+  else if (/material/i.test(material)) quality = 'fresh';
+  else if (/random|drop/i.test(material)) quality = 'special';
+
+  return { name, icon, quality, rarity: 'common' };
+}
+
 // Pomodoro Tab Component
 export const PomodoroTab: React.FC<PomodoroTabProps> = React.memo(({
   plugin,
@@ -80,20 +111,6 @@ export const PomodoroTab: React.FC<PomodoroTabProps> = React.memo(({
   const [pomodoroStats, setPomodoroStats] = useState<PomodoroStats>(() => PomodoroStatsManager.loadStats());
   const [notifications, setNotifications] = useState<EnhancedNotification[]>([]);
   const timerSectionRef = useRef<HTMLDivElement>(null);
-
-  // Enhanced reward display state
-  const [showRewardDisplay, setShowRewardDisplay] = useState(false);
-  const [currentRewards, setCurrentRewards] = useState({
-    xp: 0,
-    cp: 0,
-    currency: 0,
-    materials: [] as Array<{
-      name: string;
-      icon: string;
-      quality: string;
-      rarity: string;
-    }>
-  });
 
   // Quest suggestion modal state
   const [showQuestSuggestions, setShowQuestSuggestions] = useState(false);
@@ -130,26 +147,6 @@ export const PomodoroTab: React.FC<PomodoroTabProps> = React.memo(({
     lineNumber?: number;
     isTimedQuest?: boolean;
   } | null>(null);
-
-  // Test: Show reward display on component mount for testing
-  useEffect(() => {
-    // Only show test reward display if no quest is attached
-    if (!attachedQuest) {
-      setTimeout(() => {
-        setCurrentRewards({
-          xp: 125,
-          cp: 60,
-          currency: 40,
-          materials: [
-            { name: 'Focus Crystal', icon: '💎', quality: 'masterwork', rarity: 'rare' },
-            { name: 'Time Essence', icon: '🔮', quality: 'refined', rarity: 'uncommon' },
-            { name: 'Energy Shard', icon: '⚡', quality: 'normal', rarity: 'common' }
-          ]
-        });
-        setShowRewardDisplay(true);
-      }, 2000); // Show after 2 seconds
-    }
-  }, [attachedQuest]);
 
   // Update energy state periodically
   useEffect(() => {
@@ -1035,7 +1032,7 @@ export const PomodoroTab: React.FC<PomodoroTabProps> = React.memo(({
         sessionDuration
       );
 
-      // Set up enhanced reward display
+      // Materials list for session-complete notification
       const displayMaterials = questRewards ? 
         [...materialReward.materials, ...questRewards.finalRewards.materials.map(material => ({
           name: material,
@@ -1050,16 +1047,6 @@ export const PomodoroTab: React.FC<PomodoroTabProps> = React.memo(({
           quality: 'rare',
           rarity: 'special'
         }))] : materialReward.materials;
-
-      setCurrentRewards({
-        xp: sessionXP,
-        cp: sessionCP,
-        currency: sessionCoins,
-        materials: displayMaterials
-      });
-
-      // Show enhanced reward display
-      setShowRewardDisplay(true);
 
       // Complete quest tracking session if active
       if (activeQuestSessionId && attachedQuest) {
@@ -1251,7 +1238,7 @@ export const PomodoroTab: React.FC<PomodoroTabProps> = React.memo(({
 
   // Memoize the entire JSX to prevent unnecessary re-renders
   const memoizedJSX = useMemo(() => (
-    <div className={styles.pomodoroContainer}>
+    <div className={`${styles.pomodoroContainer} ${styles.pixelPomodoroShell}`}>
       {/* Statistics Panel */}
       <div className={styles.statsPanel}>
         {/* XP Display */}
@@ -1524,27 +1511,18 @@ export const PomodoroTab: React.FC<PomodoroTabProps> = React.memo(({
         {/* Enhanced Quest Rewards Display */}
         {attachedQuest.rewards && (
           <div className={styles.questRewards}>
-            <div className={styles.rewardsLabel}>
-              Rewards
-              {attachedQuest.isTimedQuest && (
-                <span className={styles.timedBonusLabel}> ⏰ +20% XP, +15% Coins</span>
-              )}
-            </div>
+            {attachedQuest.isTimedQuest && (
+              <div className={styles.questTimedRewardBonus}>
+                <span className={styles.timedBonusLabel}>⏰ +20% XP, +15% Coins</span>
+              </div>
+            )}
             <PomodoroRewardDisplay
               xp={attachedQuest.rewards?.xp || 0}
               cp={attachedQuest.rewards?.cp || 0}
               currency={attachedQuest.rewards?.coins || 0}
               currencySymbol={currencySymbol}
               currencyName={currencyName}
-              materials={attachedQuest.rewards?.materials ? attachedQuest.rewards.materials.map(material => ({
-                name: material,
-                icon: material.includes('💎') ? '💎' : 
-                      material.includes('🔮') ? '🔮' : 
-                      material.includes('⚔️') ? '⚔️' : 
-                      material.includes('🛡️') ? '🛡️' : '🎁',
-                quality: 'normal',
-                rarity: 'common'
-              })) : []}
+              materials={attachedQuest.rewards?.materials?.map(lootEntryFromQuestMaterialString) ?? []}
               isVisible={true}
               animate={false} // Show quest rewards immediately without animation
             />
@@ -1609,50 +1587,6 @@ export const PomodoroTab: React.FC<PomodoroTabProps> = React.memo(({
       </div>
     )}
 
-    {/* Enhanced Reward Display */}
-    {showRewardDisplay && (
-      <PomodoroRewardDisplay
-        xp={currentRewards.xp}
-        cp={currentRewards.cp}
-        currency={currentRewards.currency}
-        currencySymbol={currencySymbol}
-        currencyName={currencyName}
-        materials={currentRewards.materials}
-        isVisible={showRewardDisplay}
-        onAnimationComplete={() => {
-          setTimeout(() => setShowRewardDisplay(false), 3000);
-        }}
-      />
-    )}
-
-
-    {/* Test Button for Reward Display */}
-    <button 
-      onClick={() => {
-        setCurrentRewards({
-          xp: 150,
-          cp: 75,
-          currency: 50,
-          materials: [
-            { name: 'Test Material', icon: '💎', quality: 'masterwork', rarity: 'rare' },
-            { name: 'Another Material', icon: '🔮', quality: 'refined', rarity: 'uncommon' }
-          ]
-        });
-        setShowRewardDisplay(true);
-      }}
-      style={{
-        margin: '10px',
-        padding: '10px 20px',
-        backgroundColor: '#4CAF50',
-        color: 'white',
-        border: 'none',
-        borderRadius: '5px',
-        cursor: 'pointer'
-      }}
-    >
-      Test Reward Display
-    </button>
-
     {/* Quest Suggestion Modal */}
     <QuestSuggestionModal
       app={plugin.app}
@@ -1675,11 +1609,16 @@ export const PomodoroTab: React.FC<PomodoroTabProps> = React.memo(({
     pomodoroStats.todaySessions,
     pomodoroStats.currentStreak,
     pomodoroStats.totalPomodoroXP,
+    pomodoroStats.todayXP,
+    pomodoroStats.weekXP,
     timerMode,
     customDuration,
     attachedQuest,
-    notifications.length, // Only depend on notification count to reduce re-renders
-    plugin // Add plugin to dependencies since we use it in the JSX
+    showQuestSuggestions,
+    notifications.length,
+    plugin,
+    handleQuestSuggestionSelect,
+    getCurrentSessionDuration,
   ]);
 
   return memoizedJSX;

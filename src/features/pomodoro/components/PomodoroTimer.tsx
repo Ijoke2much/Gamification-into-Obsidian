@@ -187,7 +187,7 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
   };
 
   return (
-    <div className={styles.timerCard}>
+    <div className={styles.timerCard} data-phase={isBreak ? "break" : "work"}>
       {/* Phase Title */}
       <div className={styles.timerTitle}>
         {isBreak ? "🌿 Break Time" : "⚡ Work Time"}

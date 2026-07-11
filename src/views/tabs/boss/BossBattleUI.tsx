@@ -15,21 +15,44 @@ import { playerStore } from '../../../shared/state/playerStore';
 import { PlayerData } from '../../../data/models/PlayerData';
 import { SkillBasedBattleEngine } from '../../../features/quests/utils/skillBasedBattleEngine';
 import { ProjectBossFactory } from '../../../features/quests/utils/projectBossFactory';
-import { BossAnalyticsUI } from './BossAnalyticsUI';
-import { Notice, TFile } from 'obsidian';
+import { TFile } from 'obsidian';
 import { createSampleBosses } from './sampleBosses';
 import { saveAndActivateBoss } from './enhancedBossCreation';
 import { getAllSkills, SkillMetadata } from '../../../shared/utils/skillDiscovery';
 import { currencyDisplay } from '../../../shared/services/currencyDisplayService';
 import { useQuestManagement } from '../../../data/hooks/useQuestManagement';
 import { applyTacticalBattleBonuses } from '../../../shared/utils/questCompletionPipeline';
+import { pixelNotice } from '../../../shared/utils/noticeUtils';
+import {
+    readBoss,
+    type BossFileData,
+} from '../../../features/quests/utils/bossFile';
+import {
+    clearBossFileRaid,
+    clearBossRaidPendingVictory,
+    describeBossRaidAffinity,
+    getActiveBossFileRaid,
+} from '../../../features/quests/utils/bossRaidService';
+import {
+    completeFileBackedDungeonRaid,
+    getDungeonBossSource,
+    loadJourneyState,
+} from '../../../features/quests/utils/journeyRunService';
+import {
+    buildDungeonRaidNotice,
+    computeBossFileRaidLoot,
+} from '../../../features/quests/utils/journeyLootService';
+import { notifyJourneyVictory } from '../../../shared/services/ceremonyService';
+import { getAppliedVisualTheme } from '../../../shared/utils/visualThemeManager';
+import { onSettingsUpdated } from '../../../shared/utils/settingsEvents';
 
 // Enhanced Productivity Systems
 import { productivityEquipmentSystem, ProductivityEquipment } from '../../../features/quests/systems/productivityEquipmentSystem';
 import { dynamicBossEvents } from '../../../features/quests/systems/dynamicBossEvents';
 import { createEnhancedBattleIntegration } from '../../../features/quests/systems/enhancedBattleIntegration';
 import styles from './BossBattleStyles.module.css';
-import BossCreatorTab from './BossCreatorTab';
+import hubStyles from './BossHubPixel.module.css';
+import { GateBattleIdlePanel } from './components/GateBattleIdlePanel';
 
 interface BossBattleUIProps {
     plugin: GamifiedObsidianPlugin;
@@ -55,12 +78,24 @@ interface LoadingStates {
 
 export const BossBattleUI: React.FC<BossBattleUIProps> = ({ plugin }) => {
     console.log("BossBattleUI: Component rendering...");
-    const [activeTab, setActiveTab] = useState<TabType>('tutorial');
+    const [activeTab, setActiveTab] = useState<TabType>('selection');
     const [availableBosses, setAvailableBosses] = useState<BossData[]>([]);
     const [selectedBoss, setSelectedBoss] = useState<BossData | null>(null);
     const [playerData, setPlayerData] = useState<PlayerData | null>(null);
     const [battleLog, setBattleLog] = useState<string[]>([]);
     const [currentScreen, setCurrentScreen] = useState<'main' | 'battle'>('main');
+    // File-backed boss raid launched from the Dungeon (or the boss command).
+    const [bossRaidFile, setBossRaidFile] = useState<BossFileData | null>(null);
+    const [bossRaidLockDungeon, setBossRaidLockDungeon] = useState(false);
+    const [bossRaidPendingVictory, setBossRaidPendingVictory] = useState(false);
+    const [bossVictoryPreview, setBossVictoryPreview] = useState(false);
+    const [visualThemeRevision, setVisualThemeRevision] = useState(0);
+    const appliedVisualTheme = useMemo(
+        () => getAppliedVisualTheme(),
+        [visualThemeRevision]
+    );
+
+    useEffect(() => onSettingsUpdated(() => setVisualThemeRevision((n) => n + 1)), []);
     
     // Load quests to get real subtasks
     const { quests, handleCompleteQuest } = useQuestManagement(plugin);
@@ -234,16 +269,79 @@ export const BossBattleUI: React.FC<BossBattleUIProps> = ({ plugin }) => {
 
     // Open create tab when requested by sidebar or other triggers
     useEffect(() => {
-        const handler = () => setActiveTab('creation');
+        const handler = () => void plugin.openCreateBossModal();
         window.addEventListener('openBossCreation', handler);
         return () => window.removeEventListener('openBossCreation', handler);
     }, []);
+
+    // Consume a file-backed boss raid intent (from the Dungeon "Enter raid").
+    useEffect(() => {
+        const consume = async (path: string, lockDungeon: boolean) => {
+            const raid = getActiveBossFileRaid();
+            const pendingVictory =
+                !!raid?.pendingVictoryClaim && raid.bossFilePath === path;
+            const boss = await readBoss(plugin.app, path);
+            if (!boss) {
+                pixelNotice('Could not load that boss note.', 3000);
+                return;
+            }
+            setBossRaidFile(boss);
+            setBossVictoryPreview(false);
+            setBossRaidLockDungeon(lockDungeon);
+            setBossRaidPendingVictory(pendingVictory);
+            setCurrentScreen('battle');
+        };
+
+        // Intent set before this view mounted.
+        const pending = plugin.pendingBossRaid;
+        if (pending) {
+            plugin.pendingBossRaid = null;
+            void consume(pending.path, pending.lockDungeon);
+        }
+
+        // Intent dispatched while already mounted.
+        const handler = (e: Event) => {
+            const detail = (e as CustomEvent<{ path: string; lockDungeon: boolean }>).detail;
+            plugin.pendingBossRaid = null;
+            if (detail?.path) void consume(detail.path, detail.lockDungeon);
+        };
+        window.addEventListener('openBossRaid', handler as EventListener);
+        return () => window.removeEventListener('openBossRaid', handler as EventListener);
+    }, [plugin]);
+
+    // Debug: open boss workspace directly on the victory screen.
+    useEffect(() => {
+        const consume = async (path: string) => {
+            const boss = await readBoss(plugin.app, path);
+            if (!boss) {
+                pixelNotice('Could not load that boss note.', 3000);
+                return;
+            }
+            setBossRaidFile(boss);
+            setBossVictoryPreview(true);
+            setBossRaidLockDungeon(false);
+            setCurrentScreen('battle');
+        };
+
+        const pending = plugin.pendingBossVictoryPreview;
+        if (pending) {
+            plugin.pendingBossVictoryPreview = null;
+            void consume(pending.path);
+        }
+
+        const handler = (e: Event) => {
+            const detail = (e as CustomEvent<{ path: string }>).detail;
+            plugin.pendingBossVictoryPreview = null;
+            if (detail?.path) void consume(detail.path);
+        };
+        window.addEventListener('openBossVictoryPreview', handler as EventListener);
+        return () => window.removeEventListener('openBossVictoryPreview', handler as EventListener);
+    }, [plugin]);
 
     useEffect(() => {
         const onSystem = (e: Event) => {
             const tab = (e as CustomEvent<{ tab?: string }>).detail?.tab;
             if (tab === 'analytics') setActiveTab('analytics');
-            else setActiveTab('selection');
         };
         const onAnalytics = () => setActiveTab('analytics');
         window.addEventListener('openBossSystem', onSystem as EventListener);
@@ -486,7 +584,6 @@ export const BossBattleUI: React.FC<BossBattleUIProps> = ({ plugin }) => {
         }
     }, [questTracker, isQuestTrackingActive]);
 
-
     const loadAvailableBosses = useCallback(async () => {
         setLoadingStates(prev => ({ ...prev, bosses: true }));
         try {
@@ -534,24 +631,11 @@ export const BossBattleUI: React.FC<BossBattleUIProps> = ({ plugin }) => {
             .map(([key, _]) => key.replace(/([A-Z])/g, ' $1').toLowerCase());
 
         return (
-            <div style={{
-                position: 'fixed',
-                top: '50%',
-                left: '50%',
-                transform: 'translate(-50%, -50%)',
-                background: 'rgba(0, 0, 0, 0.8)',
-                color: 'white',
-                padding: '20px',
-                borderRadius: '10px',
-                zIndex: 1000,
-                textAlign: 'center'
-            }}>
-                <div style={{ fontSize: '2rem', marginBottom: '10px' }}>⚡</div>
+            <div className={hubStyles.loadingOverlay}>
+                <div className={hubStyles.loadingEmoji}>⚡</div>
                 <div>Loading Boss Battle System...</div>
                 {loadingItems.length > 0 && (
-                    <div style={{ fontSize: '0.9rem', marginTop: '10px', opacity: 0.8 }}>
-                        Loading: {loadingItems.join(', ')}
-                    </div>
+                    <div className={hubStyles.loadingSub}>Loading: {loadingItems.join(', ')}</div>
                 )}
             </div>
         );
@@ -631,10 +715,10 @@ export const BossBattleUI: React.FC<BossBattleUIProps> = ({ plugin }) => {
                 // Refresh the boss list
                 loadAvailableBosses();
                 
-                new Notice(`Boss "${bossData.boss.name}" deleted successfully`);
+                pixelNotice(`Boss "${bossData.boss.name}" deleted successfully`);
             } catch (error) {
                 console.error('Failed to delete boss:', error);
-                new Notice('Failed to delete boss');
+                pixelNotice('Failed to delete boss');
             }
         }
     };
@@ -669,10 +753,10 @@ export const BossBattleUI: React.FC<BossBattleUIProps> = ({ plugin }) => {
                 (bossManagementService as any).saveToStorage();
                 loadAvailableBosses();
                 
-                new Notice(`Cleared ${deletedCount} test bosses`);
+                pixelNotice(`Cleared ${deletedCount} test bosses`);
             } catch (error) {
                 console.error('Failed to clear test bosses:', error);
-                new Notice('Failed to clear test bosses');
+                pixelNotice('Failed to clear test bosses');
             }
         }
     };
@@ -682,17 +766,17 @@ export const BossBattleUI: React.FC<BossBattleUIProps> = ({ plugin }) => {
         window.console.log('Starting unified battle with:', bossData);
         
         if (!playerData) {
-            new Notice('Player data not loaded. Please try again.');
+            pixelNotice('Player data not loaded. Please try again.');
             return;
         }
 
         if (!bossData.quest) {
-            new Notice('No quest data found for this boss. Please try again.');
+            pixelNotice('No quest data found for this boss. Please try again.');
             return;
         }
 
         if (!bossData.quest.subtasks || bossData.quest.subtasks.length === 0) {
-            new Notice('This quest has no subtasks to battle with. Please add subtasks first.');
+            pixelNotice('This quest has no subtasks to battle with. Please add subtasks first.');
             return;
         }
 
@@ -713,10 +797,10 @@ export const BossBattleUI: React.FC<BossBattleUIProps> = ({ plugin }) => {
             setShowUnifiedBattle(true);
             setActiveTab('battle');
             
-            new Notice(`Starting unified battle with ${bossData.boss.name}!`);
+            pixelNotice(`Starting unified battle with ${bossData.boss.name}!`);
         } catch (error) {
             window.console.error('Failed to start unified battle:', error);
-            new Notice(`Failed to start battle: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            pixelNotice(`Failed to start battle: ${error instanceof Error ? error.message : 'Unknown error'}`);
         }
     }, [playerData, playerBattleStats]);
 
@@ -742,12 +826,12 @@ export const BossBattleUI: React.FC<BossBattleUIProps> = ({ plugin }) => {
             // Show completion notification
             const subtask = (unifiedBattle.quest.subtasks as Array<{ id?: string; text: string }> | undefined)?.find(s => (s.id || '') === subtaskId);
             if (subtask) {
-                new Notice(`Subtask completed: ${subtask.text}`);
+                pixelNotice(`Subtask completed: ${subtask.text}`);
             }
             
             // Check if battle is won
             if (updatedBattle.isDefeated) {
-                new Notice(`🎉 Victory! ${updatedBattle.bossName} defeated!`);
+                pixelNotice(`🎉 Victory! ${updatedBattle.bossName} defeated!`);
                 // Award rewards
                 if (playerData) {
                     playerData.xp += updatedBattle.rewards.xp;
@@ -759,7 +843,7 @@ export const BossBattleUI: React.FC<BossBattleUIProps> = ({ plugin }) => {
             }
         } catch (error) {
             window.console.error('Failed to complete subtask:', error);
-            new Notice('Failed to complete subtask. Please try again.');
+            pixelNotice('Failed to complete subtask. Please try again.');
         }
     }, [unifiedBattle, playerData, playerBattleStats, questTracker]);
 
@@ -908,7 +992,7 @@ export const BossBattleUI: React.FC<BossBattleUIProps> = ({ plugin }) => {
     const createNewQuest = async () => {
         try {
             if (!newQuestData.title.trim()) {
-                new Notice('Please enter a quest title');
+                pixelNotice('Please enter a quest title');
                 return;
             }
 
@@ -976,14 +1060,14 @@ export const BossBattleUI: React.FC<BossBattleUIProps> = ({ plugin }) => {
             });
             setShowQuestCreation(false);
 
-            new Notice(`Quest "${newQuestData.title}" created successfully with tag #${bossTag}`);
+            pixelNotice(`Quest "${newQuestData.title}" created successfully with tag #${bossTag}`);
             
             // Reload quests to get the latest from file
             loadAvailableQuests();
             
         } catch (error) {
             console.error('Failed to create quest:', error);
-            new Notice('Failed to create quest');
+            pixelNotice('Failed to create quest');
         }
     };
 
@@ -1037,14 +1121,14 @@ export const BossBattleUI: React.FC<BossBattleUIProps> = ({ plugin }) => {
                 questTags: [...prev.questTags, bossTag]
             }));
 
-            new Notice(`Boss tag #${bossTag} applied to ${customBoss.linkedQuests.length} quests`);
+            pixelNotice(`Boss tag #${bossTag} applied to ${customBoss.linkedQuests.length} quests`);
             
             // Reload quests to get updated tags
             loadAvailableQuests();
             
         } catch (error) {
             console.error('Failed to apply boss tags:', error);
-            new Notice('Failed to apply boss tags to quests');
+            pixelNotice('Failed to apply boss tags to quests');
         }
     };
 
@@ -1341,7 +1425,7 @@ export const BossBattleUI: React.FC<BossBattleUIProps> = ({ plugin }) => {
         const file = event.target.files?.[0];
         if (file) {
             if (file.size > 5 * 1024 * 1024) { // 5MB limit
-                new Notice('Image file must be less than 5MB');
+                pixelNotice('Image file must be less than 5MB');
                 return;
             }
             
@@ -1388,7 +1472,7 @@ export const BossBattleUI: React.FC<BossBattleUIProps> = ({ plugin }) => {
     // Save boss template
     const saveBossTemplate = () => {
         if (!customBoss.name.trim()) {
-            new Notice('Please enter a boss name');
+            pixelNotice('Please enter a boss name');
             return;
         }
         
@@ -1476,15 +1560,15 @@ export const BossBattleUI: React.FC<BossBattleUIProps> = ({ plugin }) => {
             // Also create an active boss that appears in boss selection
             const activeBossCreated = saveAndActivateBoss(customBoss);
             if (activeBossCreated) {
-                new Notice(`Boss template "${customBoss.name}" saved and activated successfully!`);
+                pixelNotice(`Boss template "${customBoss.name}" saved and activated successfully!`);
                 // Refresh the available bosses list
                 loadAvailableBosses();
             } else {
-                new Notice(`Boss template "${customBoss.name}" saved as template only`);
+                pixelNotice(`Boss template "${customBoss.name}" saved as template only`);
             }
         } catch (error) {
             console.error('Failed to save boss template:', error);
-            new Notice('Failed to save boss template');
+            pixelNotice('Failed to save boss template');
         }
     };
 
@@ -1553,7 +1637,7 @@ export const BossBattleUI: React.FC<BossBattleUIProps> = ({ plugin }) => {
             setImagePreview(template.visuals.customImage);
         }
         
-        new Notice(`Boss template "${template.name}" loaded!`);
+        pixelNotice(`Boss template "${template.name}" loaded!`);
     };
 
     // Removed duplicate loadPlayerData - using optimized version above
@@ -2121,7 +2205,7 @@ export const BossBattleUI: React.FC<BossBattleUIProps> = ({ plugin }) => {
         // Check for victory
         if (newHP === 0) {
             setTimeout(() => {
-                new Notice(isDemoBoss || isSkillDemoBoss ? '🎉 Training completed successfully!' : '🏆 Boss defeated!');
+                pixelNotice(isDemoBoss || isSkillDemoBoss ? '🎉 Training completed successfully!' : '🏆 Boss defeated!');
                 if (isDemoBoss || isSkillDemoBoss) {
                     // Add training completion message and exit options
                     setBattleLog(prev => [...prev.slice(-2), 
@@ -2135,23 +2219,6 @@ export const BossBattleUI: React.FC<BossBattleUIProps> = ({ plugin }) => {
             }, 1000);
         }
     };
-
-
-    // Tab Styles
-    const tabButtonStyle = (isActive: boolean) => ({
-        padding: '12px 24px',
-        backgroundColor: isActive ? '#4a90e2' : '#2a2a2a',
-        color: isActive ? '#ffffff' : '#cccccc',
-        border: 'none',
-        borderRadius: '8px 8px 0 0',
-        cursor: 'pointer',
-        fontSize: '14px',
-        fontWeight: 'bold',
-        transition: 'all 0.3s ease',
-        marginRight: '4px',
-        transform: isActive ? 'translateY(-2px)' : 'none',
-        boxShadow: isActive ? '0 4px 8px rgba(74, 144, 226, 0.3)' : 'none'
-    });
 
     const renderTutorialTab = () => {
         console.log("BossBattleUI: Rendering tutorial tab");
@@ -2574,7 +2641,7 @@ export const BossBattleUI: React.FC<BossBattleUIProps> = ({ plugin }) => {
                                                         const updated = savedBossTemplates.filter(t => t.id !== template.id);
                                                         setSavedBossTemplates(updated);
                                                         localStorage.setItem('gamified-boss-templates', JSON.stringify(updated));
-                                                        new Notice('Template deleted');
+                                                        pixelNotice('Template deleted');
                                                     }}
                                                     style={{
                                                         padding: '6px',
@@ -3086,8 +3153,6 @@ export const BossBattleUI: React.FC<BossBattleUIProps> = ({ plugin }) => {
                             </div>
                         </div>
                     );
-
-
 
                 case 'quests':
                     return (
@@ -4081,6 +4146,118 @@ export const BossBattleUI: React.FC<BossBattleUIProps> = ({ plugin }) => {
         );
     };
     // Enhanced Battle Screen with improved UI
+    // ── File-backed boss raid (two-bar rules) ──
+    if (currentScreen === 'battle' && bossRaidFile) {
+        const previewTasks = bossVictoryPreview
+            ? bossRaidFile.tasks.map((t) => ({ text: t.text, completed: true }))
+            : bossRaidFile.tasks.map((t) => ({ text: t.text, completed: t.completed }));
+
+        const raidQuest: Quest = {
+            id: `boss-file-${bossRaidFile.bossId}`,
+            title: bossRaidFile.name,
+            className: 'boss',
+            stats: [],
+            xp: bossRaidFile.maxHp,
+            cp: 0,
+            coins: 0,
+            priority: 'high',
+            difficulty: bossRaidFile.difficulty,
+            // Far-future due date so the deadline timer never fails a boss-file raid.
+            due: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+            skills: [],
+            description: bossRaidFile.description || 'A boss that only real work can fell.',
+            subtasks: previewTasks,
+            completed: false,
+            tags: ['boss'],
+            estimatedTime: '60',
+            energyCost: 0,
+        };
+
+        const raidPlayerData: PlayerData = {
+            name: playerData?.name || 'Player',
+            avatar: playerData?.avatar || '🧙',
+            rank: playerData?.rank || 'Adventurer',
+            masterClass: playerData?.masterClass || 'Warrior',
+            description: playerData?.description || 'A skilled fighter',
+            level: playerData?.level || 5,
+            xp: playerData?.xp || 0,
+            xpRequired: playerData?.xpRequired || 1000,
+            total_exp: playerData?.total_exp || 0,
+            coins: playerData?.coins || 0,
+            cp: playerData?.cp || 0,
+            inventory: playerData?.inventory || [],
+            stats: {
+                energy: playerData?.stats?.energy || 70,
+                focus: playerData?.stats?.focus || 80,
+                motivation: playerData?.stats?.motivation || 75,
+                strength: playerBattleStats.strength || playerData?.stats?.strength || 60,
+                intelligence: playerBattleStats.intelligence || playerData?.stats?.intelligence || 60,
+                creativity: playerBattleStats.creativity || playerData?.stats?.creativity || 60,
+                communication: playerBattleStats.charisma || playerData?.stats?.communication || 60,
+                speed: playerBattleStats.dexterity || playerData?.stats?.speed || 60,
+                wisdom: playerBattleStats.faith || playerData?.stats?.wisdom || 60,
+            },
+            lastDailyReset: playerData?.lastDailyReset || new Date().toISOString(),
+        };
+
+        const exitRaid = () => {
+            setBossRaidFile(null);
+            setBossRaidLockDungeon(false);
+            setBossRaidPendingVictory(false);
+            setBossVictoryPreview(false);
+            setCurrentScreen('main');
+        };
+
+        const activeRaid = getActiveBossFileRaid();
+        const dungeonRaidLootPreview =
+            bossRaidLockDungeon && !bossVictoryPreview
+                ? computeBossFileRaidLoot(bossRaidFile, getDungeonBossSource(loadJourneyState()))
+                : null;
+
+        const currencySymbol = plugin.settings.currencySymbol ?? '🪙';
+
+        return (
+            <TacticalBattleUI
+                quest={raidQuest}
+                playerData={raidPlayerData}
+                plugin={plugin}
+                bossFile={bossVictoryPreview ? undefined : bossRaidFile}
+                victoryPreview={bossVictoryPreview}
+                bossRaidPendingVictory={bossRaidPendingVictory}
+                bossRaidAffinityLabel={
+                    activeRaid ? describeBossRaidAffinity(activeRaid) : undefined
+                }
+                bossRaidProgress={
+                    activeRaid
+                        ? {
+                              applied: activeRaid.questsApplied,
+                              required: bossRaidFile.requiredTasks,
+                          }
+                        : undefined
+                }
+                dungeonRaidLootPreview={dungeonRaidLootPreview}
+                onBossFileVictory={async (boss) => {
+                    if (bossVictoryPreview) return;
+                    if (bossRaidLockDungeon) {
+                        const loot = await completeFileBackedDungeonRaid(plugin.app, boss);
+                        if (loot) {
+                            notifyJourneyVictory(buildDungeonRaidNotice(boss.name, loot, currencySymbol));
+                        } else {
+                            pixelNotice(
+                                `${boss.name} defeated! Raid spoils were already claimed this cycle.`,
+                                4500
+                            );
+                        }
+                    }
+                    clearBossFileRaid();
+                    clearBossRaidPendingVictory();
+                }}
+                onQuestComplete={() => {}}
+                onClose={exitRaid}
+            />
+        );
+    }
+
     if (currentScreen === 'battle' && selectedBoss) {
         const isDemoBoss = selectedBoss.boss.id === 'demo-boss-test-001';
         const isSkillDemoBoss = selectedBoss.boss.id === 'skill-demo-boss-001';
@@ -4099,7 +4276,7 @@ export const BossBattleUI: React.FC<BossBattleUIProps> = ({ plugin }) => {
                             onEquipmentClick={() => {
                                 // This would open the inventory modal
                                 console.log("Opening inventory for equipment management...");
-                                new Notice("💡 Tip: Use the inventory tab to manage productivity equipment!", 3000);
+                                pixelNotice("💡 Tip: Use the inventory tab to manage productivity equipment!", 3000);
                             }}
                         />
                     </div>
@@ -4188,7 +4365,6 @@ export const BossBattleUI: React.FC<BossBattleUIProps> = ({ plugin }) => {
             );
         }
     }
-
 
     if (currentScreen === 'battle' && selectedBoss) {
         // Check if this is a tutorial/practice boss - USE TACTICAL BATTLE UI
@@ -4432,7 +4608,7 @@ export const BossBattleUI: React.FC<BossBattleUIProps> = ({ plugin }) => {
                         battlePreparation={battlePreparation}
                         playerStats={playerBattleStats}
                         onEquipmentClick={() => {
-                            new Notice("💡 Tip: Use the inventory tab to manage productivity equipment!", 3000);
+                            pixelNotice("💡 Tip: Use the inventory tab to manage productivity equipment!", 3000);
                         }}
                     />
                 </div>
@@ -5173,7 +5349,7 @@ export const BossBattleUI: React.FC<BossBattleUIProps> = ({ plugin }) => {
                         const bonusCoins = extras.moveBonusCoins ?? 0;
                         await applyTacticalBattleBonuses(bonusXp, bonusCoins);
                         if (bonusXp > 0 || bonusCoins > 0) {
-                            new Notice(`Raid bonuses applied: +${bonusXp} XP, +${bonusCoins} coins`, 4500);
+                            pixelNotice(`Raid bonuses applied: +${bonusXp} XP, +${bonusCoins} coins`, 4500);
                         }
                     }
                     const q =
@@ -5184,7 +5360,7 @@ export const BossBattleUI: React.FC<BossBattleUIProps> = ({ plugin }) => {
                     if (q?.filePath) {
                         await handleCompleteQuest(q.id);
                     } else {
-                        new Notice(
+                        pixelNotice(
                             'Raid bonuses saved. Quest note not linked — complete the quest in the tracker if needed.',
                             6000
                         );
@@ -5203,67 +5379,25 @@ export const BossBattleUI: React.FC<BossBattleUIProps> = ({ plugin }) => {
         );
     }
 
+    const shellProps = {
+        className: hubStyles.root,
+        'data-gamification-theme-root': true,
+        'data-gamification-visual-theme': appliedVisualTheme.preset,
+        'data-gamification-shell': 'pixel',
+        'data-gamification-pixel-enclave': true,
+    } as const;
 
     return (
-        <div style={{
-            width: '100%',
-            height: '100vh',
-            background: 'linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)',
-            color: '#ffffff',
-            overflowY: 'auto',
-            fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif"
-        }}>
-            {/* Loading Indicator */}
+        <div {...shellProps}>
             <LoadingIndicator />
-            
-            {/* Tab Navigation */}
-            <div style={{
-                padding: '20px 20px 0',
-                borderBottom: '2px solid #4a4a5a',
-                background: 'rgba(0,0,0,0.3)'
-            }}>
-                <div style={{ display: 'flex', justifyContent: 'center', gap: '4px' }}>
-                    <button
-                        onClick={() => setActiveTab('tutorial')}
-                        style={tabButtonStyle(activeTab === 'tutorial')}
-                    >
-                        📚 Tutorial
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('selection')}
-                        style={tabButtonStyle(activeTab === 'selection')}
-                    >
-                        ⚔️ Boss Selection
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('creation')}
-                        style={tabButtonStyle(activeTab === 'creation')}
-                    >
-                        🔨 Create Boss
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('analytics')}
-                        style={tabButtonStyle(activeTab === 'analytics')}
-                    >
-                        📊 Analytics
-                    </button>
-                </div>
-            </div>
-
-            {/* Tab Content */}
-            <div style={{ minHeight: 'calc(100vh - 100px)' }}>
-                {activeTab === 'tutorial' && renderTutorialTab()}
-                {activeTab === 'selection' && renderBossSelectionTab()}
-                {activeTab === 'creation' && (
-                    <BossCreatorTab
-                        vault={plugin.app.vault}
-                        onCreate={async (_boss) => {
-                            await loadAvailableBosses();
-                            setActiveTab('selection');
-                        }}
-                    />
-                )}
-                {activeTab === 'analytics' && <BossAnalyticsUI playerData={playerData} />}
+            <header className={hubStyles.nav} role="navigation" aria-label="Gate battle">
+                <p className={hubStyles.navTitle}>GATE BATTLE</p>
+                <p className={hubStyles.navSubtitle}>
+                    Gate raids only — start from the Quest sidebar Dungeon tab. Resume an active raid below.
+                </p>
+            </header>
+            <div className={hubStyles.content}>
+                <GateBattleIdlePanel plugin={plugin} />
             </div>
         </div>
     );

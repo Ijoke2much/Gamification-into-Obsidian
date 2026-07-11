@@ -1,5 +1,6 @@
-import { App, Modal, Notice } from "obsidian";
+import { App, Modal } from 'obsidian';
 import styles from "./CustomInputModal.module.css";
+import { pixelNotice } from '../../../shared/utils/noticeUtils';
 
 export class CustomInputModal extends Modal {
     onSubmit: (seconds: number) => void;
@@ -111,12 +112,12 @@ export class CustomInputModal extends Modal {
             const totalSeconds = min * 60 + sec;
 
             if (totalSeconds <= 0) {
-                new Notice("Please enter a valid duration greater than 0");
+                pixelNotice("Please enter a valid duration greater than 0");
                 return;
             }
 
             if (totalSeconds > 24 * 60 * 60) { // 24 hours
-                new Notice("Duration cannot exceed 24 hours");
+                pixelNotice("Duration cannot exceed 24 hours");
                 return;
             }
 

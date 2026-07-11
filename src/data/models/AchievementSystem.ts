@@ -654,4 +654,66 @@ export class AchievementTracker {
     }
     return null;
   }
+
+  /** Completed achievements unlocked within the last N ms (newest first). */
+  getRecentlyUnlocked(withinMs = 7 * 24 * 60 * 60 * 1000): {
+    achievement: Achievement;
+    playerData: PlayerAchievement;
+  }[] {
+    const cutoff = Date.now() - withinMs;
+    return this.getAllAchievements()
+      .filter(
+        ({ playerData }) =>
+          playerData.status === 'completed' &&
+          playerData.unlockedDate &&
+          new Date(playerData.unlockedDate).getTime() >= cutoff
+      )
+      .sort(
+        (a, b) =>
+          new Date(b.playerData.unlockedDate!).getTime() -
+          new Date(a.playerData.unlockedDate!).getTime()
+      );
+  }
+
+  /** Top completed achievements for the trophy showcase (legendary/gold first). */
+  getShowcaseAchievements(limit = 6): {
+    achievement: Achievement;
+    playerData: PlayerAchievement;
+  }[] {
+    const tierOrder: Record<BadgeTier, number> = {
+      legendary: 4,
+      gold: 3,
+      silver: 2,
+      bronze: 1,
+    };
+    return this.getAllAchievements()
+      .filter(({ playerData }) => playerData.status === 'completed')
+      .sort((a, b) => {
+        const tierDiff =
+          tierOrder[b.achievement.tier] - tierOrder[a.achievement.tier];
+        if (tierDiff !== 0) return tierDiff;
+        const aDate = a.playerData.unlockedDate
+          ? new Date(a.playerData.unlockedDate).getTime()
+          : 0;
+        const bDate = b.playerData.unlockedDate
+          ? new Date(b.playerData.unlockedDate).getTime()
+          : 0;
+        return bDate - aDate;
+      })
+      .slice(0, limit);
+  }
+
+  getTierCounts(): Record<BadgeTier, { earned: number; total: number }> {
+    const tiers: BadgeTier[] = ['bronze', 'silver', 'gold', 'legendary'];
+    const counts = {} as Record<BadgeTier, { earned: number; total: number }>;
+    for (const tier of tiers) {
+      const total = ACHIEVEMENTS.filter((a) => a.tier === tier).length;
+      const earned = ACHIEVEMENTS.filter((a) => {
+        if (a.tier !== tier) return false;
+        return this.achievements.get(a.id)?.status === 'completed';
+      }).length;
+      counts[tier] = { earned, total };
+    }
+    return counts;
+  }
 } 

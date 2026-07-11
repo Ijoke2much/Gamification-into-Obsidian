@@ -1,0 +1,39 @@
+/**
+ * System Hunter shell — global polish when the preset is active.
+ * Scoped to plugin roots so Classic stays untouched.
+ */
+
+[data-gamification-visual-theme='system-hunter'][data-gamification-shell='system'],
+[data-gamification-visual-theme='system-hunter'][data-pixel-shell='quests'] {
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif);
+}
+
+/* Journey foe roster cards */
+[data-gamification-visual-theme='system-hunter'] [class*='rosterCard'] {
+	border-color: var(--go-border, rgba(79, 195, 247, 0.35)) !important;
+	background: rgba(0, 0, 0, 0.45) !important;
+}
+
+[data-gamification-visual-theme='system-hunter'] [class*='rosterName'] {
+	color: var(--go-text-bright, #f0f9ff) !important;
+}
+
+[data-gamification-visual-theme='system-hunter'] [class*='journeyRosterSection'] {
+	border-top-color: var(--go-border, rgba(79, 195, 247, 0.25));
+}
+
+[data-gamification-visual-theme='system-hunter'] [class*='dayBadge'],
+[data-gamification-visual-theme='system-hunter'] [class*='encounterBadge'] {
+	border-width: 1px !important;
+	font-size: 8px !important;
+	letter-spacing: 0.1em !important;
+}
+
+[data-gamification-visual-theme='system-hunter'] [class*='sceneHpLabel'] {
+	color: var(--go-gold, #ffd740) !important;
+}
+
+[data-gamification-visual-theme='system-hunter'] [class*='damageLogTitle'] {
+	color: var(--go-accent, #4fc3f7) !important;
+	letter-spacing: 0.12em;
+}

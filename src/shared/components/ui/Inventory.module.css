@@ -1,46 +1,31 @@
 /* ========================================
-   ENHANCED BOTW-STYLE INVENTORY STYLES
+   ENHANCED INVENTORY STYLES (shell: InventoryModal.module.css)
+   Theme tokens: --inv-* on .gamify-inventory-modal
    ======================================== */
-
-/* Scope to our modal instance to avoid layout thrash */
-:global(.modal-container .modal.gamify-inventory-modal) {
-    max-width: 95vw !important;
-    width: 1200px !important;
-    min-width: 800px !important;
-    max-height: 90vh !important;
-    height: 700px !important;
-    min-height: 500px !important;
-}
-
-/* Make Modal Draggable - ONLY for inventory modal */
-:global(.modal-container .modal.gamify-inventory-modal .modal-title) {
-    cursor: move;
-    user-select: none;
-    padding: 12px 16px;
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 16px 16px 0 0;
-    font-weight: 600;
-    color: #e0e6f7;
-    text-align: center;
-}
-
-/* Enhanced Modal Background - ONLY for inventory modal */
-:global(.modal-container .modal.gamify-inventory-modal) {
-    background: linear-gradient(135deg, #1a1d29 0%, #2d3748 100%) !important;
-    border-radius: 16px !important;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-}
 
 /* Main Inventory Modal Layout */
 .inventoryModalContent {
     display: flex;
     height: 100%;
-    max-height: 650px;
+    min-height: 0;
+    flex: 1;
+    max-height: none;
     background: transparent;
     border-radius: 0 0 16px 16px;
     overflow: hidden;
+}
+
+.inventoryLeftPanel {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    flex: 1;
+}
+
+.inventoryLeftPanelSplit {
+    flex: 0 0 55%;
+    border-right: 2px solid rgba(142, 202, 230, 0.22);
 }
 
 /* ========================================
@@ -50,19 +35,24 @@
 /* Tab Navigation */
 .tabNavigation {
     display: flex;
-    padding: 16px;
+    padding: 12px 12px;
     gap: 8px;
     background: linear-gradient(90deg, rgba(0, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.2) 100%);
     border-bottom: 2px solid rgba(255, 255, 255, 0.1);
-    flex-wrap: wrap;
-    justify-content: center;
+    flex-wrap: nowrap;
+    justify-content: flex-start;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(142, 202, 230, 0.45) rgba(0, 0, 0, 0.25);
+    align-items: center;
 }
 
 .tabButton {
     display: flex;
     align-items: center;
     gap: 8px;
-    padding: 12px 20px;
+    padding: 10px 16px;
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 24px;
@@ -70,18 +60,27 @@
     font-weight: 500;
     font-size: 14px;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
     backdrop-filter: none;
-    min-width: 120px;
+    min-width: 100px;
+    flex-shrink: 0;
     justify-content: center;
     position: relative;
 }
 
 .tabButton:hover {
     background: rgba(255, 255, 255, 0.1);
-    border-color: rgba(255, 255, 255, 0.2);
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    border-color: rgba(255, 255, 255, 0.22);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.2);
+}
+
+.tabButton:focus {
+    outline: none;
+}
+
+.tabButton:focus-visible {
+    box-shadow: 0 0 0 2px rgba(142, 202, 230, 0.55);
+    border-color: #8ecae6;
 }
 
 .tabButton.activeTab {
@@ -262,6 +261,11 @@
     box-shadow: 0 0 0 3px rgba(142, 202, 230, 0.2);
 }
 
+.searchBar:focus-visible {
+    border-color: #8ecae6;
+    box-shadow: 0 0 0 3px rgba(142, 202, 230, 0.28);
+}
+
 /* ========================================
    INVENTORY GRID LAYOUT
    ======================================== */
@@ -270,6 +274,7 @@
     flex: 1;
     display: flex;
     flex-direction: column;
+    min-height: 0;
     padding: 16px;
     overflow-y: auto;
     background: linear-gradient(180deg, rgba(0, 0, 0, 0.1) 0%, rgba(0, 0, 0, 0.05) 100%);
@@ -307,6 +312,15 @@
     border-color: rgba(255, 255, 255, 0.25);
 }
 
+.inventorySlot:focus {
+    outline: none;
+}
+
+.inventorySlot:focus-visible {
+    box-shadow: 0 0 0 2px rgba(142, 202, 230, 0.75);
+    border-color: #8ecae6;
+}
+
 .inventorySlot.selected {
     background: linear-gradient(135deg, rgba(142, 202, 230, 0.15) 0%, rgba(33, 158, 188, 0.08) 100%);
     border: 2px solid #8ecae6;
@@ -322,7 +336,7 @@
 }
 
 .inventorySlot:hover .itemIcon {
-    transform: scale(1.1);
+    transform: scale(1.04);
 }
 
 .itemName {
@@ -796,11 +810,11 @@
     text-align: center;
 }
 
-/* Responsive Design */
+/* Responsive Design — inventory modal only (avoid affecting other Obsidian modals) */
 @media (max-width: 1000px) {
-    :global(.modal-container .modal) {
+    :global(.modal-container .modal.gamify-inventory-modal) {
         width: 90vw !important;
-        min-width: 600px !important;
+        min-width: 0 !important;
     }
 
     .inventoryGrid {
@@ -2122,4 +2136,184 @@
 
 .inventorySlot.selected .changeIconButton {
     opacity: 1;
+}
+
+/* ========================================
+   PIXEL SKIN (modal has .gamify-inventory-modal--pixel)
+   ======================================== */
+
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) .inventoryModalContent {
+    border-radius: 0;
+    font-family: "Press Start 2P", "VT323", monospace;
+}
+
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) .inventoryLeftPanelSplit {
+    border-right: 2px solid var(--inv-border-dark, #0f1120);
+}
+
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) .tabNavigation {
+    background: var(--inv-panel, #252742);
+    border-bottom: 2px solid var(--inv-border-dark, #0f1120);
+    box-shadow: inset 0 -1px 0 var(--inv-border, #5b61a2);
+}
+
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) .tabButton {
+    border-radius: 0;
+    min-width: 88px;
+    font-size: 7px;
+    padding: 10px 12px;
+    line-height: 1.35;
+    background: var(--inv-bg, #1b1d2f);
+    border: 2px solid var(--inv-border-dark, #0f1120);
+    color: var(--inv-text, #ecefff);
+    box-shadow: 2px 2px 0 var(--inv-border-dark, #0f1120);
+}
+
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) .tabButton:hover {
+    filter: brightness(1.08);
+    box-shadow: 2px 2px 0 var(--inv-border-dark, #0f1120);
+}
+
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) .tabButton.activeTab {
+    background: var(--inv-panel, #252742);
+    border-color: var(--inv-accent, #8ecae6);
+    color: var(--inv-highlight, #ffd166);
+    box-shadow:
+        2px 2px 0 var(--inv-border-dark, #0f1120),
+        inset 0 0 0 1px var(--inv-border, #5b61a2);
+}
+
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) .tabIcon {
+    filter: none;
+    font-size: 12px;
+}
+
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) .tabBadge {
+    border: 2px solid var(--inv-border-dark, #0f1120);
+    border-radius: 0;
+    font-size: 8px;
+}
+
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) .qualityFilter,
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) .searchContainer,
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) .inventoryContent,
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) .filterControls {
+    background: rgba(27, 29, 47, 0.92);
+    border-color: var(--inv-border-dark, #0f1120);
+}
+
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) .qualityTitle,
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) .qualityButton,
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) .searchBar,
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) .filterToggle,
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) .filterSelect {
+    border-radius: 0;
+    font-family: inherit;
+}
+
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) .qualityButton {
+    border: 2px solid var(--inv-border-dark, #0f1120);
+    box-shadow: 2px 2px 0 var(--inv-border-dark, #0f1120);
+    font-size: 7px;
+}
+
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) .searchBar {
+    border: 2px solid var(--inv-border-dark, #0f1120);
+    font-size: 10px;
+    padding: 10px 12px;
+}
+
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) .inventorySlot {
+    border-radius: 0;
+    border: 2px solid var(--inv-border-dark, #0f1120);
+    background: var(--inv-panel, #252742);
+    box-shadow: 2px 2px 0 var(--inv-border-dark, #0f1120);
+}
+
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) .inventorySlot:hover {
+    filter: brightness(1.06);
+}
+
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) .inventorySlot.selected {
+    border-color: var(--inv-accent, #8ecae6);
+    box-shadow:
+        2px 2px 0 var(--inv-border-dark, #0f1120),
+        0 0 0 1px var(--inv-accent, #8ecae6);
+}
+
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) .itemName {
+    font-size: 8px;
+    line-height: 1.4;
+}
+
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) .itemRarity {
+    font-size: 6px;
+}
+
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) .quantityBadge {
+    border-radius: 0;
+    border: 2px solid var(--inv-border-dark, #0f1120);
+    font-size: 7px;
+}
+
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) .itemDetailsPanel {
+    border-left: 2px solid var(--inv-border-dark, #0f1120);
+    background: var(--inv-bg, #1b1d2f);
+}
+
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) .selectedItemHeader,
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) .itemDescription,
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) .detailItem {
+    border-radius: 0;
+    border: 2px solid var(--inv-border-dark, #0f1120);
+    box-shadow: 2px 2px 0 var(--inv-border-dark, #0f1120);
+}
+
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) .selectedItemName {
+    font-size: 10px;
+    line-height: 1.45;
+}
+
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) .selectedItemIcon {
+    border-radius: 0;
+}
+
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) .actionButton {
+    border-radius: 0;
+    border: 2px solid var(--inv-border-dark, #0f1120);
+    box-shadow: 2px 2px 0 var(--inv-border-dark, #0f1120);
+    font-size: 7px;
+}
+
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) .emptyState {
+    font-family: inherit;
+}
+
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) .emptyStateTitle {
+    font-size: 10px;
+}
+
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) .emptyStateSubtitle {
+    font-size: 8px;
+}
+
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) .materialsSummary,
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) .selectionBar,
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) .bulkActions {
+    border-radius: 0;
+    border: 2px solid var(--inv-border-dark, #0f1120);
+}
+
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) .detailItem:hover {
+    transform: none;
+    filter: brightness(1.05);
+}
+
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) .bulkActionButton,
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) .selectionButton {
+    border-radius: 0;
+    border: 2px solid var(--inv-border-dark, #0f1120);
+    box-shadow: 2px 2px 0 var(--inv-border-dark, #0f1120);
+    font-size: 7px;
+    font-family: inherit;
 }

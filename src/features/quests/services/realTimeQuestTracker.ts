@@ -1,8 +1,9 @@
-import { TFile, TAbstractFile, App, Notice } from 'obsidian';
+import { TFile, TAbstractFile, App } from 'obsidian';
 import { bossManagementService } from '../utils/bossManagementService';
 import { Boss, BossProgress, BossRewards } from '../types/BossTypes';
 import { Quest } from '../utils/taskParser';
 import type GamifiedObsidianPlugin from '../../../core/main';
+import { pixelNotice } from '../../../shared/utils/noticeUtils';
 
 /**
  * Real-time quest completion tracker that monitors vault changes
@@ -35,7 +36,7 @@ export class RealTimeQuestTracker {
         this.performInitialScan();
 
         console.log('Real-time quest tracker started');
-        new Notice('🎯 Boss quest tracking activated!');
+        pixelNotice('🎯 Boss quest tracking activated!');
     }
 
     /**
@@ -286,7 +287,7 @@ export class RealTimeQuestTracker {
                     ? questText.substring(0, 47) + '...'
                     : questText;
 
-                new Notice(`⚔️ ${damage} damage dealt to ${bossData.boss.name}!\n"${questPreview}"`);
+                pixelNotice(`⚔️ ${damage} damage dealt to ${bossData.boss.name}!\n"${questPreview}"`);
             }
 
             // Dispatch custom event for UI updates
@@ -330,7 +331,7 @@ export class RealTimeQuestTracker {
                 await this.awardBossRewards(result, silent);
 
                 if (!silent) {
-                    new Notice(`🎉 Boss Defeated: ${result.boss.name}!\nCheck your rewards!`, 8000);
+                    pixelNotice(`🎉 Boss Defeated: ${result.boss.name}!\nCheck your rewards!`, 8000);
                 }
 
                 // Dispatch defeat event

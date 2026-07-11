@@ -1,6 +1,7 @@
-import { Notice } from 'obsidian';
+;
 import { Boss, BossBattleRecord, PlayerStats } from '../types/BossTypes';
 import { EnhancedBattleState, BossPersonality } from '../types/EnhancedMoveTypes';
+import { pixelNotice } from '../../../shared/utils/noticeUtils';
 
 /**
  * Boss Achievement System
@@ -523,7 +524,7 @@ export class BossAchievementSystem {
 
         // Show notification
         const rarityColor = this.getRarityColor(achievement.rarity);
-        new Notice(
+        pixelNotice(
             `🏆 Achievement Unlocked!\n${achievement.icon} ${achievement.name}\n${achievement.description}`,
             8000
         );
@@ -618,7 +619,7 @@ export class BossAchievementSystem {
             const newLevel = Math.floor(currentMastery.experience / 1000); // 1000 XP per level
             if (newLevel > currentMastery.level) {
                 currentMastery.level = newLevel;
-                new Notice(`🌟 Boss Mastery Level Up!\n${boss.name} - Level ${newLevel}`, 5000);
+                pixelNotice(`🌟 Boss Mastery Level Up!\n${boss.name} - Level ${newLevel}`, 5000);
             }
         }
 

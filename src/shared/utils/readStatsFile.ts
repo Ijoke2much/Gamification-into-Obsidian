@@ -1,5 +1,6 @@
 import { App, TFile, TFolder } from "obsidian";
 import yaml from "js-yaml";
+import { calculateRequiredCP } from "./progressUpdater";
 
 // Add StatFrontmatter type for YAML frontmatter
 
@@ -23,6 +24,9 @@ export interface Stat {
   totalCP?: number;
   requiredCP?: number;
   code?: string;
+  filePath?: string;
+  /** requiredCP was calculated, not present in frontmatter */
+  cpEstimated?: boolean;
 }
 
 export interface StatDebugInfo {
@@ -78,17 +82,21 @@ export async function getStatsFromFolder(
         if (!frontmatter || typeof frontmatter !== "object") throw new Error('Invalid YAML');
         const fm = frontmatter as StatFrontmatter;
         const name = fm.name || file.basename;
-        // Use value, fallback to 0 if value is missing
+        const level = fm.level ?? 1;
         const value = fm.value ?? 0;
+        const rawRequired = fm.requiredCP ?? 0;
         const stat: Stat = {
           name,
           value,
-          level: fm.level ?? 1,
+          level,
           description: fm.description ?? '',
           currentCP: fm.currentCP ?? 0,
           totalCP: fm.totalCP ?? 0,
-          requiredCP: fm.requiredCP ?? 0,
+          requiredCP:
+            rawRequired > 0 ? rawRequired : calculateRequiredCP("stat", level),
           code: fm.code ?? undefined,
+          filePath: file.path,
+          cpEstimated: rawRequired <= 0,
         };
         console.log(`[getStatsFromFolder] Loaded stat:`, stat); // Debug log
         parsedStats.push(stat);

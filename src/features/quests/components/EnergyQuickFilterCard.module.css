@@ -92,3 +92,18 @@
         opacity: 0.7;
     }
 }
+
+:global([data-pixel-shell="quests"]) .energyCost,
+:global([data-pixel-shell="quests"]) .energyRecommendation,
+:global([data-pixel-shell="quests"]) .energyMatchIndicator {
+    border-radius: 0 !important;
+    border: 2px solid var(--pixel-border-dark, #0f1120) !important;
+    font-family: "Press Start 2P", monospace;
+    font-size: 6px !important;
+    backdrop-filter: none !important;
+    box-shadow: 1px 1px 0 var(--pixel-border-dark, #0f1120);
+}
+
+:global([data-pixel-shell="quests"]) .energyWrapper.energyMatch {
+    animation: none;
+}

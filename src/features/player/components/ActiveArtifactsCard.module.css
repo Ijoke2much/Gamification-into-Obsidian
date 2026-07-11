@@ -1,20 +1,21 @@
 /* ActiveArtifactsCard.module.css */
 
 .statusCard {
-    background: linear-gradient(135deg,
+    background: var(--pixel-panel, linear-gradient(135deg,
             var(--background-primary) 0%,
-            var(--background-secondary) 100%);
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 12px;
+            var(--background-secondary) 100%));
+    border: 2px solid var(--pixel-border-dark, var(--background-modifier-border));
+    border-radius: var(--pixel-card-radius, 12px);
     padding: 16px;
     margin-bottom: 16px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    transition: all 0.2s ease;
+    box-shadow: var(--pixel-shadow, 0 2px 8px rgba(0, 0, 0, 0.1)), inset 0 0 0 1px var(--pixel-border-light, transparent);
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+    font-family: inherit;
 }
 
 .statusCard:hover {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
-    transform: translateY(-1px);
+    box-shadow: var(--pixel-shadow, 0 4px 16px rgba(0, 0, 0, 0.15)), inset 0 0 0 1px var(--pixel-border-light, transparent);
+    transform: translate(-1px, -1px);
 }
 
 .statusHeader {

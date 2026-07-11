@@ -1,6 +1,11 @@
 import { penaltyService } from '../../../shared/services/penaltyService';
 import { Boss, BossProgress } from '../types/BossTypes';
-import { Notice } from 'obsidian';
+;
+import { pixelNotice } from '../../../shared/utils/noticeUtils';
+import {
+    getResolvedGameplayConfig,
+    isPenaltyTypeEnabled,
+} from '../../../shared/utils/gameplayConfig';
 
 export class BossPenaltyIntegration {
 
@@ -26,6 +31,8 @@ export class BossPenaltyIntegration {
         // Check if battle exceeded time limit
         if (battleDuration > timeLimit) {
             const timeExceeded = battleDuration - timeLimit;
+            const gameplay = getResolvedGameplayConfig();
+            const bossPenaltiesOn = isPenaltyTypeEnabled(gameplay, 'boss_timeout');
 
             const penaltyResult = await penaltyService.applyPenalty({
                 type: 'boss_timeout',
@@ -35,13 +42,23 @@ export class BossPenaltyIntegration {
             });
 
             finalRewards = penaltyResult.finalReward;
-            penaltyApplied = true;
-            messages.push(...penaltyResult.messages);
+            const hadMechanicalPenalty =
+                bossPenaltiesOn &&
+                (penaltyResult.debuffsApplied.length > 0 ||
+                    penaltyResult.reputationLoss > 0 ||
+                    penaltyResult.finalReward.xp < originalRewards.xp);
 
-            // Apply boss health boost for next encounter
-            await this.applyBossHealthBoost(boss.id, Math.round(timeExceeded / 10)); // 1% health boost per 10 minutes over
-
-            new Notice(`⏰ Boss battle timeout! Penalties applied and boss strengthened for next encounter.`, 8000);
+            if (hadMechanicalPenalty) {
+                penaltyApplied = true;
+                messages.push(...penaltyResult.messages);
+                await this.applyBossHealthBoost(boss.id, Math.round(timeExceeded / 10));
+                pixelNotice(
+                    `⏰ Boss battle timeout! Penalties applied and boss strengthened for next encounter.`,
+                    8000
+                );
+            } else if (bossPenaltiesOn) {
+                messages.push(`Battle ran ${Math.round(timeExceeded)} min over limit (no penalty applied).`);
+            }
         } else {
             // Bonus for completing within time limit
             const speedBonus = Math.max(0, (timeLimit - battleDuration) / timeLimit * 0.2); // Up to 20% bonus

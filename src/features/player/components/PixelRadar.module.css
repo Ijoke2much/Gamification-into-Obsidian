@@ -1,0 +1,13 @@
+.radarWrap {
+    margin: 8px 0 12px;
+    display: flex;
+    justify-content: center;
+}
+
+.radarSvg {
+    image-rendering: pixelated;
+    border-radius: 0;
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    background: rgba(0, 0, 0, 0.10);
+    box-shadow: 2px 2px 0 rgba(15, 17, 32, 0.8);
+}

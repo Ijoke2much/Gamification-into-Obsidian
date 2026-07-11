@@ -264,3 +264,61 @@
         padding: 2px 4px;
     }
 }
+
+:global([data-pixel-shell="quests"]) .adhdWrapper {
+    transition: none;
+}
+
+:global([data-pixel-shell="quests"]) .adhdWrapper.perfect {
+    box-shadow: 0 0 0 2px var(--pixel-accent, #8ecae6);
+}
+
+:global([data-pixel-shell="quests"]) .adhdWrapper.good {
+    box-shadow: 0 0 0 2px #86efac;
+}
+
+:global([data-pixel-shell="quests"]) .adhdWrapper.challenging {
+    box-shadow: 0 0 0 2px var(--pixel-highlight, #ffd166);
+}
+
+:global([data-pixel-shell="quests"]) .adhdWrapper.insufficient {
+    box-shadow: 0 0 0 2px #f87171;
+    filter: none;
+}
+
+:global([data-pixel-shell="quests"]) .energyBadge,
+:global([data-pixel-shell="quests"]) .energyMatch {
+    border-radius: 0 !important;
+    border: 2px solid var(--pixel-border-dark, #0f1120) !important;
+    backdrop-filter: none !important;
+    font-family: "Press Start 2P", monospace;
+    font-size: 7px !important;
+    box-shadow: 1px 1px 0 var(--pixel-border-dark, #0f1120);
+}
+
+:global([data-pixel-shell="quests"]) .energyMatch.perfect {
+    animation: none;
+}
+
+:global([data-pixel-shell="quests"]) .clickableEnergyBadge:hover {
+    transform: none;
+    box-shadow: 2px 2px 0 var(--pixel-border-dark, #0f1120) !important;
+}
+
+:global([data-pixel-shell="quests"]) .adhdButton {
+    border-radius: 0 !important;
+    border: 2px solid var(--pixel-border-dark, #0f1120) !important;
+    font-family: "Press Start 2P", monospace;
+    font-size: 7px !important;
+    backdrop-filter: none !important;
+    box-shadow: 2px 2px 0 var(--pixel-border-dark, #0f1120);
+}
+
+:global([data-pixel-shell="quests"]) .adhdButton:hover {
+    transform: translate(1px, 1px);
+    box-shadow: 1px 1px 0 var(--pixel-border-dark, #0f1120);
+}
+
+:global([data-pixel-shell="quests"]) .adhdButton.primary {
+    animation: none;
+}

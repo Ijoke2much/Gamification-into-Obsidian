@@ -1,5 +1,5 @@
-import { App, Vault, TFile, Notice } from "obsidian";
-import { showGameNotice } from '../../../shared/utils/noticeUtils';
+import { App, Vault, TFile } from 'obsidian';
+import { showGameNotice, pixelNotice } from '../../../shared/utils/noticeUtils';
 import { ShopItem, ShopLikeItem } from "../../shop/utils/ShopParser";
 import { readPlayerData, updatePlayerData } from "../../player/utils/playerDataUtils";
 import type { PlayerData, Artifact } from "../../../data/models/PlayerData";
@@ -570,7 +570,7 @@ export async function sellItem(app: App, itemName: string): Promise<void> {
         const currencyName = plugin?.settings?.currencyName || "Coins";
         const currencySymbol = plugin?.settings?.currencySymbol || "🪙";
         // @ts-ignore
-        new window.Notice(`${currencySymbol} +${saleValue} ${currencyName.toLowerCase()}`, 2000);
+        pixelNotice(`${currencySymbol} +${saleValue} ${currencyName.toLowerCase()}`, 2000);
       } catch {
         // Ignore notice errors silently
       }

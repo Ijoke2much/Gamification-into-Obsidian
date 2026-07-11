@@ -9,6 +9,7 @@ import {
     RandomItemTemplate
 } from '../types/CraftingTypes';
 import { CraftingEngine } from '../utils/craftingEngine';
+import { refreshAllCraftingData } from '../utils/craftingDataSync';
 import { RandomItemGenerator } from '../utils/randomItemGenerator';
 import { PlayerData } from '../../../data/models/PlayerData';
 import GamifiedObsidianPlugin from '../../../core/main';
@@ -44,46 +45,51 @@ export const CraftingTab: React.FC<CraftingTabProps> = ({ plugin, playerData, re
     };
 
     useEffect(() => {
-        const recipes = CraftingEngine.getDefaultRecipes();
-        const sessions = CraftingEngine.getCraftingSessions();
-        const skill = playerData ? CraftingEngine.getPlayerCraftingSkill(playerData) : null;
-        const stations = CraftingEngine.getCraftingStations();
-        const fragments = CraftingEngine.getRecipeFragments();
-        
-        setRecipes(recipes);
-        setActiveSessions(sessions.filter(s => s.status === 'active'));
-        setCraftingSkill(skill);
-        setCraftingStations(stations);
-        setRecipeFragments(fragments);
-        
-        // Load player materials from inventory
-        const loadMaterials = async () => {
+        const init = async () => {
+            await refreshAllCraftingData(plugin);
+            const recipes = CraftingEngine.getRecipes();
+            const sessions = CraftingEngine.getCraftingSessions();
+            const skill = playerData ? CraftingEngine.getPlayerCraftingSkill(playerData) : null;
+            const stations = CraftingEngine.getCraftingStations();
+            const fragments = CraftingEngine.getRecipeFragments();
+
+            setRecipes(recipes);
+            setActiveSessions(sessions.filter((s) => s.status === 'active'));
+            setCraftingSkill(skill);
+            setCraftingStations(stations);
+            setRecipeFragments(fragments);
+
             try {
                 const materials = await CraftingEngine.getPlayerMaterialsFromInventory(plugin.app);
                 setPlayerMaterials(materials);
             } catch (error) {
                 console.error('Error loading materials:', error);
             }
-        };
-        loadMaterials();
-        
-        // Load random item templates
-        if (playerData) {
-            const templates = RandomItemGenerator.getAvailableTemplates(playerData.level);
-            setAvailableTemplates(templates);
-            
-            // Load craftable templates
-            const loadCraftableTemplates = async () => {
+
+            if (playerData) {
+                const templates = RandomItemGenerator.getAvailableTemplates(playerData.level);
+                setAvailableTemplates(templates);
+
                 try {
-                    const craftable = await RandomItemGenerator.getCraftableTemplates(plugin.app, playerData.level);
+                    const craftable = await RandomItemGenerator.getCraftableTemplates(
+                        plugin.app,
+                        playerData.level
+                    );
                     setCraftableTemplates(craftable);
                 } catch (error) {
                     console.error('Error loading craftable templates:', error);
                 }
-            };
-            loadCraftableTemplates();
-        }
-    }, [playerData, plugin.app]);
+            }
+        };
+
+        void init();
+
+        const onCraftingDataUpdate = () => {
+            void init();
+        };
+        document.addEventListener('crafting-data-updated', onCraftingDataUpdate);
+        return () => document.removeEventListener('crafting-data-updated', onCraftingDataUpdate);
+    }, [playerData, plugin]);
 
     const startCrafting = async (recipe: CraftingRecipe) => {
         if (!playerData) return;
@@ -130,11 +136,18 @@ export const CraftingTab: React.FC<CraftingTabProps> = ({ plugin, playerData, re
     };
 
     if (!playerData) {
-        return <div>Loading player data...</div>;
+        return (
+            <div className={`${styles.craftingContainer} ${styles.pixelCraftingShell}`} data-pixel-shell="crafting">
+                Loading player data...
+            </div>
+        );
     }
 
     return (
-        <div className={`${styles.craftingContainer} ${isMobile ? mobileClasses.container : ''}`}>
+        <div
+            className={`${styles.craftingContainer} ${styles.pixelCraftingShell} ${isMobile ? mobileClasses.container : ''}`}
+            data-pixel-shell="crafting"
+        >
             <h2 className={styles.craftingHeader}>⚒️ Crafting Workshop</h2>
             
             {/* Tab Navigation */}

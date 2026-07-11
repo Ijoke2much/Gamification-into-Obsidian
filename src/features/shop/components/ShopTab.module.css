@@ -1,0 +1,256 @@
+/* Pixel / RPG shell for Shop tab (global .gami-shop-* in createShopTab.tsx) */
+
+.pixelShopShell {
+    --pixel-bg: #1b1d2f;
+    --pixel-panel: #252742;
+    --pixel-panel-alt: #2e3152;
+    --pixel-border-dark: #0f1120;
+    --pixel-border-light: #5b61a2;
+    --pixel-accent: #8ecae6;
+    --pixel-highlight: #ffd166;
+    --pixel-text: #ecefff;
+    --pixel-muted: #bac2e3;
+    --pixel-shadow: 3px 3px 0 var(--pixel-border-dark);
+    --pixel-shadow-pressed: 1px 1px 0 var(--pixel-border-dark);
+    --pixel-card-radius: 0;
+    isolation: isolate;
+}
+
+.pixelShopShell:global(.gami-shop-tab) {
+    font-family: "Press Start 2P", "VT323", "Courier New", monospace;
+    font-size: 11px;
+    line-height: 1.65;
+    color: var(--pixel-text);
+    background: var(--pixel-bg) !important;
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: var(--pixel-card-radius) !important;
+    box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light);
+    box-sizing: border-box;
+}
+
+.shopLoading.pixelShopShell:global(.gami-shop-tab) {
+    display: block;
+    padding: 24px !important;
+    text-align: center;
+    font-size: 10px;
+    color: var(--pixel-accent);
+    text-shadow: 2px 2px 0 var(--pixel-border-dark);
+}
+
+/* Header */
+.pixelShopShell :global(.gami-shop-header) {
+    background: var(--pixel-panel-alt) !important;
+    border-radius: var(--pixel-card-radius) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light) !important;
+    padding: 10px 12px !important;
+}
+
+.pixelShopShell :global(.gami-shop-header > span:first-child) {
+    font-family: "Press Start 2P", "VT323", monospace !important;
+    font-size: 10px !important;
+    color: var(--pixel-text) !important;
+    text-shadow: 2px 2px 0 var(--pixel-border-dark) !important;
+    letter-spacing: 0.02em !important;
+}
+
+.pixelShopShell :global(.gami-shop-header > div) {
+    background: var(--pixel-panel) !important;
+    border-radius: var(--pixel-card-radius) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    color: var(--pixel-highlight) !important;
+    box-shadow: var(--pixel-shadow-pressed) !important;
+    font-family: "VT323", "Courier New", monospace !important;
+    font-size: 16px !important;
+    padding: 4px 10px !important;
+}
+
+.pixelShopShell :global(.gami-shop-tab img[alt="Shopkeeper"]) {
+    border-radius: var(--pixel-card-radius) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    box-shadow: var(--pixel-shadow) !important;
+}
+
+.pixelShopShell :global(.gami-shop-keeper-btn) {
+    border-radius: var(--pixel-card-radius) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    font-family: "Press Start 2P", monospace !important;
+    font-size: 7px !important;
+    background: var(--pixel-panel-alt) !important;
+    color: var(--pixel-accent) !important;
+    box-shadow: var(--pixel-shadow) !important;
+    padding: 6px 10px !important;
+}
+
+.pixelShopShell :global(.gami-shop-keeper-btn:hover) {
+    transform: translate(1px, 1px);
+    box-shadow: var(--pixel-shadow-pressed) !important;
+}
+
+.pixelShopShell :global(.shop-dialogue-box) {
+    background: var(--pixel-panel) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    border-radius: var(--pixel-card-radius) !important;
+    color: var(--pixel-text) !important;
+    font-family: "VT323", "Courier New", monospace !important;
+    font-size: 15px !important;
+    box-shadow: var(--pixel-shadow-pressed) !important;
+}
+
+.pixelShopShell :global(.gami-shop-dialogue-options button) {
+    border-radius: var(--pixel-card-radius) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    background: var(--pixel-panel-alt) !important;
+    color: var(--pixel-text) !important;
+    font-family: "Press Start 2P", monospace !important;
+    font-size: 8px !important;
+    box-shadow: var(--pixel-shadow-pressed) !important;
+}
+
+.pixelShopShell :global(.gami-shop-dialogue-options button:hover) {
+    transform: translate(1px, 1px);
+    box-shadow: var(--pixel-shadow) !important;
+}
+
+/* Add item / artifact toolbar */
+.pixelShopShell :global(button.px-4) {
+    border-radius: var(--pixel-card-radius) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    font-family: "Press Start 2P", monospace !important;
+    font-size: 8px !important;
+    box-shadow: var(--pixel-shadow) !important;
+}
+
+.pixelShopShell :global(button.bg-blue-600),
+.pixelShopShell :global(button.bg-blue-600.rounded) {
+    background: var(--pixel-panel-alt) !important;
+    color: var(--pixel-accent) !important;
+}
+
+.pixelShopShell :global(button.bg-purple-600),
+.pixelShopShell :global(button.bg-purple-600.rounded) {
+    background: var(--pixel-panel-alt) !important;
+    color: #c4b5fd !important;
+}
+
+.pixelShopShell :global(button.px-4:hover) {
+    transform: translate(1px, 1px);
+    box-shadow: var(--pixel-shadow-pressed) !important;
+}
+
+/* Category tabs */
+.pixelShopShell :global(.gami-shop-category-tabs button) {
+    border-radius: var(--pixel-card-radius) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    background: var(--pixel-panel-alt) !important;
+    color: var(--pixel-muted) !important;
+    font-family: "Press Start 2P", monospace !important;
+    font-size: 7px !important;
+    box-shadow: var(--pixel-shadow-pressed) !important;
+}
+
+.pixelShopShell :global(.gami-shop-category-tabs button[data-active="true"]) {
+    background: var(--pixel-accent) !important;
+    color: var(--pixel-border-dark) !important;
+    border-color: var(--pixel-border-dark) !important;
+    box-shadow: var(--pixel-shadow) !important;
+}
+
+.pixelShopShell :global(select.gami-shop-select) {
+    border-radius: var(--pixel-card-radius) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    background: var(--pixel-panel-alt) !important;
+    color: var(--pixel-text) !important;
+    font-family: "VT323", "Courier New", monospace !important;
+    font-size: 14px !important;
+}
+
+.pixelShopShell :global(.gami-shop-empty-msg) {
+    border-radius: var(--pixel-card-radius) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    background: var(--pixel-panel-alt) !important;
+    color: var(--pixel-highlight) !important;
+    font-family: "VT323", "Courier New", monospace !important;
+    font-size: 14px !important;
+    box-shadow: var(--pixel-shadow) !important;
+}
+
+.pixelShopShell :global(.gami-shop-grid) {
+    gap: 10px !important;
+}
+
+.pixelShopShell :global(.gami-shop-card) {
+    background: var(--pixel-panel) !important;
+    border-radius: var(--pixel-card-radius) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light) !important;
+    min-height: 220px !important;
+}
+
+.pixelShopShell :global(.gami-shop-card:hover) {
+    border-color: var(--pixel-accent) !important;
+    box-shadow: 2px 2px 0 var(--pixel-border-dark), inset 0 0 0 1px var(--pixel-accent) !important;
+}
+
+.pixelShopShell :global(.gami-shop-card-category) {
+    border-bottom: 2px solid var(--pixel-border-dark) !important;
+    font-family: "Press Start 2P", monospace !important;
+    font-size: 7px !important;
+}
+
+.pixelShopShell :global(.gami-shop-card-title) {
+    font-family: "Press Start 2P", "VT323", monospace !important;
+    font-size: 9px !important;
+    color: var(--pixel-text) !important;
+}
+
+.pixelShopShell :global(.gami-shop-card-desc) {
+    border-top: 2px solid var(--pixel-border-dark) !important;
+    border-bottom: 2px solid var(--pixel-border-dark) !important;
+    background: var(--pixel-panel-alt) !important;
+}
+
+.pixelShopShell :global(.gami-shop-card-desc > div) {
+    font-family: "VT323", "Courier New", monospace !important;
+    font-size: 13px !important;
+    color: var(--pixel-muted) !important;
+}
+
+.pixelShopShell :global(.gami-shop-card-footer) {
+    background: var(--pixel-panel-alt) !important;
+    border-top: 2px solid var(--pixel-border-dark) !important;
+}
+
+.pixelShopShell :global(.gami-shop-card-footer > div:first-child) {
+    color: var(--pixel-highlight) !important;
+    font-family: "VT323", monospace !important;
+    font-size: 15px !important;
+}
+
+.pixelShopShell :global(.gami-shop-card-footer button:first-of-type) {
+    border-radius: var(--pixel-card-radius) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    background: #15803d !important;
+    color: var(--pixel-text) !important;
+    font-family: "Press Start 2P", monospace !important;
+    font-size: 8px !important;
+    box-shadow: var(--pixel-shadow-pressed) !important;
+}
+
+.pixelShopShell :global(.gami-shop-card-footer button:last-of-type) {
+    border-radius: var(--pixel-card-radius) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    background: var(--pixel-panel) !important;
+    color: var(--pixel-muted) !important;
+    font-family: "Press Start 2P", monospace !important;
+    font-size: 8px !important;
+    box-shadow: var(--pixel-shadow-pressed) !important;
+}
+
+.pixelShopShell :global(.gami-shop-card-new) {
+    border-radius: var(--pixel-card-radius) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    font-family: "Press Start 2P", monospace !important;
+    font-size: 6px !important;
+    box-shadow: var(--pixel-shadow-pressed) !important;
+}

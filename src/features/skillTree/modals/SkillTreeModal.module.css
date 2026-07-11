@@ -1,4 +1,4 @@
-/* Skill Tree Modal Styles */
+/* Skill Codex — pixel shell (tokens align with PlayerStats pixel / TabView) */
 
 .modalOverlay {
     position: fixed;
@@ -6,188 +6,310 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
+    background: rgba(15, 17, 32, 0.82);
     backdrop-filter: blur(4px);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1000;
-    animation: fadeIn 0.3s ease-out;
+    animation: fadeIn 0.25s ease-out;
 }
 
 .modalContent {
-    background: var(--background-primary);
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 12px;
+    --pixel-bg: #1b1d2f;
+    --pixel-panel: #252742;
+    --pixel-panel-alt: #2e3152;
+    --pixel-border-dark: #0f1120;
+    --pixel-border-light: #5b61a2;
+    --pixel-accent: #8ecae6;
+    --pixel-highlight: #ffd166;
+    --pixel-text: #ecefff;
+    --pixel-muted: #bac2e3;
+    --pixel-ok: #4ade80;
+    --pixel-shadow: 3px 3px 0 var(--pixel-border-dark);
+
+    position: relative;
+
+    background: var(--pixel-panel);
+    color: var(--pixel-text);
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: 0;
     width: 90vw;
     max-width: 900px;
     max-height: 85vh;
     overflow: hidden;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    animation: slideIn 0.3s ease-out;
+    box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light);
+    animation: slideIn 0.22s ease-out;
+    font-family: "VT323", "Courier New", monospace;
+    font-size: 20px;
+    line-height: 1.35;
+    image-rendering: pixelated;
 }
 
 .modalHeader {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--background-modifier-border);
-    background: var(--background-secondary);
+    padding: 14px 16px;
+    border-bottom: 2px solid var(--pixel-border-dark);
+    background: var(--pixel-panel-alt);
+    box-shadow: inset 0 -1px 0 var(--pixel-border-light);
 }
 
-.modalHeader h2 {
+.modalTitle {
     margin: 0;
-    color: var(--text-normal);
-    font-size: 1.5em;
+    font-family: "Press Start 2P", "VT323", monospace;
+    font-size: 0.65rem;
+    line-height: 1.6;
+    color: var(--pixel-highlight);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
 }
 
 .closeButton {
-    background: none;
-    border: none;
-    color: var(--text-muted);
-    font-size: 20px;
+    background: var(--pixel-panel);
+    border: 2px solid var(--pixel-border-dark);
+    color: var(--pixel-muted);
+    font-size: 16px;
     cursor: pointer;
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    border-radius: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    transition: transform 0.1s ease, color 0.15s ease;
+    box-shadow: var(--pixel-shadow);
+    font-family: inherit;
+    line-height: 1;
 }
 
 .closeButton:hover {
-    background: var(--background-modifier-hover);
-    color: var(--text-normal);
+    color: var(--pixel-text);
+    transform: translate(1px, 1px);
+    box-shadow: 2px 2px 0 var(--pixel-border-dark);
 }
 
 .tabNavigation {
     display: flex;
-    background: var(--background-secondary);
-    border-bottom: 1px solid var(--background-modifier-border);
+    flex-wrap: wrap;
+    gap: 0;
+    background: var(--pixel-bg);
+    border-bottom: 2px solid var(--pixel-border-dark);
 }
 
 .tab {
     flex: 1;
-    padding: 12px 16px;
-    background: none;
+    min-width: 96px;
+    padding: 12px 10px;
+    background: var(--pixel-bg);
     border: none;
-    color: var(--text-muted);
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    transition: all 0.2s ease;
+    border-right: 2px solid var(--pixel-border-dark);
     border-bottom: 2px solid transparent;
+    color: var(--pixel-muted);
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-family: inherit;
+    transition: background 0.12s ease, color 0.12s ease;
+    margin-bottom: -2px;
+}
+
+.tab:last-child {
+    border-right: none;
 }
 
 .tab:hover {
-    background: var(--background-modifier-hover);
-    color: var(--text-normal);
+    background: var(--pixel-panel-alt);
+    color: var(--pixel-text);
 }
 
 .tab.active {
-    color: var(--text-accent);
-    border-bottom-color: var(--text-accent);
-    background: var(--background-primary);
+    color: var(--pixel-highlight);
+    background: var(--pixel-panel);
+    border-bottom-color: var(--pixel-highlight);
+    box-shadow: inset 0 0 0 1px var(--pixel-border-light);
 }
 
 .tabContent {
-    padding: 20px;
+    padding: 18px 16px 20px;
     overflow-y: auto;
     max-height: calc(85vh - 120px);
+    background: var(--pixel-panel);
 }
 
 .loading {
     text-align: center;
-    padding: 40px;
-    color: var(--text-muted);
-    font-size: 16px;
+    padding: 48px 20px;
+    color: var(--pixel-muted);
+    font-size: 1.25rem;
 }
 
-/* Overview Tab */
-.overviewTab h3 {
+.sectionTitle {
     margin-top: 0;
-    color: var(--text-normal);
-    border-bottom: 1px solid var(--background-modifier-border);
-    padding-bottom: 8px;
+    margin-bottom: 14px;
+    font-family: "Press Start 2P", "VT323", monospace;
+    font-size: 0.55rem;
+    line-height: 1.65;
+    color: var(--pixel-text);
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--pixel-border-dark);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.sectionSubtitle {
+    margin-top: 0;
+    margin-bottom: 12px;
+    font-family: "Press Start 2P", "VT323", monospace;
+    font-size: 0.45rem;
+    line-height: 1.7;
+    color: var(--pixel-accent);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Progress tab */
+.progressTab {
+    min-height: 120px;
+}
+
+.progressGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Mobile tab panel */
+.mobileTab {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 200px;
+}
+
+.mobileTab .sectionTitle {
+    margin-bottom: 0;
+}
+
+.helperText {
+    margin: 0;
+    color: var(--pixel-muted);
+    font-size: 0.95rem;
+    line-height: 1.45;
+}
+
+.emojiPresetButton {
+    background: var(--pixel-panel-alt);
+    border: 2px solid var(--pixel-border-dark);
+    color: var(--pixel-text);
+    border-radius: 0;
+    padding: 6px 10px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    box-shadow: 2px 2px 0 var(--pixel-border-dark);
+    transition: transform 0.08s ease;
+}
+
+.emojiPresetButton:hover {
+    transform: translate(1px, 1px);
+    box-shadow: 1px 1px 0 var(--pixel-border-dark);
+}
+
+.emojiPresetButton:active {
+    transform: translate(2px, 2px);
+    box-shadow: none;
+}
+
+/* Overview */
+.overviewTab {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
 }
 
 .canvasActions {
     display: flex;
     gap: 12px;
-    margin-bottom: 24px;
+    margin-bottom: 18px;
 }
 
 .primaryButton {
-    background: var(--interactive-accent);
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 6px;
+    background: var(--pixel-accent);
+    color: var(--pixel-border-dark);
+    border: 2px solid var(--pixel-border-dark);
+    padding: 10px 18px;
+    border-radius: 0;
     cursor: pointer;
-    font-weight: 500;
-    transition: all 0.2s ease;
+    font-weight: 700;
+    font-family: "Press Start 2P", "VT323", monospace;
+    font-size: 0.45rem;
+    line-height: 1.5;
+    box-shadow: var(--pixel-shadow);
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
 }
 
 .primaryButton:hover {
-    background: var(--interactive-accent-hover);
-    transform: translateY(-1px);
+    filter: brightness(1.06);
+    transform: translate(1px, 1px);
+    box-shadow: 2px 2px 0 var(--pixel-border-dark);
 }
 
 .secondaryButton {
-    background: var(--background-modifier-border);
-    color: var(--text-normal);
-    border: 1px solid var(--background-modifier-border);
-    padding: 10px 20px;
-    border-radius: 6px;
+    background: var(--pixel-panel-alt);
+    color: var(--pixel-text);
+    border: 2px solid var(--pixel-border-dark);
+    padding: 10px 18px;
+    border-radius: 0;
     cursor: pointer;
-    font-weight: 500;
-    transition: all 0.2s ease;
+    font-weight: 700;
+    font-family: inherit;
+    font-size: 0.95rem;
+    box-shadow: 2px 2px 0 var(--pixel-border-dark);
+    transition: transform 0.1s ease;
 }
 
 .secondaryButton:hover {
-    background: var(--background-modifier-hover);
-    transform: translateY(-1px);
+    background: var(--pixel-panel);
+    transform: translate(1px, 1px);
+    box-shadow: 1px 1px 0 var(--pixel-border-dark);
 }
 
 .skillOverview {
-    background: var(--background-secondary);
-    padding: 16px;
-    border-radius: 8px;
-    border: 1px solid var(--background-modifier-border);
-}
-
-.skillOverview h4 {
-    margin-top: 0;
-    color: var(--text-normal);
+    background: var(--pixel-bg);
+    padding: 14px;
+    border: 2px solid var(--pixel-border-dark);
+    box-shadow: inset 0 0 0 1px var(--pixel-border-light);
 }
 
 .stats {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 12px;
-    margin-bottom: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
 }
 
 .statItem {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 12px;
-    background: var(--background-primary);
-    border-radius: 6px;
-    border: 1px solid var(--background-modifier-border);
+    padding: 10px 12px;
+    background: var(--pixel-panel-alt);
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: 0;
+    box-shadow: inset 0 0 0 1px var(--pixel-border-light);
 }
 
 .statItem span:first-child {
-    color: var(--text-muted);
-    font-size: 14px;
+    color: var(--pixel-muted);
+    font-size: 0.9rem;
 }
 
 .statItem span:last-child {
-    color: var(--text-accent);
-    font-weight: 600;
+    color: var(--pixel-highlight);
+    font-weight: 700;
+    font-family: "Press Start 2P", "VT323", monospace;
+    font-size: 0.45rem;
 }
 
 .classBreakdown {
@@ -200,58 +322,69 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 12px;
-    background: var(--background-primary);
-    border-radius: 6px;
-    border: 1px solid var(--background-modifier-border);
+    padding: 10px 12px;
+    background: var(--pixel-panel-alt);
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: 0;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
 }
 
 .classItem strong {
-    color: var(--text-normal);
+    color: var(--pixel-text);
+    font-family: "Press Start 2P", "VT323", monospace;
+    font-size: 0.42rem;
+    line-height: 1.4;
 }
 
 .classItem span {
-    color: var(--text-muted);
-    font-size: 13px;
+    color: var(--pixel-muted);
+    font-size: 0.85rem;
 }
 
-/* Manage Tab */
-.manageTab h3 {
-    margin-top: 0;
-    color: var(--text-normal);
-    border-bottom: 1px solid var(--background-modifier-border);
-    padding-bottom: 8px;
+/* Manage */
+.manageTab {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
 }
 
 .classFilter {
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
     padding: 12px;
-    background: var(--background-secondary);
-    border-radius: 6px;
-    border: 1px solid var(--background-modifier-border);
+    background: var(--pixel-bg);
+    border: 2px solid var(--pixel-border-dark);
+    flex-wrap: wrap;
 }
 
 .classFilter label {
-    color: var(--text-normal);
-    font-weight: 500;
+    color: var(--pixel-muted);
+    font-weight: 600;
+    font-size: 0.95rem;
 }
 
 .classFilter select {
-    background: var(--background-primary);
-    color: var(--text-normal);
-    border: 1px solid var(--background-modifier-border);
-    padding: 6px 10px;
-    border-radius: 4px;
+    background: var(--pixel-panel-alt);
+    color: var(--pixel-text);
+    border: 2px solid var(--pixel-border-dark);
+    padding: 12px 14px;
+    border-radius: 0;
     min-width: 150px;
+    min-height: 48px;
+    line-height: 1.5;
+    box-sizing: border-box;
+    font-family: inherit;
+    font-size: 0.95rem;
+    box-shadow: inset 0 0 0 1px var(--pixel-border-light);
+    vertical-align: middle;
 }
 
 .skillsList {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 10px;
 }
 
 .emptyState {
@@ -259,63 +392,64 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 60px 20px;
+    padding: 48px 20px;
     text-align: center;
-    background: var(--background-secondary);
-    border-radius: 8px;
-    border: 1px dashed var(--background-modifier-border);
+    background: var(--pixel-bg);
+    border: 2px dashed var(--pixel-border-light);
 }
 
 .emptyIcon {
-    font-size: 48px;
-    margin-bottom: 16px;
-    opacity: 0.6;
+    font-size: 42px;
+    margin-bottom: 12px;
+    line-height: 1;
 }
 
 .emptyTitle {
-    font-size: 18px;
-    font-weight: 600;
-    color: var(--text-normal);
-    margin-bottom: 8px;
+    font-family: "Press Start 2P", "VT323", monospace;
+    font-size: 0.5rem;
+    line-height: 1.6;
+    color: var(--pixel-text);
+    margin-bottom: 10px;
 }
 
 .emptyDescription {
-    font-size: 14px;
-    color: var(--text-muted);
+    font-size: 0.95rem;
+    color: var(--pixel-muted);
     max-width: 400px;
-    line-height: 1.5;
+    line-height: 1.45;
 }
 
 .skillItem {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    padding: 16px;
-    background: var(--background-secondary);
-    border-radius: 8px;
-    border: 1px solid var(--background-modifier-border);
-    transition: all 0.2s ease;
+    gap: 12px;
+    padding: 14px;
+    background: var(--pixel-bg);
+    border: 2px solid var(--pixel-border-dark);
+    transition: box-shadow 0.15s ease;
+    box-shadow: inset 0 0 0 1px var(--pixel-border-light);
 }
 
 .skillItem:hover {
-    border-color: var(--text-accent);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    border-color: var(--pixel-accent);
 }
 
 .skillInfo {
     flex: 1;
+    min-width: 0;
 }
 
 .skillInfo p {
     margin: 4px 0;
-    color: var(--text-muted);
-    font-size: 14px;
+    color: var(--pixel-muted);
+    font-size: 0.95rem;
 }
 
 .description {
     font-style: italic;
     margin-top: 8px !important;
+    color: var(--pixel-muted) !important;
 }
 
 .skillTitle {
@@ -323,20 +457,24 @@
     align-items: center;
     gap: 10px;
     margin: 0 0 8px 0;
-    color: var(--text-normal);
-    font-size: 16px;
+    color: var(--pixel-text);
+    font-family: "Press Start 2P", "VT323", monospace;
+    font-size: 0.48rem;
+    line-height: 1.45;
 }
 
 .skillIconBubble {
-    width: 28px;
-    height: 28px;
-    border-radius: 999px;
+    width: 32px;
+    height: 32px;
+    border-radius: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
-    background: rgba(255, 255, 255, 0.06);
-    border: 1px solid var(--background-modifier-border);
+    font-size: 18px;
+    background: var(--pixel-panel-alt);
+    border: 2px solid var(--pixel-border-dark);
+    flex-shrink: 0;
+    box-shadow: 2px 2px 0 var(--pixel-border-dark);
 }
 
 .skillNameText {
@@ -347,148 +485,169 @@
 
 .skillActions {
     display: flex;
+    flex-wrap: wrap;
     gap: 8px;
+    justify-content: flex-end;
 }
 
 .skillActions button {
-    background: var(--interactive-normal);
-    color: var(--text-normal);
-    border: 1px solid var(--background-modifier-border);
-    padding: 6px 12px;
-    border-radius: 4px;
+    background: var(--pixel-panel-alt);
+    color: var(--pixel-text);
+    border: 2px solid var(--pixel-border-dark);
+    padding: 8px 10px;
+    border-radius: 0;
     cursor: pointer;
-    font-size: 12px;
-    transition: all 0.2s ease;
+    font-size: 0.75rem;
+    font-family: inherit;
+    box-shadow: 2px 2px 0 var(--pixel-border-dark);
+    transition: transform 0.08s ease;
 }
 
 .skillActions button:hover {
-    background: var(--interactive-hover);
-    transform: translateY(-1px);
+    background: var(--pixel-panel);
+    transform: translate(1px, 1px);
+    box-shadow: 1px 1px 0 var(--pixel-border-dark);
 }
 
 .skillIconEditor {
     display: flex;
     align-items: center;
-    gap: 6px;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
 .skillIconInput {
-    min-width: 80px;
-    padding: 4px 6px;
-    border-radius: 4px;
-    border: 1px solid var(--background-modifier-border);
-    background: var(--background-primary);
-    color: var(--text-normal);
+    min-width: 100px;
+    padding: 6px 8px;
+    border-radius: 0;
+    border: 2px solid var(--pixel-border-dark);
+    background: var(--pixel-panel);
+    color: var(--pixel-text);
+    font-family: inherit;
 }
 
-/* Create Tab */
-.createTab h3 {
-    margin-top: 0;
-    color: var(--text-normal);
-    border-bottom: 1px solid var(--background-modifier-border);
-    padding-bottom: 8px;
+/* Create */
+.createTab {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
 }
 
 .createTypeSelector {
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
     padding: 12px;
-    background: var(--background-secondary);
-    border-radius: 6px;
-    border: 1px solid var(--background-modifier-border);
+    background: var(--pixel-bg);
+    border: 2px solid var(--pixel-border-dark);
+    flex-wrap: wrap;
 }
 
 .createTypeSelector label {
-    color: var(--text-normal);
-    font-weight: 500;
+    color: var(--pixel-muted);
+    font-weight: 600;
 }
 
 .createTypeSelector select {
-    background: var(--background-primary);
-    color: var(--text-normal);
-    border: 1px solid var(--background-modifier-border);
-    padding: 6px 10px;
-    border-radius: 4px;
+    background: var(--pixel-panel-alt);
+    color: var(--pixel-text);
+    border: 2px solid var(--pixel-border-dark);
+    padding: 12px 14px;
+    border-radius: 0;
     min-width: 150px;
+    min-height: 48px;
+    line-height: 1.5;
+    box-sizing: border-box;
+    font-family: inherit;
+    font-size: 0.95rem;
+    vertical-align: middle;
 }
 
 .createForm {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 14px;
 }
 
 .formField {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
 }
 
 .formField label {
-    color: var(--text-normal);
-    font-weight: 500;
-    font-size: 14px;
+    color: var(--pixel-muted);
+    font-weight: 600;
+    font-size: 0.9rem;
 }
 
 .formField input,
 .formField textarea,
 .formField select {
-    background: var(--background-primary);
-    color: var(--text-normal);
-    border: 1px solid var(--background-modifier-border);
-    /* Slightly reduced vertical padding so select text like "Select Class (Required)" is fully visible */
-    padding: 5px 12px;
-    border-radius: 6px;
-    font-size: 14px;
-    transition: all 0.2s ease;
+    background: var(--pixel-bg);
+    color: var(--pixel-text);
+    border: 2px solid var(--pixel-border-dark);
+    padding: 8px 12px;
+    border-radius: 0;
+    font-size: 0.95rem;
+    font-family: inherit;
+    transition: border-color 0.15s ease;
+    box-shadow: inset 0 0 0 1px var(--pixel-border-light);
+}
+
+.formField select {
+    min-height: 48px;
+    line-height: 1.5;
+    padding: 12px 14px;
+    box-sizing: border-box;
+    vertical-align: middle;
 }
 
 .formField input:focus,
 .formField textarea:focus,
 .formField select:focus {
     outline: none;
-    border-color: var(--text-accent);
-    box-shadow: 0 0 0 2px rgba(var(--text-accent-rgb), 0.1);
+    border-color: var(--pixel-accent);
 }
 
 .formField textarea {
     resize: vertical;
     min-height: 80px;
-    font-family: inherit;
 }
 
 .createButton {
-    background: var(--interactive-accent);
-    color: white;
-    border: none;
-    padding: 12px 24px;
-    border-radius: 6px;
+    background: var(--pixel-highlight);
+    color: var(--pixel-border-dark);
+    border: 2px solid var(--pixel-border-dark);
+    padding: 14px 22px;
+    border-radius: 0;
     cursor: pointer;
-    font-weight: 600;
-    font-size: 16px;
+    font-weight: 700;
+    font-family: "Press Start 2P", "VT323", monospace;
+    font-size: 0.48rem;
+    line-height: 1.5;
     margin-top: 8px;
-    transition: all 0.2s ease;
     align-self: flex-start;
+    box-shadow: var(--pixel-shadow);
+    text-transform: uppercase;
 }
 
 .createButton:hover {
-    background: var(--interactive-accent-hover);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(var(--interactive-accent-rgb), 0.3);
+    filter: brightness(1.05);
+    transform: translate(1px, 1px);
+    box-shadow: 2px 2px 0 var(--pixel-border-dark);
 }
 
 .createButton:active {
-    transform: translateY(0);
+    transform: translate(2px, 2px);
+    box-shadow: none;
 }
 
-/* Animations */
 @keyframes fadeIn {
     from {
         opacity: 0;
     }
-
     to {
         opacity: 1;
     }
@@ -497,16 +656,14 @@
 @keyframes slideIn {
     from {
         opacity: 0;
-        transform: translateY(-20px) scale(0.95);
+        transform: translateY(-10px);
     }
-
     to {
         opacity: 1;
-        transform: translateY(0) scale(1);
+        transform: translateY(0);
     }
 }
 
-/* Desktop Modal Improvements */
 @media (min-width: 1024px) {
     .modalContent {
         width: 95vw;
@@ -519,12 +676,12 @@
     }
 
     .mobileTab {
-        height: calc(90vh - 120px);
+        height: calc(90vh - 200px);
+        min-height: 280px;
         overflow: hidden;
     }
 }
 
-/* Ultra-wide desktop support */
 @media (min-width: 1440px) {
     .modalContent {
         width: 90vw;
@@ -532,7 +689,6 @@
     }
 }
 
-/* Responsive Design */
 @media (max-width: 768px) {
     .modalContent {
         width: 95vw;
@@ -544,7 +700,13 @@
     }
 
     .tab {
+        border-right: none;
+        border-bottom: 2px solid var(--pixel-border-dark);
         text-align: center;
+    }
+
+    .tab:last-child {
+        border-bottom: none;
     }
 
     .canvasActions {
@@ -561,46 +723,45 @@
 
     .skillItem {
         flex-direction: column;
-        gap: 12px;
     }
 
     .skillActions {
         align-self: stretch;
-        justify-content: flex-end;
+        justify-content: flex-start;
     }
 }
 
-/* Custom Multi-Select Styles */
+/* Multi-select */
 .multiSelectContainer {
     position: relative;
     width: 100%;
 }
 
 .multiSelectDropdown {
-    background: var(--background-primary);
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 6px;
+    background: var(--pixel-bg);
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: 0;
     padding: 10px 12px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    min-height: 42px;
-    transition: all 0.2s ease;
+    min-height: 44px;
+    transition: border-color 0.15s ease;
+    box-shadow: inset 0 0 0 1px var(--pixel-border-light);
 }
 
 .multiSelectDropdown:hover {
-    border-color: var(--text-accent);
+    border-color: var(--pixel-accent);
 }
 
 .multiSelectDropdown:focus {
     outline: none;
-    border-color: var(--text-accent);
-    box-shadow: 0 0 0 2px rgba(var(--text-accent-rgb), 0.1);
+    border-color: var(--pixel-accent);
 }
 
 .placeholder {
-    color: var(--text-muted);
+    color: var(--pixel-muted);
     font-style: italic;
 }
 
@@ -612,11 +773,11 @@
 }
 
 .selectedStat {
-    background: var(--interactive-accent);
-    color: white;
+    background: var(--pixel-panel-alt);
+    color: var(--pixel-text);
     padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 12px;
+    border-radius: 0;
+    font-size: 0.8rem;
     display: flex;
     align-items: center;
     gap: 4px;
@@ -624,12 +785,14 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    border: 2px solid var(--pixel-border-dark);
+    box-shadow: 2px 2px 0 var(--pixel-border-dark);
 }
 
 .removeStat {
     background: none;
     border: none;
-    color: white;
+    color: var(--pixel-muted);
     cursor: pointer;
     font-size: 14px;
     font-weight: bold;
@@ -639,16 +802,14 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 50%;
-    transition: all 0.2s ease;
 }
 
 .removeStat:hover {
-    background: rgba(255, 255, 255, 0.2);
+    color: var(--pixel-text);
 }
 
 .dropdownArrow {
-    color: var(--text-muted);
+    color: var(--pixel-muted);
     font-size: 12px;
     transition: transform 0.2s ease;
 }
@@ -662,40 +823,149 @@
     top: 100%;
     left: 0;
     right: 0;
-    background: var(--background-primary);
-    border: 1px solid var(--background-modifier-border);
-    border-top: none;
-    border-radius: 0 0 6px 6px;
+    background: var(--pixel-panel-alt);
+    border: 2px solid var(--pixel-border-dark);
+    border-top-width: 0;
+    border-radius: 0;
     max-height: 200px;
     overflow-y: auto;
     z-index: 10;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--pixel-shadow);
 }
 
 .dropdownOption {
-    padding: 8px 12px;
+    padding: 10px 12px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    transition: all 0.2s ease;
-    color: var(--text-normal);
+    transition: background 0.12s ease;
+    color: var(--pixel-text);
+    font-size: 0.92rem;
+    border-bottom: 1px solid var(--pixel-border-dark);
+}
+
+.dropdownOption:last-child {
+    border-bottom: none;
 }
 
 .dropdownOption:hover {
-    background: var(--background-modifier-hover);
+    background: var(--pixel-panel);
 }
 
 .dropdownOption.selected {
-    background: var(--interactive-accent);
-    color: white;
+    background: var(--pixel-accent);
+    color: var(--pixel-border-dark);
+    font-weight: 700;
 }
 
 .checkmark {
-    color: var(--text-accent);
+    color: var(--pixel-highlight);
     font-weight: bold;
 }
 
 .dropdownOption.selected .checkmark {
-    color: white;
+    color: var(--pixel-border-dark);
 }
+
+/* ── Solo Leveling System shell for Skill Codex ── */
+
+.modalContent[data-skill-system="true"] {
+    --pixel-bg: var(--go-bg, #071527);
+    --pixel-panel: var(--go-panel, rgba(10, 30, 58, 0.9));
+    --pixel-panel-alt: var(--go-panel-strong, rgba(18, 55, 96, 0.94));
+    --pixel-border-dark: var(--go-border, rgba(34, 200, 255, 0.35));
+    --pixel-border-light: var(--go-border-strong, rgba(34, 200, 255, 0.6));
+    --pixel-accent: var(--go-accent, #22c8ff);
+    --pixel-highlight: var(--go-gold, #ffd83d);
+    --pixel-text: var(--go-text, #e0f2fe);
+    --pixel-muted: var(--go-muted, #9ec7df);
+    --pixel-shadow: var(--go-shadow, 0 0 20px rgba(34, 200, 255, 0.28));
+    background:
+        radial-gradient(circle at 50% 0%, var(--go-accent-soft, rgba(34, 200, 255, 0.2)), transparent 45%),
+        var(--go-screen-bg, linear-gradient(180deg, rgba(13, 39, 72, 0.98), rgba(5, 20, 40, 0.96)));
+    font-family: var(--go-font-ui, "Inter", "Segoe UI", system-ui, sans-serif);
+    font-size: 14px;
+    line-height: 1.45;
+    image-rendering: auto;
+    border: 1px solid var(--go-border, rgba(34, 200, 255, 0.62));
+    box-shadow:
+        0 0 0 1px rgba(34, 200, 255, 0.14),
+        var(--go-shadow, 0 0 34px rgba(34, 200, 255, 0.28));
+}
+
+.modalContent[data-skill-system="true"]::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+        var(--go-screen-overlay, repeating-linear-gradient(
+            0deg,
+            rgba(255, 255, 255, 0.04) 0,
+            rgba(255, 255, 255, 0.04) 1px,
+            transparent 2px,
+            transparent 5px
+        )),
+        radial-gradient(circle at 30% 20%, rgba(34, 200, 255, 0.13), transparent 36%);
+    mix-blend-mode: screen;
+    opacity: var(--go-static-opacity, 0.48);
+    z-index: 0;
+}
+
+.modalContent[data-skill-system="true"] > * {
+    position: relative;
+    z-index: 1;
+}
+
+.modalContent[data-skill-system="true"] .modalTitle {
+    font-family: var(--go-font-ui, inherit);
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    color: var(--go-accent, #22c8ff);
+    text-shadow: 0 0 12px rgba(34, 200, 255, 0.42);
+}
+
+.modalContent[data-skill-system="true"] .tab {
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.modalContent[data-skill-system="true"] .tab.active {
+    color: var(--go-gold, #ffd83d);
+    border-bottom-color: var(--go-accent, #22c8ff);
+    box-shadow: inset 0 -2px 0 var(--go-accent, #22c8ff);
+}
+
+.modalContent[data-skill-system="true"] .tabContent {
+    padding: 0;
+    background: transparent;
+}
+
+.modalContent[data-skill-system="true"] .mobileTab {
+    padding: 0;
+}
+
+.advancedListToggle {
+    margin: 12px 14px 16px;
+    padding: 10px 12px;
+    border: 1px dashed rgba(34, 200, 255, 0.36);
+    background: rgba(8, 28, 54, 0.72);
+    font-size: 11px;
+    color: var(--go-muted, #94a3b8);
+}
+
+.advancedListToggle summary {
+    cursor: pointer;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--go-accent, #22c8ff);
+}
+
+.advancedListToggle[open] summary {
+    margin-bottom: 12px;
+}
+

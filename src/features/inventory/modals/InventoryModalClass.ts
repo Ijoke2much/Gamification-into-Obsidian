@@ -68,12 +68,14 @@ export class InventoryModalClass extends Modal {
 				customClose.textContent = '✕';
 				customClose.style.cssText = `
           position: absolute;
-          top: 10px; right: 12px;
+          top: 8px; right: 10px;
           width: 32px; height: 32px;
-          border-radius: 50%;
-          background: linear-gradient(135deg, #8ecae6 0%, #219ebc 100%);
-          border: 2px solid rgba(142, 202, 230, 0.3);
-          color: #fff; font-weight: bold; font-size: 16px;
+          border-radius: 0;
+          background: #252742;
+          border: 2px solid #0f1120;
+          box-shadow: 2px 2px 0 #0f1120;
+          color: #ecefff; font-weight: bold; font-size: 10px;
+          font-family: "Press Start 2P","VT323",monospace;
           display: flex; align-items: center; justify-content: center;
           cursor: pointer; z-index: 1001;
         `;
@@ -129,7 +131,7 @@ export class InventoryModalClass extends Modal {
 		this.titleEl.setText("Inventory");
 
 		// Mark this modal for targeted CSS without using :has()
-		this.modalEl.classList.add('gamify-inventory-modal');
+		this.modalEl.classList.add("gamify-inventory-modal", "gamify-inventory-modal--pixel");
 
 		this.root = createRoot(this.contentEl);
 		this.root.render(
@@ -142,7 +144,7 @@ export class InventoryModalClass extends Modal {
 
 	onClose() {
 		// Remove marker class
-		this.modalEl.classList.remove('gamify-inventory-modal');
+		this.modalEl.classList.remove("gamify-inventory-modal", "gamify-inventory-modal--pixel");
 		if (this.root) {
 			this.root.unmount();
 			this.root = null;

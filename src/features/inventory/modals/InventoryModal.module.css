@@ -1,173 +1,227 @@
 /* ========================================
-   INVENTORY MODAL SPECIFIC STYLES
+   INVENTORY MODAL — shell, variables, pixel skin
    ======================================== */
 
 .inventoryModal {
-    position: relative;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    background: transparent;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+  flex: 1;
 }
 
-/* Target ONLY the inventory modal - using Obsidian's modal structure */
+/* Theme tokens (inherited by Inventory.module.css content) */
 :global(.modal-container .modal.gamify-inventory-modal) {
-    /* Make the modal much wider */
-    width: 1400px !important;
-    min-width: 1000px !important;
-    max-width: 98vw !important;
-    height: 800px !important;
-    min-height: 600px !important;
-    max-height: 95vh !important;
+  --inv-bg: linear-gradient(135deg, #1a1d29 0%, #2d3748 100%);
+  --inv-panel: rgba(255, 255, 255, 0.06);
+  --inv-border: rgba(255, 255, 255, 0.12);
+  --inv-accent: #8ecae6;
+  --inv-accent-strong: #219ebc;
+  --inv-text: #e0e6f7;
+  --inv-radius: 16px;
+  --inv-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
 
-    /* Blue theme background */
-    background: linear-gradient(135deg, #1a1d29 0%, #2d3748 100%) !important;
-    border-radius: 16px !important;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4) !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  margin: 0 !important;
+  z-index: 1000 !important;
+
+  width: min(1200px, 96vw) !important;
+  min-width: min(800px, 100vw) !important;
+  max-width: 98vw !important;
+  height: min(800px, 88vh) !important;
+  min-height: min(480px, 90vh) !important;
+  max-height: 92vh !important;
+
+  background: var(--inv-bg) !important;
+  border-radius: var(--inv-radius) !important;
+  box-shadow: var(--inv-shadow) !important;
+  border: 1px solid var(--inv-border) !important;
 }
 
-/* Target the modal title specifically for inventory */
+/* Pixel variant — align with plugin pixel / notice tokens */
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) {
+  --inv-bg: #1b1d2f;
+  --inv-panel: #252742;
+  --inv-border: #5b61a2;
+  --inv-border-dark: #0f1120;
+  --inv-accent: #8ecae6;
+  --inv-accent-strong: #6ecff6;
+  --inv-text: #ecefff;
+  --inv-muted: #bac2e3;
+  --inv-highlight: #ffd166;
+  --inv-radius: 0;
+  --inv-shadow: 4px 4px 0 #0f1120, inset 0 0 0 1px #5b61a2;
+
+  font-family: "Press Start 2P", "VT323", monospace;
+  border-radius: 0 !important;
+  border: 2px solid var(--inv-border-dark) !important;
+  box-shadow: var(--inv-shadow) !important;
+  background: var(--inv-bg) !important;
+}
+
 :global(.modal-container .modal.gamify-inventory-modal .modal-title),
 :global(.modal-container .modal.gamify-inventory-modal .modal-title-bar) {
-    background: linear-gradient(135deg, #8ecae6 0%, #219ebc 100%) !important;
-    color: #ffffff !important;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
-    border-bottom: 2px solid #4a90e2 !important;
-    font-weight: bold !important;
-    text-align: center !important;
-    padding: 16px !important;
-    border-radius: 16px 16px 0 0 !important;
-    position: relative !important;
+  background: linear-gradient(135deg, #8ecae6 0%, #219ebc 100%) !important;
+  color: #ffffff !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+  border-bottom: 2px solid #4a90e2 !important;
+  font-weight: bold !important;
+  text-align: center !important;
+  padding: 16px !important;
+  border-radius: 16px 16px 0 0 !important;
+  position: relative !important;
+  cursor: move;
+  user-select: none;
 }
 
-/* Target the modal content area */
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel .modal-title),
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel .modal-title-bar) {
+  background: var(--inv-panel) !important;
+  color: var(--inv-text) !important;
+  text-shadow: none !important;
+  border-bottom: 2px solid var(--inv-border-dark) !important;
+  border-radius: 0 !important;
+  font-family: "Press Start 2P", "VT323", monospace !important;
+  font-size: 10px !important;
+  letter-spacing: 0.02em;
+  padding: 14px 44px 14px 16px !important;
+  box-shadow: inset 0 -2px 0 var(--inv-border);
+}
+
 :global(.modal-container .modal.gamify-inventory-modal .modal-content) {
-    background: transparent !important;
-    border-radius: 0 0 16px 16px !important;
-    padding: 0 !important;
+  background: transparent !important;
+  border-radius: 0 0 16px 16px !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
 }
 
-/* Override Obsidian's default modal constraints - ONLY for inventory */
-:global(.modal-container .modal.gamify-inventory-modal) {
-    position: fixed !important;
-    top: 50% !important;
-    left: 50% !important;
-    /* Center the modal */
-    transform: translate(-50%, -50%) !important;
-    margin: 0 !important;
-    z-index: 1000 !important;
-    /* Avoid forcing extra layers which can cause flicker on some GPUs */
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel .modal-content) {
+  border-radius: 0 !important;
 }
 
-/* we now inject a native button into the title bar via JS with class .gamify-close-btn */
-.gamify-close-btn:hover {
-    filter: brightness(1.05);
+/* Injected close control */
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel .gamify-close-btn) {
+  border-radius: 0 !important;
+  background: var(--inv-panel) !important;
+  border: 2px solid var(--inv-border-dark) !important;
+  color: var(--inv-text) !important;
+  font-size: 10px !important;
+  font-family: "Press Start 2P", "VT323", monospace !important;
+  box-shadow: 2px 2px 0 var(--inv-border-dark) !important;
+  width: 32px !important;
+  height: 32px !important;
 }
 
-.gamify-close-btn:active {
-    transform: scale(0.95);
+:global(.gamify-close-btn:hover) {
+  filter: brightness(1.05);
 }
 
-/* removed secondary inline header */
+:global(.gamify-close-btn:active) {
+  transform: scale(0.95);
+}
 
-/* Disable expensive shimmer to reduce flicker */
 .inventoryModalHeader::before {
-    display: none;
+  display: none;
 }
 
 @keyframes shimmer {
-    0% {
-        left: -100%;
-    }
-
-    100% {
-        left: 100%;
-    }
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
 }
 
-/* Mobile responsiveness for inventory modal */
+@media (max-width: 900px) {
+  :global(.modal-container .modal.gamify-inventory-modal) {
+    width: min(1200px, 100vw) !important;
+    min-width: 0 !important;
+  }
+}
+
 @media (max-width: 768px) {
-    :global(.modal-container .modal.gamify-inventory-modal) {
-        width: 100vw !important;
-        height: 100vh !important;
-        min-width: 320px !important;
-        min-height: 500px !important;
-        top: 0 !important;
-        left: 0 !important;
-        transform: none !important;
-        border-radius: 0 !important;
-        max-width: none !important;
-        max-height: none !important;
-    }
+  :global(.modal-container .modal.gamify-inventory-modal) {
+    width: 100vw !important;
+    height: 100vh !important;
+    min-width: 280px !important;
+    min-height: 400px !important;
+    top: 0 !important;
+    left: 0 !important;
+    transform: none !important;
+    border-radius: 0 !important;
+    max-width: none !important;
+    max-height: none !important;
+  }
 
-    .closeBtn {
-        top: 8px;
-        right: 12px;
-        width: 44px;
-        height: 44px;
-        font-size: 20px;
-        background: rgba(0, 0, 0, 0.5);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
+  :global(.modal-container .modal.gamify-inventory-modal .modal-title),
+  :global(.modal-container .modal.gamify-inventory-modal .modal-title-bar) {
+    border-radius: 0 !important;
+  }
 
-    .inventoryModalHeader {
-        padding: 16px 20px;
-        font-size: 18px;
-        min-height: 60px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
+  .closeBtn {
+    top: 8px;
+    right: 12px;
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 
-    /* Improve touch targets in mobile inventory */
-    :global(.modal-container .modal.gamify-inventory-modal) button {
-        min-height: 44px;
-        min-width: 44px;
-        padding: 12px 16px;
-        font-size: 16px;
-    }
+  .inventoryModalHeader {
+    padding: 16px 20px;
+    font-size: 18px;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 
-    /* Better spacing for mobile content */
-    :global(.modal-container .modal.gamify-inventory-modal .modal-content) {
-        padding: 16px !important;
-        overflow-y: auto;
-        -webkit-overflow-scrolling: touch;
-    }
+  :global(.modal-container .modal.gamify-inventory-modal .modal-content) {
+    padding: 0 !important;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
 }
 
-/* Reduce heavy effects on smaller/laptop screens to avoid flicker */
 @media (max-width: 1280px) {
-    :global(.modal-container .modal:has(.inventoryModal)) {
-        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35) !important;
-    }
+  :global(.modal-container .modal:has(.inventoryModal)) {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35) !important;
+  }
 
-    .inventoryModalHeader::before {
-        animation: none;
-    }
+  .inventoryModalHeader::before {
+    animation: none;
+  }
 
-    /* Disable expensive filters and transitions inside the inventory modal */
-    [data-inventory-modal="true"],
-    [data-inventory-modal="true"] * {
-        backdrop-filter: none !important;
-        filter: none !important;
-    }
+  [data-inventory-modal="true"],
+  [data-inventory-modal="true"] * {
+    backdrop-filter: none !important;
+    filter: none !important;
+  }
 
-    /* Tone down animations and hover transforms */
-    [data-inventory-modal="true"] * {
-        animation-duration: 0s !important;
-    }
+  [data-inventory-modal="true"] * {
+    animation-duration: 0s !important;
+  }
 }
 
-/* Tablet responsiveness */
-@media (min-width: 769px) and (max-width: 1024px) {
-    :global(.modal-container .modal:has(.inventoryModal)) {
-        width: 90vw !important;
-        min-width: 800px !important;
-        height: 85vh !important;
-    }
+@media (min-width: 769px) and (max-width: 1100px) {
+  :global(.modal-container .modal:has(.inventoryModal)) {
+    width: 94vw !important;
+    min-width: 0 !important;
+    height: min(800px, 90vh) !important;
+  }
 }

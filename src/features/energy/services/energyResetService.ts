@@ -1,9 +1,12 @@
 // Energy Daily Reset Service
 // Handles automatic daily energy restoration and reset mechanics
 
-import { App, Notice } from 'obsidian';
+import { App } from 'obsidian';
 import { playerStore } from '../../../shared/state/playerStore';
 import { runtimeConfig } from '../../../shared/state/config';
+import { pixelNotice } from '../../../shared/utils/noticeUtils';
+import { getPluginSettingsFromApp } from '../../../shared/utils/gameplayConfig';
+import { resolveEnergyHudConfig } from '../../../shared/utils/energyHudConfig';
 
 export interface DailyResetState {
     lastResetDate: string; // YYYY-MM-DD format
@@ -104,6 +107,11 @@ export class EnergyResetService {
      */
     private async performDailyReset(): Promise<void> {
         try {
+            const hudConfig = resolveEnergyHudConfig(getPluginSettingsFromApp(this.app));
+            if (hudConfig.mode === 'off') {
+                return;
+            }
+
             const playerData = await playerStore.get();
             if (!playerData) {
                 console.warn('[EnergyResetService] No player data available for reset');
@@ -115,21 +123,29 @@ export class EnergyResetService {
 
             // Calculate energy conservation streak
             const energyBeforeReset = currentStats.energy || 0;
-            if (energyBeforeReset >= 50) {
+            if (hudConfig.trackEnergyCost && energyBeforeReset >= 50) {
                 this.resetState.energyConservationStreak++;
-            } else {
+            } else if (hudConfig.trackEnergyCost) {
                 this.resetState.energyConservationStreak = 0;
             }
 
-            // Apply daily restoration
-            const newStats = {
-                ...currentStats,
-                energy: Math.min(100, (currentStats.energy || 0) + (restore.energy || 0)),
-                focus: Math.min(100, (currentStats.focus || 0) + (restore.focus || 0)),
-                motivation: Math.min(100, (currentStats.motivation || 0) + (restore.motivation || 0)),
-                calm: Math.min(100, (currentStats.calm || 0) + (restore.calm || 0)),
-                stress: Math.max(0, (currentStats.stress || 0) - (restore.stressReduce || 0))
-            };
+            // Apply daily restoration only for tracked stats
+            const newStats = { ...currentStats };
+            if (hudConfig.trackEnergyCost) {
+                newStats.energy = Math.min(100, (currentStats.energy || 0) + (restore.energy || 0));
+            }
+            if (hudConfig.activeWellbeingStats.includes('focus')) {
+                newStats.focus = Math.min(100, (currentStats.focus || 0) + (restore.focus || 0));
+            }
+            if (hudConfig.activeWellbeingStats.includes('motivation')) {
+                newStats.motivation = Math.min(100, (currentStats.motivation || 0) + (restore.motivation || 0));
+            }
+            if (hudConfig.activeWellbeingStats.includes('calm')) {
+                newStats.calm = Math.min(100, (currentStats.calm || 0) + (restore.calm || 0));
+            }
+            if (hudConfig.activeWellbeingStats.includes('stress')) {
+                newStats.stress = Math.max(0, (currentStats.stress || 0) - (restore.stressReduce || 0));
+            }
 
             // Update player data
             await playerStore.update(data => ({
@@ -167,7 +183,7 @@ export class EnergyResetService {
             message += `\n⚡ Energy Conservation Streak: ${conservationStreak} days!`;
         }
 
-        new Notice(message, 5000);
+        pixelNotice(message, 5000);
     }
 
     /**
@@ -263,6 +279,6 @@ export class EnergyResetService {
      */
     async performManualReset(): Promise<void> {
         await this.performDailyReset();
-        new Notice('🔧 Manual energy reset performed!', 3000);
+        pixelNotice('🔧 Manual energy reset performed!', 3000);
     }
 }

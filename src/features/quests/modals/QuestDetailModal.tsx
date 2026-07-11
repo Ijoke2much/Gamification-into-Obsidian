@@ -244,8 +244,8 @@ export const QuestDetailModal: React.FC<QuestDetailModalProps> = ({
     : displayQuest.completed ? 100 : 0;
 
   const modalContent = (
-    <div className={styles.modalOverlay} onClick={onClose}>
-      <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+    <div className={`${styles.modalOverlay} ${styles.pixelModalOverlay}`} data-pixel-modal="quest-detail" onClick={onClose}>
+      <div className={`${styles.modalContent} ${styles.pixelModalPanel}`} data-pixel-shell="quest-detail" onClick={(e) => e.stopPropagation()}>
         {/* Sticky Header */}
         <div className={styles.modalHeader}>
           <div className={styles.headerTitle}>

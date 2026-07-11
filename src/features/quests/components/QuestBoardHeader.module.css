@@ -40,9 +40,10 @@
 
 .buttonContainer {
     display: flex;
-    gap: 8px;
-    align-items: center;
-    flex-wrap: wrap;
+    flex-direction: column;
+    gap: 6px;
+    align-items: stretch;
+    min-width: 148px;
 }
 
 /* Button Base Styles */
@@ -122,6 +123,17 @@
     background: rgba(255, 255, 255, 0.3);
 }
 
+.captureButton {
+    composes: headerButton;
+    background: rgba(255, 255, 255, 0.1);
+    font-size: 12px;
+    justify-content: center;
+}
+
+.captureButton:hover {
+    background: rgba(255, 255, 255, 0.22);
+}
+
 /* Mobile Optimizations */
 @media (max-width: 768px) {
     .header {
@@ -174,4 +186,45 @@
     .headerButton:hover {
         transform: none;
     }
+}
+
+/* Pixel shell when rendered inside Quest tab */
+:global([data-pixel-shell="quests"]) .header {
+    background: var(--pixel-panel, #252742);
+    border: 2px solid var(--pixel-border-dark, #0f1120);
+    border-radius: 0;
+    box-shadow: 3px 3px 0 var(--pixel-border-dark, #0f1120), inset 0 0 0 1px var(--pixel-border-light, #5b61a2);
+    backdrop-filter: none;
+}
+
+:global([data-pixel-shell="quests"]) .title {
+    font-family: "Press Start 2P", "VT323", monospace;
+    font-size: 11px;
+    color: var(--pixel-text, #ecefff);
+    text-shadow: 2px 2px 0 var(--pixel-border-dark, #0f1120);
+}
+
+:global([data-pixel-shell="quests"]) .subtitle {
+    font-family: "VT323", "Courier New", monospace;
+    font-size: 15px;
+    color: var(--pixel-muted, #bac2e3);
+    font-style: normal;
+}
+
+:global([data-pixel-shell="quests"]) .addQuestButton,
+:global([data-pixel-shell="quests"]) .headerButton {
+    border: 2px solid var(--pixel-border-dark, #0f1120);
+    border-radius: 0;
+    background: var(--pixel-panel-alt, #2e3152);
+    color: var(--pixel-accent, #8ecae6);
+    font-family: "Press Start 2P", "VT323", monospace;
+    font-size: 8px;
+    box-shadow: 3px 3px 0 var(--pixel-border-dark, #0f1120);
+    backdrop-filter: none;
+}
+
+:global([data-pixel-shell="quests"]) .addQuestButton:hover,
+:global([data-pixel-shell="quests"]) .headerButton:hover {
+    transform: translate(1px, 1px);
+    box-shadow: 1px 1px 0 var(--pixel-border-dark, #0f1120);
 }

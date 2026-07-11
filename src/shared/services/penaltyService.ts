@@ -6,6 +6,10 @@ import { rewardService } from './rewardService';
 import { penaltyAnalyticsService } from './penaltyAnalyticsService';
 import { penaltyForgivenessService } from './penaltyForgivenessService';
 import { penaltyCoachingService } from './penaltyCoachingService';
+import {
+    getResolvedGameplayConfig,
+    isPenaltyTypeEnabled,
+} from '../utils/gameplayConfig';
 
 export interface PenaltyContext {
     type: 'boss_timeout' | 'quest_overdue' | 'quest_attachment_expired';
@@ -49,6 +53,12 @@ export class PenaltyService {
         const player = await playerStore.get();
         if (!player) {
             throw new Error('Player data not available');
+        }
+
+        const gameplay = getResolvedGameplayConfig();
+        const originalReward = context.originalReward ?? { xp: 0, coins: 0, cp: 0 };
+        if (!isPenaltyTypeEnabled(gameplay, context.type)) {
+            return this.createNoOpPenaltyResult(originalReward);
         }
 
         let result: PenaltyResult;
@@ -408,6 +418,20 @@ export class PenaltyService {
             insights,
             forgivenessOpportunities: forgivenessEvents,
             coachingAvailable: shouldGenerateCoaching
+        };
+    }
+
+    private createNoOpPenaltyResult(originalReward: {
+        xp: number;
+        coins: number;
+        cp: number;
+    }): PenaltyResult {
+        return {
+            finalReward: { ...originalReward },
+            messages: [],
+            debtAccumulated: { xp: 0, coins: 0 },
+            reputationLoss: 0,
+            debuffsApplied: [],
         };
     }
 }

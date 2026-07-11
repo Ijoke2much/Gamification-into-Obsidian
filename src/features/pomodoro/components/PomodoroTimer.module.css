@@ -834,10 +834,15 @@
 
 .questRewards {
     margin: 20px 0;
-    padding: 15px;
-    background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 193, 7, 0.05) 100%);
-    border-radius: 8px;
-    border: 1px solid rgba(255, 215, 0, 0.2);
+    padding: 0;
+    background: none;
+    border: none;
+    border-radius: 0;
+}
+
+.questTimedRewardBonus {
+    margin-bottom: 10px;
+    font-size: 0.85rem;
 }
 
 .rewardsLabel {
@@ -1918,7 +1923,7 @@ screen and (max-width: 600px) {
 
     .questRewards {
         margin: 10px 0 !important;
-        padding: 8px !important;
+        padding: 0 !important;
     }
 
     .rewardsLabel {
@@ -2119,7 +2124,7 @@ screen and (max-width: 600px) {
 .pomodoroContainer.compact .questRewards,
 .pomodoroContainer[data-compact="true"] .questRewards {
     margin: 10px 0 !important;
-    padding: 8px !important;
+    padding: 0 !important;
 }
 
 .pomodoroContainer.compact .rewardsList,
@@ -2920,10 +2925,10 @@ Break Activities CSS
 
 .questRewards {
     margin: 20px 0;
-    padding: 16px;
-    background: rgba(76, 175, 80, 0.1);
-    border-radius: 12px;
-    border: 1px solid rgba(76, 175, 80, 0.2);
+    padding: 0;
+    background: none;
+    border: none;
+    border-radius: 0;
 }
 
 .rewardsLabel {
@@ -3489,4 +3494,476 @@ Break Activities CSS
         padding: 8px 12px;
         font-size: 0.8rem;
     }
+}
+
+/* ========================================
+   PIXEL / RPG SHELL (Pomodoro tab)
+   Matches Player tab tokens: hard edges, slab shadow, retro type.
+   ======================================== */
+
+.pomodoroContainer.pixelPomodoroShell {
+    --pixel-bg: #1b1d2f;
+    --pixel-panel: #252742;
+    --pixel-panel-alt: #2e3152;
+    --pixel-border-dark: #0f1120;
+    --pixel-border-light: #5b61a2;
+    --pixel-accent: #8ecae6;
+    --pixel-highlight: #ffd166;
+    --pixel-text: #ecefff;
+    --pixel-muted: #bac2e3;
+    --pixel-shadow: 3px 3px 0 var(--pixel-border-dark);
+    --pixel-shadow-pressed: 1px 1px 0 var(--pixel-border-dark);
+    --pixel-card-radius: 0;
+    --pixel-ring-work: #5ce1e6;
+    --pixel-ring-break: #7ed957;
+    --pixel-ring-track: #2f3558;
+
+    font-family: "Press Start 2P", "VT323", "Courier New", monospace;
+    font-size: 11px;
+    line-height: 1.65;
+    color: var(--pixel-text);
+    background: var(--pixel-bg);
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: var(--pixel-card-radius);
+    box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light);
+}
+
+.pomodoroContainer.pixelPomodoroShell .statsPanel {
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.pomodoroContainer.pixelPomodoroShell .xpDisplay,
+.pomodoroContainer.pixelPomodoroShell .sessionCounters,
+.pomodoroContainer.pixelPomodoroShell .streakDisplay {
+    background: var(--pixel-panel);
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: var(--pixel-card-radius);
+    box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light);
+    backdrop-filter: none;
+}
+
+.pomodoroContainer.pixelPomodoroShell .xpDisplay {
+    background: var(--pixel-panel-alt);
+}
+
+.pomodoroContainer.pixelPomodoroShell .currentSessionXP {
+    font-family: "VT323", "Courier New", monospace;
+    font-size: 16px;
+    color: var(--pixel-accent);
+    background: var(--pixel-panel);
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: var(--pixel-card-radius);
+    box-shadow: var(--pixel-shadow-pressed);
+}
+
+.pomodoroContainer.pixelPomodoroShell .totalXP {
+    font-size: 18px;
+    color: var(--pixel-highlight);
+    text-shadow: 2px 2px 0 var(--pixel-border-dark);
+}
+
+.pomodoroContainer.pixelPomodoroShell .dailyProgress,
+.pomodoroContainer.pixelPomodoroShell .progressLabel,
+.pomodoroContainer.pixelPomodoroShell .counterLabel,
+.pomodoroContainer.pixelPomodoroShell .streakLabel,
+.pomodoroContainer.pixelPomodoroShell .longestStreak {
+    color: var(--pixel-muted);
+    font-family: "VT323", "Courier New", monospace;
+    font-size: 14px;
+}
+
+.pomodoroContainer.pixelPomodoroShell .counterNumber {
+    color: var(--pixel-highlight);
+    text-shadow: 2px 2px 0 var(--pixel-border-dark);
+}
+
+.pomodoroContainer.pixelPomodoroShell .streakNumber {
+    font-size: 20px;
+    color: var(--pixel-highlight);
+    text-shadow: 2px 2px 0 var(--pixel-border-dark);
+}
+
+.pomodoroContainer.pixelPomodoroShell .timerSection {
+    margin: 16px 0;
+}
+
+.pomodoroContainer.pixelPomodoroShell .timerCard {
+    background: var(--pixel-panel);
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: var(--pixel-card-radius);
+    box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light);
+    padding: 1.25rem;
+}
+
+.pomodoroContainer.pixelPomodoroShell .timerTitle {
+    font-family: "Press Start 2P", "VT323", monospace;
+    font-size: 10px;
+    color: var(--pixel-accent);
+    text-shadow: 2px 2px 0 var(--pixel-border-dark);
+}
+
+.pomodoroContainer.pixelPomodoroShell .timeCircle {
+    font-family: "Press Start 2P", "VT323", monospace;
+    font-size: 2rem;
+    color: var(--pixel-text);
+    text-shadow: 2px 2px 0 var(--pixel-border-dark);
+}
+
+.pomodoroContainer.pixelPomodoroShell .progressRing .ringBackground {
+    stroke: var(--pixel-ring-track) !important;
+    stroke-linecap: butt;
+}
+
+.pomodoroContainer.pixelPomodoroShell .timerCard[data-phase="work"] .ringProgress {
+    stroke: var(--pixel-ring-work) !important;
+    stroke-linecap: butt;
+    filter: drop-shadow(1px 1px 0 var(--pixel-border-dark));
+}
+
+.pomodoroContainer.pixelPomodoroShell .timerCard[data-phase="break"] .ringProgress {
+    stroke: var(--pixel-ring-break) !important;
+    stroke-linecap: butt;
+    filter: drop-shadow(1px 1px 0 var(--pixel-border-dark));
+}
+
+.pomodoroContainer.pixelPomodoroShell .controls {
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.pomodoroContainer.pixelPomodoroShell .controls button {
+    font-family: "Press Start 2P", "VT323", monospace;
+    font-size: 9px;
+    border-radius: var(--pixel-card-radius);
+    border: 2px solid var(--pixel-border-dark);
+    box-shadow: var(--pixel-shadow);
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+
+.pomodoroContainer.pixelPomodoroShell .controls button:hover {
+    transform: translate(1px, 1px);
+    box-shadow: var(--pixel-shadow-pressed);
+}
+
+.pomodoroContainer.pixelPomodoroShell .controls button:active {
+    transform: translate(2px, 2px);
+    box-shadow: none;
+}
+
+.pomodoroContainer.pixelPomodoroShell .btnStart {
+    background: var(--pixel-accent);
+    color: var(--pixel-border-dark);
+}
+
+.pomodoroContainer.pixelPomodoroShell .btnPause {
+    background: var(--pixel-highlight);
+    color: var(--pixel-border-dark);
+}
+
+.pomodoroContainer.pixelPomodoroShell .btnReset {
+    background: var(--pixel-panel-alt);
+    color: var(--pixel-text);
+    border-color: var(--pixel-border-light);
+}
+
+.pomodoroContainer.pixelPomodoroShell .btnSkip {
+    background: #9b7edc;
+    color: var(--pixel-text);
+}
+
+.pomodoroContainer.pixelPomodoroShell .energySection {
+    background: var(--pixel-panel);
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: var(--pixel-card-radius);
+    box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light);
+}
+
+.pomodoroContainer.pixelPomodoroShell .energyBattery {
+    border-radius: var(--pixel-card-radius);
+    border: 2px solid var(--pixel-border-dark);
+    background: var(--pixel-ring-track);
+    box-shadow: inset 2px 2px 0 rgba(0, 0, 0, 0.35);
+}
+
+.pomodoroContainer.pixelPomodoroShell .energyLevel {
+    border-radius: var(--pixel-card-radius);
+    background: linear-gradient(90deg, #ff6b6b, var(--pixel-highlight), var(--pixel-ring-break));
+    box-shadow: none;
+}
+
+.pomodoroContainer.pixelPomodoroShell .energyText {
+    font-family: "VT323", "Courier New", monospace;
+    font-size: 14px;
+    color: var(--pixel-text);
+    text-shadow: 1px 1px 0 var(--pixel-border-dark);
+}
+
+.pomodoroContainer.pixelPomodoroShell .energyType,
+.pomodoroContainer.pixelPomodoroShell .hyperfocusLevel {
+    font-family: "VT323", "Courier New", monospace;
+    font-size: 15px;
+    color: var(--pixel-muted);
+}
+
+.pomodoroContainer.pixelPomodoroShell .hyperfocusBtn {
+    background: var(--pixel-panel-alt);
+    color: var(--pixel-accent);
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: var(--pixel-card-radius);
+    box-shadow: var(--pixel-shadow);
+    font-family: "Press Start 2P", "VT323", monospace;
+    font-size: 8px;
+}
+
+.pomodoroContainer.pixelPomodoroShell .hyperfocusBtn:hover:not(:disabled) {
+    box-shadow: var(--pixel-shadow-pressed);
+    transform: translate(1px, 1px);
+}
+
+.pomodoroContainer.pixelPomodoroShell .hyperfocusBtn:disabled {
+    background: var(--pixel-panel);
+    color: var(--pixel-muted);
+    opacity: 0.7;
+}
+
+.pomodoroContainer.pixelPomodoroShell .hyperfocusActive {
+    background: #c94c4c !important;
+    color: var(--pixel-text) !important;
+    animation: none;
+    box-shadow: var(--pixel-shadow) !important;
+}
+
+.pomodoroContainer.pixelPomodoroShell .sessionTypesSection h3,
+.pomodoroContainer.pixelPomodoroShell .questAttachmentSection h3 {
+    font-family: "Press Start 2P", "VT323", monospace;
+    font-size: 10px;
+    color: var(--pixel-accent);
+    text-shadow: 2px 2px 0 var(--pixel-border-dark);
+    background: var(--pixel-panel);
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: var(--pixel-card-radius);
+    box-shadow: var(--pixel-shadow);
+    padding: 10px 14px;
+}
+
+.pomodoroContainer.pixelPomodoroShell .sessionTypeCard {
+    background: var(--pixel-panel);
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: var(--pixel-card-radius);
+    box-shadow: var(--pixel-shadow);
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+
+.pomodoroContainer.pixelPomodoroShell .sessionTypeCard:hover {
+    transform: translate(1px, 1px);
+    box-shadow: var(--pixel-shadow-pressed);
+    border-color: var(--pixel-border-light);
+}
+
+.pomodoroContainer.pixelPomodoroShell .sessionTypeCard.active {
+    background: var(--pixel-panel-alt);
+    border-color: var(--pixel-accent);
+    box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-accent);
+}
+
+.pomodoroContainer.pixelPomodoroShell .sessionTypeCard.active::after {
+    border-radius: var(--pixel-card-radius);
+    background: var(--pixel-ring-break);
+    border: 2px solid var(--pixel-border-dark);
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: "Press Start 2P", monospace;
+    font-size: 8px;
+}
+
+.pomodoroContainer.pixelPomodoroShell .sessionTypeTitle {
+    font-family: "Press Start 2P", "VT323", monospace;
+    font-size: 9px;
+    color: var(--pixel-text);
+}
+
+.pomodoroContainer.pixelPomodoroShell .sessionTypeDuration,
+.pomodoroContainer.pixelPomodoroShell .sessionTypeXP {
+    font-family: "VT323", "Courier New", monospace;
+    font-size: 14px;
+    color: var(--pixel-muted);
+}
+
+.pomodoroContainer.pixelPomodoroShell .attachmentOptions {
+    background: var(--pixel-panel);
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: var(--pixel-card-radius);
+    box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light);
+    backdrop-filter: none;
+}
+
+.pomodoroContainer.pixelPomodoroShell .attachBtn,
+.pomodoroContainer.pixelPomodoroShell .smartSuggestionBtn {
+    background: var(--pixel-panel-alt) !important;
+    color: var(--pixel-accent) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    border-radius: var(--pixel-card-radius) !important;
+    box-shadow: var(--pixel-shadow) !important;
+    font-family: "Press Start 2P", "VT323", monospace;
+    font-size: 9px;
+}
+
+.pomodoroContainer.pixelPomodoroShell .smartSuggestionBtn::before {
+    display: none;
+}
+
+.pomodoroContainer.pixelPomodoroShell .attachBtn:hover,
+.pomodoroContainer.pixelPomodoroShell .smartSuggestionBtn:hover {
+    transform: translate(1px, 1px);
+    box-shadow: var(--pixel-shadow-pressed) !important;
+}
+
+.pomodoroContainer.pixelPomodoroShell .attachmentHint {
+    font-family: "VT323", "Courier New", monospace;
+    font-size: 15px;
+    color: var(--pixel-muted);
+}
+
+.pomodoroContainer.pixelPomodoroShell .enhancedQuestCard {
+    background: var(--pixel-panel);
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: var(--pixel-card-radius);
+    box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light);
+    backdrop-filter: none;
+}
+
+.pomodoroContainer.pixelPomodoroShell .questHeaderEnhanced {
+    border-bottom: 2px solid var(--pixel-border-dark);
+}
+
+.pomodoroContainer.pixelPomodoroShell .questIconEnhanced {
+    border-radius: var(--pixel-card-radius);
+    background: var(--pixel-panel-alt);
+    border: 2px solid var(--pixel-border-dark);
+    box-shadow: var(--pixel-shadow-pressed);
+}
+
+.pomodoroContainer.pixelPomodoroShell .questTitleEnhanced {
+    font-family: "Press Start 2P", "VT323", monospace;
+    font-size: 11px;
+    color: var(--pixel-text);
+    text-shadow: 2px 2px 0 var(--pixel-border-dark);
+}
+
+.pomodoroContainer.pixelPomodoroShell .difficultyBadge {
+    border-radius: var(--pixel-card-radius);
+    border: 2px solid var(--pixel-border-dark);
+    box-shadow: var(--pixel-shadow-pressed);
+    font-family: "Press Start 2P", monospace;
+    font-size: 7px;
+}
+
+.pomodoroContainer.pixelPomodoroShell .questType {
+    font-family: "VT323", monospace;
+    font-size: 14px;
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: var(--pixel-card-radius);
+    padding: 2px 8px;
+    background: var(--pixel-panel-alt);
+}
+
+.pomodoroContainer.pixelPomodoroShell .questSkills,
+.pomodoroContainer.pixelPomodoroShell .questDescription,
+.pomodoroContainer.pixelPomodoroShell .questDueDate,
+.pomodoroContainer.pixelPomodoroShell .timedQuestIndicator {
+    border-radius: var(--pixel-card-radius);
+    border: 2px solid var(--pixel-border-dark);
+    background: var(--pixel-panel-alt);
+    font-family: "VT323", monospace;
+    font-size: 14px;
+}
+
+.pomodoroContainer.pixelPomodoroShell .questRewards {
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+    margin: 12px 0;
+    font-family: "VT323", monospace;
+    font-size: 14px;
+}
+
+.pomodoroContainer.pixelPomodoroShell .questTimedRewardBonus {
+    color: var(--pixel-highlight);
+    text-shadow: 1px 1px 0 var(--pixel-border-dark);
+}
+
+.pomodoroContainer.pixelPomodoroShell .skillTag {
+    border-radius: var(--pixel-card-radius);
+    border: 2px solid var(--pixel-border-dark);
+    font-family: "Press Start 2P", monospace;
+    font-size: 7px;
+}
+
+.pomodoroContainer.pixelPomodoroShell .questActions {
+    border-top: 2px solid var(--pixel-border-dark);
+}
+
+.pomodoroContainer.pixelPomodoroShell .completeQuestBtn {
+    border-radius: var(--pixel-card-radius);
+    border: 2px solid var(--pixel-border-dark);
+    box-shadow: var(--pixel-shadow);
+    font-family: "Press Start 2P", monospace;
+    font-size: 8px;
+}
+
+.pomodoroContainer.pixelPomodoroShell .subtasksContainerEnhanced {
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: var(--pixel-card-radius);
+    background: var(--pixel-panel-alt);
+    box-shadow: var(--pixel-shadow-pressed);
+}
+
+.pomodoroContainer.pixelPomodoroShell .subtaskItemEnhanced {
+    border-radius: var(--pixel-card-radius);
+    border: 2px solid var(--pixel-border-dark);
+    font-family: "VT323", monospace;
+    font-size: 14px;
+}
+
+.pomodoroContainer.pixelPomodoroShell .detachBtnEnhanced {
+    border-radius: var(--pixel-card-radius);
+    border: 2px solid var(--pixel-border-dark);
+    box-shadow: var(--pixel-shadow);
+    font-family: "Press Start 2P", monospace;
+    font-size: 8px;
+}
+
+.pomodoroContainer.pixelPomodoroShell .progressTextEnhanced {
+    font-family: "VT323", monospace;
+    font-size: 16px;
+    color: var(--pixel-accent);
+    text-shadow: none;
+}
+
+.pomodoroContainer.pixelPomodoroShell .circularProgress {
+    border-radius: 50%;
+    border: 3px solid var(--pixel-border-dark);
+    box-shadow: var(--pixel-shadow), inset 0 0 0 2px var(--pixel-panel-alt);
+    background: radial-gradient(circle, var(--pixel-panel-alt) 0%, var(--pixel-bg) 100%);
+}
+
+.pomodoroContainer.pixelPomodoroShell .circularProgress::before {
+    display: none;
+}
+
+.pomodoroContainer.pixelPomodoroShell .circularProgressFill {
+    filter: none;
+}
+
+.pomodoroContainer.pixelPomodoroShell .circularProgressText {
+    border-radius: var(--pixel-card-radius);
+    background: var(--pixel-panel);
+    border: 2px solid var(--pixel-border-dark);
+    text-shadow: 1px 1px 0 var(--pixel-border-dark);
+    box-shadow: inset 1px 1px 0 var(--pixel-border-light);
 }

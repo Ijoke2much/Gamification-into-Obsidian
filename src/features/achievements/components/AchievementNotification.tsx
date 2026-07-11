@@ -8,12 +8,14 @@ interface AchievementNotificationProps {
   achievement: Achievement;
   isVisible: boolean;
   onClose: () => void;
+  onViewGallery?: () => void;
 }
 
 export const AchievementNotification: React.FC<AchievementNotificationProps> = ({
   achievement,
   isVisible,
   onClose,
+  onViewGallery,
 }) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
@@ -256,6 +258,28 @@ export const AchievementNotification: React.FC<AchievementNotificationProps> = (
             }}
           />
         </div>
+
+        {onViewGallery && (
+          <button
+            type="button"
+            onClick={onViewGallery}
+            style={{
+              marginTop: '16px',
+              width: '100%',
+              padding: '10px 14px',
+              borderRadius: '10px',
+              border: `1px solid ${getTierColor(achievement.tier)}`,
+              background: `${getTierColor(achievement.tier)}22`,
+              color: '#fff',
+              fontSize: '13px',
+              fontWeight: '700',
+              cursor: 'pointer',
+              letterSpacing: '0.4px',
+            }}
+          >
+            View in trophy gallery →
+          </button>
+        )}
       </div>
 
       {/* Confetti Animation */}

@@ -286,8 +286,8 @@ export const UnifiedQuestView: React.FC<UnifiedQuestViewProps> = ({
       {weekModalOpen && (
         <>
           {createPortal(
-            <div className={styles.modalOverlay} onClick={handleCloseWeekModal}>
-              <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <div className={`${styles.modalOverlay} ${styles.pixelTimelineOverlay}`} data-pixel-modal="quest-week" onClick={handleCloseWeekModal}>
+              <div className={`${styles.modalContent} ${styles.pixelTimelinePanel}`} data-pixel-shell="quest-week" onClick={(e) => e.stopPropagation()}>
                 <div className={styles.modalHeader}>
                   <h2 className={styles.modalTitle}>
                     {weekModalMode === 'workweek' ? '📊 Work Week View' : '📆 Full Week View'}

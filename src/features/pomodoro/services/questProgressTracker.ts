@@ -1,8 +1,9 @@
 // Quest Progress Tracking Service for Pomodoro Integration
 // Tracks and updates quest progress in real-time during Pomodoro sessions
 
-import { App, TFile, Notice } from 'obsidian';
+import { App, TFile } from 'obsidian';
 import { AttachedQuest } from '../types/EnhancedTaskLinking';
+import { pixelNotice } from '../../../shared/utils/noticeUtils';
 
 export interface QuestProgressUpdate {
     questId: string;
@@ -284,7 +285,7 @@ export class QuestProgressTracker {
             console.log(`📝 Updated quest file: ${quest.filePath} (${progress}% progress)`);
         } catch (error) {
             console.error('Error updating quest file:', error);
-            new Notice('Failed to update quest progress in file');
+            pixelNotice('Failed to update quest progress in file');
         }
     }
 

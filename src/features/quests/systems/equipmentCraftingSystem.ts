@@ -1,6 +1,7 @@
-import { Notice } from 'obsidian';
+;
 import { productivityEquipmentSystem, ProductivityEquipment, EquipmentRarity } from './productivityEquipmentSystem';
 import { currencyDisplay } from '../../../shared/services/currencyDisplayService';
+import { pixelNotice } from '../../../shared/utils/noticeUtils';
 
 /**
  * Equipment Crafting System
@@ -363,7 +364,7 @@ export class EquipmentCraftingSystem {
                         const refund = Math.floor(amount * 0.5);
                         this.playerMaterials.set(material, (this.playerMaterials.get(material) || 0) + refund);
                     }
-                    new Notice(`🎁 Material efficiency! Refunded 50% of materials`, 3000);
+                    pixelNotice(`🎁 Material efficiency! Refunded 50% of materials`, 3000);
                 }
 
                 // Add item to inventory
@@ -528,7 +529,7 @@ export class EquipmentCraftingSystem {
         this.unlockedRecipes.add(recipeId);
         this.saveCraftingProgress();
 
-        new Notice(`🔓 Recipe unlocked: ${recipe.name}`, 5000);
+        pixelNotice(`🔓 Recipe unlocked: ${recipe.name}`, 5000);
         return true;
     }
 
@@ -556,7 +557,7 @@ export class EquipmentCraftingSystem {
         // Unlock level-based recipes
         this.checkLevelBasedUnlocks();
 
-        new Notice(`🎉 Crafting Level Up! Now level ${this.craftingLevel}`, 5000);
+        pixelNotice(`🎉 Crafting Level Up! Now level ${this.craftingLevel}`, 5000);
     }
 
     /**
@@ -654,13 +655,13 @@ export class EquipmentCraftingSystem {
                 ? `✅ Successfully crafted ${result.itemsCrafted}x ${recipe.name}!`
                 : `⚠️ Crafted ${result.itemsCrafted}/${result.totalAttempts} ${recipe.name}`;
 
-            new Notice(message, 4000);
+            pixelNotice(message, 4000);
 
             if (result.experienceGained > 0) {
-                new Notice(`📈 +${result.experienceGained} Crafting XP`, 3000);
+                pixelNotice(`📈 +${result.experienceGained} Crafting XP`, 3000);
             }
         } else {
-            new Notice(`❌ Failed to craft ${recipe.name}: ${result.error}`, 5000);
+            pixelNotice(`❌ Failed to craft ${recipe.name}: ${result.error}`, 5000);
         }
     }
 

@@ -2,6 +2,7 @@
 // Export all achievement-related components and utilities
 
 export { default as AchievementNotification } from './AchievementNotification';
+export { AchievementUnlockHost } from './AchievementUnlockHost';
 export { default as AchievementStats } from './AchievementStats';
 export { default as EnhancedAchievementProcessor } from '../utils/achievementProcessor';
 

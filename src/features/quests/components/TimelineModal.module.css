@@ -172,3 +172,62 @@
         font-size: 16px;
     }
 }
+
+/* ========== Pixel / RPG timeline & week view modals ========== */
+.pixelTimelineOverlay {
+    background: rgba(15, 17, 32, 0.92);
+    backdrop-filter: none;
+}
+
+.pixelTimelinePanel {
+    --pixel-bg: #1b1d2f;
+    --pixel-panel: #252742;
+    --pixel-border-dark: #0f1120;
+    --pixel-border-light: #5b61a2;
+    --pixel-accent: #8ecae6;
+    --pixel-highlight: #ffd166;
+    --pixel-text: #ecefff;
+    --pixel-muted: #bac2e3;
+    --pixel-shadow: 4px 4px 0 var(--pixel-border-dark);
+    --pixel-radius: 0;
+    font-family: "Press Start 2P", "VT323", "Courier New", monospace;
+    color: var(--pixel-text);
+    background: var(--pixel-bg) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    border-radius: var(--pixel-radius) !important;
+    box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light) !important;
+}
+
+.pixelTimelinePanel .modalHeader {
+    background: var(--pixel-panel) !important;
+    border-color: var(--pixel-border-dark) !important;
+}
+
+.pixelTimelinePanel .modalTitle {
+    font-family: "Press Start 2P", monospace !important;
+    font-size: 10px !important;
+    color: var(--pixel-highlight) !important;
+    text-shadow: 2px 2px 0 var(--pixel-border-dark) !important;
+}
+
+.pixelTimelinePanel .closeButton {
+    border-radius: var(--pixel-radius) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    background: var(--pixel-panel) !important;
+    color: var(--pixel-text) !important;
+    box-shadow: 2px 2px 0 var(--pixel-border-dark) !important;
+}
+
+.pixelTimelinePanel .modalBody {
+    background: var(--pixel-bg) !important;
+}
+
+.pixelTimelinePanel .modalBody::-webkit-scrollbar-thumb {
+    border-radius: 0 !important;
+}
+
+@media (max-width: 1024px) {
+    .pixelTimelinePanel {
+        border-radius: 0 !important;
+    }
+}

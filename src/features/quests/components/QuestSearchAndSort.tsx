@@ -14,10 +14,13 @@ export const QuestSearchBar = forwardRef<HTMLInputElement, QuestSearchBarProps>(
     placeholder = "Search quests..."
 }, ref) => {
     return (
-        <div style={{
+        <div
+            data-quest-search="true"
+            style={{
             position: "relative",
             marginBottom: 16
-        }}>
+        }}
+        >
             <input
                 ref={ref}
                 type="text"
@@ -133,7 +136,7 @@ export const QuestSortDropdown: React.FC<QuestSortDropdownProps> = ({
     }, [isOpen]);
 
     return (
-        <div style={{ position: "relative" }}>
+        <div data-quest-sort-trigger="true" style={{ position: "relative" }}>
             <button
                 ref={buttonRef}
                 onClick={() => setIsOpen(!isOpen)}
@@ -286,7 +289,9 @@ export const QuestFilters: React.FC<QuestFiltersProps> = ({
     availableSkills
 }) => {
     return (
-        <div style={{
+        <div
+            data-quest-filters="true"
+            style={{
             display: "grid",
             gridTemplateColumns: "1fr 1fr 1fr",
             gap: 16,
@@ -296,7 +301,8 @@ export const QuestFilters: React.FC<QuestFiltersProps> = ({
             border: "1px solid rgba(255, 255, 255, 0.1)",
             borderRadius: 12,
             backdropFilter: "blur(10px)"
-        }}>
+        }}
+        >
             {/* Status Filter */}
             <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
                 <label style={{

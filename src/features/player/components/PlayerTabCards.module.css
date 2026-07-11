@@ -1,0 +1,212 @@
+/* Player tab — LEVEL, EXP, currency, actions (not the profile card) */
+
+.playerTabSystem .levelCard,
+.playerTabSystem .expCard,
+.playerTabSystem .coinsCard,
+.playerTabSystem .skillTreeCard,
+.playerTabSystem .inventoryCard {
+    font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif);
+    border-width: 1px;
+    border-color: var(--go-border, rgba(34, 200, 255, 0.45));
+    background: var(--go-card-soft, rgba(8, 28, 54, 0.55));
+    box-shadow:
+        0 0 0 1px rgba(34, 200, 255, 0.08),
+        inset 0 0 16px rgba(34, 200, 255, 0.04);
+    border-radius: 2px;
+}
+
+.playerTabSystem .levelCard:hover,
+.playerTabSystem .expCard:hover,
+.playerTabSystem .coinsCard:hover,
+.playerTabSystem .skillTreeCard:hover,
+.playerTabSystem .inventoryCard:hover {
+    transform: none;
+    box-shadow:
+        0 0 0 1px rgba(34, 200, 255, 0.2),
+        0 0 14px rgba(34, 200, 255, 0.12),
+        inset 0 0 16px rgba(34, 200, 255, 0.05);
+}
+
+.playerTabSystem .cardLabel {
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    color: var(--go-muted, #9ec7df);
+}
+
+.playerTabSystem .levelValue,
+.playerTabSystem .coinsValue {
+    color: var(--go-gold, #ffd83d);
+    font-size: 1.25rem;
+}
+
+.playerTabSystem .actionLabel {
+    font-family: inherit;
+    font-size: 0.65rem;
+    letter-spacing: 0.06em;
+    color: var(--go-text, #e0f2fe);
+}
+
+.cardRow {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    gap: 18px;
+    width: 100%;
+    min-width: 0;
+    flex-wrap: wrap;
+    overflow: visible;
+}
+
+.levelCard,
+.expCard,
+.coinsCard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background: var(--pixel-panel);
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: 0;
+    box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light);
+    padding: 12px 10px 8px;
+    min-width: 0;
+    width: 50%;
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+    overflow: visible;
+    box-sizing: border-box;
+}
+
+.expCard {
+    /* inherits shared card chrome */
+}
+
+.expCardSystem {
+    align-items: stretch;
+    justify-content: center;
+    padding: 14px 12px 12px;
+}
+
+.playerTabSystem .expCardSystem {
+    padding: 14px 14px 12px;
+}
+
+.levelCard:hover,
+.expCard:hover,
+.coinsCard:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0 var(--pixel-border-dark), inset 0 0 0 1px var(--pixel-border-light);
+}
+
+.levelValue {
+    font-size: 0.85rem;
+    font-weight: 800;
+    color: var(--pixel-highlight);
+    margin-top: 4px;
+}
+
+.coinsValue {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: var(--pixel-highlight);
+    margin-top: 4px;
+}
+
+.cardLabel {
+    font-size: 8px;
+    color: var(--pixel-muted);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    font-family: inherit;
+}
+
+.actionLabel {
+    font-size: 0.55rem;
+    font-weight: 600;
+    line-height: 1.4;
+    color: var(--pixel-text);
+    margin-top: 4px;
+    font-family: inherit;
+    padding: 0 4px;
+    max-width: 100%;
+    text-align: center;
+    word-break: break-word;
+}
+
+.actionIcon {
+    font-size: 18px;
+    line-height: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.skillTreeCard,
+.inventoryCard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    background: var(--pixel-panel);
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: 0;
+    box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light);
+    padding: 12px 12px 10px;
+    min-width: 0;
+    flex: 1;
+    min-height: 88px;
+    align-self: stretch;
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+    box-sizing: border-box;
+    color: var(--pixel-text);
+    font-family: inherit;
+    text-align: center;
+}
+
+.skillTreeCard:hover,
+.inventoryCard:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0 var(--pixel-border-dark), inset 0 0 0 1px var(--pixel-border-light);
+}
+
+.skillTreeCard:active,
+.inventoryCard:active {
+    transform: translate(0, 0);
+    box-shadow: var(--pixel-shadow-pressed), inset 0 0 0 1px var(--pixel-border-light);
+}
+
+.energyCard {
+    background: var(--pixel-panel);
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: 0;
+    box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light);
+    padding: 12px 16px;
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+}
+
+.energyCardFlush {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    overflow: visible;
+}
+
+@container (max-width: 450px) {
+    .cardRow {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .levelCard,
+    .expCard,
+    .coinsCard,
+    .skillTreeCard,
+    .inventoryCard {
+        width: 100%;
+    }
+}

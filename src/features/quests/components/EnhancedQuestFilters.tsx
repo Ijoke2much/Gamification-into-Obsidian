@@ -1,20 +1,39 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { EnergyQuickFilterCard } from './EnergyQuickFilterCard';
 import { SavedQuestsManager } from '../services/savedQuestsManager';
+
+/** Lite profile shows these by default; the rest sit behind "More filters". */
+const LITE_PRIMARY_FILTERS = new Set(['all', 'today', 'quick_wins', 'overdue']);
 
 interface EnhancedQuestFiltersProps {
   activeQuickFilter: string;
   setActiveQuickFilter: (filter: string) => void;
   quests: any[];
   currentEnergy: number;
+  /** Phase 4 — collapse secondary filters for Lite profile */
+  compactMode?: boolean;
+  /** Hide energy-match filters when energy stat is not tracked */
+  trackEnergyCost?: boolean;
 }
 
 export const EnhancedQuestFilters: React.FC<EnhancedQuestFiltersProps> = ({
   activeQuickFilter,
   setActiveQuickFilter,
   quests,
-  currentEnergy
+  currentEnergy,
+  compactMode = false,
+  trackEnergyCost = true,
 }) => {
+  const [showMoreFilters, setShowMoreFilters] = useState(false);
+
+  const isFilterVisible = (filterId: string): boolean => {
+    if (!trackEnergyCost && filterId === 'perfect_energy') {
+      return false;
+    }
+    if (!compactMode) return true;
+    if (LITE_PRIMARY_FILTERS.has(filterId)) return true;
+    return showMoreFilters;
+  };
   // Calculate quest counts for each filter
   const allQuests = quests.filter(q => !q.completed);
   const todayQuests = quests.filter(q => q.today && !q.completed);
@@ -40,13 +59,17 @@ export const EnhancedQuestFilters: React.FC<EnhancedQuestFiltersProps> = ({
   const optimalSavedQuests = SavedQuestsManager.getOptimalSavedQuests(currentEnergy);
 
   return (
-    <div style={{
+    <div
+      data-quest-quick-filters="true"
+      style={{
       display: "grid",
       gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
       gap: 12,
       marginBottom: 48
-    }}>
+    }}
+    >
       {/* Original filters with energy enhancements */}
+      {isFilterVisible('all') && (
       <EnergyQuickFilterCard
         label="ALL"
         emoji="📋"
@@ -59,7 +82,9 @@ export const EnhancedQuestFilters: React.FC<EnhancedQuestFiltersProps> = ({
         energyCostRange="5-50"
         recommendedFor="any"
       />
+      )}
 
+      {isFilterVisible('today') && (
       <EnergyQuickFilterCard
         label="TODAY"
         emoji="🎯"
@@ -73,7 +98,9 @@ export const EnhancedQuestFilters: React.FC<EnhancedQuestFiltersProps> = ({
         recommendedFor="medium"
         currentEnergyMatch={currentEnergy >= 40 && currentEnergy <= 80}
       />
+      )}
 
+      {isFilterVisible('tomorrow') && (
       <EnergyQuickFilterCard
         label="TOMORROW"
         emoji="📅"
@@ -86,7 +113,9 @@ export const EnhancedQuestFilters: React.FC<EnhancedQuestFiltersProps> = ({
         energyCostRange="15-40"
         recommendedFor="high"
       />
+      )}
 
+      {isFilterVisible('overdue') && (
       <EnergyQuickFilterCard
         label="OVERDUE"
         emoji="🚨"
@@ -100,7 +129,9 @@ export const EnhancedQuestFilters: React.FC<EnhancedQuestFiltersProps> = ({
         recommendedFor="high"
         currentEnergyMatch={currentEnergy >= 70}
       />
+      )}
 
+      {isFilterVisible('upcoming') && (
       <EnergyQuickFilterCard
         label="UPCOMING"
         emoji="🔮"
@@ -113,7 +144,9 @@ export const EnhancedQuestFilters: React.FC<EnhancedQuestFiltersProps> = ({
         energyCostRange="10-35"
         recommendedFor="medium"
       />
+      )}
 
+      {isFilterVisible('no_due_date') && (
       <EnergyQuickFilterCard
         label="NO DUE DATE"
         emoji="📝"
@@ -126,8 +159,10 @@ export const EnhancedQuestFilters: React.FC<EnhancedQuestFiltersProps> = ({
         energyCostRange="5-45"
         recommendedFor="any"
       />
+      )}
 
       {/* ADHD-specific filters */}
+      {isFilterVisible('perfect_energy') && (
       <EnergyQuickFilterCard
         label="PERFECT MATCH"
         emoji="🎯"
@@ -141,7 +176,9 @@ export const EnhancedQuestFilters: React.FC<EnhancedQuestFiltersProps> = ({
         recommendedFor="any"
         currentEnergyMatch={true}
       />
+      )}
 
+      {isFilterVisible('quick_wins') && (
       <EnergyQuickFilterCard
         label="QUICK WINS"
         emoji="⚡"
@@ -155,7 +192,9 @@ export const EnhancedQuestFilters: React.FC<EnhancedQuestFiltersProps> = ({
         recommendedFor="low"
         currentEnergyMatch={currentEnergy < 40}
       />
+      )}
 
+      {isFilterVisible('hyperfocus') && (
       <EnergyQuickFilterCard
         label="HYPERFOCUS"
         emoji="🧠"
@@ -169,7 +208,9 @@ export const EnhancedQuestFilters: React.FC<EnhancedQuestFiltersProps> = ({
         recommendedFor="high"
         currentEnergyMatch={currentEnergy >= 80}
       />
+      )}
 
+      {isFilterVisible('saved') && (
       <EnergyQuickFilterCard
         label="SAVED"
         emoji="💾"
@@ -183,6 +224,26 @@ export const EnhancedQuestFilters: React.FC<EnhancedQuestFiltersProps> = ({
         recommendedFor="any"
         currentEnergyMatch={optimalSavedQuests.length > 0}
       />
+      )}
+
+      {compactMode && (
+        <button
+          type="button"
+          onClick={() => setShowMoreFilters((v) => !v)}
+          style={{
+            gridColumn: '1 / -1',
+            padding: '10px 14px',
+            borderRadius: 10,
+            border: '1px solid var(--background-modifier-border)',
+            background: 'var(--background-secondary)',
+            color: 'var(--text-normal)',
+            cursor: 'pointer',
+            fontWeight: 600,
+          }}
+        >
+          {showMoreFilters ? '▲ Fewer filters' : '▼ More filters'}
+        </button>
+      )}
     </div>
   );
 };

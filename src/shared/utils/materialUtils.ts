@@ -1,5 +1,5 @@
 import { InventoryItem } from '../../features/inventory/utils/updateInventoryFile';
-import { CraftingEngine } from '../../features/crafting/utils/craftingEngine';
+import { getCraftingMaterials, findMaterialByIdOrName } from '../../features/crafting/utils/craftingMaterialRegistry';
 
 /**
  * Utility functions for identifying and working with crafting materials
@@ -14,17 +14,18 @@ export class MaterialUtils {
         if (item.category === "material") return true;
 
         // Check if it's a known crafting material category
-        const craftingCategories = ['mineral', 'herb', 'crystal', 'essence', 'organic', 'mystical'];
+        const craftingCategories = ['mineral', 'herb', 'crystal', 'essence', 'organic', 'mystical', 'component'];
         if (craftingCategories.includes(item.category || '')) return true;
 
         // Check if it has crafting-related tags
         if (item.tags?.some(tag => ['craftable', 'material', 'ingredient'].includes(tag.toLowerCase()))) return true;
 
         // Check against known crafting material names from the crafting engine
-        const knownMaterials = CraftingEngine.getDefaultMaterials();
+        const knownMaterials = getCraftingMaterials();
         return knownMaterials.some(material =>
             material.name.toLowerCase() === item.name.toLowerCase() ||
-            material.id.toLowerCase() === item.name.toLowerCase().replace(/\s+/g, '_') ||
+            material.id.toLowerCase() === item.name.toLowerCase().replace(/\s+/g, '-') ||
+            findMaterialByIdOrName(knownMaterials, item.name) !== undefined ||
             item.name.toLowerCase().includes(material.name.toLowerCase()) ||
             material.name.toLowerCase().includes(item.name.toLowerCase())
         );

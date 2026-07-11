@@ -1,7 +1,8 @@
 // src/modals/AddItemModal.ts
-import { App, Modal, Setting, Notice } from "obsidian";
+import { App, Modal, Setting } from 'obsidian';
 import type GamifiedObsidianPlugin from "src/core/main";
 import { ShopItem, getAllShopTemplates } from "src/features/shop/utils/ShopParser";
+import { pixelNotice } from '../../../shared/utils/noticeUtils';
 
 // High-level item mode used to drive defaults and UX
 type ItemMode = "generic" | "artifact" | "weapon";
@@ -684,7 +685,7 @@ export class AddItemModal extends Modal {
 					.setCta()
 					.onClick(async () => {
 						if (!this.name.trim()) {
-							new Notice("❌ Please enter a name.");
+							pixelNotice("❌ Please enter a name.");
 							return;
 						}
 
@@ -701,7 +702,7 @@ export class AddItemModal extends Modal {
 						const shopFile = allFiles.find(f => f.basename.toLowerCase() === "shop");
 
 						if (!shopFile) {
-							new Notice("⚠️ Could not find Shop.md!");
+							pixelNotice("⚠️ Could not find Shop.md!");
 							return;
 						}
 
@@ -756,7 +757,7 @@ export class AddItemModal extends Modal {
 							}
 
 							if (!itemFound) {
-								new Notice(`⚠️ Could not find original item "${this.originalItem.name}" in shop. Adding as new item instead.`);
+								pixelNotice(`⚠️ Could not find original item "${this.originalItem.name}" in shop. Adding as new item instead.`);
 								// Fallback: add as new item
 								let toAppend = `\n${line}`;
 								if (descLine) toAppend += `\n${descLine}`;
@@ -767,7 +768,7 @@ export class AddItemModal extends Modal {
 								await this.app.vault.modify(shopFile, updatedLines.join("\n"));
 							}
 
-							new Notice(`✅ Edited "${this.name}" in shop.`);
+							pixelNotice(`✅ Edited "${this.name}" in shop.`);
 						} else {
 							// Add mode: append new line
 							let toAppend = `\n${line}`;
@@ -776,7 +777,7 @@ export class AddItemModal extends Modal {
 							if (stockLine) toAppend += `\n${stockLine}`;
 							if (effectLines.length) toAppend += `\n${effectLines.join("\n")}`;
 							await this.app.vault.append(shopFile, toAppend);
-							new Notice(`✅ Added "${this.name}" to shop.`);
+							pixelNotice(`✅ Added "${this.name}" to shop.`);
 						}
 
 						this.onSubmit({

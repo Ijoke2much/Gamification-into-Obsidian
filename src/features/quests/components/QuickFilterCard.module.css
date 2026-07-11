@@ -127,3 +127,37 @@
     transform: rotate(5deg);
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
+
+:global([data-pixel-shell="quests"]) .card {
+    border-radius: 0 !important;
+    border-width: 2px !important;
+    box-shadow: 3px 3px 0 var(--pixel-border-dark, #0f1120), inset 0 0 0 1px var(--pixel-border-light, #5b61a2) !important;
+    background: var(--pixel-panel, #252742) !important;
+    font-family: "VT323", "Courier New", monospace;
+}
+
+:global([data-pixel-shell="quests"]) .card:hover,
+:global([data-pixel-shell="quests"]) .card:focus {
+    transform: translate(1px, 1px);
+    box-shadow: 1px 1px 0 var(--pixel-border-dark, #0f1120), inset 0 0 0 1px var(--pixel-accent, #8ecae6) !important;
+}
+
+:global([data-pixel-shell="quests"]) .active {
+    box-shadow: 2px 2px 0 var(--pixel-border-dark, #0f1120), inset 0 0 0 2px var(--pixel-accent, #8ecae6) !important;
+    background: var(--pixel-panel-alt, #2e3152) !important;
+}
+
+:global([data-pixel-shell="quests"]) .label {
+    font-family: "Press Start 2P", "VT323", monospace;
+    font-size: 8px;
+    letter-spacing: 0.5px;
+}
+
+:global([data-pixel-shell="quests"]) .count {
+    font-family: "Press Start 2P", "VT323", monospace;
+    text-shadow: 2px 2px 0 var(--pixel-border-dark, #0f1120);
+}
+
+:global([data-pixel-shell="quests"]) .card.compact {
+    border-radius: 0 !important;
+}

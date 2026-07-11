@@ -1,7 +1,8 @@
 // Gamified Task Scanner Service
 // Automatically finds and processes tasks with #gamified-task tag
 
-import { Vault, TFile, Notice, App } from 'obsidian';
+import { Vault, TFile, App } from 'obsidian';
+import { pixelNotice } from '../../../shared/utils/noticeUtils';
 
 export interface TaskScanResult {
     newTasks: Array<{
@@ -88,7 +89,7 @@ export class GamifiedTaskScanner {
             this.lastScanTime = Date.now();
 
             if (result.completedTasks.length > 0) {
-                new Notice(`🎉 Completed ${result.completedTasks.length} gamified tasks!`);
+                pixelNotice(`🎉 Completed ${result.completedTasks.length} gamified tasks!`);
             }
 
             console.log(`[TaskScanner] Scan complete: ${result.newTasks.length} active, ${result.completedTasks.length} completed`);
@@ -120,6 +121,9 @@ export class GamifiedTaskScanner {
 
             // Must have #gamified-task tag
             if (!taskText.includes('#gamified-task')) continue;
+
+            // Skip brain-dump captures until promoted
+            if (taskText.includes('#capture')) continue;
 
             const completed = checked === 'x';
             const title = this.extractTitle(taskText);
@@ -216,7 +220,7 @@ export class GamifiedTaskScanner {
                 skills: [] as string[],
                 stats: [] as string[],
             } as unknown as import('../utils/taskParser').Quest;
-            await awardQuestRewards(this.vault, questShim, resolvePluginSettings(this.app));
+            await awardQuestRewards(this.vault, questShim, resolvePluginSettings(this.app), this.app);
 
             // Trigger achievement events
             const { achievementEventService } = await import('../../achievements/services/achievementEventService');

@@ -1,18 +1,28 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
-import { Notice, TFile } from "obsidian";
+import { TFile } from 'obsidian';
 import type GamifiedObsidianPlugin from "../../../core/main";
 import type { SkillMetadata } from "../../../shared/utils/skillDiscovery";
 import { getAllSkills } from "../../../shared/utils/skillDiscovery";
 import { QuestGiverAvatar } from "../../../features/quests/components/QuestGiverAvatar";
 import { useTypewriter } from "../../../data/hooks/useTypewriter";
 import styles from "./QuestModal.module.css";
+import { pixelNotice } from '../../../shared/utils/noticeUtils';
 import {
-    getXPRange,
-    getCPRange,
-    getRandomInRange,
+    rollQuestRewardXp,
+    rollQuestRewardCp,
     generateMarkdownTask,
 } from "../../../features/quests/utils/questUtils";
+import { getQuestEnergyCost } from "../../../shared/utils/questCompletionPipeline";
+import {
+	createQuestNote,
+	getTaskNoteFolder,
+	isPerNoteMode,
+} from "../utils/questNoteService";
+import {
+    type ActivityProfileId,
+    normalizeActivityProfileId,
+} from "../../../shared/utils/questWellbeingProfiles";
 // import {
 //     QuestRewardItem,
 // } from "../../../features/quests/utils/questRewardsSystem";
@@ -23,7 +33,8 @@ import {
     QuestModalActions, 
     QuestModalAdvancedOptions 
 } from "./components";
-import type { Quest } from "../utils/taskParser";
+import type { Quest, QuestTimelineTheme } from "../utils/taskParser";
+import { normalizeQuestTimelineTheme } from "../utils/taskParser";
 
 export interface QuestModalProps {
     isOpen: boolean;
@@ -32,6 +43,10 @@ export interface QuestModalProps {
     mode: "create" | "edit";
     quest?: Quest | null;
     onSubmit: (createdQuest?: Quest, filePath?: string) => void;
+    /** Open guild contract titles for optional linking on create. */
+    openContracts?: string[];
+    /** Pre-select active pinned contract when creating from the quest hub. */
+    defaultContract?: string;
     // Optional prefill for quick-add flows
     prefill?: {
         dueISO?: string; // YYYY-MM-DDTHH:MM
@@ -48,6 +63,8 @@ export const QuestModal: React.FC<QuestModalProps> = ({
     mode,
     quest,
     onSubmit,
+    openContracts = [],
+    defaultContract,
     prefill,
 }) => {
     // Store original quest title for editing mode to find the quest in the file
@@ -64,11 +81,19 @@ export const QuestModal: React.FC<QuestModalProps> = ({
     const [selectedSkill, setSelectedSkill] = useState<string>("");
     const [priority, setPriority] = useState(mode === "edit" && quest ? quest.priority || "Medium" : "Medium");
     const [difficulty, setDifficulty] = useState(mode === "edit" && quest ? quest.difficulty || "Medium" : "Medium");
-    const [xp, setXp] = useState(mode === "edit" && quest ? quest.xp || 0 : getRandomInRange(...getXPRange("Medium")));
-    const [cp, setCp] = useState(mode === "edit" && quest ? quest.cp || 0 : getRandomInRange(...getCPRange("Medium")));
+    const [xp, setXp] = useState(mode === "edit" && quest ? quest.xp || 0 : rollQuestRewardXp("Medium"));
+    const [cp, setCp] = useState(mode === "edit" && quest ? quest.cp || 0 : rollQuestRewardCp("Medium"));
     const [banner, setBanner] = useState(mode === "edit" && quest ? quest.banner || "" : "");
     const [bannerAlign, setBannerAlign] = useState<string>(
         mode === "edit" && quest && quest.bannerAlign ? quest.bannerAlign : "center"
+    );
+
+    const [timelineTheme, setTimelineTheme] = useState<
+        QuestTimelineTheme | undefined
+    >(() =>
+        mode === "edit" && quest
+            ? normalizeQuestTimelineTheme(quest.timelineTheme)
+            : undefined
     );
     
     // Separate date and time properly when editing
@@ -129,6 +154,72 @@ export const QuestModal: React.FC<QuestModalProps> = ({
     const [subtasks, setSubtasks] = useState<{ text: string; completed: boolean; description?: string }[]>(mode === "edit" && quest ? quest.subtasks || [] : []);
     const [newSubtask, setNewSubtask] = useState("");
     const [newSubtaskDescription, setNewSubtaskDescription] = useState("");
+
+    /** Parsed from quest when editing; undefined means “use default stamina cost” (see getQuestEnergyCost). */
+    const [energyCost, setEnergyCost] = useState<number | undefined>(undefined);
+    const [activityProfile, setActivityProfile] = useState<ActivityProfileId>("generic");
+    const [attachedContract, setAttachedContract] = useState(
+        mode === "edit" && quest?.project ? quest.project : defaultContract || ""
+    );
+
+    useEffect(() => {
+        if (!isOpen) return;
+        if (mode === "edit" && quest?.project) {
+            setAttachedContract(quest.project);
+            return;
+        }
+        if (mode === "create") {
+            setAttachedContract(defaultContract || "");
+        }
+    }, [isOpen, mode, quest?.project, defaultContract]);
+
+    /**
+     * When priority or difficulty actually changes, roll XP / CP in the matching ranges
+     * (getXPRange by priority, getCPRange by difficulty). Skip the first "sync" per modal open
+     * so we keep the initial useState (edit: saved values, create: first random roll).
+     */
+    const lastRewardTierRef = useRef<{ priority: string; difficulty: string } | null>(null);
+
+    useEffect(() => {
+        if (!isOpen) {
+            lastRewardTierRef.current = null;
+            return;
+        }
+        if (lastRewardTierRef.current === null) {
+            lastRewardTierRef.current = { priority, difficulty };
+            return;
+        }
+        const prev = lastRewardTierRef.current;
+        if (prev.priority === priority && prev.difficulty === difficulty) return;
+        if (prev.priority !== priority) {
+            setXp(rollQuestRewardXp(priority));
+        }
+        if (prev.difficulty !== difficulty) {
+            setCp(rollQuestRewardCp(difficulty));
+        }
+        lastRewardTierRef.current = { priority, difficulty };
+    }, [isOpen, priority, difficulty]);
+
+    useEffect(() => {
+        if (!isOpen) return;
+        if (mode === "edit" && quest) {
+            if (typeof quest.energyCost === "number" && quest.energyCost > 0) {
+                setEnergyCost(quest.energyCost);
+            } else {
+                setEnergyCost(undefined);
+            }
+            setActivityProfile(
+                quest.activityProfile
+                    ? normalizeActivityProfileId(quest.activityProfile)
+                    : "generic"
+            );
+            setTimelineTheme(normalizeQuestTimelineTheme(quest.timelineTheme));
+        } else {
+            setEnergyCost(undefined);
+            setActivityProfile("generic");
+            setTimelineTheme(undefined);
+        }
+    }, [isOpen, mode, quest]);
     
     // Reward customization (for future use)
     // const [customRewards, setCustomRewards] = useState<Array<{ name: string; quantity: number; item?: QuestRewardItem }>>([]);
@@ -288,7 +379,7 @@ export const QuestModal: React.FC<QuestModalProps> = ({
         } catch (error) {
             const msg = error instanceof Error ? error.message : String(error);
             console.error("Failed to persist quest banner:", error);
-            new Notice(`Could not save quest banner: ${msg}. Quest will be saved without it.`, 6000);
+            pixelNotice(`Could not save quest banner: ${msg}. Quest will be saved without it.`, 6000);
             return undefined;
         }
     };
@@ -347,22 +438,86 @@ export const QuestModal: React.FC<QuestModalProps> = ({
             if (mode === "create") {
                 // Create new quest
                 const bannerPath = await ensureBannerPath(banner || undefined);
+                const resolvedStamina = getQuestEnergyCost({ energyCost });
+                const usePerNoteCreate =
+                    isPerNoteMode(plugin.settings) && saveLocationId === "default";
+
+                if (usePerNoteCreate) {
+                    const file = await createQuestNote(
+                        plugin.app,
+                        getTaskNoteFolder(plugin.settings),
+                        {
+                            title: title.trim(),
+                            description: description.trim() || undefined,
+                            subtasks,
+                            skills,
+                            priority,
+                            difficulty,
+                            xp,
+                            cp,
+                            due: getScheduledDateTime() || undefined,
+                            recur: recur || undefined,
+                            estimatedTime: estimatedMinutes || undefined,
+                            energyCost: resolvedStamina,
+                            activityProfile:
+                                activityProfile === "generic" ? undefined : activityProfile,
+                            banner: bannerPath || undefined,
+                            bannerAlign,
+                            timelineTheme,
+                            project: attachedContract.trim() || undefined,
+                        }
+                    );
+
+                    const questForState: Quest = {
+                        id: file.path,
+                        title: title.trim(),
+                        description: description.trim() || undefined,
+                        skills: skills.map((s) => s.name),
+                        priority,
+                        difficulty,
+                        xp,
+                        cp,
+                        coins: Math.round(xp * 0.2),
+                        banner: bannerPath || undefined,
+                        bannerAlign,
+                        ...(timelineTheme ? { timelineTheme } : {}),
+                        due: getScheduledDateTime() || undefined,
+                        recur: recur || undefined,
+                        estimatedTime: estimatedMinutes || undefined,
+                        subtasks,
+                        completed: false,
+                        className: skills[0]?.class || "",
+                        stats: skills[0]?.stats ? Object.keys(skills[0].stats) : [],
+                        energyCost: resolvedStamina,
+                        filePath: file.path,
+                        ...(activityProfile !== "generic" ? { activityProfile } : {}),
+                        ...(attachedContract.trim() ? { project: attachedContract.trim() } : {}),
+                    };
+                    onSubmit(questForState, file.path);
+                    return;
+                }
+
                 const newQuest = {
                     title: title.trim(),
                     description: description.trim() || undefined,
-                    skills: skills.map(s => s.name),
+                    skills: skills.map((s) => s.name),
                     priority,
                     difficulty,
                     xp,
                     cp,
                     banner: bannerPath || undefined,
                     bannerAlign,
+                    timelineTheme,
                     due: getScheduledDateTime() || undefined,
                     recur: recur || undefined,
                     estimatedTime: estimatedMinutes || undefined,
-                    subtasks: subtasks,
+                    subtasks,
                     customRewards: undefined,
-                    enhancedCustomRewards: enhancedCustomRewards.length > 0 ? enhancedCustomRewards : undefined,
+                    enhancedCustomRewards:
+                        enhancedCustomRewards.length > 0 ? enhancedCustomRewards : undefined,
+                    energyCost: resolvedStamina,
+                    activityProfile: activityProfile === "generic" ? undefined : activityProfile,
+                    project: attachedContract.trim() || undefined,
                 };
 
                 const markdownTask = generateMarkdownTask(newQuest);
@@ -401,6 +556,7 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                     coins: Math.round(xp * 0.2),
                     banner: bannerPath || undefined,
                     bannerAlign,
+                    ...(timelineTheme ? { timelineTheme } : {}),
                     due: getScheduledDateTime() || undefined,
                     recur: recur || undefined,
                     estimatedTime: estimatedMinutes || undefined,
@@ -408,6 +564,8 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                     completed: false,
                     className: skills[0]?.class || '',
                     stats: skills[0]?.stats ? Object.keys(skills[0].stats) : [],
+                    energyCost: resolvedStamina,
+                    ...(activityProfile !== "generic" ? { activityProfile } : {}),
                 };
                 onSubmit(questForState, targetPath);
             } else if (mode === "edit" && quest) {
@@ -477,6 +635,7 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                 
                 // Generate the updated quest
                 const bannerPath = await ensureBannerPath(banner || undefined);
+                const resolvedStamina = getQuestEnergyCost({ energyCost });
                 const updatedQuest = {
                     title: title.trim(),
                     description: description.trim() || undefined,
@@ -487,12 +646,15 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                     cp,
                     banner: bannerPath || undefined,
                     bannerAlign,
+                    timelineTheme,
                     due: getScheduledDateTime() || undefined,
                     recur: recur || undefined,
                     estimatedTime: estimatedMinutes || undefined,
                     subtasks: subtasks,
                     customRewards: undefined,
                     enhancedCustomRewards: enhancedCustomRewards.length > 0 ? enhancedCustomRewards : undefined,
+                    energyCost: resolvedStamina,
+                    activityProfile: activityProfile === "generic" ? undefined : activityProfile,
                 };
 
                 const markdownTask = generateMarkdownTask(updatedQuest);
@@ -526,8 +688,8 @@ export const QuestModal: React.FC<QuestModalProps> = ({
 
     // Quest Modal UI
     const questModalPortal = ReactDOM.createPortal(
-        <div className={`${styles.modalOverlay} ${isMobile ? 'mobile-quest-modal' : ''}`} onClick={onClose}>
-            <div className={`${styles.modal} ${isMobile ? 'mobile-quest-modal-content' : ''}`} onClick={(e) => e.stopPropagation()}>
+        <div className={`${styles.modalOverlay} ${styles.pixelQuestModalOverlay} ${isMobile ? 'mobile-quest-modal' : ''}`} data-pixel-modal="quest-form" onClick={onClose}>
+            <div className={`${styles.modal} ${styles.pixelQuestModalPanel} ${isMobile ? 'mobile-quest-modal-content' : ''}`} data-pixel-shell="quest-form" onClick={(e) => e.stopPropagation()}>
                 <QuestModalHeader 
                     mode={mode}
                     isMobile={isMobile}
@@ -536,13 +698,7 @@ export const QuestModal: React.FC<QuestModalProps> = ({
 
                 {/* Quest Giver */}
                 {!questGiverCollapsed && (
-                    <div style={{
-                        background: "rgba(255, 255, 255, 0.05)",
-                        borderRadius: 12,
-                        padding: 16,
-                        marginBottom: 20,
-                        border: "1px solid rgba(255, 255, 255, 0.1)"
-                    }}>
+                    <div className={styles.questGiverSection}>
                         <QuestGiverAvatar
                             plugin={plugin}
                             imagePath={questGiverImagePath}
@@ -550,20 +706,8 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                             collapsed={false}
                         />
                         
-                        <div style={{
-                            marginTop: 12,
-                            padding: 12,
-                            background: "rgba(0, 0, 0, 0.3)",
-                            borderRadius: 8,
-                            border: "1px solid rgba(255, 255, 255, 0.2)"
-                        }}>
-                            <p style={{
-                                margin: 0,
-                                color: "#e2e8f0",
-                                fontSize: 14,
-                                lineHeight: 1.5,
-                                fontStyle: "italic"
-                            }}>
+                        <div className={styles.questGiverDialogue}>
+                            <p className={styles.questGiverDialogueText}>
                                 {animatedDialogue}
                                 {isAnimating && <span className={styles.blinkingCursor}>|</span>}
                             </p>
@@ -573,34 +717,9 @@ export const QuestModal: React.FC<QuestModalProps> = ({
 
                 <form onSubmit={handleSubmit}>
                     {/* Save Location Selector (where to write the quest in your vault) */}
-                    <div
-                        style={{
-                            marginBottom: 16,
-                            padding: 12,
-                            borderRadius: 10,
-                            border: "1px solid var(--background-modifier-border)",
-                            background: "rgba(255, 255, 255, 0.02)",
-                        }}
-                    >
-                        <div
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "space-between",
-                                marginBottom: 8,
-                                gap: 8,
-                            }}
-                        >
-                            <span
-                                style={{
-                                    fontWeight: 600,
-                                    color: "var(--text-normal)",
-                                    fontSize: 14,
-                                    display: "flex",
-                                    alignItems: "center",
-                                    gap: 6,
-                                }}
-                            >
+                    <div className={styles.saveLocationSection}>
+                        <div className={styles.saveLocationHeader}>
+                            <span className={styles.saveLocationTitle}>
                                 <span>📁 Save Quest To</span>
                             </span>
                         </div>
@@ -626,26 +745,13 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                                 value={customFilePath}
                                 onChange={(e) => setCustomFilePath(e.target.value)}
                                 placeholder="e.g. Daily/2025-11-24.md"
-                                style={{
-                                    width: "100%",
-                                    padding: 10,
-                                    borderRadius: 6,
-                                    border: "1px solid var(--background-modifier-border)",
-                                    backgroundColor: "var(--background-primary)",
-                                    color: "var(--text-normal)",
-                                    fontSize: 13,
-                                }}
+                                className={styles.customPathInput}
                             />
                         )}
-                        <div
-                            style={{
-                                marginTop: 4,
-                                fontSize: 11,
-                                color: "var(--text-muted)",
-                            }}
-                        >
-                            Choose a saved location or type a custom note path. New quests
-                            will be appended to that file.
+                        <div className={styles.saveLocationHint}>
+                            {isPerNoteMode(plugin.settings) && saveLocationId === "default"
+                                ? `Default save creates a new note in ${getTaskNoteFolder(plugin.settings)}. Pick another location to append to a list file instead.`
+                                : "Choose a saved location or type a custom note path. New quests will be appended to that file."}
                         </div>
                     </div>
 
@@ -667,6 +773,9 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                         setXp={setXp}
                         cp={cp}
                         setCp={setCp}
+                        energyOnComplete={getQuestEnergyCost({ energyCost })}
+                        activityProfile={activityProfile}
+                        setActivityProfile={setActivityProfile}
                         due={due}
                         setDue={setDue}
                         time={scheduleTime}
@@ -685,6 +794,10 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                         handleAddSubtask={handleAddSubtask}
                         handleRemoveSubtask={handleRemoveSubtask}
                         isMobile={isMobile}
+                        showContractPicker={mode === "create" && openContracts.length > 0}
+                        openContracts={openContracts}
+                        attachedContract={attachedContract}
+                        setAttachedContract={setAttachedContract}
                     />
 
                     <QuestModalAdvancedOptions
@@ -708,6 +821,8 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                     setQuestBanner={setBanner}
                     bannerAlign={bannerAlign}
                     setBannerAlign={setBannerAlign}
+                    timelineTheme={timelineTheme}
+                    setTimelineTheme={setTimelineTheme}
                         subtasks={subtasks}
                         newSubtask={newSubtask}
                         setNewSubtask={setNewSubtask}

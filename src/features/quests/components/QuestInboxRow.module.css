@@ -124,3 +124,27 @@
 .menu:hover {
   opacity: 1;
 }
+
+:global([data-pixel-shell="quests"]) .row {
+  border-bottom: 2px solid var(--pixel-border-dark, #0f1120);
+  font-family: "VT323", "Courier New", monospace;
+  font-size: 14px;
+}
+
+:global([data-pixel-shell="quests"]) .title {
+  font-family: "Press Start 2P", "VT323", monospace;
+  font-size: 9px;
+}
+
+:global([data-pixel-shell="quests"]) .badge {
+  border-radius: 0 !important;
+  border: 2px solid var(--pixel-border-dark, #0f1120);
+  font-family: "Press Start 2P", monospace;
+  font-size: 6px;
+}
+
+:global([data-pixel-shell="quests"]) .priorityDot {
+  border-radius: 0;
+  width: 8px;
+  height: 8px;
+}

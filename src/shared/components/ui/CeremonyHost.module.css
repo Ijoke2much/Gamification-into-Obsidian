@@ -1,0 +1,120 @@
+.backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 100000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 16px;
+	background: rgba(2, 6, 14, 0.72);
+	backdrop-filter: blur(4px);
+}
+
+.panel {
+	width: min(360px, 92vw);
+	padding: 22px 20px 18px;
+	border: 1px solid rgba(34, 211, 238, 0.55);
+	border-radius: 6px;
+	background:
+		linear-gradient(180deg, rgba(10, 22, 40, 0.98), rgba(5, 8, 16, 0.98));
+	box-shadow:
+		0 0 24px rgba(34, 211, 238, 0.22),
+		inset 0 0 0 1px rgba(224, 242, 254, 0.08);
+	color: #e0f2fe;
+	text-align: center;
+	font-family: "Inter", "Segoe UI", system-ui, sans-serif;
+}
+
+.systemLabel {
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.28em;
+	color: #22d3ee;
+	margin-bottom: 10px;
+}
+
+.title {
+	margin: 0 0 14px;
+	font-size: 14px;
+	font-weight: 700;
+	letter-spacing: 0.18em;
+	color: #f0f9ff;
+}
+
+.subtitle {
+	margin: 0 0 12px;
+	font-size: 13px;
+	color: #94a3b8;
+}
+
+.whisper {
+	margin: 0 0 18px;
+	font-size: 13px;
+	line-height: 1.5;
+	color: #cbd5e1;
+}
+
+.rankRow {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 12px;
+	margin-bottom: 8px;
+}
+
+.rankBadgeOld,
+.rankBadgeNew {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 52px;
+	padding: 8px 10px;
+	border-radius: 4px;
+	font-size: 22px;
+	font-weight: 800;
+	letter-spacing: 0.06em;
+}
+
+.rankBadgeOld {
+	border: 1px solid rgba(148, 163, 184, 0.45);
+	color: #94a3b8;
+	background: rgba(15, 23, 42, 0.8);
+}
+
+.rankBadgeNew {
+	border: 1px solid rgba(251, 191, 36, 0.65);
+	color: #fbbf24;
+	background: rgba(251, 191, 36, 0.12);
+	box-shadow: 0 0 16px rgba(251, 191, 36, 0.25);
+}
+
+.rankArrow {
+	font-size: 20px;
+	color: #22d3ee;
+}
+
+.levelValue {
+	font-size: 42px;
+	font-weight: 800;
+	line-height: 1;
+	color: #fbbf24;
+	text-shadow: 0 0 18px rgba(251, 191, 36, 0.35);
+	margin-bottom: 8px;
+}
+
+.dismissBtn {
+	border: 1px solid rgba(34, 211, 238, 0.55);
+	background: rgba(34, 211, 238, 0.12);
+	color: #e0f2fe;
+	border-radius: 4px;
+	padding: 8px 18px;
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0.08em;
+	cursor: pointer;
+}
+
+.dismissBtn:hover {
+	background: rgba(34, 211, 238, 0.22);
+	border-color: #22d3ee;
+}

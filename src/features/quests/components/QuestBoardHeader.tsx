@@ -3,10 +3,12 @@ import styles from "./QuestBoardHeader.module.css";
 
 interface QuestBoardHeaderProps {
     onAddQuest: () => void;
+    onQuickCapture?: () => void;
 }
 
 export const QuestBoardHeader: React.FC<QuestBoardHeaderProps> = ({ 
-    onAddQuest
+    onAddQuest,
+    onQuickCapture,
 }) => (
     <div className={styles.headerContainer}>
         <div className={styles.header}>
@@ -23,6 +25,16 @@ export const QuestBoardHeader: React.FC<QuestBoardHeaderProps> = ({
                 >
                     + Add Quest
                 </button>
+                {onQuickCapture && (
+                    <button
+                        type="button"
+                        onClick={onQuickCapture}
+                        className={styles.captureButton}
+                        title="Brain dump — saves to Capture.md"
+                    >
+                        🧠 Brain Dump
+                    </button>
+                )}
             </div>
         </div>
     </div>

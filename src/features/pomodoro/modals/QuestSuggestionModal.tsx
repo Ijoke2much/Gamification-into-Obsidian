@@ -1,8 +1,9 @@
 // Quest Suggestion Modal for Pomodoro Integration
 // Provides intelligent quest recommendations based on session type and context
 
-import React, { useState, useEffect } from 'react';
-import { App, Modal } from 'obsidian';
+import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { App } from 'obsidian';
 import { QuestSuggestionService, QuestSuggestionContext } from '../services/questSuggestionService';
 import { QuestSuggestion } from '../types/EnhancedTaskLinking';
 import styles from './QuestSuggestionModal.module.css';
@@ -28,12 +29,26 @@ export const QuestSuggestionModal: React.FC<QuestSuggestionModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'quick' | 'deep' | 'urgent'>('all');
   const [questService] = useState(() => new QuestSuggestionService(app));
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
 
   useEffect(() => {
     if (isOpen) {
       loadSuggestions();
     }
   }, [isOpen, sessionType, selectedFilter]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        onCloseRef.current();
+      }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isOpen]);
 
   const loadSuggestions = async () => {
     setLoading(true);
@@ -117,7 +132,7 @@ export const QuestSuggestionModal: React.FC<QuestSuggestionModalProps> = ({
 
   const sessionInfo = getSessionTypeInfo();
 
-  return (
+  return createPortal(
     <div className={styles.modalOverlay} onClick={onClose}>
       <div className={styles.modal} onClick={(e) => e.stopPropagation()}>
         <div className={styles.modalHeader}>
@@ -131,7 +146,16 @@ export const QuestSuggestionModal: React.FC<QuestSuggestionModalProps> = ({
                 </p>
               </div>
             </div>
-            <button className={styles.closeButton} onClick={onClose}>
+            <button
+              type="button"
+              className={styles.closeButton}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onClose();
+              }}
+              aria-label="Close"
+            >
               ✕
             </button>
           </div>
@@ -141,24 +165,28 @@ export const QuestSuggestionModal: React.FC<QuestSuggestionModalProps> = ({
           {/* Filter Tabs */}
           <div className={styles.filterTabs}>
             <button
+              type="button"
               className={`${styles.filterTab} ${selectedFilter === 'all' ? styles.active : ''}`}
               onClick={() => setSelectedFilter('all')}
             >
               All Quests
             </button>
             <button
+              type="button"
               className={`${styles.filterTab} ${selectedFilter === 'quick' ? styles.active : ''}`}
               onClick={() => setSelectedFilter('quick')}
             >
               ⚡ Quick Focus
             </button>
             <button
+              type="button"
               className={`${styles.filterTab} ${selectedFilter === 'deep' ? styles.active : ''}`}
               onClick={() => setSelectedFilter('deep')}
             >
               🧠 Deep Work
             </button>
             <button
+              type="button"
               className={`${styles.filterTab} ${selectedFilter === 'urgent' ? styles.active : ''}`}
               onClick={() => setSelectedFilter('urgent')}
             >
@@ -270,7 +298,7 @@ export const QuestSuggestionModal: React.FC<QuestSuggestionModalProps> = ({
         </div>
 
         <div className={styles.modalFooter}>
-          <button className={styles.cancelButton} onClick={onClose}>
+          <button type="button" className={styles.cancelButton} onClick={onClose}>
             Cancel
           </button>
           <div className={styles.footerHint}>
@@ -278,7 +306,8 @@ export const QuestSuggestionModal: React.FC<QuestSuggestionModalProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
 

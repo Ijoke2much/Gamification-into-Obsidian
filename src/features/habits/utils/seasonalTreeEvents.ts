@@ -2,7 +2,8 @@
 // Manages special events that affect tree growth, rewards, and visual effects
 
 import { TreeEvent, TreeItemDrop } from './treeRewardSystem';
-import { Notice } from 'obsidian';
+;
+import { pixelNotice } from '../../../shared/utils/noticeUtils';
 
 export class SeasonalTreeEventManager {
     private static readonly STORAGE_KEY = 'gamified-seasonal-tree-events';
@@ -273,7 +274,7 @@ export class SeasonalTreeEventManager {
         );
 
         newlyActiveEvents.forEach(event => {
-            new Notice(
+            pixelNotice(
                 `🌳 ${event.name} has begun! ${event.description}`,
                 8000
             );
@@ -322,7 +323,7 @@ export class SeasonalTreeEventManager {
         event.endDate = new Date(now.getTime() + (durationHours * 60 * 60 * 1000));
         event.isActive = true;
 
-        new Notice(
+        pixelNotice(
             `🌳 ${event.name} has been manually triggered! Duration: ${durationHours} hours`,
             5000
         );

@@ -297,14 +297,9 @@ const InventoryModalContent: React.FC = () => {
         <div className={inventoryStyles.inventoryModalContent}>
             {/* Left Panel - Categories & Items Grid */}
             <div
-                style={{
-                    flex: selectedItemData ? "0 0 55%" : "1",
-                    display: "flex",
-                    flexDirection: "column",
-                    borderRight: selectedItemData
-                        ? "2px solid rgba(232, 244, 253, 0.1)"
-                        : "none",
-                }}
+                className={`${inventoryStyles.inventoryLeftPanel} ${
+                    selectedItemData ? inventoryStyles.inventoryLeftPanelSplit : ""
+                }`}
             >
                 {/* Tab Navigation */}
                 <div className={inventoryStyles.tabNavigation}>

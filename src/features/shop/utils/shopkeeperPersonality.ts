@@ -3,7 +3,8 @@
 
 import type GamifiedObsidianPlugin from "../../../core/main";
 import { ShopItem } from "./ShopParser";
-import { Notice } from "obsidian";
+;
+import { pixelNotice } from '../../../shared/utils/noticeUtils';
 
 export interface ShopkeeperPersonality {
     name: string;
@@ -691,7 +692,7 @@ export class ShopkeeperPersonalityManager {
 
         this.setCurrentShopkeeper(shopkeeperNames[nextIndex]);
 
-        new Notice(`🏪 ${this.getCurrentShopkeeper()?.avatar} ${this.getCurrentShopkeeper()?.name} is now running the shop!`, 4000);
+        pixelNotice(`🏪 ${this.getCurrentShopkeeper()?.avatar} ${this.getCurrentShopkeeper()?.name} is now running the shop!`, 4000);
         console.log(`Shopkeeper rotated to: ${this.currentShopkeeper}`);
     }
 

@@ -1,8 +1,13 @@
 import { penaltyService, PenaltyContext } from '../../../shared/services/penaltyService';
 import { Quest } from './taskParser';
 import { rewardService } from '../../../shared/services/rewardService';
-import { Notice } from 'obsidian';
+;
 import { currencyDisplay } from '../../../shared/services/currencyDisplayService';
+import { pixelNotice } from '../../../shared/utils/noticeUtils';
+import {
+    getResolvedGameplayConfig,
+    isPenaltyTypeEnabled,
+} from '../../../shared/utils/gameplayConfig';
 
 export class QuestPenaltyIntegration {
 
@@ -31,6 +36,8 @@ export class QuestPenaltyIntegration {
 
             if (now > dueDate) {
                 const daysOverdue = Math.ceil((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+                const gameplay = getResolvedGameplayConfig();
+                const overdueEnabled = isPenaltyTypeEnabled(gameplay, 'quest_overdue');
 
                 const penaltyResult = await penaltyService.applyPenalty({
                     type: 'quest_overdue',
@@ -40,11 +47,26 @@ export class QuestPenaltyIntegration {
                 });
 
                 finalReward = penaltyResult.finalReward;
-                penaltyApplied = true;
-                messages.push(...penaltyResult.messages);
+                const hadMechanicalPenalty =
+                    overdueEnabled &&
+                    (penaltyResult.debuffsApplied.length > 0 ||
+                        penaltyResult.debtAccumulated.xp > 0 ||
+                        penaltyResult.debtAccumulated.coins > 0 ||
+                        penaltyResult.reputationLoss > 0 ||
+                        penaltyResult.finalReward.xp < originalReward.xp);
 
-                // Show penalty notification
-                new Notice(`⚠️ Quest "${quest.title}" completed ${daysOverdue} days late! Penalties applied.`, 8000);
+                if (hadMechanicalPenalty) {
+                    penaltyApplied = true;
+                    messages.push(...penaltyResult.messages);
+                    pixelNotice(
+                        `⚠️ Quest "${quest.title}" completed ${daysOverdue} days late! Penalties applied.`,
+                        8000
+                    );
+                } else if (overdueEnabled) {
+                    messages.push(
+                        `Quest "${quest.title}" was ${daysOverdue} day(s) late (no penalty applied — check penalty settings).`
+                    );
+                }
             }
         }
 
@@ -85,10 +107,16 @@ export class QuestPenaltyIntegration {
 
         if (overdueQuests.length > 0) {
             messages.push(`⚠️ ${overdueQuests.length} overdue quest(s) found!`);
-            messages.push('Penalties will be applied when you complete these quests.');
-
-            // Show notification
-            new Notice(`⚠️ ${overdueQuests.length} overdue quests detected! Check your penalty status.`, 8000);
+            const gameplay = getResolvedGameplayConfig();
+            if (isPenaltyTypeEnabled(gameplay, 'quest_overdue')) {
+                messages.push('Penalties will be applied when you complete these quests.');
+                pixelNotice(
+                    `⚠️ ${overdueQuests.length} overdue quests detected! Check your penalty status.`,
+                    8000
+                );
+            } else {
+                messages.push('Overdue — complete when you can (penalties are off in settings).');
+            }
         }
 
         return {
@@ -102,17 +130,24 @@ export class QuestPenaltyIntegration {
      * Check quest attachment penalties (for Pomodoro integration)
      */
     static async checkAttachmentPenalties(attachedQuestId: string, timeLimit: number, actualTime: number): Promise<void> {
-        if (actualTime > timeLimit) {
-            const originalReward = { xp: 50, coins: 5, cp: 10 }; // Default attachment rewards
-
-            await penaltyService.applyPenalty({
-                type: 'quest_attachment_expired',
-                questId: attachedQuestId,
-                originalReward
-            });
-
-            new Notice('🎯 Failed to complete attached quest within time limit! Focus penalty applied.', 5000);
+        if (actualTime <= timeLimit) {
+            return;
         }
+
+        const gameplay = getResolvedGameplayConfig();
+        if (!isPenaltyTypeEnabled(gameplay, 'quest_attachment_expired')) {
+            return;
+        }
+
+        const originalReward = { xp: 50, coins: 5, cp: 10 };
+
+        await penaltyService.applyPenalty({
+            type: 'quest_attachment_expired',
+            questId: attachedQuestId,
+            originalReward
+        });
+
+        pixelNotice('🎯 Failed to complete attached quest within time limit! Focus penalty applied.', 5000);
     }
 
     /**
@@ -123,6 +158,11 @@ export class QuestPenaltyIntegration {
         penaltyType: 'overdue' | 'none';
         daysOverdue?: number;
     } {
+        const gameplay = getResolvedGameplayConfig();
+        if (!isPenaltyTypeEnabled(gameplay, 'quest_overdue')) {
+            return { shouldApply: false, penaltyType: 'none' };
+        }
+
         if (!quest.due || quest.completed) {
             return { shouldApply: false, penaltyType: 'none' };
         }

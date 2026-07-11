@@ -405,3 +405,252 @@
         transform: none;
     }
 }
+
+/* Composed with questTabContainer for TSX; tokens live on .questTabContainer.pixelQuestShell */
+.pixelQuestShell {
+    isolation: isolate;
+}
+
+.shortcutsHint {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(0, 0, 0, 0.8);
+    color: rgba(255, 255, 255, 0.7);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 9px;
+    z-index: 1000;
+    cursor: help;
+}
+
+.advancedSearchBanner {
+    margin-top: 8px;
+    padding: 12px;
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 8px;
+    margin-bottom: 20px;
+    min-width: 100%;
+    box-sizing: border-box;
+}
+
+.bulkToolbar {
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* ========================================
+   PIXEL / RPG SHELL (Quest tab)
+   ======================================== */
+
+.questTabContainer.pixelQuestShell {
+    --pixel-bg: #1b1d2f;
+    --pixel-panel: #252742;
+    --pixel-panel-alt: #2e3152;
+    --pixel-border-dark: #0f1120;
+    --pixel-border-light: #5b61a2;
+    --pixel-accent: #8ecae6;
+    --pixel-highlight: #ffd166;
+    --pixel-text: #ecefff;
+    --pixel-muted: #bac2e3;
+    --pixel-shadow: 3px 3px 0 var(--pixel-border-dark);
+    --pixel-shadow-pressed: 1px 1px 0 var(--pixel-border-dark);
+    --pixel-card-radius: 0;
+
+    position: relative;
+    padding: 10px;
+    font-family: "Press Start 2P", "VT323", "Courier New", monospace;
+    font-size: 11px;
+    line-height: 1.65;
+    color: var(--pixel-text);
+    background: var(--pixel-bg);
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: var(--pixel-card-radius);
+    box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light);
+    box-sizing: border-box;
+}
+
+.questTabContainer.pixelQuestShell .shortcutsHint {
+    background: var(--pixel-panel);
+    color: var(--pixel-muted);
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: var(--pixel-card-radius);
+    box-shadow: var(--pixel-shadow-pressed);
+    font-family: "Press Start 2P", "VT323", monospace;
+    font-size: 7px;
+}
+
+.questTabContainer.pixelQuestShell .advancedSearchBanner {
+    background: var(--pixel-panel-alt);
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: var(--pixel-card-radius);
+    box-shadow: var(--pixel-shadow-pressed);
+}
+
+.questTabContainer.pixelQuestShell .bulkToolbar {
+    background: var(--pixel-panel-alt);
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: var(--pixel-card-radius);
+    box-shadow: var(--pixel-shadow-pressed);
+}
+
+.questTabContainer.pixelQuestShell .searchContainer {
+    margin-bottom: 10px;
+}
+
+.questTabContainer.pixelQuestShell :global([data-quest-search="true"]) input {
+    border-radius: var(--pixel-card-radius) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    background: var(--pixel-panel) !important;
+    color: var(--pixel-text) !important;
+    font-family: "VT323", "Courier New", monospace !important;
+    font-size: 16px !important;
+    box-shadow: var(--pixel-shadow-pressed) !important;
+}
+
+.questTabContainer.pixelQuestShell :global([data-quest-search="true"]) input:focus {
+    border-color: var(--pixel-accent) !important;
+    box-shadow: var(--pixel-shadow), 0 0 0 1px var(--pixel-accent) !important;
+}
+
+.questTabContainer.pixelQuestShell :global([data-quest-search="true"]) button {
+    border-radius: var(--pixel-card-radius) !important;
+}
+
+.questTabContainer.pixelQuestShell :global([data-quest-sort-trigger="true"]) button {
+    border-radius: var(--pixel-card-radius) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    background: var(--pixel-panel) !important;
+    color: var(--pixel-text) !important;
+    font-family: "VT323", "Courier New", monospace !important;
+    font-size: 15px !important;
+    box-shadow: var(--pixel-shadow-pressed) !important;
+}
+
+.questTabContainer.pixelQuestShell :global([data-quest-filters="true"]) {
+    border-radius: var(--pixel-card-radius) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    background: var(--pixel-panel) !important;
+    backdrop-filter: none !important;
+    box-shadow: var(--pixel-shadow-pressed) !important;
+}
+
+.questTabContainer.pixelQuestShell :global([data-quest-filters="true"]) select {
+    border-radius: var(--pixel-card-radius) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    background: var(--pixel-panel-alt) !important;
+    font-family: "VT323", "Courier New", monospace !important;
+    font-size: 14px !important;
+}
+
+.questTabContainer.pixelQuestShell :global([data-quest-quick-filters="true"]) {
+    margin-bottom: 32px !important;
+}
+
+.questTabContainer.pixelQuestShell .controlsContainer {
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.questTabContainer.pixelQuestShell .actionButton {
+    border-radius: var(--pixel-card-radius) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    background: var(--pixel-panel-alt) !important;
+    color: var(--pixel-text) !important;
+    font-family: "Press Start 2P", "VT323", monospace !important;
+    font-size: 8px !important;
+    backdrop-filter: none !important;
+    box-shadow: var(--pixel-shadow) !important;
+    min-height: 34px;
+}
+
+.questTabContainer.pixelQuestShell .actionButton:hover {
+    transform: translate(1px, 1px);
+    box-shadow: var(--pixel-shadow-pressed) !important;
+}
+
+.questTabContainer.pixelQuestShell .filterButton.active {
+    background: var(--pixel-panel) !important;
+    border-color: var(--pixel-accent) !important;
+    box-shadow: var(--pixel-shadow-pressed), inset 0 0 0 1px var(--pixel-accent) !important;
+}
+
+.questTabContainer.pixelQuestShell .templateButton {
+    background: var(--pixel-panel-alt) !important;
+    color: var(--pixel-accent) !important;
+}
+
+.questTabContainer.pixelQuestShell .advancedButton {
+    background: var(--pixel-panel-alt) !important;
+    color: var(--pixel-highlight) !important;
+}
+
+.questTabContainer.pixelQuestShell .bossButton {
+    background: var(--pixel-panel-alt) !important;
+    color: #f87171 !important;
+}
+
+.questTabContainer.pixelQuestShell .exportButton {
+    background: var(--pixel-panel-alt) !important;
+    color: #86efac !important;
+}
+
+.questTabContainer.pixelQuestShell .quickFilterResultsHeader {
+    background: var(--pixel-panel);
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: var(--pixel-card-radius);
+    box-shadow: var(--pixel-shadow-pressed);
+}
+
+.questTabContainer.pixelQuestShell .quickFilterResultsTitle {
+    font-family: "Press Start 2P", "VT323", monospace;
+    font-size: 9px;
+    color: var(--pixel-accent);
+    text-shadow: 2px 2px 0 var(--pixel-border-dark);
+}
+
+.questTabContainer.pixelQuestShell .quickFilterResultsMeta,
+.questTabContainer.pixelQuestShell .quickFilterResultsCount,
+.questTabContainer.pixelQuestShell .paginationInfo {
+    font-family: "VT323", "Courier New", monospace;
+    font-size: 14px;
+    color: var(--pixel-muted);
+}
+
+.questTabContainer.pixelQuestShell .quickFilterClearButton {
+    border-radius: var(--pixel-card-radius);
+    border: 2px solid var(--pixel-border-dark);
+    background: var(--pixel-panel-alt);
+    color: #fecaca;
+    font-family: "Press Start 2P", monospace;
+    font-size: 7px;
+    box-shadow: var(--pixel-shadow-pressed);
+}
+
+.questTabContainer.pixelQuestShell .paginationButton {
+    border-radius: var(--pixel-card-radius);
+    border: 2px solid var(--pixel-border-dark);
+    background: var(--pixel-panel-alt);
+    color: var(--pixel-accent);
+    font-family: "Press Start 2P", monospace;
+    font-size: 8px;
+    box-shadow: var(--pixel-shadow-pressed);
+}
+
+.questTabContainer.pixelQuestShell .questListContainer {
+    padding-right: 6px;
+}
+
+@container (max-width: 280px) {
+    .questTabContainer.pixelQuestShell .actionButton {
+        font-size: 7px !important;
+    }
+}

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CraftingMaterial } from '../../crafting/types/CraftingTypes';
-import { CraftingEngine } from '../../crafting/utils/craftingEngine';
+import { getCraftingMaterials } from '../../crafting/utils/craftingMaterialRegistry';
 import { QuestRewardItem, getRarityColor, getRarityDisplayName } from '../utils/questRewardsSystem';
 import { IconPicker } from '../../inventory/utils/iconPicker';
 import styles from './CustomRewardBuilder.module.css';
@@ -90,11 +90,11 @@ export const CustomRewardBuilder: React.FC<CustomRewardBuilderProps> = ({
   const [availableMaterials, setAvailableMaterials] = useState<CraftingMaterial[]>([]);
 
   useEffect(() => {
-    if (isOpen) {
-      // Load available crafting materials for reference
-      const materials = CraftingEngine.getDefaultMaterials();
-      setAvailableMaterials(materials);
-    }
+    if (!isOpen) return;
+    const load = () => setAvailableMaterials(getCraftingMaterials());
+    load();
+    document.addEventListener('crafting-data-updated', load);
+    return () => document.removeEventListener('crafting-data-updated', load);
   }, [isOpen]);
 
   // Auto-set base value based on rarity and quality

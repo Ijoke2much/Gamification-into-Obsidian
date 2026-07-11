@@ -1,0 +1,83 @@
+import React, { useCallback, useEffect, useState } from 'react';
+import { getRankWhisper } from '../../../features/player/utils/playerRank';
+import { onCeremony, type CeremonyDetail } from '../../utils/ceremonyEvents';
+import { showRankUpFallbackNotice } from '../../services/ceremonyService';
+import {
+	SystemActionBtn,
+	SystemBackdrop,
+	SystemFrame,
+	SystemHeader,
+	SystemLicenseCard,
+	systemPanelStyles as s,
+} from './system';
+
+export const CeremonyHost: React.FC = () => {
+	const [queue, setQueue] = useState<CeremonyDetail[]>([]);
+	const [mounted, setMounted] = useState(false);
+
+	useEffect(() => {
+		setMounted(true);
+		return onCeremony((detail) => {
+			setQueue((prev) => [...prev, detail]);
+		});
+	}, []);
+
+	const current = queue[0] ?? null;
+
+	const dismiss = useCallback(() => {
+		setQueue((prev) => prev.slice(1));
+	}, []);
+
+	useEffect(() => {
+		if (!mounted || current) return;
+	}, [mounted, current]);
+
+	if (!current) return null;
+
+	const stopPropagation = (e: React.MouseEvent) => e.stopPropagation();
+
+	if (current.kind === 'rank_up') {
+		const whisper = getRankWhisper(current.newRank);
+		return (
+			<SystemBackdrop onDismiss={dismiss} ariaLabelledBy="ceremony-rank-title">
+				<SystemFrame wide onClick={stopPropagation}>
+					<SystemHeader icon="🏛" label="SYSTEM: HUNTER ASSOCIATION" title="Rank elevated" />
+					<SystemLicenseCard
+						serial={String(current.level).padStart(6, '0')}
+						rank={current.newRank}
+						level={current.level}
+						rankLabel={`${current.newRank}-rank hunter`}
+					/>
+					<div className={s.rankRow}>
+						<span className={`${s.rankBadge} ${s.rankBadgeOld}`}>{current.oldRank}</span>
+						<span className={s.rankArrow} aria-hidden="true">
+							→
+						</span>
+						<span className={`${s.rankBadge} ${s.rankBadgeNew}`}>{current.newRank}</span>
+					</div>
+					<p className={s.whisper}>{whisper}</p>
+					<SystemActionBtn onClick={dismiss}>Understood</SystemActionBtn>
+				</SystemFrame>
+			</SystemBackdrop>
+		);
+	}
+
+	return (
+		<SystemBackdrop onDismiss={dismiss} ariaLabelledBy="ceremony-level-title">
+			<SystemFrame wide onClick={stopPropagation}>
+				<SystemHeader icon="✦" label="SYSTEM" title="Level up" />
+				<div className={s.levelValue}>{current.newLevel}</div>
+				<p className={s.subtitle}>Rank {current.rank}</p>
+				<p className={s.whisper}>Your capacity grows. The vault records another step forward.</p>
+				<SystemActionBtn onClick={dismiss}>Understood</SystemActionBtn>
+			</SystemFrame>
+		</SystemBackdrop>
+	);
+};
+
+/** Fallback when no React host is mounted (e.g. sidebar-only views). */
+export function ensureCeremonyFallback(detail: CeremonyDetail): void {
+	if (detail.kind === 'rank_up') {
+		showRankUpFallbackNotice(detail.oldRank, detail.newRank, detail.level);
+	}
+}

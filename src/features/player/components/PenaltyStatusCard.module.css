@@ -1,11 +1,12 @@
 .penaltyCard {
-    background: linear-gradient(135deg, #2a2d35 0%, #1f2228 100%);
-    border-radius: 8px;
+    background: var(--pixel-panel, linear-gradient(135deg, #2a2d35 0%, #1f2228 100%));
+    border-radius: var(--pixel-card-radius, 8px);
     padding: 20px;
     margin: 15px 0;
-    color: #e8eaed;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    color: var(--pixel-text, #e8eaed);
+    box-shadow: var(--pixel-shadow, 0 2px 8px rgba(0, 0, 0, 0.3)), inset 0 0 0 1px var(--pixel-border-light, transparent);
+    border: 2px solid var(--pixel-border-dark, rgba(255, 255, 255, 0.08));
+    font-family: inherit;
 }
 
 .header {

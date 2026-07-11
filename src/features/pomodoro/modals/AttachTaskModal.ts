@@ -1,5 +1,6 @@
-import { App, Modal, Notice } from "obsidian";
+import { App, Modal } from 'obsidian';
 import styles from "./AttachTaskModal.module.css";
+import { pixelNotice } from '../../../shared/utils/noticeUtils';
 
 export class AttachTaskModal extends Modal {
     onSelect: (task: {
@@ -153,6 +154,7 @@ export class AttachTaskModal extends Modal {
                                     const magicMatch = taskText.match(/🔮(\d+)/);
                                     const weaponMatch = taskText.match(/⚔️(\d+)/);
                                     const armorMatch = taskText.match(/🛡️(\d+)/);
+                                    const giftMatch = taskText.match(/🎁(\d+)/);
 
                                     if (xpMatch) rewards.xp = parseInt(xpMatch[1]);
                                     if (coinsMatch) rewards.coins = parseInt(coinsMatch[1]);
@@ -178,6 +180,11 @@ export class AttachTaskModal extends Modal {
                                         tags.push(`#armor-${armorMatch[1]}`);
                                         if (!rewards.materials) rewards.materials = [];
                                         rewards.materials.push(`🛡️${armorMatch[1]} Armor`);
+                                    }
+                                    if (giftMatch) {
+                                        tags.push(`#item-${giftMatch[1]}`);
+                                        if (!rewards.materials) rewards.materials = [];
+                                        rewards.materials.push(`🎁${giftMatch[1]} Random drops`);
                                     }
 
                                     // Extract skills (🛠️Skill Name pattern)
@@ -319,7 +326,7 @@ export class AttachTaskModal extends Modal {
 
         } catch (error) {
             console.error("Error in AttachTaskModal onOpen:", error);
-            new Notice("Error opening task selection modal");
+            pixelNotice("Error opening task selection modal");
         }
     }
 

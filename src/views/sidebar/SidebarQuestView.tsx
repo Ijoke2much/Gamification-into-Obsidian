@@ -1,22 +1,80 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { App, Notice, TFile, ItemView, WorkspaceLeaf } from "obsidian";
+import { App, TFile, ItemView, WorkspaceLeaf } from 'obsidian';
 import { createRoot, Root } from "react-dom/client";
 import type { Quest } from "../../features/quests/utils/taskParser";
-import { parseQuestsFromMarkdown } from "../../features/quests/utils/taskParser";
+import {
+	parseQuestsFromMarkdown,
+	normalizeQuestTimelineTheme,
+	resolveQuestRef,
+} from "../../features/quests/utils/taskParser";
+import {
+	describeQuestPersistFailure,
+	describeQuestUncompleteFailure,
+	persistQuestCompletion,
+	persistQuestUncomplete,
+} from "../../features/quests/utils/questPersistence";
 import type GamifiedObsidianPlugin from "../../core/main";
 import { QuestDetailModal } from "../../features/quests/modals/QuestDetailModal";
 import { QuestModal } from "../../features/quests/modals/QuestModal";
 import { readPlayerData } from "../../features/player/utils/playerDataUtils";
 import { EnergyCalculationService } from "../../features/quests/services/energyCalculationService";
 import { QuestCalendarView } from "../../features/quests/components/QuestCalendarView";
-import { awardQuestRewards, buildCompletionNoticeText } from "../../shared/utils/questCompletionPipeline";
+import { emitQuestCompletionFeedback, type QuestRewardResult } from "../../shared/utils/questCompletionPipeline";
+import { CeremonyHost } from "../../shared/components/ui/CeremonyHost";
+import {
+	loadAllQuests,
+	registerQuestVaultWatchers,
+} from "../../features/quests/utils/questNoteService";
 import styles from "./SidebarQuestView.module.css";
+import { pixelNotice } from '../../shared/utils/noticeUtils';
+import { onSettingsUpdated } from '../../shared/utils/settingsEvents';
+import { getAppliedVisualTheme } from '../../shared/utils/visualThemeManager';
+import {
+	getQuestProjectSlug,
+	isRegularTaskQuest,
+	parseQuestHubSection,
+	slugifyProjectId,
+	buildContractHeaderMarkdown,
+	buildProjectSummaries,
+	getProjectsFilePath,
+	appendProjectStep,
+	appendWaypointChecklistItem,
+	findQuestLineIndex,
+	listOpenContractTitles,
+	QUEST_HUB_SECTION_KEY,
+	type ProjectSummary,
+	type QuestHubSection,
+} from '../../features/quests/utils/questProjectUtils';
+import { isClosedContract } from '../../features/quests/utils/projectContractDisplay';
+import { getAllSkills, type SkillMetadata } from '../../shared/utils/skillDiscovery';
+import hubStyles from './components/QuestHubPanels.module.css';
+import { QuestHubNav } from './components/QuestHubNav';
+import {
+	QuestProjectsPanel,
+	type NewContractInput,
+	type TurnInResult,
+} from './components/QuestProjectsPanel';
+import { QuestJourneyPanel } from './components/QuestJourneyPanel';
+import { QuestDungeonPanel } from './components/QuestDungeonPanel';
+import { CaptureInboxPanel } from './components/CaptureInboxPanel';
+import { openQuickCaptureModal } from '../../features/quests/modals/QuickCaptureModal';
+import {
+	getCaptureTagPresets,
+	loadCaptures,
+	openCaptureFile,
+	promoteCaptureToTodayInbox,
+	removeCaptureLine,
+	shouldReloadCapturesOnFileChange,
+} from '../../features/quests/utils/captureService';
 
 export const SIDEBAR_QUEST_VIEW_TYPE = "sidebar-quest-view";
+
+const ACTIVE_CONTRACT_PIN_KEY = 'gamification-active-contract-pin';
 const DEFAULT_PLANNER_START_HOUR = 0;
 const DEFAULT_PLANNER_END_HOUR = 23;
 const INBOX_COLLAPSE_KEY = "sidebarQuestInboxCollapseState.v1";
 const CALENDAR_COLLAPSE_KEY = "sidebarQuestCalendarCollapse.v1";
+const CAPTURE_COLLAPSE_KEY = "sidebarCaptureInboxCollapse.v1";
 const DEFAULT_TIMELINE_COLOR_MODE: TimelineColorMode = "adaptive";
 
 interface SidebarQuestViewProps {
@@ -31,8 +89,23 @@ interface DragState {
 	sourceGroup: InboxGroupId;
 }
 
+function emitQuestCompletionNotices(
+	result: QuestRewardResult,
+	settings: GamifiedObsidianPlugin['settings']
+): void {
+	emitQuestCompletionFeedback(result, settings);
+}
+
 const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugin }) => {
+	const [allQuests, setAllQuests] = useState<Quest[]>([]);
 	const [quests, setQuests] = useState<Quest[]>([]);
+	const [hubSection, setHubSection] = useState<QuestHubSection>(() => {
+		try {
+			return parseQuestHubSection(localStorage.getItem(QUEST_HUB_SECTION_KEY));
+		} catch {
+			return 'tasks';
+		}
+	});
 	const [isQuestModalOpen, setIsQuestModalOpen] = useState(false);
 	const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
 	const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
@@ -43,8 +116,17 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 		d.setHours(0, 0, 0, 0);
 		return d;
 	});
+	const [contractSkills, setContractSkills] = useState<SkillMetadata[]>([]);
+	const [visualThemeRevision, setVisualThemeRevision] = useState(0);
+	const appliedVisualTheme = useMemo(
+		() => getAppliedVisualTheme(),
+		[visualThemeRevision]
+	);
+
+	useEffect(() => onSettingsUpdated(() => setVisualThemeRevision((n) => n + 1)), []);
 
 	// Inbox filters
+	const [projectFilter, setProjectFilter] = useState<{ slug: string; title: string } | null>(null);
 	const [tagFilter, setTagFilter] = useState("all");
 	const [priorityFilter, setPriorityFilter] = useState("all");
 	const [difficultyFilter, setDifficultyFilter] = useState("all");
@@ -54,17 +136,30 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 	const [dragState, setDragState] = useState<DragState | null>(null);
 	const [activeDropZone, setActiveDropZone] = useState<InboxGroupId | null>(null);
 	const [calendarCollapsed, setCalendarCollapsed] = useState<boolean>(() => loadCalendarCollapsed());
+	const [captures, setCaptures] = useState<Quest[]>([]);
+	const [captureCollapsed, setCaptureCollapsed] = useState<boolean>(() => loadCaptureCollapsed());
+	const [captureTagFilter, setCaptureTagFilter] = useState('all');
+	const [captureShowAll, setCaptureShowAll] = useState(false);
+	const [promotingCapture, setPromotingCapture] = useState<Quest | null>(null);
 	const [currentTime, setCurrentTime] = useState(() => new Date());
 	const plannerScrollRef = useRef<HTMLDivElement | null>(null);
+	const [dayScheduleOpen, setDayScheduleOpen] = useState(false);
+	const dayScheduleShellRef = useRef<HTMLDivElement | null>(null);
+
+	const loadCapturesList = async () => {
+		try {
+			const items = await loadCaptures(app, plugin.settings);
+			setCaptures(items);
+		} catch (error) {
+			console.error('Error loading capture inbox:', error);
+		}
+	};
 
 	const loadQuests = async () => {
 		try {
-			const file = app.vault.getAbstractFileByPath("GamifiedTasks.md");
-			if (file && file instanceof TFile) {
-				const content = await app.vault.read(file);
-				const parsed = parseQuestsFromMarkdown(content).filter((q) => !q.completed);
-				setQuests(parsed);
-			}
+			const merged = await loadAllQuests(app, plugin.settings);
+			setAllQuests(merged);
+			setQuests(merged.filter((q) => !q.completed));
 		} catch (error) {
 			console.error("Error loading sidebar quests:", error);
 		}
@@ -84,25 +179,37 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 
 	useEffect(() => {
 		loadQuests();
+		loadCapturesList();
 		loadEnergy();
 
-		const file = app.vault.getAbstractFileByPath("GamifiedTasks.md");
-		let cleanup = () => {};
-		if (file && file instanceof TFile) {
-			const onModify = (f: TFile) => {
-				if (f.path === file.path) loadQuests();
-			};
-			app.vault.on("modify", onModify as never);
-			cleanup = () => app.vault.off("modify", onModify as never);
-		}
+		void getAllSkills(app.vault)
+			.then(setContractSkills)
+			.catch((error) => console.error('Failed to load skills for contract form:', error));
+
+		const cleanupWatchers = registerQuestVaultWatchers(
+			app.vault,
+			plugin.settings,
+			() => void loadQuests()
+		);
+		const onCaptureVaultChange = (file: TFile) => {
+			if (shouldReloadCapturesOnFileChange(file.path, plugin.settings)) {
+				void loadCapturesList();
+			}
+		};
+		app.vault.on('modify', onCaptureVaultChange as never);
+		app.vault.on('create', onCaptureVaultChange as never);
+		app.vault.on('delete', onCaptureVaultChange as never);
 		const onPlayerUpdated = () => loadEnergy();
 		document.addEventListener("player-data-updated", onPlayerUpdated);
 
 		return () => {
-			cleanup();
+			cleanupWatchers();
+			app.vault.off('modify', onCaptureVaultChange as never);
+			app.vault.off('create', onCaptureVaultChange as never);
+			app.vault.off('delete', onCaptureVaultChange as never);
 			document.removeEventListener("player-data-updated", onPlayerUpdated);
 		};
-	}, [app, plugin.app.vault]);
+	}, [app, plugin.app.vault, plugin.settings]);
 
 	useEffect(() => {
 		try {
@@ -121,22 +228,90 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 	}, [calendarCollapsed]);
 
 	useEffect(() => {
+		try {
+			localStorage.setItem(CAPTURE_COLLAPSE_KEY, captureCollapsed ? '1' : '0');
+		} catch {
+			// Ignore storage write failures.
+		}
+	}, [captureCollapsed]);
+
+	useEffect(() => {
+		setCaptureShowAll(false);
+	}, [captureTagFilter]);
+
+	useEffect(() => {
 		const timer = window.setInterval(() => setCurrentTime(new Date()), 60_000);
 		return () => window.clearInterval(timer);
 	}, []);
 
+	useEffect(() => {
+		if (!dayScheduleOpen) return;
+		const onPointerDown = (e: PointerEvent) => {
+			if (!dayScheduleShellRef.current) return;
+			if (!dayScheduleShellRef.current.contains(e.target as Node)) {
+				setDayScheduleOpen(false);
+			}
+		};
+		const onKey = (e: KeyboardEvent) => {
+			if (e.key === "Escape") setDayScheduleOpen(false);
+		};
+		document.addEventListener("pointerdown", onPointerDown);
+		document.addEventListener("keydown", onKey);
+		return () => {
+			document.removeEventListener("pointerdown", onPointerDown);
+			document.removeEventListener("keydown", onKey);
+		};
+	}, [dayScheduleOpen]);
+
+	useEffect(() => {
+		try {
+			localStorage.setItem(QUEST_HUB_SECTION_KEY, hubSection);
+		} catch {
+			// Ignore storage write failures.
+		}
+	}, [hubSection]);
+
+	useEffect(() => {
+		const handler = (e: Event) => {
+			const section = (e as CustomEvent<{ section?: QuestHubSection }>).detail?.section;
+			if (section) setHubSection(section);
+		};
+		window.addEventListener('gamification-quest-hub-focus', handler);
+		return () => window.removeEventListener('gamification-quest-hub-focus', handler);
+	}, []);
+
+	const taskQuests = useMemo(() => quests.filter(isRegularTaskQuest), [quests]);
+
+	const openContractOptions = useMemo(() => {
+		const summaries = buildProjectSummaries(allQuests);
+		return listOpenContractTitles(summaries, isClosedContract);
+	}, [allQuests]);
+
+	const defaultContractTitle = useMemo(() => {
+		const summaries = buildProjectSummaries(allQuests);
+		try {
+			const pinnedId = localStorage.getItem(ACTIVE_CONTRACT_PIN_KEY);
+			if (!pinnedId) return undefined;
+			const pinned = summaries.find((p) => p.id === pinnedId && !isClosedContract(p));
+			return pinned?.title;
+		} catch {
+			return undefined;
+		}
+	}, [allQuests]);
+
 	const availableTags = useMemo(() => {
-		return Array.from(new Set(quests.flatMap((q) => q.tags || []))).sort();
-	}, [quests]);
+		return Array.from(new Set(taskQuests.flatMap((q) => q.tags || []))).sort();
+	}, [taskQuests]);
 
 	const filteredQuests = useMemo(() => {
-		return quests.filter((quest) => {
+		return taskQuests.filter((quest) => {
+			if (projectFilter && getQuestProjectSlug(quest) !== projectFilter.slug) return false;
 			if (tagFilter !== "all" && !(quest.tags || []).includes(tagFilter)) return false;
 			if (priorityFilter !== "all" && (quest.priority || "none").toLowerCase() !== priorityFilter) return false;
 			if (difficultyFilter !== "all" && (quest.difficulty || "none").toLowerCase() !== difficultyFilter) return false;
 			return true;
 		});
-	}, [quests, tagFilter, priorityFilter, difficultyFilter]);
+	}, [taskQuests, projectFilter, tagFilter, priorityFilter, difficultyFilter]);
 
 	const selectedDateISO = toISODate(selectedDate);
 	const todayISO = toISODate(currentTime);
@@ -362,12 +537,281 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 
 	const openCreate = () => {
 		setEditingQuest(null);
+		setPromotingCapture(null);
 		setIsQuestModalOpen(true);
 	};
+
+	const handleQuickCapture = () => {
+		openQuickCaptureModal(app, plugin.settings);
+	};
+
+	const handleAddCaptureToTodayInbox = async (quest: Quest) => {
+		try {
+			const ok = await promoteCaptureToTodayInbox(app, plugin.settings, quest);
+			if (ok) {
+				pixelNotice("Added to today's inbox", 2000);
+				await loadCapturesList();
+				await loadQuests();
+			}
+		} catch (error) {
+			console.error('Failed to add capture to today inbox:', error);
+			pixelNotice("Could not add to today's inbox", 2500);
+		}
+	};
+
+	const handlePromoteCapture = (quest: Quest) => {
+		setPromotingCapture(quest);
+		setEditingQuest(null);
+		setIsQuestModalOpen(true);
+	};
+
+	const handleDismissCapture = async (quest: Quest) => {
+		try {
+			const removed = await removeCaptureLine(app, plugin.settings, quest);
+			if (removed) {
+				pixelNotice('Capture dismissed', 1500);
+				await loadCapturesList();
+			}
+		} catch (error) {
+			console.error('Failed to dismiss capture:', error);
+			pixelNotice('Could not dismiss capture', 2500);
+		}
+	};
+
+	const handleOpenCaptureFile = () => {
+		void openCaptureFile(app, plugin.settings);
+	};
+
+	const captureTagPresets = useMemo(
+		() => getCaptureTagPresets(plugin.settings),
+		[plugin.settings]
+	);
 
 	const openDetails = (quest: Quest) => {
 		setSelectedQuest(quest);
 		setDetailOpen(true);
+	};
+
+	const handleContinueOnTasks = (projectSlug: string, projectTitle: string) => {
+		setProjectFilter({ slug: projectSlug, title: projectTitle });
+		setHubSection('tasks');
+		pixelNotice(`🗡️ Showing tasks for: ${projectTitle}`);
+	};
+
+	const handleOpenContract = async (project: ProjectSummary) => {
+		const headerQuest = project.headerQuest;
+		const contractPath = headerQuest?.filePath ?? project.tasks[0]?.filePath ?? null;
+		if (contractPath) {
+			const file = app.vault.getAbstractFileByPath(contractPath);
+			if (file instanceof TFile) {
+				const leaf = app.workspace.getLeaf(false);
+				await leaf.openFile(file);
+				return;
+			}
+		}
+		// Fallback: show the contract header (or first task) in the detail modal.
+		const fallbackQuest = headerQuest ?? project.tasks[0] ?? null;
+		if (fallbackQuest) {
+			openDetails(fallbackQuest);
+		} else {
+			pixelNotice('📜 No contract note found for this project.');
+		}
+	};
+
+	const handleTurnInContract = async (project: ProjectSummary): Promise<TurnInResult | null> => {
+		const header = project.headerQuest
+			? resolveQuestRef(allQuests, project.headerQuest)
+			: undefined;
+		if (!header) {
+			pixelNotice('📜 This contract has no header to turn in.');
+			return null;
+		}
+		try {
+			const result = await persistQuestCompletion(app, header, true, plugin.settings);
+			await loadQuests();
+			if (!result.changed) {
+				if (result.failureReason) {
+					pixelNotice(describeQuestPersistFailure(result.failureReason, header, 'turn_in'), 4000);
+				}
+				return null;
+			}
+			return {
+				xp: result.awardedXP,
+				coins: result.awardedCoins,
+				cp: result.awardedCP,
+			};
+		} catch (error) {
+			console.error('Failed to turn in contract:', error);
+			pixelNotice('Could not turn in the contract. Please try again.', 3500);
+			return null;
+		}
+	};
+
+	const handleAddChecklistItem = async (
+		project: ProjectSummary,
+		waypoint: Quest,
+		title: string
+	): Promise<boolean> => {
+		const stepTitle = title.trim();
+		if (!stepTitle) return false;
+		if (!waypoint) {
+			pixelNotice('Add a waypoint first (+ NEW WAYPOINT).', 3000);
+			return false;
+		}
+		try {
+			await appendWaypointChecklistItem(app, waypoint, stepTitle);
+			await loadQuests();
+			pixelNotice(`✓ Checklist item added to "${waypoint.title}"`, 2500);
+			return true;
+		} catch (error) {
+			console.error('Failed to add checklist item:', error);
+			const message = error instanceof Error ? error.message : 'Unknown error';
+			pixelNotice(`Could not add checklist item: ${message}`, 4000);
+			return false;
+		}
+	};
+
+	const handleAddProjectWaypoint = async (project: ProjectSummary, title: string): Promise<boolean> => {
+		const stepTitle = title.trim();
+		if (!stepTitle) return false;
+		try {
+			await appendProjectStep(app, plugin.settings, project, stepTitle, contractSkills);
+			await loadQuests();
+			pixelNotice(`🗺️ New waypoint: ${stepTitle}`, 2500);
+			return true;
+		} catch (error) {
+			console.error('Failed to add project waypoint:', error);
+			pixelNotice('Could not add the waypoint. Please try again.', 3000);
+			return false;
+		}
+	};
+
+	const handleEditContract = (project: ProjectSummary) => {
+		const header = project.headerQuest;
+		if (header) {
+			handleEditQuest(header);
+		} else {
+			pixelNotice('📜 This contract has no header note to edit yet.');
+		}
+	};
+
+	const handleAbandonContract = async (project: ProjectSummary): Promise<boolean> => {
+		const header = project.headerQuest
+			? resolveQuestRef(allQuests, project.headerQuest)
+			: undefined;
+		if (!header) {
+			pixelNotice('📜 This contract has no header to abandon.');
+			return false;
+		}
+		const confirmed = window.confirm(
+			`Abandon "${project.title}"? The contract closes without payout. ` +
+			'(You can reopen it by unchecking the header in its note.)'
+		);
+		if (!confirmed) return false;
+		try {
+			const result = await persistQuestCompletion(app, header, false);
+			await loadQuests();
+			if (!result.changed) {
+				if (result.failureReason) {
+					pixelNotice(describeQuestPersistFailure(result.failureReason, header, 'abandon'), 4000);
+				}
+				return false;
+			}
+			pixelNotice(`🏳️ Contract abandoned: ${project.title} — no payout.`, 3500);
+			return true;
+		} catch (error) {
+			console.error('Failed to abandon contract:', error);
+			pixelNotice('Could not abandon the contract. Please try again.', 3500);
+			return false;
+		}
+	};
+
+	const handleToggleSubtask = async (questRef: Quest | string, subtaskIndex: number) => {
+		try {
+			const quest = resolveQuestRef(allQuests, questRef);
+			if (!quest) {
+				pixelNotice('Could not find that quest.', 2500);
+				return;
+			}
+			const file = app.vault.getAbstractFileByPath(quest.filePath || "GamifiedTasks.md");
+			if (!(file instanceof TFile)) {
+				pixelNotice(`Quest file not found: ${quest.filePath || 'GamifiedTasks.md'}`, 3500);
+				return;
+			}
+			const content = await app.vault.read(file);
+			const lines = content.split("\n");
+			const questLineIndex = findQuestLineIndex(lines, quest);
+			if (questLineIndex === -1) {
+				pixelNotice('Could not find the quest line in its note.', 3000);
+				return;
+			}
+			const subtaskLineIndex = findSubtaskLineIndex(lines, questLineIndex, subtaskIndex);
+			if (subtaskLineIndex === -1) {
+				pixelNotice('Could not find that checklist item in the note.', 3000);
+				return;
+			}
+			const line = lines[subtaskLineIndex];
+			lines[subtaskLineIndex] = line.includes("- [ ]")
+				? line.replace("- [ ]", "- [x]")
+				: line.replace(/- \[[xX]\]/, "- [ ]");
+			await app.vault.modify(file, lines.join("\n"));
+			await loadQuests();
+		} catch (error) {
+			console.error("Failed to toggle subtask from sidebar:", error);
+			pixelNotice("Could not update the subtask. Please try again.", 3000);
+		}
+	};
+
+	const getContractFilePath = (): string => getProjectsFilePath(plugin.settings);
+
+	const handleCreateContract = async (input: NewContractInput): Promise<string | null> => {
+		const title = input.name.trim();
+		if (!title) return null;
+		if (!input.skill.trim()) {
+			pixelNotice('Pick a skill for this contract.', 3000);
+			return null;
+		}
+		try {
+			const duplicate = allQuests.some(
+				(q) => slugifyProjectId(q.title) === slugifyProjectId(title)
+			);
+			if (duplicate) {
+				pixelNotice(`📜 A contract or quest named "${title}" already exists.`, 3500);
+				return null;
+			}
+
+			const skillMeta = contractSkills.find((s) => s.name === input.skill);
+			const block = buildContractHeaderMarkdown({
+				name: title,
+				description: input.description,
+				due: input.due || undefined,
+				xp: input.xp,
+				cp: input.cp,
+				coins: input.coins,
+				difficulty: input.difficulty || undefined,
+				priority: input.priority,
+				skillName: input.skill,
+				skillClass: skillMeta?.class,
+			});
+
+			const path = getContractFilePath();
+			const file = app.vault.getAbstractFileByPath(path);
+			if (file instanceof TFile) {
+				const content = await app.vault.read(file);
+				const base = content.replace(/\n*$/, "");
+				await app.vault.modify(file, `${base}\n\n${block}\n`);
+			} else {
+				await app.vault.create(path, `# Gamified Projects\n\n${block}\n`);
+			}
+
+			await loadQuests();
+			pixelNotice(`📜 New contract posted: ${title}`, 3500);
+			return slugifyProjectId(title);
+		} catch (error) {
+			console.error("Failed to create contract:", error);
+			pixelNotice("Could not create the contract. Please try again.", 3500);
+			return null;
+		}
 	};
 
 	const handleEditQuest = (quest: Quest) => {
@@ -379,6 +823,21 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 	const handleQuestModalClose = () => {
 		setIsQuestModalOpen(false);
 		setEditingQuest(null);
+		setPromotingCapture(null);
+	};
+
+	const handleQuestModalSubmit = async () => {
+		if (promotingCapture) {
+			try {
+				await removeCaptureLine(app, plugin.settings, promotingCapture);
+				await loadCapturesList();
+			} catch (error) {
+				console.error('Failed to remove promoted capture:', error);
+			}
+		}
+		setIsQuestModalOpen(false);
+		setEditingQuest(null);
+		setPromotingCapture(null);
 		loadQuests();
 	};
 
@@ -394,42 +853,67 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 		});
 	};
 
-	const handleQuestComplete = async (questTitle: string) => {
+	const handleQuestComplete = async (ref: Quest | string) => {
 		try {
-			const quest = quests.find((q) => q.title === questTitle || q.id === questTitle);
-			if (!quest) return;
-			const result = await persistQuestCompletion(app, quest, true);
+			const quest = resolveQuestRef(allQuests, ref);
+
+			if (!quest) {
+				pixelNotice('Could not find that quest.', 2500);
+				return;
+			}
+
+			const openSubtasks = quest.subtasks?.filter((s) => !s.completed) ?? [];
+			if (openSubtasks.length > 0) {
+				pixelNotice(
+					`Finish the checklist first (${quest.subtasks!.length - openSubtasks.length}/${quest.subtasks!.length} done).`,
+					3500
+				);
+				return;
+			}
+
+			const result = await persistQuestCompletion(app, quest, true, plugin.settings);
 			await loadQuests();
 			if (result.changed) {
-				new Notice(buildCompletionNoticeText(result, plugin.settings), 3500);
+				emitQuestCompletionNotices(result, plugin.settings);
+			} else if (result.failureReason) {
+				pixelNotice(describeQuestPersistFailure(result.failureReason, quest, 'complete'), 4000);
 			}
 		} catch (error) {
-			console.error("Failed to complete quest from sidebar calendar:", error);
+			console.error('Failed to complete quest from sidebar calendar:', error);
+			pixelNotice('Could not complete the quest. Please try again.', 3500);
 		}
 	};
 
-	const handleQuestUncomplete = async (questTitle: string) => {
+	const handleQuestUncomplete = async (ref: Quest | string) => {
 		try {
-			const quest = quests.find((q) => q.title === questTitle || q.id === questTitle);
-			if (!quest) return;
-			const changed = await persistQuestUncomplete(app, quest);
+			const quest = resolveQuestRef(allQuests, ref);
+			if (!quest) {
+				pixelNotice('Could not find that quest.', 2500);
+				return;
+			}
+			const result = await persistQuestUncomplete(app, quest);
 			await loadQuests();
-			if (changed) {
-				new Notice(`Reopened "${getQuestDisplayTitle(quest)}"`, 2500);
+			if (result.changed) {
+				pixelNotice(`Reopened "${getQuestDisplayTitle(quest)}"`, 2500);
+				if (result.journeyHpRestored != null && result.journeyHpRestored > 0) {
+					pixelNotice(`Journey +${result.journeyHpRestored} HP restored`, 2800);
+				}
+			} else if (result.failureReason) {
+				pixelNotice(describeQuestUncompleteFailure(result.failureReason, quest), 3500);
 			}
 		} catch (error) {
 			console.error("Failed to uncomplete quest from sidebar details:", error);
-			new Notice("Could not reopen quest. Please try again.", 3500);
+			pixelNotice("Could not reopen quest. Please try again.", 3500);
 		}
 	};
 
 	const handleQuestMove = async (questId: string, newDate: string) => {
 		try {
-			const file = app.vault.getAbstractFileByPath("GamifiedTasks.md");
+			const quest = quests.find((q) => q.id === questId || q.title === questId);
+			const file = app.vault.getAbstractFileByPath(quest?.filePath || "GamifiedTasks.md");
 			if (!(file instanceof TFile)) return;
 			const content = await app.vault.read(file);
 			const lines = content.split("\n");
-			const quest = quests.find((q) => q.id === questId || q.title === questId);
 			const idx = lines.findIndex((line) => {
 				if (!line.includes("#gamified-task")) return false;
 				if (quest?.title && line.includes(quest.title)) return true;
@@ -482,10 +966,10 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 			const questName = getQuestDisplayTitle(dragState.quest);
 			await persistQuestGroupMove(app, dragState.quest, targetGroup, todayISO);
 			await loadQuests();
-			new Notice(`Moved "${questName}" to ${groupTitle(targetGroup)}`, 2500);
+			pixelNotice(`Moved "${questName}" to ${groupTitle(targetGroup)}`, 2500);
 		} catch (error) {
 			console.error("Failed to move quest between inbox groups:", error);
-			new Notice("Could not move quest. Please try again.", 3500);
+			pixelNotice("Could not move quest. Please try again.", 3500);
 		} finally {
 			setDragState(null);
 			setActiveDropZone(null);
@@ -501,14 +985,17 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 
 	const handleTimelineComplete = async (quest: Quest) => {
 		try {
-			const result = await persistQuestCompletion(app, quest, true);
+			const resolved = resolveQuestRef(allQuests, quest) ?? quest;
+			const result = await persistQuestCompletion(app, resolved, true, plugin.settings);
 			await loadQuests();
 			if (result.changed) {
-				new Notice(buildCompletionNoticeText(result, plugin.settings), 3500);
+				emitQuestCompletionNotices(result, plugin.settings);
+			} else if (result.failureReason) {
+				pixelNotice(describeQuestPersistFailure(result.failureReason, resolved, 'complete'), 4000);
 			}
 		} catch (error) {
 			console.error("Failed to complete quest from timeline:", error);
-			new Notice("Could not complete quest. Please try again.", 3500);
+			pixelNotice("Could not complete quest. Please try again.", 3500);
 		}
 	};
 
@@ -522,10 +1009,10 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 			await persistQuestDateMove(app, quest, targetIso, todayISO);
 			await loadQuests();
 			const label = targetDate.toLocaleDateString([], { month: "short", day: "numeric" });
-			new Notice(`Moved "${getQuestDisplayTitle(quest)}" to ${label}`, 2500);
+			pixelNotice(`Moved "${getQuestDisplayTitle(quest)}" to ${label}`, 2500);
 		} catch (error) {
 			console.error("Failed to move quest from timeline:", error);
-			new Notice("Could not move quest. Please try again.", 3500);
+			pixelNotice("Could not move quest. Please try again.", 3500);
 		}
 	};
 
@@ -554,20 +1041,24 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 	};
 
 	return (
-		<div className={styles.container}>
+		<>
+			<CeremonyHost />
+		<div
+			className={`${styles.container} ${styles.pixelSidebarQuestShell}`}
+			data-gamification-theme-root
+			data-gamification-visual-theme={appliedVisualTheme.preset}
+			data-gamification-shell={appliedVisualTheme.shell}
+			data-pixel-shell="quests"
+		>
 			<div className={styles.panelHeader}>
 				<h2 className={styles.panelTitle}>Quests</h2>
-				<button
-					type="button"
-					className={styles.linkButton}
-					title="Open Boss Battle in the main workspace tab"
-					onClick={() => void plugin.activateBossView()}
-				>
-					Boss Battle →
-				</button>
 			</div>
 
-			<div className={styles.topRow}>
+			<QuestHubNav active={hubSection} onChange={setHubSection} pixelShell />
+
+			{hubSection === 'tasks' && (
+				<>
+			<div className={styles.actionColumn}>
 				<button
 					type="button"
 					className={styles.addButton}
@@ -575,7 +1066,44 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 				>
 					+ Add Quest
 				</button>
+				<button
+					type="button"
+					className={styles.captureButton}
+					onClick={handleQuickCapture}
+					title="Brain dump — saves to Capture.md"
+				>
+					🧠 Brain Dump
+				</button>
+				{projectFilter && (
+					<span className={hubStyles.projectFilterChip}>
+						<span aria-hidden="true">📜</span>
+						<span className={hubStyles.projectFilterChipLabel}>{projectFilter.title}</span>
+						<button
+							type="button"
+							className={hubStyles.projectFilterChipClear}
+							title="Clear project filter"
+							onClick={() => setProjectFilter(null)}
+						>
+							✕
+						</button>
+					</span>
+				)}
 			</div>
+
+			<CaptureInboxPanel
+				captures={captures}
+				tagPresets={captureTagPresets}
+				activeTag={captureTagFilter}
+				onTagChange={setCaptureTagFilter}
+				collapsed={captureCollapsed}
+				onToggleCollapse={() => setCaptureCollapsed((prev) => !prev)}
+				onPromote={handlePromoteCapture}
+				onAddToTodayInbox={(quest) => void handleAddCaptureToTodayInbox(quest)}
+				onDismiss={(quest) => void handleDismissCapture(quest)}
+				onOpenCaptureFile={handleOpenCaptureFile}
+				showAll={captureShowAll}
+				onToggleShowAll={() => setCaptureShowAll((prev) => !prev)}
+			/>
 
 			<section className={`${styles.section} ${styles.calendarSection}`}>
 				<div className={styles.calendarSectionHeader}>
@@ -612,21 +1140,78 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 			</section>
 
 			<section className={styles.section}>
-				<div className={styles.timelineHeader}>
-					<span>Day</span>
-					<div className={styles.timelineHeaderActions}>
-						<button
-							type="button"
-							className={styles.timelineNowBtn}
-							title="Jump to current time"
-							onClick={handleJumpToNow}
-						>
-							Now
-						</button>
-						<button type="button" className={styles.timelineHeaderIcon} title="Day schedule">
-							☷
-						</button>
+				<div className={styles.timelineDayShell} ref={dayScheduleShellRef}>
+					<div className={styles.timelineHeader}>
+						<span>Day</span>
+						<div className={styles.timelineHeaderActions}>
+							<button
+								type="button"
+								className={styles.timelineNowBtn}
+								title="Jump to current time"
+								onClick={handleJumpToNow}
+							>
+								Now
+							</button>
+							<button
+								type="button"
+								className={`${styles.timelineHeaderIcon} ${dayScheduleOpen ? styles.timelineHeaderIconActive : ""}`}
+								title="Open a chronological list of quests for the selected day. Click again to close."
+								aria-expanded={dayScheduleOpen}
+								aria-controls="sidebar-day-schedule-list"
+								onClick={() => setDayScheduleOpen((open) => !open)}
+							>
+								☷
+							</button>
+						</div>
 					</div>
+					{dayScheduleOpen && (
+						<div
+							id="sidebar-day-schedule-list"
+							className={styles.daySchedulePanel}
+							role="region"
+							aria-label="Day schedule"
+						>
+							<div className={styles.daySchedulePanelDate}>
+								{selectedDate.toLocaleDateString(undefined, {
+									weekday: "short",
+									month: "short",
+									day: "numeric",
+									year: "numeric",
+								})}
+							</div>
+							{timelineBlocks.length === 0 ? (
+								<div className={styles.dayScheduleEmpty}>No quests for this day.</div>
+							) : (
+								<ul className={styles.dayScheduleList}>
+									{timelineBlocks.map((block, idx) => {
+										const timeStr = `${toTime(block.start)} – ${toTime(block.end)}`;
+										const label =
+											block.mode === "scheduled" ? "Timed" : block.mode === "suggested" ? "Suggested" : "Flexible";
+										return (
+											<li key={`day-schedule-${block.quest.id}-${idx}`}>
+												<button
+													type="button"
+													className={styles.dayScheduleRow}
+													onClick={() => {
+														setDayScheduleOpen(false);
+														openDetails(block.quest);
+													}}
+												>
+													<span className={styles.dayScheduleTime}>{timeStr}</span>
+													<span className={styles.dayScheduleRowBody}>
+														<span className={styles.dayScheduleTitle}>
+															{getQuestDisplayTitle(block.quest)}
+														</span>
+														<span className={styles.dayScheduleBadge}>{label}</span>
+													</span>
+												</button>
+											</li>
+										);
+									})}
+								</ul>
+							)}
+						</div>
+					)}
 				</div>
 				<div className={styles.timelinePlanner} ref={plannerScrollRef}>
 					<div className={styles.timelineHourColumn}>
@@ -850,6 +1435,37 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 					isDropActive={activeDropZone === "abandon" && canDropToGroup("abandon")}
 				/>
 			</section>
+				</>
+			)}
+
+			{hubSection === 'projects' && (
+				<QuestProjectsPanel
+					allQuests={allQuests}
+					onQuestClick={openDetails}
+					onCreateProject={openCreate}
+					onContinueOnTasks={handleContinueOnTasks}
+					onOpenContract={(project) => void handleOpenContract(project)}
+					onTurnIn={handleTurnInContract}
+					onToggleSubtask={(quest, idx) => void handleToggleSubtask(quest, idx)}
+					onCompleteQuest={(quest) => void handleQuestComplete(quest)}
+					onCreateContract={handleCreateContract}
+					onAddChecklistItem={handleAddChecklistItem}
+					onAddWaypoint={handleAddProjectWaypoint}
+					onEditContract={handleEditContract}
+					onAbandonContract={handleAbandonContract}
+					currencyName={plugin.settings.currencyName || 'Coins'}
+					currencySymbol={plugin.settings.currencySymbol || '🪙'}
+					skillOptions={contractSkills}
+				/>
+			)}
+
+			{hubSection === 'journey' && (
+				<QuestJourneyPanel plugin={plugin} />
+			)}
+
+			{hubSection === 'dungeon' && (
+				<QuestDungeonPanel plugin={plugin} />
+			)}
 
 			{isQuestModalOpen && (
 				<QuestModal
@@ -858,7 +1474,10 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 					mode={editingQuest ? "edit" : "create"}
 					quest={editingQuest}
 					onClose={handleQuestModalClose}
-					onSubmit={handleQuestModalClose}
+					onSubmit={handleQuestModalSubmit}
+					openContracts={openContractOptions}
+					defaultContract={defaultContractTitle}
+					prefill={promotingCapture ? { title: promotingCapture.title } : undefined}
 				/>
 			)}
 
@@ -871,8 +1490,10 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 				onEdit={handleEditQuest}
 				onComplete={handleQuestComplete}
 				onUncomplete={handleQuestUncomplete}
+				onToggleSubtask={(questId, idx) => void handleToggleSubtask(questId, idx)}
 			/>
 		</div>
+		</>
 	);
 };
 
@@ -1007,6 +1628,44 @@ function toISODate(date: Date): string {
 	return `${y}-${m}-${d}`;
 }
 
+/**
+ * Difference in whole local calendar days: due day minus ref day.
+ * Date-only strings (`YYYY-MM-DD`) use local midnight, not UTC (fixes false "OVERDUE" in western timezones).
+ */
+function diffCalendarDaysForDue(dueStr: string, ref: Date): number {
+	let dueStart: Date;
+	if (dueStr.includes("T")) {
+		const due = new Date(dueStr);
+		if (Number.isNaN(due.getTime())) return 0;
+		dueStart = new Date(due.getFullYear(), due.getMonth(), due.getDate(), 0, 0, 0, 0);
+	} else {
+		const m = dueStr.trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+		if (!m) {
+			const due = new Date(dueStr);
+			if (Number.isNaN(due.getTime())) return 0;
+			dueStart = new Date(due.getFullYear(), due.getMonth(), due.getDate(), 0, 0, 0, 0);
+		} else {
+			dueStart = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 0, 0, 0, 0);
+		}
+	}
+	const refStart = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate(), 0, 0, 0, 0);
+	return Math.round((dueStart.getTime() - refStart.getTime()) / 86400000);
+}
+
+/** `Date` for labels; date-only dues use local Y-M-D, not `new Date("YYYY-MM-DD")` (UTC). */
+function localDateFromDueString(dueStr: string): Date | null {
+	if (dueStr.includes("T")) {
+		const due = new Date(dueStr);
+		return Number.isNaN(due.getTime()) ? null : due;
+	}
+	const m = dueStr.trim().match(/^(\d{4})-(\d{2})-(\d{2})/);
+	if (!m) {
+		const due = new Date(dueStr);
+		return Number.isNaN(due.getTime()) ? null : due;
+	}
+	return new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]), 12, 0, 0, 0);
+}
+
 function parseMinutes(timeString?: string): number {
 	if (!timeString) return 60;
 	const trimmed = timeString.trim();
@@ -1026,18 +1685,14 @@ function toTime(date: Date): string {
 
 function dueLabel(quest: Quest): string {
 	if (!quest.due) return "No due date";
-	const due = new Date(quest.due);
-	if (Number.isNaN(due.getTime())) return "No due date";
-	const today = new Date();
-	today.setHours(0, 0, 0, 0);
-	const dueDay = new Date(due);
-	dueDay.setHours(0, 0, 0, 0);
-	if (dueDay.getTime() === today.getTime()) return "Today";
-	const tomorrow = new Date(today);
-	tomorrow.setDate(today.getDate() + 1);
-	if (dueDay.getTime() === tomorrow.getTime()) return "Tomorrow";
-	if (dueDay < today) return "Overdue";
-	return due.toLocaleDateString();
+	const ref = new Date();
+	const diffDays = diffCalendarDaysForDue(quest.due, ref);
+	if (diffDays === 0) return "Today";
+	if (diffDays === 1) return "Tomorrow";
+	if (diffDays < 0) return "Overdue";
+	const display = localDateFromDueString(quest.due);
+	if (!display) return "No due date";
+	return display.toLocaleDateString();
 }
 
 function placeFlexibleBlocks(
@@ -1064,7 +1719,7 @@ type TimelineQuestBlock = {
 	mode: "scheduled" | "floating" | "suggested";
 };
 
-type TimelineThemeKey = "violet" | "blue" | "pink" | "amber" | "green";
+type TimelineThemeKey = "violet" | "blue" | "pink" | "amber" | "green" | "red";
 type TimelineColorMode = "adaptive" | "priority" | "difficulty" | "tag";
 type PlannerBlock = TimelineQuestBlock & {
 	sortIndex: number;
@@ -1236,6 +1891,8 @@ function resolveTimelineTheme(
 	fallbackIndex: number,
 	mode: TimelineColorMode
 ): TimelineThemeKey {
+	const explicit = normalizeQuestTimelineTheme(quest.timelineTheme);
+	if (explicit) return explicit;
 	if (mode === "priority" || mode === "adaptive") {
 		const p = (quest.priority || "").toLowerCase();
 		if (["highest", "high"].includes(p)) return "pink";
@@ -1274,6 +1931,8 @@ function getTimelineThemeClass(
 			return moduleStyles.timelineThemeAmber;
 		case "green":
 			return moduleStyles.timelineThemeGreen;
+		case "red":
+			return moduleStyles.timelineThemeRed;
 		default:
 			return moduleStyles.timelineThemeBlue;
 	}
@@ -1289,23 +1948,21 @@ function hashString(value: string): number {
 
 function compactDueLabel(quest: Quest): string {
 	if (!quest.due) return "";
-	const due = new Date(quest.due);
-	if (Number.isNaN(due.getTime())) return "";
-	const today = new Date();
-	today.setHours(0, 0, 0, 0);
-	const dueDay = new Date(due);
-	dueDay.setHours(0, 0, 0, 0);
-	const diffDays = Math.round((dueDay.getTime() - today.getTime()) / 86400000);
+	const ref = new Date();
+	const diffDays = diffCalendarDaysForDue(quest.due, ref);
 	if (diffDays < 0) return "OVERDUE";
 	if (diffDays === 0) {
-		const hasTime = quest.due.includes("T");
-		if (hasTime) {
+		if (hasTime(quest.due)) {
+			const due = new Date(quest.due);
+			if (Number.isNaN(due.getTime())) return "";
 			return `DUE ${due.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}`;
 		}
 		return "TODAY";
 	}
 	if (diffDays === 1) return "TOMORROW";
-	return due.toLocaleDateString([], { month: "short", day: "numeric" }).toUpperCase();
+	const display = localDateFromDueString(quest.due);
+	if (!display) return "";
+	return display.toLocaleDateString([], { month: "short", day: "numeric" }).toUpperCase();
 }
 
 function loadCollapsedGroups(): Record<InboxGroupId, boolean> {
@@ -1329,6 +1986,14 @@ function loadCollapsedGroups(): Record<InboxGroupId, boolean> {
 function loadCalendarCollapsed(): boolean {
 	try {
 		return localStorage.getItem(CALENDAR_COLLAPSE_KEY) === "1";
+	} catch {
+		return false;
+	}
+}
+
+function loadCaptureCollapsed(): boolean {
+	try {
+		return localStorage.getItem(CAPTURE_COLLAPSE_KEY) === "1";
 	} catch {
 		return false;
 	}
@@ -1361,17 +2026,13 @@ function isNowQuest(quest: Quest, todayISO: string, now: Date): boolean {
 
 function isOverdueQuest(quest: Quest): boolean {
 	if (!quest.due) return false;
-	const due = new Date(quest.due);
-	if (Number.isNaN(due.getTime())) return false;
 	const now = new Date();
 	if (hasTime(quest.due)) {
+		const due = new Date(quest.due);
+		if (Number.isNaN(due.getTime())) return false;
 		return due < now;
 	}
-	const todayStart = new Date(now);
-	todayStart.setHours(0, 0, 0, 0);
-	const dueDay = new Date(due);
-	dueDay.setHours(0, 0, 0, 0);
-	return dueDay < todayStart;
+	return diffCalendarDaysForDue(quest.due, now) < 0;
 }
 
 function isAbandonQuest(quest: Quest, now: Date): boolean {
@@ -1390,7 +2051,7 @@ async function persistQuestGroupMove(
 	targetGroup: InboxGroupId,
 	todayISO: string
 ): Promise<void> {
-	const file = app.vault.getAbstractFileByPath("GamifiedTasks.md");
+	const file = app.vault.getAbstractFileByPath(quest.filePath || "GamifiedTasks.md");
 	if (!(file instanceof TFile)) return;
 	const content = await app.vault.read(file);
 	const lines = content.split("\n");
@@ -1401,50 +2062,13 @@ async function persistQuestGroupMove(
 	await app.vault.modify(file, lines.join("\n"));
 }
 
-async function persistQuestCompletion(
-	app: App,
-	quest: Quest,
-	awardRewards: boolean
-): Promise<{ changed: boolean; awardedXP: number; awardedCP: number; awardedCoins: number }> {
-	const file = app.vault.getAbstractFileByPath("GamifiedTasks.md");
-	if (!(file instanceof TFile)) return { changed: false, awardedXP: 0, awardedCP: 0, awardedCoins: 0 };
-	const content = await app.vault.read(file);
-	const lines = content.split("\n");
-	const index = findQuestLineIndex(lines, quest);
-	if (index === -1) return { changed: false, awardedXP: 0, awardedCP: 0, awardedCoins: 0 };
-	if (lines[index].includes("- [x]")) return { changed: false, awardedXP: 0, awardedCP: 0, awardedCoins: 0 };
-	lines[index] = lines[index].replace("- [ ]", "- [x]");
-	await app.vault.modify(file, lines.join("\n"));
-
-	if (!awardRewards) {
-		return { changed: true, awardedXP: 0, awardedCP: 0, awardedCoins: 0 };
-	}
-
-	// Delegate reward distribution to the shared pipeline.
-	const result = await awardQuestRewards(app.vault, quest);
-	return { changed: true, ...result };
-}
-
-async function persistQuestUncomplete(app: App, quest: Quest): Promise<boolean> {
-	const file = app.vault.getAbstractFileByPath("GamifiedTasks.md");
-	if (!(file instanceof TFile)) return false;
-	const content = await app.vault.read(file);
-	const lines = content.split("\n");
-	const index = findQuestLineIndex(lines, quest);
-	if (index === -1) return false;
-	if (lines[index].includes("- [ ]")) return false;
-	lines[index] = lines[index].replace("- [x]", "- [ ]");
-	await app.vault.modify(file, lines.join("\n"));
-	return true;
-}
-
 async function persistQuestDateMove(
 	app: App,
 	quest: Quest,
 	targetDateISO: string,
 	todayISO: string
 ): Promise<void> {
-	const file = app.vault.getAbstractFileByPath("GamifiedTasks.md");
+	const file = app.vault.getAbstractFileByPath(quest.filePath || "GamifiedTasks.md");
 	if (!(file instanceof TFile)) return;
 	const content = await app.vault.read(file);
 	const lines = content.split("\n");
@@ -1454,13 +2078,23 @@ async function persistQuestDateMove(
 	await app.vault.modify(file, lines.join("\n"));
 }
 
-function findQuestLineIndex(lines: string[], quest: Quest): number {
-	const title = (quest.title || "").trim();
-	const id = (quest.id || "").trim();
-	let idx = lines.findIndex((line) => line.includes("#gamified-task") && title && line.includes(title));
-	if (idx !== -1) return idx;
-	idx = lines.findIndex((line) => line.includes("#gamified-task") && id && line.includes(id));
-	return idx;
+/**
+ * Find the file line for the nth indented `- [ ]` subtask under a quest line.
+ * Skips indented non-checkbox lines (e.g. 💭 descriptions) and stops at the
+ * next top-level line.
+ */
+function findSubtaskLineIndex(lines: string[], questLineIndex: number, subtaskIndex: number): number {
+	let count = 0;
+	for (let i = questLineIndex + 1; i < lines.length; i++) {
+		const line = lines[i];
+		if (line.trim() === "") continue;
+		if (!/^[ \t]/.test(line)) break;
+		if (/^[ \t]+- \[[ xX]\]/.test(line)) {
+			if (count === subtaskIndex) return i;
+			count++;
+		}
+	}
+	return -1;
 }
 
 function applyGroupMoveToLine(line: string, targetGroup: InboxGroupId, todayISO: string): string {

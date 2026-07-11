@@ -1,0 +1,372 @@
+/* Avatar-first player profile card — Classic + System themes */
+
+.root {
+    width: 100%;
+    container-type: inline-size;
+}
+
+.rootPixel {
+    --pixel-panel: #252742;
+    --pixel-panel-alt: #2e3152;
+    --pixel-border-dark: #0f1120;
+    --pixel-border-light: #5b61a2;
+    --pixel-accent: #8ecae6;
+    --pixel-highlight: #ffd166;
+    --pixel-text: #ecefff;
+    --pixel-muted: #bac2e3;
+    --pixel-shadow: 3px 3px 0 #0f1120;
+    font-family: "Press Start 2P", "VT323", "Courier New", monospace;
+    color: var(--pixel-text);
+}
+
+.rootSystem {
+    font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif);
+    color: var(--go-text, #e0f2fe);
+}
+
+.framePixel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 18px 16px 20px;
+    background: var(--pixel-panel);
+    border: 2px solid var(--pixel-border-dark);
+    box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light);
+}
+
+.frameSystem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 20px 18px 22px !important;
+}
+
+.portraitSection {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin-bottom: 18px;
+}
+
+.portraitSlot {
+    position: relative;
+    display: block;
+    width: 220px;
+    height: 220px;
+    flex-shrink: 0;
+    padding: 0;
+    margin: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    overflow: hidden;
+}
+
+.portraitImg {
+    display: block;
+    width: 220px;
+    height: 220px;
+    object-fit: cover;
+    object-position: center center;
+    box-sizing: border-box;
+}
+
+.rootPixel .portraitImg {
+    border: 3px solid var(--pixel-accent);
+    box-shadow: var(--pixel-shadow);
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+.rootSystem .portraitImg {
+    border: 1px solid var(--go-border, rgba(34, 200, 255, 0.62));
+    box-shadow:
+        0 0 0 1px rgba(34, 200, 255, 0.12),
+        0 0 20px rgba(34, 200, 255, 0.18);
+    image-rendering: auto;
+}
+
+.portraitEditHint {
+    position: absolute;
+    right: 8px;
+    bottom: 8px;
+    padding: 4px 8px;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0;
+    transition: opacity 0.12s ease;
+    pointer-events: none;
+    font-family: inherit;
+}
+
+.rootPixel .portraitEditHint {
+    color: var(--pixel-text);
+    background: rgba(15, 17, 32, 0.88);
+    border: 1px solid var(--pixel-border-light);
+}
+
+.rootSystem .portraitEditHint {
+    color: var(--go-text-bright, #f0f9ff);
+    background: rgba(7, 21, 39, 0.9);
+    border: 1px solid var(--go-border, rgba(34, 200, 255, 0.55));
+}
+
+.portraitSlot:hover .portraitEditHint,
+.portraitSlot:focus-visible .portraitEditHint {
+    opacity: 1;
+}
+
+@media (pointer: coarse) {
+    .portraitEditHint {
+        opacity: 0.9;
+    }
+}
+
+.identity {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    text-align: center;
+    padding: 0 6px;
+    box-sizing: border-box;
+}
+
+.playerName {
+    margin: 0;
+    font-size: 0.82rem;
+    font-weight: 800;
+    line-height: 1.35;
+    letter-spacing: 0.02em;
+}
+
+.rootSystem .playerName {
+    font-size: 1.1rem;
+    letter-spacing: 0.04em;
+    color: var(--go-text-bright, #f0f9ff);
+}
+
+.rankLine {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0;
+    font-size: 0.58rem;
+    line-height: 1.4;
+    color: var(--pixel-muted);
+}
+
+.rootSystem .rankLine {
+    font-size: 0.82rem;
+    letter-spacing: 0.08em;
+    color: var(--go-muted, #9ec7df);
+}
+
+.rankLabel {
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.rootSystem .rankLabel {
+    color: var(--go-accent, #22c8ff);
+}
+
+.rankValue {
+    font-weight: 800;
+    color: var(--pixel-highlight);
+}
+
+.rootSystem .rankValue {
+    color: var(--go-gold, #ffd83d);
+}
+
+.rankDivider {
+    opacity: 0.5;
+}
+
+.rankLevel {
+    font-weight: 800;
+}
+
+.rootSystem .rankLevel {
+    color: var(--go-text-bright, #f0f9ff);
+}
+
+.masterClassLine {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0;
+    font-size: 0.52rem;
+    line-height: 1.5;
+    color: var(--pixel-muted);
+}
+
+.rootSystem .masterClassLine {
+    font-size: 0.8rem;
+    color: var(--go-muted, #9ec7df);
+}
+
+.masterClassLabel {
+    font-weight: 700;
+    letter-spacing: 0.06em;
+}
+
+.rootSystem .masterClassLabel {
+    color: var(--go-accent, #22c8ff);
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+}
+
+.masterClassName {
+    font-weight: 800;
+}
+
+.masterClassIcon {
+    line-height: 1;
+}
+
+.rootSystem .masterClassName {
+    color: var(--go-text-bright, #f0f9ff);
+}
+
+.statsPanel {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
+    margin-top: 4px;
+    padding: 14px 16px 12px;
+    box-sizing: border-box;
+    background: var(--pixel-panel-alt);
+    border: 2px solid var(--pixel-border-dark);
+    box-shadow: inset 0 0 0 1px var(--pixel-border-light);
+}
+
+.rootSystem .statsPanel {
+    border-width: 1px;
+    border-color: var(--go-border, rgba(34, 200, 255, 0.45));
+    background: var(--go-card-soft, rgba(8, 28, 54, 0.55));
+    box-shadow:
+        0 0 0 1px rgba(34, 200, 255, 0.08),
+        inset 0 0 20px rgba(34, 200, 255, 0.04);
+}
+
+.masterLvBlock {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    width: 100%;
+    text-align: center;
+    padding-bottom: 2px;
+}
+
+.statLabel {
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--pixel-muted);
+}
+
+.rootSystem .statLabel {
+    font-size: 9px;
+    letter-spacing: 0.16em;
+    color: var(--go-muted, #9ec7df);
+}
+
+.statValue {
+    font-size: 1.15rem;
+    font-weight: 900;
+    color: var(--pixel-highlight);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+}
+
+.rootSystem .statValue {
+    font-size: 1.55rem;
+    color: var(--go-gold, #ffd83d);
+}
+
+.cpSection {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    width: 100%;
+}
+
+.rootSystem .cpSection {
+    gap: 0;
+    padding-top: 4px;
+}
+
+.description {
+    margin: 2px 0 0;
+    font-size: 0.5rem;
+    line-height: 1.45;
+    color: var(--pixel-muted);
+    font-style: italic;
+    text-align: center;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+    overflow: hidden;
+}
+
+.rootSystem .description {
+    font-size: 0.74rem;
+    font-style: normal;
+    color: var(--go-muted, #9ec7df);
+    opacity: 0.92;
+}
+
+.descriptionEmpty {
+    opacity: 0.55;
+}
+
+.loading {
+    width: 100%;
+    text-align: center;
+    padding: 24px;
+    color: var(--pixel-muted, #bac2e3);
+}
+
+@container (max-width: 280px) {
+    .portraitSlot,
+    .portraitImg {
+        width: 160px;
+        height: 160px;
+    }
+
+    .playerName {
+        font-size: 0.68rem;
+    }
+
+    .rootSystem .playerName {
+        font-size: 0.92rem;
+    }
+}
+
+@container (max-width: 360px) {
+    .portraitSlot,
+    .portraitImg {
+        width: 190px;
+        height: 190px;
+    }
+}
