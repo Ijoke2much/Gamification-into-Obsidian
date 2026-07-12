@@ -5,8 +5,8 @@
 	"main": "main.js",
 	"css": "main.css",
 	"minAppVersion": "0.15.0",
-	"description": "Gamify your Obsidian vault with quests, achievements, boss battles, and RPG-style progression (v1.0.3: Player tab master-class CP bar; build syncs to ~/Obsidian-vaults copy if present).",
+	"description": "Gamify your Obsidian vault with quests, achievements, boss battles, and RPG-style progression. Desktop-only — use the Gamification-Mobile companion plugin on phone/tablet (see MOBILE-SETUP.md).",
 	"author": "IJoke2much",
 	"authorUrl": "https://github.com/nilesloverso",
-	"isDesktopOnly": false
+	"isDesktopOnly": true
 }
