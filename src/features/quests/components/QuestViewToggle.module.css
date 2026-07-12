@@ -91,3 +91,39 @@
         font-size: 16px;
     }
 }
+
+:global([data-pixel-shell="quests"]) .viewToggle {
+    background: var(--pixel-panel, #252742);
+    border: 2px solid var(--pixel-border-dark, #0f1120);
+    border-radius: 0;
+    box-shadow: 3px 3px 0 var(--pixel-border-dark, #0f1120), inset 0 0 0 1px var(--pixel-border-light, #5b61a2);
+    backdrop-filter: none;
+    padding: 0;
+    gap: 0;
+}
+
+:global([data-pixel-shell="quests"]) .viewButton {
+    border-radius: 0;
+    font-family: "Press Start 2P", "VT323", monospace;
+    font-size: 8px;
+    color: var(--pixel-muted, #bac2e3);
+}
+
+:global([data-pixel-shell="quests"]) .viewButton:hover {
+    background: var(--pixel-panel-alt, #2e3152);
+    transform: none;
+    color: var(--pixel-text, #ecefff);
+}
+
+:global([data-pixel-shell="quests"]) .viewButton.active {
+    background: var(--pixel-accent, #8ecae6);
+    color: var(--pixel-border-dark, #0f1120);
+    box-shadow: inset 2px 2px 0 rgba(0, 0, 0, 0.2);
+}
+
+:global([data-pixel-shell="quests"]) .viewBadge {
+    border-radius: 0;
+    border: 2px solid var(--pixel-border-dark, #0f1120);
+    font-family: "Press Start 2P", monospace;
+    font-size: 6px;
+}

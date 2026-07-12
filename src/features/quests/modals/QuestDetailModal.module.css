@@ -195,6 +195,15 @@
     display: inline-block;
 }
 
+.badgeLabel {
+    font-weight: 700;
+    opacity: 0.9;
+}
+
+.badgeValue {
+    text-transform: capitalize;
+}
+
 .completedBadge {
     background: rgba(34, 197, 94, 0.2);
     color: #22c55e;
@@ -543,4 +552,140 @@
     .actionButton {
         width: 100%;
     }
+}
+
+/* ========== Pixel / RPG quest detail modal ========== */
+.pixelModalOverlay {
+    background: rgba(15, 17, 32, 0.92);
+    backdrop-filter: none;
+}
+
+.pixelModalPanel {
+    --pixel-bg: #1b1d2f;
+    --pixel-panel: #252742;
+    --pixel-panel-alt: #2e3152;
+    --pixel-border-dark: #0f1120;
+    --pixel-border-light: #5b61a2;
+    --pixel-accent: #8ecae6;
+    --pixel-highlight: #ffd166;
+    --pixel-text: #ecefff;
+    --pixel-muted: #bac2e3;
+    --pixel-shadow: 4px 4px 0 var(--pixel-border-dark);
+    --pixel-radius: 0;
+    font-family: "Press Start 2P", "VT323", "Courier New", monospace;
+    font-size: 11px;
+    line-height: 1.65;
+    color: var(--pixel-text);
+    background: var(--pixel-bg) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    border-radius: var(--pixel-radius) !important;
+    box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light) !important;
+}
+
+.pixelModalPanel .modalHeader,
+.pixelModalPanel .modalFooter {
+    background: var(--pixel-panel) !important;
+    border-color: var(--pixel-border-dark) !important;
+}
+
+.pixelModalPanel .headerTitle {
+    font-family: "Press Start 2P", monospace !important;
+    font-size: 10px !important;
+    color: var(--pixel-highlight) !important;
+    text-shadow: 2px 2px 0 var(--pixel-border-dark) !important;
+}
+
+.pixelModalPanel .closeButton {
+    border-radius: var(--pixel-radius) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    background: var(--pixel-panel-alt) !important;
+    color: var(--pixel-text) !important;
+    font-family: "Press Start 2P", monospace !important;
+    box-shadow: 2px 2px 0 var(--pixel-border-dark) !important;
+}
+
+.pixelModalPanel .modalBody {
+    background: var(--pixel-bg) !important;
+}
+
+.pixelModalPanel .questTitle,
+.pixelModalPanel .bannerTitle {
+    font-family: "Press Start 2P", monospace !important;
+    font-size: 12px !important;
+    line-height: 1.5 !important;
+    color: var(--pixel-highlight) !important;
+    text-shadow: 2px 2px 0 var(--pixel-border-dark) !important;
+}
+
+.pixelModalPanel .badge,
+.pixelModalPanel .reward,
+.pixelModalPanel .skillTag,
+.pixelModalPanel .urgentTag,
+.pixelModalPanel .todayTag {
+    border-radius: var(--pixel-radius) !important;
+    border-width: 2px !important;
+    font-family: "VT323", monospace !important;
+    font-size: 14px !important;
+    box-shadow: 2px 2px 0 var(--pixel-border-dark) !important;
+}
+
+.pixelModalPanel .badgeLabel {
+    font-family: "Press Start 2P", monospace !important;
+    font-size: 8px !important;
+}
+
+.pixelModalPanel .sectionTitle {
+    font-family: "Press Start 2P", monospace !important;
+    font-size: 9px !important;
+    color: var(--pixel-accent) !important;
+}
+
+.pixelModalPanel .infoLabel {
+    font-family: "Press Start 2P", monospace !important;
+    font-size: 7px !important;
+    color: var(--pixel-muted) !important;
+}
+
+.pixelModalPanel .infoValue,
+.pixelModalPanel .description,
+.pixelModalPanel .sectionContent {
+    font-family: "VT323", monospace !important;
+    font-size: 15px !important;
+    color: var(--pixel-text) !important;
+}
+
+.pixelModalPanel .subtaskItem {
+    border-radius: var(--pixel-radius) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    background: var(--pixel-panel-alt) !important;
+}
+
+.pixelModalPanel .progressBar {
+    border-radius: var(--pixel-radius) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    background: var(--pixel-panel) !important;
+}
+
+.pixelModalPanel .progressFill {
+    border-radius: 0 !important;
+}
+
+.pixelModalPanel .actionButton {
+    border-radius: var(--pixel-radius) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    font-family: "Press Start 2P", monospace !important;
+    font-size: 8px !important;
+    background: var(--pixel-panel-alt) !important;
+    color: var(--pixel-text) !important;
+    box-shadow: 2px 2px 0 var(--pixel-border-dark) !important;
+}
+
+.pixelModalPanel .bannerPlaceholder {
+    border-radius: var(--pixel-radius) !important;
+    border: 2px dashed var(--pixel-border-light) !important;
+    font-family: "VT323", monospace !important;
+}
+
+.pixelModalPanel .modalBody::-webkit-scrollbar-thumb {
+    border-radius: 0 !important;
 }

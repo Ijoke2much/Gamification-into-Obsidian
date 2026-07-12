@@ -1,0 +1,105 @@
+/**
+ * Gamified (pixel / RPG) styling for plugin notices only.
+ * Content must be wrapped in .gamification-pixel-notice (see noticeUtils.ts).
+ */
+
+.notice-container .notice:has(.gamification-pixel-notice),
+.notice-container .notice:has(.gamification-mc-notice) {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.notice-container .notice .gamification-pixel-notice,
+.notice-container .notice .gamification-mc-notice {
+    cursor: pointer !important;
+    display: inline-block !important;
+    width: fit-content !important;
+    max-width: min(420px, 92vw) !important;
+    padding: 14px 16px !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    background: var(--pixel-bg, #1b1d2f) !important;
+    color: var(--pixel-text, #ecefff) !important;
+    border: 2px solid var(--pixel-border-dark, #0f1120) !important;
+    border-radius: 0 !important;
+    box-shadow:
+        4px 4px 0 var(--pixel-border-dark, #0f1120),
+        inset 0 0 0 1px var(--pixel-border-light, #5b61a2) !important;
+    font-family: var(--gamify-font-notices, "VT323", "Courier New", monospace) !important;
+    font-size: 18px !important;
+    font-weight: 400 !important;
+    line-height: 1.35 !important;
+    white-space: pre-wrap !important;
+    word-break: break-word !important;
+    outline: none !important;
+    text-rendering: optimizeSpeed !important;
+}
+
+.notice-container .notice .gamification-pixel-notice:hover,
+.notice-container .notice .gamification-mc-notice:hover {
+    background: var(--pixel-panel) !important;
+    color: var(--pixel-highlight) !important;
+    box-shadow:
+        3px 3px 0 var(--pixel-border-dark),
+        inset 0 0 0 1px var(--pixel-accent) !important;
+}
+
+.notice-container .notice .gamification-pixel-notice:active,
+.notice-container .notice .gamification-mc-notice:active {
+    transform: translate(2px, 2px) !important;
+    box-shadow:
+        1px 1px 0 var(--pixel-border-dark),
+        inset 0 0 0 1px var(--pixel-border-light) !important;
+}
+
+/* System / growth notices (Phase 1 — status screen style) */
+.notice-container .notice:has(.gamification-system-notice) {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.notice-container .notice .gamification-system-notice {
+    cursor: pointer !important;
+    display: inline-block !important;
+    width: fit-content !important;
+    max-width: min(420px, 92vw) !important;
+    padding: 16px 18px !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    background: var(--go-panel, rgba(2, 4, 8, 0.94)) !important;
+    color: var(--go-text, #e0f2fe) !important;
+    border: 1px solid var(--go-border, rgba(79, 195, 247, 0.55)) !important;
+    border-radius: 0 !important;
+    box-shadow:
+        0 0 0 1px rgba(79, 195, 247, 0.12),
+        0 0 20px var(--go-shadow, rgba(34, 211, 238, 0.18)) !important;
+    font-family: var(--go-font-ui, "Inter", "Segoe UI", system-ui, sans-serif) !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    line-height: 1.5 !important;
+    white-space: pre-wrap !important;
+    word-break: break-word !important;
+    letter-spacing: 0.04em !important;
+    text-align: center !important;
+}
+
+.notice-container .notice .gamification-system-notice::before {
+    content: "[ SYSTEM ]" !important;
+    display: block !important;
+    margin-bottom: 8px !important;
+    font-size: 9px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.28em !important;
+    color: var(--go-accent, #4fc3f7) !important;
+}
+
+.notice-container .notice .gamification-system-notice:hover {
+    border-color: var(--go-accent, #4fc3f7) !important;
+    box-shadow: 0 0 24px var(--go-shadow, rgba(34, 211, 238, 0.28)) !important;
+}

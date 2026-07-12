@@ -3,7 +3,7 @@ import { showGameNotice } from '../utils/noticeUtils';
 import { addOrIncrementInventoryItem } from '../../features/inventory/utils/updateInventoryFile';
 import { ShopItem } from '../../features/shop/utils/ShopParser';
 import { MaterialRewardService } from './materialRewardService';
-import { CraftingEngine } from '../../features/crafting/utils/craftingEngine';
+import { getCraftingMaterials, findMaterialByIdOrName } from '../../features/crafting/utils/craftingMaterialRegistry';
 
 export interface MaterialReward {
     name: string;
@@ -283,8 +283,8 @@ export class MaterialInventoryManager {
 
     // Get material details by ID and quality
     private static getMaterialDetails(materialId: string, quality: string): any {
-        const allMaterials = CraftingEngine.getDefaultMaterials();
-        const material = allMaterials.find((m: any) => m.id === materialId);
+        const allMaterials = getCraftingMaterials();
+        const material = findMaterialByIdOrName(allMaterials, materialId);
 
         if (material) {
             return {

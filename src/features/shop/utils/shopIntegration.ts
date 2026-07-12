@@ -2,7 +2,8 @@
 import type GamifiedObsidianPlugin from "../../../core/main";
 import { SeasonalInventoryManager } from "./seasonalInventoryManager";
 import { EnhancedShopSystem } from "./enhancedShopSystem";
-import { Notice } from "obsidian";
+;
+import { pixelNotice } from '../../../shared/utils/noticeUtils';
 
 export class ShopIntegration {
     private plugin: GamifiedObsidianPlugin;
@@ -15,8 +16,15 @@ export class ShopIntegration {
     }
 
     /**
- * Initialize the enhanced shop system
- */
+     * Whether seasonal + enhanced shop subsystems are ready
+     */
+    isInitialized(): boolean {
+        return this.seasonalManager !== null && this.enhancedShop !== null;
+    }
+
+    /**
+     * Initialize the enhanced shop system
+     */
     async initialize(): Promise<void> {
         try {
             // Initialize seasonal manager
@@ -53,9 +61,9 @@ export class ShopIntegration {
                 if (this.seasonalManager && this.enhancedShop) {
                     await this.seasonalManager.refreshInventory();
                     await this.enhancedShop.updatePrices();
-                    new Notice('🛒 Shop inventory and prices refreshed!');
+                    pixelNotice('🛒 Shop inventory and prices refreshed!');
                 } else {
-                    new Notice('❌ Shop system not initialized');
+                    pixelNotice('❌ Shop system not initialized');
                 }
             }
         });
@@ -69,9 +77,9 @@ export class ShopIntegration {
                     const status = this.enhancedShop.getShopStatus();
                     const shopkeeper = status.currentShopkeeper;
                     const market = status.marketConditions;
-                    new Notice(`🏪 ${shopkeeper.avatar} ${shopkeeper.name}\n💭 Mood: ${Math.round(shopkeeper.mood)}% | Rep: ${Math.round(shopkeeper.reputation)}%\n📈 Market: ${market.overall} (${market.volatility}% volatility)\n💰 Special Offers: ${status.specialOffers.length}`, 6000);
+                    pixelNotice(`🏪 ${shopkeeper.avatar} ${shopkeeper.name}\n💭 Mood: ${Math.round(shopkeeper.mood)}% | Rep: ${Math.round(shopkeeper.reputation)}%\n📈 Market: ${market.overall} (${market.volatility}% volatility)\n💰 Special Offers: ${status.specialOffers.length}`, 6000);
                 } else {
-                    new Notice('❌ Shop system not initialized');
+                    pixelNotice('❌ Shop system not initialized');
                 }
             }
         });
@@ -86,7 +94,7 @@ export class ShopIntegration {
                         if (this.seasonalManager) {
                             await this.seasonalManager.triggerSpecialEvent('Dragon Festival', 7);
                         } else {
-                            new Notice('❌ Shop system not initialized');
+                            pixelNotice('❌ Shop system not initialized');
                         }
                     }
                 });
@@ -100,7 +108,7 @@ export class ShopIntegration {
                         if (this.seasonalManager) {
                             await this.seasonalManager.triggerSpecialEvent('Mystical Market', 3);
                         } else {
-                            new Notice('❌ Shop system not initialized');
+                            pixelNotice('❌ Shop system not initialized');
                         }
                     }
                 });
@@ -117,7 +125,7 @@ export class ShopIntegration {
                     const randomEvent = events[Math.floor(Math.random() * events.length)];
                     this.enhancedShop.triggerMarketEvent(randomEvent);
                 } else {
-                    new Notice('❌ Enhanced shop system not initialized');
+                    pixelNotice('❌ Enhanced shop system not initialized');
                 }
             }
         });
@@ -130,7 +138,7 @@ export class ShopIntegration {
                 if (this.enhancedShop) {
                     this.enhancedShop.rotateShopkeeper();
                 } else {
-                    new Notice('❌ Enhanced shop system not initialized');
+                    pixelNotice('❌ Enhanced shop system not initialized');
                 }
             }
         });

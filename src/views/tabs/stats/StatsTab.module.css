@@ -1,29 +1,42 @@
+/* Full-page Stats tab — pixel shell (matches Player column tokens) */
 .statsTabRoot {
-    background: linear-gradient(135deg, #181a2b 0%, #23243a 100%);
-    border-radius: 16px;
-    padding: 32px 10px 10px 10px;
+    --pixel-bg: #1b1d2f;
+    --pixel-panel: #252742;
+    --pixel-border-dark: #0f1120;
+    --pixel-border-light: #5b61a2;
+    --pixel-accent: #8ecae6;
+    --pixel-highlight: #ffd166;
+    --pixel-text: #ecefff;
+    --pixel-shadow: 3px 3px 0 var(--pixel-border-dark);
+
+    background: var(--pixel-bg);
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: 0;
+    padding: 24px 16px 20px 16px;
     min-height: 400px;
-    color: #fff;
-    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
-    max-width: 420px;
-    margin: 32px auto 0 auto;
-    border: 2px solid #2d314d;
-    transition: box-shadow 0.2s, border 0.2s;
+    color: var(--pixel-text);
+    box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light);
+    max-width: 480px;
+    margin: 24px auto 0 auto;
+    transition: box-shadow 0.08s ease, transform 0.08s ease;
+    image-rendering: pixelated;
 }
 
 .statsTabRoot:hover {
-    box-shadow: 0 8px 32px rgba(142, 202, 230, 0.18);
-    border-color: #8ecae6;
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0 var(--pixel-border-dark), inset 0 0 0 1px var(--pixel-border-light);
 }
 
 .header {
-    font-size: 2.2rem;
+    font-family: "Press Start 2P", "VT323", monospace;
+    font-size: 0.85rem;
+    line-height: 1.6;
     font-weight: 800;
-    margin-bottom: 32px;
+    margin: 0 0 20px 0;
     text-align: center;
-    letter-spacing: 1.5px;
-    color: #8ecae6;
-    text-shadow: 0 2px 8px #222a, 0 1px 0 #222a;
+    letter-spacing: 0.06em;
+    color: var(--pixel-accent);
+    text-shadow: 2px 2px 0 var(--pixel-border-dark);
 }
 
 .statsContent {
@@ -31,5 +44,36 @@
     justify-content: center;
     align-items: flex-start;
     width: 100%;
-    min-height: 320px;
+    min-height: 280px;
+}
+
+/* Modal / embedded: no outer chrome (modal frame handles border) */
+.statsTabRootCompact {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0;
+    margin: 0;
+    max-width: none;
+    min-height: 0;
+    color: inherit;
+}
+
+.statsTabRootCompact:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.statsTabRootCompact .header {
+    display: none;
+}
+
+.statsTabRootCompact .statsContent {
+    min-height: 0;
+}
+
+.statsTabRootCompact .statsContent,
+.statsTabRoot .statsContent {
+    justify-content: stretch;
 }

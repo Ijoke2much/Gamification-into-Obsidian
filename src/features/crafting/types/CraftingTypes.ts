@@ -3,7 +3,7 @@ export interface CraftingMaterial {
     name: string;
     icon: string;
     rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
-    category: 'herb' | 'mineral' | 'essence' | 'crystal' | 'organic' | 'mystical';
+    category: 'herb' | 'mineral' | 'essence' | 'crystal' | 'organic' | 'mystical' | 'component';
     description: string;
     baseValue: number; // CP value
     quality: 'fresh' | 'normal' | 'dried' | 'refined' | 'masterwork';
@@ -17,14 +17,14 @@ export interface CraftingRecipe {
     name: string;
     description: string;
     icon: string;
-    category: 'weapon' | 'armor' | 'tool' | 'consumable' | 'decoration' | 'mystical';
+    category: 'weapon' | 'armor' | 'tool' | 'consumable' | 'decoration' | 'mystical' | 'artifact';
 
     // Material requirements
     materials: {
         materialId: string;
         quantity: number;
         required: boolean; // false = optional material that enhances the result
-        qualityRequired?: 'fresh' | 'normal' | 'refined' | 'masterwork'; // minimum quality needed
+        qualityRequired?: 'fresh' | 'normal' | 'dried' | 'refined' | 'masterwork'; // minimum quality needed
     }[];
 
     // Crafting requirements

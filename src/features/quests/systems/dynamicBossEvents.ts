@@ -1,6 +1,7 @@
-import { Notice } from 'obsidian';
+;
 import { Boss, BossProgress } from '../types/BossTypes';
 import { EnhancedBattleState } from '../types/EnhancedMoveTypes';
+import { pixelNotice } from '../../../shared/utils/noticeUtils';
 
 /**
  * Dynamic Boss Events System
@@ -424,14 +425,14 @@ export class DynamicBossEvents {
         });
 
         // Show notification
-        new Notice(`🎲 ${event.icon} ${event.name}: ${event.description}`, 5000);
+        pixelNotice(`🎲 ${event.icon} ${event.name}: ${event.description}`, 5000);
     }
 
     /**
      * Record event expiration
      */
     private recordEventExpiration(event: BossEvent): void {
-        new Notice(`⏰ Event "${event.name}" has expired`, 3000);
+        pixelNotice(`⏰ Event "${event.name}" has expired`, 3000);
     }
 
     /**

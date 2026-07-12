@@ -1,6 +1,11 @@
-import React, { memo, useMemo, useCallback } from 'react';
+import React, { memo } from 'react';
 import type { SkillMetadata } from '../../../../shared/utils/skillDiscovery';
 import { PRIORITY_OPTIONS, DIFFICULTY_OPTIONS } from '../../utils/questUtils';
+import {
+    ACTIVITY_PROFILE_IDS,
+    formatActivityProfileLabel,
+    type ActivityProfileId,
+} from "../../../../shared/utils/questWellbeingProfiles";
 import styles from '../QuestModal.module.css';
 
 interface QuestModalFormProps {
@@ -22,6 +27,10 @@ interface QuestModalFormProps {
     setXp: (xp: number) => void;
     cp: number;
     setCp: (cp: number) => void;
+    /** Stamina subtracted on quest completion (resolved default or quest metadata). */
+    energyOnComplete: number;
+    activityProfile: ActivityProfileId;
+    setActivityProfile: (v: ActivityProfileId) => void;
     due: string;
     setDue: (due: string) => void;
     time: string;
@@ -45,6 +54,12 @@ interface QuestModalFormProps {
     
     // Mobile
     isMobile: boolean;
+
+    /** Guild contract linking (create flow). */
+    showContractPicker?: boolean;
+    openContracts?: string[];
+    attachedContract: string;
+    setAttachedContract: (contract: string) => void;
 }
 
 export const QuestModalForm: React.FC<QuestModalFormProps> = memo(({
@@ -65,6 +80,9 @@ export const QuestModalForm: React.FC<QuestModalFormProps> = memo(({
     setXp,
     cp,
     setCp,
+    energyOnComplete,
+    activityProfile,
+    setActivityProfile,
     due,
     setDue,
     time,
@@ -82,7 +100,11 @@ export const QuestModalForm: React.FC<QuestModalFormProps> = memo(({
     handleSkillRemoval,
     handleAddSubtask,
     handleRemoveSubtask,
-    isMobile
+    isMobile,
+    showContractPicker = false,
+    openContracts = [],
+    attachedContract,
+    setAttachedContract,
 }) => {
     return (
         <>
@@ -294,9 +316,8 @@ export const QuestModalForm: React.FC<QuestModalFormProps> = memo(({
                 )}
             </div>
 
-            {/* Priority and Difficulty - Core */}
-            <div style={{ display: "flex", gap: 16, marginBottom: 20 }}>
-                <div style={{ flex: 1 }}>
+            {showContractPicker && (
+                <div style={{ marginBottom: 20 }}>
                     <label style={{
                         display: "block",
                         marginBottom: 8,
@@ -304,38 +325,153 @@ export const QuestModalForm: React.FC<QuestModalFormProps> = memo(({
                         color: "var(--text-normal)",
                         fontSize: 16,
                     }}>
-                        📋 Priority
+                        📜 Guild contract (optional)
                     </label>
                     <select
-                        value={priority}
-                        onChange={(e) => setPriority(e.target.value)}
+                        value={attachedContract}
+                        onChange={(e) => setAttachedContract(e.target.value)}
                         className={styles.select}
                     >
-                        {PRIORITY_OPTIONS.map(option => (
-                            <option key={option} value={option}>{option}</option>
+                        <option value="">No contract — standalone task</option>
+                        {openContracts.map((title) => (
+                            <option key={title} value={title}>
+                                {title}
+                            </option>
                         ))}
                     </select>
-                </div>
-                <div style={{ flex: 1 }}>
-                    <label style={{
+                    <span style={{
                         display: "block",
-                        marginBottom: 8,
-                        fontWeight: 600,
-                        color: "var(--text-normal)",
-                        fontSize: 16,
+                        marginTop: 6,
+                        fontSize: 12,
+                        color: "var(--text-muted)",
+                        lineHeight: 1.35,
                     }}>
-                        ⚡ Difficulty
-                    </label>
-                    <select
-                        value={difficulty}
-                        onChange={(e) => setDifficulty(e.target.value)}
-                        className={styles.select}
-                    >
-                        {DIFFICULTY_OPTIONS.map(option => (
-                            <option key={option} value={option}>{option}</option>
-                        ))}
-                    </select>
+                        Links this task to a Projects contract via <code>[project:: Name]</code>.
+                    </span>
                 </div>
+            )}
+
+            {/* Priority | Energy | Difficulty — single-height row; help text below */}
+            <div style={{ marginBottom: 8 }}>
+                <div
+                    style={{
+                        display: "flex",
+                        gap: 16,
+                        flexWrap: "wrap",
+                        alignItems: "flex-start",
+                    }}
+                >
+                    <div style={{ flex: "1 1 140px", minWidth: 0 }}>
+                        <label style={{
+                            display: "block",
+                            marginBottom: 8,
+                            fontWeight: 600,
+                            color: "var(--text-normal)",
+                            fontSize: 16,
+                        }}>
+                            📋 Priority
+                        </label>
+                        <select
+                            value={priority}
+                            onChange={(e) => setPriority(e.target.value)}
+                            className={styles.select}
+                        >
+                            {PRIORITY_OPTIONS.map(option => (
+                                <option key={option} value={option}>{option}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div style={{ flex: "1 1 140px", minWidth: 0 }}>
+                        <label
+                            style={{
+                                display: "block",
+                                marginBottom: 8,
+                                fontWeight: 600,
+                                color: "var(--text-normal)",
+                                fontSize: 16,
+                            }}
+                            title="Physical energy removed when you mark this quest complete. Separate from stress/motivation in Activity type below."
+                        >
+                            🔋 Energy cost
+                        </label>
+                        <div
+                            className={styles.select}
+                            style={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
+                                fontWeight: 700,
+                                fontSize: 18,
+                                boxSizing: "border-box",
+                            }}
+                            role="status"
+                            aria-live="polite"
+                            aria-label={`Stamina cost when completing this quest: ${energyOnComplete}`}
+                        >
+                            {energyOnComplete}
+                        </div>
+                    </div>
+                    <div style={{ flex: "1 1 140px", minWidth: 0 }}>
+                        <label style={{
+                            display: "block",
+                            marginBottom: 8,
+                            fontWeight: 600,
+                            color: "var(--text-normal)",
+                            fontSize: 16,
+                        }}>
+                            ⚡ Difficulty
+                        </label>
+                        <select
+                            value={difficulty}
+                            onChange={(e) => setDifficulty(e.target.value)}
+                            className={styles.select}
+                        >
+                            {DIFFICULTY_OPTIONS.map(option => (
+                                <option key={option} value={option}>{option}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+                <p style={{
+                    margin: "8px 0 0 0",
+                    fontSize: 12,
+                    color: "var(--text-muted)",
+                    lineHeight: 1.4,
+                }}>
+                    Stamina cost defaults to 10 if your task line does not set a custom cost. It is not the same as stress or motivation (see Activity type).
+                </p>
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+                <label style={{
+                    display: "block",
+                    marginBottom: 8,
+                    fontWeight: 600,
+                    color: "var(--text-normal)",
+                    fontSize: 16,
+                }}>
+                    🧠 Activity type (wellbeing)
+                </label>
+                <select
+                    value={activityProfile}
+                    onChange={(e) => setActivityProfile(e.target.value as ActivityProfileId)}
+                    className={styles.select}
+                >
+                    {ACTIVITY_PROFILE_IDS.map((id) => (
+                        <option key={id} value={id}>
+                            {formatActivityProfileLabel(id)}
+                        </option>
+                    ))}
+                </select>
+                <span style={{
+                    display: "block",
+                    marginTop: 6,
+                    fontSize: 12,
+                    color: "var(--text-muted)",
+                    lineHeight: 1.35,
+                }}>
+                    On complete, adjusts stress, motivation, focus, and calm (e.g. chores tend to lower stress; exercise raises motivation). “Generic” adds no extra wellbeing change—only energy and rewards, like an untagged task.
+                </span>
             </div>
 
             {/* XP and CP Rewards - Core */}

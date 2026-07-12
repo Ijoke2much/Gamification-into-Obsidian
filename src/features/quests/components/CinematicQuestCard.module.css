@@ -959,3 +959,71 @@
         opacity: 0.4;
     }
 }
+
+/* Pixel / RPG shell when quest list is under Quest tab */
+:global([data-pixel-shell="quests"]) .questCard {
+    border-radius: 0 !important;
+    border: 2px solid var(--pixel-border-dark, #0f1120) !important;
+    background: var(--pixel-panel, #252742) !important;
+    box-shadow: 3px 3px 0 var(--pixel-border-dark, #0f1120), inset 0 0 0 1px var(--pixel-border-light, #5b61a2) !important;
+    backdrop-filter: none !important;
+}
+
+:global([data-pixel-shell="quests"]) .questCard:hover {
+    transform: translate(1px, 1px);
+    box-shadow: 2px 2px 0 var(--pixel-border-dark, #0f1120), inset 0 0 0 1px var(--pixel-accent, #8ecae6) !important;
+}
+
+:global([data-pixel-shell="quests"]) .questTitle {
+    font-family: "Press Start 2P", "VT323", monospace;
+    font-size: 11px;
+    text-shadow: 2px 2px 0 var(--pixel-border-dark, #0f1120);
+}
+
+:global([data-pixel-shell="quests"]) .questCategory {
+    font-family: "Press Start 2P", monospace;
+    font-size: 7px;
+}
+
+:global([data-pixel-shell="quests"]) .questAvatar {
+    border-radius: 0 !important;
+    border: 2px solid var(--pixel-border-dark, #0f1120) !important;
+    box-shadow: 2px 2px 0 var(--pixel-border-dark, #0f1120);
+    backdrop-filter: none !important;
+}
+
+:global([data-pixel-shell="quests"]) .skillTag,
+:global([data-pixel-shell="quests"]) .difficultyTag,
+:global([data-pixel-shell="quests"]) .priorityTag,
+:global([data-pixel-shell="quests"]) .metaBadge {
+    border-radius: 0 !important;
+    border: 2px solid var(--pixel-border-dark, #0f1120) !important;
+    font-family: "Press Start 2P", monospace;
+    font-size: 7px !important;
+}
+
+:global([data-pixel-shell="quests"]) .menuButton {
+    border-radius: 0 !important;
+    border: 2px solid var(--pixel-border-dark, #0f1120) !important;
+    box-shadow: 2px 2px 0 var(--pixel-border-dark, #0f1120);
+}
+
+:global([data-pixel-shell="quests"]) .dropdownMenu {
+    border-radius: 0 !important;
+    border: 2px solid var(--pixel-border-dark, #0f1120) !important;
+    box-shadow: 4px 4px 0 var(--pixel-border-dark, #0f1120) !important;
+}
+
+:global([data-pixel-shell="quests"]) .actionButton {
+    border-radius: 0 !important;
+    border: 2px solid var(--pixel-border-dark, #0f1120) !important;
+    font-family: "Press Start 2P", monospace;
+    font-size: 7px !important;
+    box-shadow: 2px 2px 0 var(--pixel-border-dark, #0f1120);
+}
+
+:global([data-pixel-shell="quests"]) .rankBadge {
+    border-radius: 0 !important;
+    border: 2px solid var(--pixel-border-dark, #0f1120) !important;
+    backdrop-filter: none !important;
+}

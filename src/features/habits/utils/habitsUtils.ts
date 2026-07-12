@@ -40,6 +40,13 @@ export interface HabitData {
     difficulty?: number;
     treeMilestones?: TreeMilestone[];
     currentTreeStage?: number;
+    /**
+     * Stages withheld from streak cap when scheduled days are missed (local calendar).
+     * Display stage = max(0, min(5, getTreeStageForStreak(streak) - evolutionPenalty)).
+     */
+    evolutionPenalty?: number;
+    /** Last YYYY-MM-DD fully processed for miss penalties (non-inclusive upper bound moves forward). */
+    lastEvolutionEvalDate?: string;
     // New: schedule configuration
     scheduleType?: 'daily' | 'weekly';
     /**
@@ -134,6 +141,101 @@ export const getTreeStageForStreak = (streak: number): number => {
     return 0;
 };
 
+/** Visible tree evolution stage (0–5), after miss penalties. */
+export const getDisplayTreeStage = (habit: HabitData): number => {
+    const cap = getTreeStageForStreak(habit.streak ?? 0);
+    const p = Math.max(0, habit.evolutionPenalty ?? 0);
+    return Math.max(0, Math.min(5, cap - p));
+};
+
+export const addCalendarDays = (dateStr: string, deltaDays: number): string => {
+    const d = new Date(dateStr + 'T12:00:00');
+    d.setDate(d.getDate() + deltaDays);
+    return getLocalDateString(d);
+};
+
+export const isHabitScheduledOnLocalDate = (habit: HabitData, dateStr: string): boolean => {
+    if (habit.archived) return false;
+    const d = new Date(dateStr + 'T12:00:00');
+    const dow = d.getDay();
+    const scheduleType = habit.scheduleType || 'daily';
+    const scheduleDays =
+        habit.scheduleDays && habit.scheduleDays.length > 0
+            ? habit.scheduleDays
+            : [0, 1, 2, 3, 4, 5, 6];
+    return scheduleType === 'daily' || scheduleDays.includes(dow);
+};
+
+export const countMissedScheduledDaysInRange = (
+    habit: HabitData,
+    completedDates: Set<string>,
+    startStr: string,
+    endStr: string
+): number => {
+    let n = 0;
+    let cur = startStr;
+    while (cur.localeCompare(endStr) <= 0) {
+        if (isHabitScheduledOnLocalDate(habit, cur) && !completedDates.has(cur)) {
+            n++;
+        }
+        cur = addCalendarDays(cur, 1);
+    }
+    return n;
+};
+
+/**
+ * Apply one evolution-penalty stage per missed scheduled day from (lastEval+1) through yesterday.
+ * First run sets lastEvolutionEvalDate without backfilling history.
+ */
+export const applyEvolutionMissPenalties = (habit: HabitData, todayStr: string = getLocalDateString()): HabitData => {
+    const yesterday = addCalendarDays(todayStr, -1);
+    if (habit.archived) {
+        return { ...habit, lastEvolutionEvalDate: yesterday };
+    }
+
+    const lastEval = habit.lastEvolutionEvalDate;
+    if (!lastEval) {
+        return { ...habit, lastEvolutionEvalDate: yesterday };
+    }
+
+    const start = addCalendarDays(lastEval, 1);
+    if (start.localeCompare(yesterday) > 0) {
+        return habit;
+    }
+
+    const missed = countMissedScheduledDaysInRange(
+        habit,
+        new Set(habit.completedDates || []),
+        start,
+        yesterday
+    );
+    const cap = getTreeStageForStreak(habit.streak ?? 0);
+    let penalty = (habit.evolutionPenalty ?? 0) + missed;
+    penalty = Math.min(Math.max(0, penalty), cap);
+
+    return {
+        ...habit,
+        evolutionPenalty: penalty,
+        lastEvolutionEvalDate: yesterday,
+    };
+};
+
+/** After streak changes: trim penalty when cap drops; forgive penalty when streak tier increases. */
+export const adjustEvolutionPenaltyForStreakChange = (
+    habit: HabitData,
+    oldStreak: number,
+    newStreak: number
+): number => {
+    const oldCap = getTreeStageForStreak(oldStreak);
+    const newCap = getTreeStageForStreak(newStreak);
+    let penalty = habit.evolutionPenalty ?? 0;
+    if (newCap > oldCap) {
+        penalty = Math.max(0, penalty - (newCap - oldCap));
+    }
+    penalty = Math.min(penalty, newCap);
+    return Math.max(0, penalty);
+};
+
 export const getTreeMilestoneForStreak = (streak: number): TreeMilestone | null => {
     return TREE_MILESTONES.find(milestone => milestone.streakRequired === streak) || null;
 };
@@ -161,9 +263,6 @@ export const checkAndUpdateTreeMilestones = (habit: HabitData): { newMilestones:
             totalReward.coins += milestone.reward.coins;
         }
     });
-
-    // Update current tree stage
-    habit.currentTreeStage = currentStage;
 
     return { newMilestones, totalReward };
 };
@@ -299,7 +398,9 @@ const habitToFrontmatterObject = (habit: HabitData): any => {
             : [0, 1, 2, 3, 4, 5, 6],
         completedDates: habit.completedDates ?? [],
         treeMilestones: habit.treeMilestones ?? [],
-        currentTreeStage: habit.currentTreeStage ?? getTreeStageForStreak(habit.streak ?? 0)
+        evolutionPenalty: habit.evolutionPenalty ?? 0,
+        lastEvolutionEvalDate: habit.lastEvolutionEvalDate,
+        currentTreeStage: getDisplayTreeStage(habit)
     };
 
     // Do not overwrite existing frontmatter with undefined values when merging.
@@ -357,6 +458,19 @@ const frontmatterToHabit = (fm: any, fallbackId: string, filePath: string): Habi
         ? fm.longestStreak
         : streak;
 
+    const capFromStreak = getTreeStageForStreak(streak);
+    const lastEvolutionEvalDateFm =
+        typeof fm.lastEvolutionEvalDate === 'string' ? fm.lastEvolutionEvalDate : undefined;
+    let evolutionPenaltyFm: number;
+    if (typeof fm.evolutionPenalty === 'number' && !Number.isNaN(fm.evolutionPenalty)) {
+        evolutionPenaltyFm = Math.max(0, fm.evolutionPenalty);
+    } else {
+        const storedStage =
+            typeof fm.currentTreeStage === 'number' ? fm.currentTreeStage : capFromStreak;
+        evolutionPenaltyFm = Math.max(0, capFromStreak - storedStage);
+    }
+    evolutionPenaltyFm = Math.min(evolutionPenaltyFm, capFromStreak);
+
     return {
         id,
         name,
@@ -390,9 +504,9 @@ const frontmatterToHabit = (fm: any, fallbackId: string, filePath: string): Habi
         completedDates,
         difficulty: typeof fm.difficulty === 'number' ? fm.difficulty : 1,
         treeMilestones: Array.isArray(fm.treeMilestones) ? fm.treeMilestones as TreeMilestone[] : undefined,
-        currentTreeStage: typeof fm.currentTreeStage === 'number'
-            ? fm.currentTreeStage
-            : getTreeStageForStreak(streak),
+        evolutionPenalty: evolutionPenaltyFm,
+        lastEvolutionEvalDate: lastEvolutionEvalDateFm,
+        currentTreeStage: Math.max(0, Math.min(5, capFromStreak - evolutionPenaltyFm)),
         scheduleType,
         scheduleDays
     };

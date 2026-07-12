@@ -4,6 +4,21 @@ export { InventoryOperations } from './utils/inventoryOperations';
 export { EnhancedInventoryParser } from './utils/enhancedInventoryParser';
 export { IconPicker } from './utils/iconPicker';
 export { MaterialUtils } from '../../shared/utils/materialUtils';
+export {
+    GEAR_FILE_PATH,
+    GEAR_SLOTS,
+    GEAR_SLOT_LABELS,
+    createEmptyGearLoadout,
+    parseGearFile,
+    generateGearFileContent,
+    readGearLoadout,
+    writeGearLoadout,
+    equipInventoryItemToGearSlot,
+    unequipGearSlot,
+    getEquippedGearItems,
+    calculateGearBonuses,
+    parseGearEffect
+} from './utils/gearFile';
 
 // Enhanced Types
 export type {
@@ -16,6 +31,15 @@ export type {
     ItemStatistics,
     ItemAction
 } from './types/EnhancedInventoryTypes';
+
+export type {
+    GearSlot,
+    GearEffectKey,
+    GearSlotState,
+    EquippedGearItem,
+    GearLoadout,
+    GearBonuses
+} from './utils/gearFile';
 
 // Existing exports for compatibility
 export type { InventoryItem } from './utils/updateInventoryFile';

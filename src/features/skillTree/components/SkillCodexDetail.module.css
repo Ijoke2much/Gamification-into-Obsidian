@@ -1,0 +1,244 @@
+/* Detail sheet — inherits --pixel-* from Skill Codex modal */
+
+.backdrop {
+    position: absolute;
+    inset: 0;
+    z-index: 50;
+    background: rgba(15, 17, 32, 0.72);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    animation: fadeIn 0.15s ease-out;
+}
+
+.panel {
+    --codex-bg: var(--go-bg, var(--pixel-bg, #1b1d2f));
+    --codex-panel: var(--go-panel, var(--pixel-panel, #252742));
+    --codex-panel-soft: var(--go-card-soft, var(--pixel-panel-alt, #2e3152));
+    --codex-border: var(--go-border, var(--pixel-border-dark, #0f1120));
+    --codex-border-strong: var(--go-border-strong, var(--pixel-border-light, #5b61a2));
+    --codex-accent: var(--go-accent, var(--pixel-accent, #8ecae6));
+    --codex-highlight: var(--go-gold, var(--pixel-highlight, #ffd166));
+    --codex-text: var(--go-text, var(--pixel-text, #ecefff));
+    --codex-muted: var(--go-muted, var(--pixel-muted, #bac2e3));
+    --codex-shadow: var(--go-shadow-soft, 3px 3px 0 var(--codex-border));
+    width: 100%;
+    max-width: 420px;
+    max-height: min(78vh, 640px);
+    overflow-y: auto;
+    background: var(--codex-panel);
+    border: 2px solid var(--codex-border);
+    box-shadow: var(--codex-shadow), inset 0 0 0 1px var(--codex-border-strong);
+    color: var(--codex-text);
+    font-family: var(--go-font-body, "VT323", "Courier New", monospace);
+    font-size: 18px;
+    line-height: 1.35;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+    image-rendering: pixelated;
+}
+
+.headerRow {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.iconBox {
+    width: 48px;
+    height: 48px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 26px;
+    border: 2px solid var(--codex-border);
+    background: var(--codex-bg);
+    box-shadow: 2px 2px 0 var(--codex-border),
+        inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+.titleBlock {
+    flex: 1;
+    min-width: 0;
+}
+
+.skillName {
+    margin: 0 0 6px 0;
+    font-family: var(--go-font-display, "Press Start 2P", "VT323", monospace);
+    font-size: 0.5rem;
+    line-height: 1.5;
+    color: var(--codex-highlight);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.epithet {
+    margin: 0;
+    font-size: 1rem;
+    color: var(--codex-accent);
+    font-style: italic;
+}
+
+.classRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: var(--codex-bg);
+    border: 2px solid var(--codex-border);
+    box-shadow: inset 0 0 0 1px var(--codex-border-strong);
+}
+
+.classIcon {
+    font-size: 22px;
+    flex-shrink: 0;
+}
+
+.classText {
+    flex: 1;
+    min-width: 0;
+}
+
+.className {
+    margin: 0;
+    font-family: var(--go-font-display, "Press Start 2P", "VT323", monospace);
+    font-size: 0.4rem;
+    line-height: 1.45;
+    color: var(--codex-text);
+}
+
+.classTagline {
+    margin: 4px 0 0 0;
+    font-size: 0.9rem;
+    color: var(--codex-muted);
+}
+
+.statGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.statBox {
+    padding: 8px 10px;
+    background: var(--codex-panel-soft);
+    border: 2px solid var(--codex-border);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+}
+
+.statLabel {
+    display: block;
+    font-size: 0.75rem;
+    color: var(--codex-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.statValue {
+    font-family: var(--go-font-display, "Press Start 2P", "VT323", monospace);
+    font-size: 0.42rem;
+    line-height: 1.4;
+    color: var(--codex-highlight);
+    margin-top: 4px;
+}
+
+.linkedStats {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.linkedStats li {
+    padding: 4px 0;
+    border-bottom: 1px solid var(--codex-border);
+    font-size: 0.95rem;
+    color: var(--codex-muted);
+}
+
+.linkedStats li:last-child {
+    border-bottom: none;
+}
+
+.bodyText {
+    margin: 0;
+    font-size: 0.95rem;
+    color: var(--codex-muted);
+    white-space: pre-wrap;
+}
+
+.actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 4px;
+    padding-top: 12px;
+    border-top: 2px solid var(--codex-border);
+}
+
+.btnPrimary {
+    flex: 1;
+    min-width: 120px;
+    padding: 10px 14px;
+    border: 2px solid var(--codex-border);
+    border-radius: 0;
+    background: var(--codex-accent);
+    color: var(--codex-bg);
+    font-family: var(--go-font-display, "Press Start 2P", "VT323", monospace);
+    font-size: 0.42rem;
+    line-height: 1.45;
+    cursor: pointer;
+    box-shadow: 3px 3px 0 var(--codex-border);
+    text-transform: uppercase;
+}
+
+.btnPrimary:hover {
+    filter: brightness(1.05);
+}
+
+.btnPrimary:active {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0 var(--codex-border);
+}
+
+.btnGhost {
+    padding: 10px 14px;
+    border: 2px solid var(--codex-border);
+    border-radius: 0;
+    background: var(--codex-panel-soft);
+    color: var(--codex-text);
+    font-family: var(--go-font-display, "Press Start 2P", "VT323", monospace);
+    font-size: 0.38rem;
+    line-height: 1.45;
+    cursor: pointer;
+    box-shadow: 2px 2px 0 var(--codex-border);
+    text-transform: uppercase;
+}
+
+.btnGhost:hover {
+    background: var(--codex-panel);
+}
+
+.btnGhost:active {
+    transform: translate(1px, 1px);
+    box-shadow: 1px 1px 0 var(--codex-border);
+}
+
+.pathNote {
+    font-size: 0.8rem;
+    color: var(--codex-muted);
+    opacity: 0.85;
+    word-break: break-all;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}

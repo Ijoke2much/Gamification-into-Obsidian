@@ -1,8 +1,9 @@
-import { App, Notice } from 'obsidian';
+import { App } from 'obsidian';
 import { RandomItemTemplate, RandomItemEffect, GeneratedRandomItem } from '../types/CraftingTypes';
 import { InventoryItem, addOrIncrementInventoryItem, readInventory, dropItem } from '../../inventory/utils/updateInventoryFile';
 import { ShopItem } from '../../shop/utils/ShopParser';
 import { MaterialUtils } from '../../../shared/utils/materialUtils';
+import { pixelNotice } from '../../../shared/utils/noticeUtils';
 
 export class RandomItemGenerator {
     private static readonly RANDOM_ITEM_TEMPLATES: RandomItemTemplate[] = [
@@ -300,7 +301,7 @@ export class RandomItemGenerator {
             }
 
             if (craftableTemplates.length === 0) {
-                new Notice('❌ No materials available for random item generation', 3000);
+                pixelNotice('❌ No materials available for random item generation', 3000);
                 return null;
             }
 
@@ -348,12 +349,12 @@ export class RandomItemGenerator {
             // Add to inventory as a usable item
             await this.addGeneratedItemToInventory(app, generatedItem);
 
-            new Notice(`✨ Generated: ${generatedItem.name}! ${randomEffect.description}`, 5000);
+            pixelNotice(`✨ Generated: ${generatedItem.name}! ${randomEffect.description}`, 5000);
             return generatedItem;
 
         } catch (error) {
             console.error('Error generating random item:', error);
-            new Notice('❌ Failed to generate random item', 3000);
+            pixelNotice('❌ Failed to generate random item', 3000);
             return null;
         }
     }

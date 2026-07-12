@@ -1,9 +1,17 @@
-import { Plugin, App, PluginSettingTab, Setting, Modal, Notice } from "obsidian";
+import "../shared/styles/gamified-notices.css";
+import "../shared/styles/system-hunter-shell.css";
+import "../shared/styles/pixel-enclave.css";
+import { Plugin, App, PluginSettingTab, Setting, Modal } from "obsidian";
 import React from 'react';
 import { PlayerTab, PLAYER_TAB_VIEW_TYPE } from "../views/tabs/player/PlayerTab";
 import { StatsTab, STATS_TAB_VIEW_TYPE } from "../views/tabs/stats/StatsTab";
 // import { Player } from "../data/models/PlayerData"; // Using PlayerStore instead
-import { GamificationPluginSettings, DEFAULT_SETTINGS } from "./settings";
+import {
+	BALANCED_GAMEPLAY_MODULES,
+	GamificationPluginSettings,
+	DEFAULT_SETTINGS,
+	type GamificationModules,
+} from "./settings";
 import { Buff } from "../data/models/PlayerData";
 import { TaskTabView, GAMIFIED_TASK_TAB_VIEW_TYPE } from '../views/tabs/quests/TaskTabView';
 import { SidebarQuestBoardView, SIDEBAR_QUEST_VIEW_TYPE } from '../views/sidebar/SidebarQuestView';
@@ -20,13 +28,19 @@ import { QuestCompletionTracker } from '../features/quests/services/questComplet
 import { ShopIntegration, setShopIntegration } from '../features/shop/utils/shopIntegration';
 import { isDialogueCorrupted } from '../features/shop/utils/shopkeeperDialogueDefaults';
 import { TaskIntegrationService } from '../features/quests/utils/taskIntegrationService';
-import { QuestSystemIntegration } from '../features/quests';
+import { QuestSystemIntegration } from '../features/quests/questSystemIntegration';
 import { EnhancedQuestSystem } from '../features/quests/components/EnhancedQuestSystem';
 import { PerformanceOptimizer } from '../shared/utils/performanceOptimizer';
-import { showGameNotice } from '../shared/utils/noticeUtils';
+import { showGameNotice, pixelNotice } from '../shared/utils/noticeUtils';
 import { EnergyResetService } from '../features/energy/services/energyResetService';
 import { EnergyNotificationService } from '../features/energy/services/energyNotificationService';
 import { getFirstLeafOfTypeInMainWorkspace, isLeafInVaultMainWorkspace } from '../shared/utils/workspaceLeafUtils';
+import { setNotificationLevel } from '../shared/utils/noticeUtils';
+import { emitSettingsUpdated } from '../shared/utils/settingsEvents';
+import {
+	applyVisualTheme,
+	migrateVisualThemeSettings,
+} from '../shared/utils/visualThemeManager';
 
 export const TASK_VIEW_TYPE = "gamified-task-view";
 
@@ -48,6 +62,7 @@ export default class GamifiedObsidianPlugin extends Plugin {
 	private performanceOptimizer!: PerformanceOptimizer;
 	private energyResetService?: EnergyResetService;
 	private energyNotificationService?: EnergyNotificationService;
+	private lastSavedModules: GamificationModules = { ...BALANCED_GAMEPLAY_MODULES };
 
 	// Make AdvancedQuestModal available on the plugin instance
 	public AdvancedQuestModal = AdvancedQuestModal;
@@ -293,26 +308,26 @@ export default class GamifiedObsidianPlugin extends Plugin {
 		// this.addRibbonIcon('target', 'Advanced Quest Dashboard', async (evt: MouseEvent) => {
 		// 	try {
 		// 		if (!this.questSystem) {
-		// 			new Notice('Advanced quest system not initialized');
+		// 			pixelNotice('Advanced quest system not initialized');
 		// 			return;
 		// 		}
 		// 
 		// 		const modal = new AdvancedQuestModal(this.app, {
 		// 			questSystem: this.questSystem,
 		// 			onQuestUpdate: (quest) => {
-		// 				new Notice('Quest updated successfully');
+		// 				pixelNotice('Quest updated successfully');
 		// 			},
 		// 			onQuestCreate: (quest) => {
-		// 				new Notice('Quest created successfully');
+		// 				pixelNotice('Quest created successfully');
 		// 			},
 		// 			onQuestDelete: (questId) => {
-		// 				new Notice('Quest deleted successfully');
+		// 				pixelNotice('Quest deleted successfully');
 		// 			}
 		// 		});
 		// 
 		// 		modal.open();
 		// 	} catch (error) {
-		// 		new Notice('Failed to open advanced quest dashboard');
+		// 		pixelNotice('Failed to open advanced quest dashboard');
 		// 	}
 		// });
 
@@ -374,14 +389,39 @@ export default class GamifiedObsidianPlugin extends Plugin {
 			},
 		});
 
+		this.addCommand({
+			id: 'quick-capture-idea',
+			name: 'Brain dump idea',
+			callback: () => {
+				void import('../features/quests/modals/QuickCaptureModal').then(({ openQuickCaptureModal }) => {
+					openQuickCaptureModal(this.app, this.settings);
+				});
+			},
+		});
+
 		// Boss Battle View Command
 		this.addCommand({
 			id: 'open-boss-battle-view',
 			name: 'Open Boss Battle Arena',
 			callback: () => {
 				this.app.workspace.onLayoutReady(async () => {
+					const { isBossBattlesEnabled } = await import('../shared/utils/gameplayConfig');
+					if (!isBossBattlesEnabled(this.settings)) {
+						const { pixelNotice } = await import('../shared/utils/noticeUtils');
+						pixelNotice('Boss battles are disabled. Enable them in Settings → Feature Modules.', 5000);
+						return;
+					}
 					this.activateBossView();
 				});
+			},
+		});
+
+		// Forge a file-backed boss (Bosses/ folder)
+		this.addCommand({
+			id: 'create-boss',
+			name: 'Forge a boss',
+			callback: () => {
+				void this.openCreateBossModal();
 			},
 		});
 
@@ -499,7 +539,27 @@ export default class GamifiedObsidianPlugin extends Plugin {
 	}
 
 	async loadSettings() {
-		this.settings = Object.assign({}, DEFAULT_SETTINGS, await this.loadData());
+		const loaded = await this.loadData();
+		this.settings = Object.assign({}, DEFAULT_SETTINGS, loaded);
+		this.settings.modules = {
+			...BALANCED_GAMEPLAY_MODULES,
+			...(loaded?.modules ?? {}),
+		};
+
+		// Visual theme: existing installs without visualTheme keep Classic (current look)
+		this.settings.visualTheme = migrateVisualThemeSettings(loaded);
+
+		// Existing installs skip first-run onboarding (Phase 3)
+		if (loaded && loaded.gameplayOnboardingComplete === undefined) {
+			this.settings.gameplayOnboardingComplete = true;
+		}
+
+		// Preserve full 5-stat HUD for existing users until they choose a mode
+		if (loaded && loaded.energyHudMode === undefined) {
+			this.settings.energyHudMode = 'full';
+		}
+
+		this.lastSavedModules = { ...this.settings.modules };
 
 		// Migration: clear corrupted shopkeeper dialogue overrides (runs at plugin load)
 		if (isDialogueCorrupted(this.settings.shopkeeperDialogueOverrides)) {
@@ -509,9 +569,17 @@ export default class GamifiedObsidianPlugin extends Plugin {
 
 		// Initialize currency display service with current settings
 		currencyDisplay.initialize(this.settings);
+		setNotificationLevel(this.settings.notificationLevel ?? 'normal');
+		applyVisualTheme(this.settings);
 	}
 
 	async saveSettings() {
+		const previousModules: GamificationModules = { ...this.lastSavedModules };
+		const nextModules: GamificationModules = {
+			...BALANCED_GAMEPLAY_MODULES,
+			...(this.settings.modules ?? {}),
+		};
+
 		await this.saveData(this.settings);
 
 		// Update currency display service with new settings
@@ -519,6 +587,46 @@ export default class GamifiedObsidianPlugin extends Plugin {
 
 		// Sync settings with runtime config
 		this.syncSettingsToRuntimeConfig();
+
+		await this.applyModuleRuntimeChanges(previousModules, nextModules);
+		this.lastSavedModules = { ...nextModules };
+
+		setNotificationLevel(this.settings.notificationLevel ?? 'normal');
+		applyVisualTheme(this.settings);
+		emitSettingsUpdated();
+	}
+
+	private async applyModuleRuntimeChanges(
+		previous: GamificationModules,
+		next: GamificationModules
+	): Promise<void> {
+		if (next.enableShopTab === true && previous.enableShopTab !== true) {
+			if (!this.shopIntegration) {
+				this.shopIntegration = new ShopIntegration(this);
+				setShopIntegration(this.shopIntegration);
+			}
+			if (!this.shopIntegration.isInitialized()) {
+				await this.shopIntegration.initialize().catch(() => {
+					// Shop integration is optional
+				});
+			}
+		}
+
+		if (next.enableEnergySystem === true && previous.enableEnergySystem !== true) {
+			if (!this.energyResetService) {
+				this.energyResetService = EnergyResetService.getInstance(this.app);
+				await this.energyResetService.initialize().catch(() => {
+					// Energy reset service is optional
+				});
+			}
+
+			if (!this.energyNotificationService) {
+				this.energyNotificationService = EnergyNotificationService.getInstance();
+				await this.energyNotificationService.initialize().catch(() => {
+					// Notification service is optional
+				});
+			}
+		}
 	}
 
 	private syncSettingsToRuntimeConfig() {
@@ -574,7 +682,6 @@ export default class GamifiedObsidianPlugin extends Plugin {
 				stressReduce: this.settings.dailyRestoreStressReduce ?? 10,
 			}
 		});
-
 
 	}
 
@@ -658,6 +765,15 @@ export default class GamifiedObsidianPlugin extends Plugin {
 		});
 	}
 
+	openPluginSettings(): void {
+		const setting = (this.app as App & {
+			setting?: { open: () => void; openTabById: (id: string) => void };
+		}).setting;
+		if (!setting) return;
+		setting.open();
+		setting.openTabById(this.manifest.id);
+	}
+
 	async activateStatsTabView() {
 		await this.app.workspace.onLayoutReady(async () => {
 			const { workspace } = this.app;
@@ -680,6 +796,122 @@ export default class GamifiedObsidianPlugin extends Plugin {
 	async activateBossView(): Promise<void> {
 		await this.app.workspace.onLayoutReady(async () => {
 			await this.focusBossViewInMainWorkspace();
+		});
+	}
+
+	/** Opens the modal for forging a new file-backed boss (Bosses/ folder). */
+	async openCreateBossModal(onSubmit?: () => void): Promise<void> {
+		const { CreateBossModal } = await import('../features/quests/modals/CreateBossModal');
+		new CreateBossModal(this.app, this, onSubmit ?? (() => {})).open();
+	}
+
+	/** Edit an existing file-backed boss note. */
+	async openEditBossModal(
+		bossOrPath: import('../features/quests/utils/bossFile').BossFileData | string,
+		onSubmit?: () => void
+	): Promise<void> {
+		const { CreateBossModal } = await import('../features/quests/modals/CreateBossModal');
+		const { readBoss } = await import('../features/quests/utils/bossFile');
+		const editBoss =
+			typeof bossOrPath === 'string'
+				? (await readBoss(this.app, bossOrPath)) ?? undefined
+				: bossOrPath;
+		if (!editBoss) {
+			const { pixelNotice } = await import('../shared/utils/noticeUtils');
+			pixelNotice('Boss note not found.');
+			return;
+		}
+		new CreateBossModal(this.app, this, onSubmit ?? (() => {}), editBoss).open();
+	}
+
+	/** Boss-raid launch intent consumed by BossBattleUI on mount. */
+	pendingBossRaid: { path: string; lockDungeon: boolean } | null = null;
+
+	/** Debug: open boss workspace straight to the victory screen for a boss note. */
+	pendingBossVictoryPreview: { path: string } | null = null;
+
+	/** Open the full-page boss workspace and fight the given boss note file. */
+	async openBossRaid(
+		bossPath: string,
+		opts?: { lockDungeon?: boolean; resumeClaim?: boolean }
+	): Promise<void> {
+		const detail = {
+			path: bossPath,
+			lockDungeon: opts?.lockDungeon ?? false,
+			resumeClaim: opts?.resumeClaim ?? false,
+		};
+		try {
+			const { startBossFileRaid } = await import('../features/quests/utils/bossRaidService');
+			await startBossFileRaid(this.app, bossPath, detail.lockDungeon, {
+				resumeClaim: detail.resumeClaim,
+			});
+		} catch (error) {
+			console.error('[openBossRaid] Failed to start boss raid', error);
+		}
+		this.pendingBossRaid = { path: detail.path, lockDungeon: detail.lockDungeon };
+		this.pendingBossVictoryPreview = null;
+		await this.activateBossView();
+		try {
+			window.dispatchEvent(new CustomEvent('openBossRaid', { detail }));
+		} catch {
+			/* ignore dispatch errors outside the browser runtime */
+		}
+	}
+
+	/** Open the boss workspace showing the full victory screen (debug / design preview). */
+	async openBossVictoryPreview(bossPath?: string): Promise<void> {
+		let path = bossPath?.trim();
+		if (!path) {
+			const { listBosses } = await import('../features/quests/utils/bossFile');
+			const bosses = await listBosses(this.app);
+			path = bosses[0]?.filePath;
+			if (!path) {
+				const { pixelNotice } = await import('../shared/utils/noticeUtils');
+				pixelNotice('Create a boss in Bosses/ first, or pass a boss note path.', 3500);
+				return;
+			}
+		}
+		const detail = { path };
+		this.pendingBossVictoryPreview = detail;
+		this.pendingBossRaid = null;
+		await this.activateBossView();
+		try {
+			window.dispatchEvent(new CustomEvent('openBossVictoryPreview', { detail }));
+		} catch {
+			/* ignore dispatch errors outside the browser runtime */
+		}
+	}
+
+	/** Open the sidebar quest board on a hub section (e.g. Dungeon gate roster). */
+	async focusQuestHubSection(
+		section: import('../features/quests/utils/questProjectUtils').QuestHubSection = 'dungeon'
+	): Promise<void> {
+		const { QUEST_HUB_SECTION_KEY } = await import('../features/quests/utils/questProjectUtils');
+		try {
+			localStorage.setItem(QUEST_HUB_SECTION_KEY, section);
+		} catch {
+			/* ignore storage failures */
+		}
+		try {
+			window.dispatchEvent(
+				new CustomEvent('gamification-quest-hub-focus', { detail: { section } })
+			);
+		} catch {
+			/* ignore dispatch errors outside the browser runtime */
+		}
+		if (!this.settings.enableSidebarQuestBoard) {
+			const { pixelNotice } = await import('../shared/utils/noticeUtils');
+			pixelNotice('Enable the sidebar quest board in plugin settings.', 4000);
+			return;
+		}
+		this.app.workspace.onLayoutReady(async () => {
+			const leaf = this.app.workspace.getRightLeaf(false);
+			if (leaf) {
+				await leaf.setViewState({
+					type: SIDEBAR_QUEST_VIEW_TYPE,
+					active: true,
+				});
+			}
 		});
 	}
 
@@ -900,14 +1132,15 @@ export default class GamifiedObsidianPlugin extends Plugin {
 			// this.taskScanner.startAutoScan(); // Disabled - was causing repetitive notifications every 10 seconds
 			this.completionTracker.startTracking();
 
-			// Initialize shop integration system
+			// Initialize shop integration when shop module is enabled
+			const shopEnabled = this.settings.modules?.enableShopTab === true;
 			this.shopIntegration = new ShopIntegration(this);
 			setShopIntegration(this.shopIntegration);
-
-			// Initialize shop system (async, don't block main initialization)
-			this.shopIntegration.initialize().catch(() => {
-				// Shop integration is optional
-			});
+			if (shopEnabled) {
+				this.shopIntegration.initialize().catch(() => {
+					// Shop integration is optional
+				});
+			}
 
 			// Initialize task integration service
 			this.taskIntegrationService = TaskIntegrationService.getInstance(
@@ -915,16 +1148,19 @@ export default class GamifiedObsidianPlugin extends Plugin {
 				this.app.metadataCache
 			);
 
-			// Initialize Energy Services (non-blocking; they will start in the background)
-			this.energyResetService = EnergyResetService.getInstance(this.app);
-			this.energyResetService.initialize().catch(() => {
-				// Energy reset service is optional; failures are logged internally
-			});
+			// Initialize Energy Services when energy module is enabled
+			const energyEnabled = this.settings.modules?.enableEnergySystem !== false;
+			if (energyEnabled) {
+				this.energyResetService = EnergyResetService.getInstance(this.app);
+				this.energyResetService.initialize().catch(() => {
+					// Energy reset service is optional; failures are logged internally
+				});
 
-			this.energyNotificationService = EnergyNotificationService.getInstance();
-			this.energyNotificationService.initialize().catch(() => {
-				// Notification service is optional; continue without if it fails
-			});
+				this.energyNotificationService = EnergyNotificationService.getInstance();
+				this.energyNotificationService.initialize().catch(() => {
+					// Notification service is optional; continue without if it fails
+				});
+			}
 
 			// Initialize Advanced Quest System in the background so it doesn't block plugin load
 			QuestSystemIntegration.initializeQuestSystem(this.app)
@@ -989,8 +1225,10 @@ class GamificationSettingTab extends PluginSettingTab {
 						onSave: async () => {
 							await this.plugin.saveSettings();
 							// @ts-ignore
-							new window.Notice('Settings saved successfully!');
-						}
+							pixelNotice('Settings saved successfully!');
+						},
+						app: this.app,
+						plugin: this.plugin,
 					})
 				);
 			});
@@ -1085,7 +1323,7 @@ class GamificationSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 						// Reload plugin to register/unregister views
 						// @ts-ignore
-						new window.Notice("Restart Obsidian to apply quest board changes.");
+						pixelNotice("Restart Obsidian to apply quest board changes.");
 					})
 			);
 
@@ -1427,7 +1665,7 @@ class GamificationSettingTab extends PluginSettingTab {
 						this.plugin.settings.enableSeasonalShop = value;
 						await this.plugin.saveSettings();
 						// @ts-ignore
-						new window.Notice("Restart Obsidian to apply shop changes.");
+						pixelNotice("Restart Obsidian to apply shop changes.");
 					})
 			);
 
@@ -1493,7 +1731,7 @@ class GamificationSettingTab extends PluginSettingTab {
 						const { resetYamlFrontmatterForType } = await import("../shared/utils/progressUpdater");
 						await resetYamlFrontmatterForType(this.app.vault, this.plugin.settings.skillFolder, "skill");
 						// @ts-ignore
-						new window.Notice("All skills have been reset. Settings will remain open for your convenience.");
+						pixelNotice("All skills have been reset. Settings will remain open for your convenience.");
 					})
 			);
 
@@ -1509,7 +1747,7 @@ class GamificationSettingTab extends PluginSettingTab {
 						const { resetYamlFrontmatterForType } = await import("../shared/utils/progressUpdater");
 						await resetYamlFrontmatterForType(this.app.vault, this.plugin.settings.classFolder, "class");
 						// @ts-ignore
-						new window.Notice("All classes have been reset. Settings will remain open for your convenience.");
+						pixelNotice("All classes have been reset. Settings will remain open for your convenience.");
 					})
 			);
 
@@ -1525,7 +1763,7 @@ class GamificationSettingTab extends PluginSettingTab {
 						const { resetYamlFrontmatterForType } = await import("../shared/utils/progressUpdater");
 						await resetYamlFrontmatterForType(this.app.vault, this.plugin.settings.masterClassFolder, "master");
 						// @ts-ignore
-						new window.Notice("All master classes have been reset. Settings will remain open for your convenience.");
+						pixelNotice("All master classes have been reset. Settings will remain open for your convenience.");
 					})
 			);
 
@@ -1541,7 +1779,7 @@ class GamificationSettingTab extends PluginSettingTab {
 						const { resetYamlFrontmatterForType } = await import("../shared/utils/progressUpdater");
 						await resetYamlFrontmatterForType(this.app.vault, this.plugin.settings.statFolder, "stat");
 						// @ts-ignore
-						new window.Notice("All stats have been reset. Settings will remain open for your convenience.");
+						pixelNotice("All stats have been reset. Settings will remain open for your convenience.");
 					})
 			);
 
@@ -1564,7 +1802,7 @@ class GamificationSettingTab extends PluginSettingTab {
 						frontmatter.total_exp = 0;
 						await writeYamlFrontmatter(this.app.vault, playerPath, frontmatter);
 						// @ts-ignore
-						new window.Notice("PlayerData.md has been reset. Settings will remain open for your convenience.");
+						pixelNotice("PlayerData.md has been reset. Settings will remain open for your convenience.");
 					})
 			);
 

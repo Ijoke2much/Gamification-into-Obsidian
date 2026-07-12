@@ -14,15 +14,37 @@ interface PomodoroRewardDisplayProps {
     rarity: string;
   }>;
   isVisible: boolean;
-  animate?: boolean; // Whether to animate the values or show them immediately
+  animate?: boolean;
   onAnimationComplete?: () => void;
 }
 
-// Random material icons for variety
-const MATERIAL_ICONS = [
-  '💎', '🔮', '⚔️', '🛡️', '🎁', '🌟', '✨', '🔥', '⚡', '🌙',
-  '☀️', '🌊', '🌪️', '🌍', '🌌', '🎯', '🏆', '👑', '💫', '🌈'
-];
+function normalizeQualityClass(quality: string): string {
+  const q = (quality || 'normal').toLowerCase();
+  const map: Record<string, string> = {
+    fresh: 'fresh',
+    normal: 'normal',
+    refined: 'refined',
+    masterwork: 'masterwork',
+    dried: 'dried',
+    rare: 'refined',
+    uncommon: 'normal',
+    common: 'normal',
+    special: 'masterwork',
+  };
+  const key = map[q];
+  if (key && key in styles) return key;
+  if (['fresh', 'normal', 'refined', 'masterwork', 'dried'].includes(q) && q in styles) return q;
+  return 'normal';
+}
+
+function formatLootSummary(materials: PomodoroRewardDisplayProps['materials']): string {
+  if (materials.length === 0) return '';
+  if (materials.length === 1) {
+    const m = materials[0];
+    return `${m.icon} ${m.name}`.trim();
+  }
+  return materials.map((m) => `${m.icon} ${m.name}`.trim()).join(' · ');
+}
 
 export const PomodoroRewardDisplay: React.FC<PomodoroRewardDisplayProps> = ({
   xp,
@@ -32,134 +54,102 @@ export const PomodoroRewardDisplay: React.FC<PomodoroRewardDisplayProps> = ({
   currencyName,
   materials,
   isVisible,
-  animate = true, // Default to animation
-  onAnimationComplete
+  animate = true,
+  onAnimationComplete,
 }) => {
-  const [displayedValues, setDisplayedValues] = useState({
-    xp: 0,
-    cp: 0,
-    currency: 0
-  });
-  const [materialIcons, setMaterialIcons] = useState<string[]>([]);
-  const [isAnimating, setIsAnimating] = useState(false);
+  const [displayedValues, setDisplayedValues] = useState({ xp: 0, cp: 0 });
 
-  // Generate random material icons
+  const showCurrency = currency > 0;
+  const showMaterials = materials.length > 0;
+  const lootSummary = formatLootSummary(materials);
+
   useEffect(() => {
-    if (materials.length > 0) {
-      const icons = materials.map(() => 
-        MATERIAL_ICONS[Math.floor(Math.random() * MATERIAL_ICONS.length)]
-      );
-      setMaterialIcons(icons);
+    if (!isVisible || !animate) {
+      if (isVisible && !animate) setDisplayedValues({ xp, cp });
+      return;
     }
-  }, [materials]);
 
-  // Animate values when component becomes visible
-  useEffect(() => {
-    if (isVisible && !isAnimating && animate) {
-      setIsAnimating(true);
-      
-      // Animate XP
-      const xpInterval = setInterval(() => {
-        setDisplayedValues(prev => {
-          if (prev.xp < xp) {
-            return { ...prev, xp: Math.min(prev.xp + Math.ceil(xp / 20), xp) };
-          }
-          clearInterval(xpInterval);
-          return prev;
-        });
-      }, 50);
+    setDisplayedValues({ xp: 0, cp: 0 });
 
-      // Animate CP
-      const cpInterval = setInterval(() => {
-        setDisplayedValues(prev => {
-          if (prev.cp < cp) {
-            return { ...prev, cp: Math.min(prev.cp + Math.ceil(cp / 20), cp) };
-          }
-          clearInterval(cpInterval);
-          return prev;
-        });
-      }, 50);
-
-      // Animate Currency
-      const currencyInterval = setInterval(() => {
-        setDisplayedValues(prev => {
-          if (prev.currency < currency) {
-            return { ...prev, currency: Math.min(prev.currency + Math.ceil(currency / 20), currency) };
-          }
-          clearInterval(currencyInterval);
-          return prev;
-        });
-      }, 50);
-
-      // Check if all animations are complete
-      const checkComplete = setInterval(() => {
-        if (displayedValues.xp >= xp && displayedValues.cp >= cp && displayedValues.currency >= currency) {
-          clearInterval(checkComplete);
-          setIsAnimating(false);
-          onAnimationComplete?.();
+    const xpInterval = window.setInterval(() => {
+      setDisplayedValues((prev) => {
+        if (prev.xp < xp) {
+          return { ...prev, xp: Math.min(prev.xp + Math.max(1, Math.ceil(xp / 20)), xp) };
         }
-      }, 100);
+        return prev;
+      });
+    }, 50);
 
-      return () => {
-        clearInterval(xpInterval);
-        clearInterval(cpInterval);
-        clearInterval(currencyInterval);
-        clearInterval(checkComplete);
-      };
-    }
-  }, [isVisible, xp, cp, currency, isAnimating, onAnimationComplete]);
+    const cpInterval = window.setInterval(() => {
+      setDisplayedValues((prev) => {
+        if (prev.cp < cp) {
+          return { ...prev, cp: Math.min(prev.cp + Math.max(1, Math.ceil(cp / 20)), cp) };
+        }
+        return prev;
+      });
+    }, 50);
 
-  // Initialize values when component first loads
-  useEffect(() => {
-    // For quest rewards, show values immediately without animation
-    if (isVisible && !animate) {
-      setDisplayedValues({ xp, cp, currency });
-    }
-  }, [xp, cp, currency, isVisible, animate]);
+    const duration = Math.min(2200, 400 + Math.max(xp, cp) * 8);
+    const doneTimer = window.setTimeout(() => {
+      window.clearInterval(xpInterval);
+      window.clearInterval(cpInterval);
+      setDisplayedValues({ xp, cp });
+      onAnimationComplete?.();
+    }, duration);
+
+    return () => {
+      window.clearInterval(xpInterval);
+      window.clearInterval(cpInterval);
+      window.clearTimeout(doneTimer);
+    };
+  }, [isVisible, xp, cp, animate, onAnimationComplete]);
 
   if (!isVisible) return null;
 
   return (
     <div className={`${styles.rewardDisplay} ${isVisible ? styles.visible : ''}`}>
+      <div className={styles.rewardsHeading}>REWARDS</div>
       <div className={styles.rewardGrid}>
-        {/* XP Display */}
         <div className={styles.rewardItem}>
           <div className={styles.rewardIcon}>⭐</div>
           <div className={styles.rewardValue}>+{displayedValues.xp}</div>
           <div className={styles.rewardLabel}>XP</div>
         </div>
 
-        {/* CP Display */}
         <div className={styles.rewardItem}>
           <div className={styles.rewardIcon}>⚡</div>
           <div className={styles.rewardValue}>+{displayedValues.cp}</div>
           <div className={styles.rewardLabel}>CP</div>
         </div>
 
-        {/* Currency Display */}
-        <div className={styles.rewardItem}>
-          <div className={styles.rewardIcon}>{currencySymbol}</div>
-          <div className={styles.rewardValue}>+{displayedValues.currency}</div>
-          <div className={styles.rewardLabel}>{currencyName}</div>
-        </div>
+        {showCurrency && (
+          <div className={styles.rewardItem}>
+            <div className={styles.rewardIcon}>{currencySymbol}</div>
+            <div className={styles.rewardValue}>+{currency}</div>
+            <div className={styles.rewardLabel}>{currencyName}</div>
+          </div>
+        )}
 
-        {/* Materials Display */}
-        {materials.length > 0 && (
-          <div className={styles.materialsContainer}>
-            <div className={styles.materialsLabel}>Materials</div>
-            <div className={styles.materialsGrid}>
-              {materials.map((material, index) => (
-                <div key={index} className={styles.materialItem}>
-                  <div className={styles.materialIcon}>
-                    {materialIcons[index] || material.icon}
-                  </div>
-                  <div className={styles.materialName}>{material.name}</div>
-                  <div className={`${styles.materialQuality} ${styles[material.quality]}`}>
-                    {material.quality}
-                  </div>
-                </div>
-              ))}
+        {showMaterials && (
+          <div
+            className={`${styles.rewardItem} ${styles.rewardItemLoot}`}
+            title={materials.map((m) => `${m.name} (${m.quality})`).join(', ')}
+          >
+            <div className={styles.rewardIcon}>💎</div>
+            <div className={styles.lootValueWrap}>
+              <div className={styles.lootValue}>{lootSummary}</div>
+              <div className={styles.lootQualities}>
+                {materials.map((m, i) => (
+                  <span
+                    key={`${m.name}-${i}`}
+                    className={`${styles.lootQualityPill} ${styles[normalizeQualityClass(m.quality) as keyof typeof styles]}`}
+                  >
+                    {m.quality}
+                  </span>
+                ))}
+              </div>
             </div>
+            <div className={styles.rewardLabel}>Items</div>
           </div>
         )}
       </div>

@@ -1,47 +1,66 @@
 .skillProgress {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
+    --sp-bg: var(--go-bg, var(--pixel-bg, #1b1d2f));
+    --sp-panel: var(--go-card-soft, var(--pixel-panel-alt, #2e3152));
+    --sp-panel-strong: var(--go-panel, var(--pixel-panel, #252742));
+    --sp-border: var(--go-border, var(--pixel-border-dark, #0f1120));
+    --sp-border-hi: var(--go-border-strong, var(--pixel-border-light, #5b61a2));
+    --sp-text: var(--go-text, var(--pixel-text, #ecefff));
+    --sp-text-bright: var(--go-text-bright, var(--pixel-text, #ffffff));
+    --sp-muted: var(--go-muted, var(--pixel-muted, #bac2e3));
+    --sp-highlight: var(--go-gold, var(--pixel-highlight, #ffd166));
+    --sp-accent: var(--go-accent, var(--pixel-accent, #8ecae6));
+    --sp-success: var(--go-success, var(--pixel-ok, #4ade80));
+    --sp-progress-track: var(--go-progress-track, var(--pixel-bg, #1b1d2f));
+    --sp-progress-fill: var(--go-cp-progress-fill, var(--go-progress-fill, #22c55e));
+    --sp-progress-fill-strong: var(--go-cp-progress-fill-strong, var(--go-progress-fill-strong, #16a34a));
+    --sp-progress-glow: var(--go-cp-progress-glow, var(--go-progress-glow, rgba(34, 197, 94, 0.35)));
+    --sp-shadow: var(--go-shadow-soft, 3px 3px 0 var(--sp-border));
+
+    background: var(--sp-panel);
+    border: 2px solid var(--sp-border);
+    border-radius: 0;
     padding: 12px;
     margin: 8px 0;
-    transition: all 0.3s ease;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
     position: relative;
     overflow: hidden;
     cursor: pointer;
+    box-shadow: var(--sp-shadow), inset 0 0 0 1px var(--sp-border-hi);
+    font-family: var(--go-font-body, "VT323", "Courier New", monospace);
+    color: var(--sp-text);
+    image-rendering: pixelated;
 }
 
 .skillProgress:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.2);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transform: translate(1px, 1px);
+    box-shadow: 2px 2px 0 var(--sp-border), inset 0 0 0 1px var(--sp-border-hi);
 }
 
 /* Size variants */
 .small {
     padding: 8px;
-    font-size: 12px;
+    font-size: 14px;
 }
 
 .medium {
     padding: 12px;
-    font-size: 14px;
+    font-size: 16px;
 }
 
 .large {
     padding: 16px;
-    font-size: 16px;
+    font-size: 18px;
 }
 
 .compact {
-    padding: 4px;
-    font-size: 10px;
+    padding: 6px 10px;
+    font-size: 11px;
     margin: 2px 0;
 }
 
 .compact .skillHeader {
     gap: 6px;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
 }
 
 .compact .skillIcon {
@@ -49,20 +68,26 @@
 }
 
 .compact .skillName {
-    font-size: 11px;
+    font-size: 0.38rem;
+    line-height: 1.45;
+}
+
+.small .skillName {
+    font-size: 0.46rem;
+    line-height: 1.5;
 }
 
 .compact .levelInfo {
-    font-size: 9px;
+    font-size: 10px;
 }
 
 .compact .progressBar {
-    height: 4px;
+    height: 6px;
     margin-bottom: 4px;
 }
 
 .compact .progressText {
-    font-size: 9px;
+    font-size: 10px;
 }
 
 .compact .skillDetails {
@@ -70,13 +95,13 @@
 }
 
 .detailed {
-    padding: 20px;
-    font-size: 16px;
+    padding: 18px;
+    font-size: 18px;
 }
 
 .detailed .skillHeader {
-    gap: 16px;
-    margin-bottom: 16px;
+    gap: 14px;
+    margin-bottom: 14px;
 }
 
 .detailed .skillIcon {
@@ -84,11 +109,11 @@
 }
 
 .detailed .skillName {
-    font-size: 20px;
+    font-size: 0.58rem;
 }
 
 .detailed .levelInfo {
-    font-size: 16px;
+    font-size: 0.95rem;
 }
 
 .detailed .progressBar {
@@ -97,18 +122,18 @@
 }
 
 .detailed .progressText {
-    font-size: 14px;
+    font-size: 0.95rem;
 }
 
 .detailed .statRow {
-    font-size: 14px;
+    font-size: 0.92rem;
     margin-bottom: 8px;
 }
 
 /* Skill Header */
 .skillHeader {
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     gap: 12px;
     margin-bottom: 12px;
 }
@@ -116,6 +141,15 @@
 .skillIcon {
     font-size: 24px;
     flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--sp-border);
+    background: var(--sp-bg);
+    box-shadow: 2px 2px 0 var(--sp-border), inset 0 0 0 1px rgba(255, 255, 255, 0.15);
 }
 
 .skillInfo {
@@ -125,29 +159,36 @@
 
 .skillName {
     margin: 0 0 4px 0;
-    font-size: 16px;
-    font-weight: 600;
-    color: #fff;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    font-family: var(--go-font-display, "Press Start 2P", "VT323", monospace);
+    font-size: 0.52rem;
+    line-height: 1.55;
+    color: var(--sp-text);
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    hyphens: auto;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
 }
 
 .levelInfo {
-    font-size: 12px;
-    color: #888;
-    font-weight: 500;
+    font-size: 0.95rem;
+    color: var(--sp-muted);
+    font-weight: 600;
 }
 
 .masteryBadge {
-    background: linear-gradient(135deg, #ffd700, #ffed4e);
-    color: #000;
-    font-size: 10px;
-    font-weight: 700;
-    padding: 4px 8px;
-    border-radius: 12px;
+    background: var(--sp-highlight);
+    color: var(--sp-border);
+    font-family: var(--go-font-display, "Press Start 2P", "VT323", monospace);
+    font-size: 0.35rem;
+    line-height: 1.45;
+    padding: 6px 8px;
+    border-radius: 0;
+    border: 2px solid var(--sp-border);
     text-transform: uppercase;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.06em;
+    box-shadow: 2px 2px 0 var(--sp-border);
     animation: masteryGlow 2s ease-in-out infinite alternate;
 }
 
@@ -158,18 +199,30 @@
 
 .progressBar {
     width: 100%;
-    height: 8px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
+    height: 10px;
+    background: var(--sp-progress-track);
+    border-radius: 0;
     overflow: hidden;
     margin-bottom: 6px;
+    border: 2px solid var(--sp-border);
+    box-shadow: inset 0 0 0 1px var(--sp-border-hi);
 }
 
 .progressFill {
     height: 100%;
-    border-radius: 4px;
-    transition: width 0.5s ease, background-color 0.3s ease;
+    border-radius: 0;
+    transition: width 0.35s ease, background-color 0.25s ease;
     position: relative;
+    background: repeating-linear-gradient(
+        -45deg,
+        var(--sp-progress-fill),
+        var(--sp-progress-fill) 4px,
+        var(--sp-progress-fill-strong) 4px,
+        var(--sp-progress-fill-strong) 8px
+    );
+    box-shadow:
+        inset 0 2px 0 rgba(255, 255, 255, 0.18),
+        0 0 8px var(--sp-progress-glow);
 }
 
 .progressFill::after {
@@ -179,7 +232,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.22), transparent);
     animation: shimmer 2s infinite;
 }
 
@@ -187,18 +240,18 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 12px;
-    color: #ccc;
+    font-size: 0.92rem;
+    color: var(--sp-muted);
 }
 
 .progressPercent {
-    color: #888;
+    color: var(--sp-muted);
     font-style: italic;
 }
 
 /* Skill Details */
 .skillDetails {
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    border-top: 2px solid var(--sp-border);
     padding-top: 12px;
 }
 
@@ -206,8 +259,9 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 6px;
-    font-size: 12px;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    color: var(--sp-muted);
 }
 
 .statRow:last-child {
@@ -215,35 +269,41 @@
 }
 
 .statValue {
-    font-weight: 600;
-    color: #4ade80;
+    font-weight: 700;
+    font-family: var(--go-font-display, "Press Start 2P", "VT323", monospace);
+    font-size: 0.42rem;
+    color: var(--sp-highlight);
 }
 
 .nextLevelPreview {
-    background: rgba(74, 222, 128, 0.1);
-    border: 1px solid rgba(74, 222, 128, 0.3);
-    border-radius: 6px;
-    padding: 8px;
-    margin-top: 8px;
+    background: var(--sp-bg);
+    border: 2px solid var(--sp-border);
+    border-radius: 0;
+    padding: 10px;
+    margin-top: 10px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 11px;
+    font-size: 0.85rem;
+    box-shadow: inset 0 0 0 1px var(--sp-border-hi);
 }
 
 .bonusText {
-    color: #4ade80;
-    font-weight: 600;
+    color: var(--sp-success);
+    font-family: var(--go-font-display, "Press Start 2P", "VT323", monospace);
+    font-size: 0.38rem;
+    line-height: 1.45;
+    font-weight: 700;
 }
 
 /* Visual Effects */
 .locked {
-    opacity: 0.6;
-    background: rgba(0, 0, 0, 0.3);
+    opacity: 0.65;
+    filter: grayscale(0.25);
 }
 
 .locked .skillName {
-    color: #666;
+    color: var(--sp-muted);
 }
 
 .pulsing {
@@ -251,14 +311,15 @@
 }
 
 .glowing {
-    box-shadow: 0 0 20px rgba(74, 222, 128, 0.3);
+    box-shadow: 0 0 0 2px var(--sp-accent), var(--sp-shadow),
+        inset 0 0 0 1px var(--sp-border-hi);
     animation: glow 2s ease-in-out infinite alternate;
 }
 
 .mastered {
-    background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 215, 0, 0.05));
-    border-color: rgba(255, 215, 0, 0.5);
-    box-shadow: 0 0 30px rgba(255, 215, 0, 0.2);
+    background: var(--sp-panel-strong);
+    border-color: var(--sp-highlight);
+    box-shadow: var(--sp-shadow), inset 0 0 0 1px var(--sp-highlight);
 }
 
 .masteryOverlay {
@@ -278,36 +339,33 @@
     animation: sparkle 3s ease-in-out infinite;
 }
 
-/* Animations */
 @keyframes pulse {
-
     0%,
     100% {
         transform: scale(1);
     }
-
     50% {
-        transform: scale(1.02);
+        transform: scale(1.01);
     }
 }
 
 @keyframes glow {
     0% {
-        box-shadow: 0 0 20px rgba(74, 222, 128, 0.3);
+        box-shadow: 0 0 0 1px var(--sp-accent), var(--sp-shadow),
+            inset 0 0 0 1px var(--sp-border-hi);
     }
-
     100% {
-        box-shadow: 0 0 30px rgba(74, 222, 128, 0.6);
+        box-shadow: 0 0 0 3px var(--go-accent-soft, rgba(142, 202, 230, 0.35)), var(--sp-shadow),
+            inset 0 0 0 1px var(--sp-border-hi);
     }
 }
 
 @keyframes masteryGlow {
     0% {
-        box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        filter: brightness(1);
     }
-
     100% {
-        box-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+        filter: brightness(1.08);
     }
 }
 
@@ -315,27 +373,23 @@
     0% {
         transform: translateX(-100%);
     }
-
     100% {
         transform: translateX(100%);
     }
 }
 
 @keyframes sparkle {
-
     0%,
     100% {
-        opacity: 0.3;
-        transform: scale(0.8);
+        opacity: 0.35;
+        transform: scale(0.9);
     }
-
     50% {
         opacity: 1;
-        transform: scale(1.2);
+        transform: scale(1.1);
     }
 }
 
-/* Mobile Optimizations */
 @media (max-width: 768px) {
     .skillProgress {
         padding: 10px;
@@ -349,29 +403,30 @@
 
     .skillIcon {
         font-size: 20px;
+        width: 36px;
+        height: 36px;
     }
 
     .skillName {
-        font-size: 14px;
+        font-size: 0.48rem;
     }
 
     .progressBar {
-        height: 6px;
+        height: 8px;
     }
 
     .statRow {
-        font-size: 11px;
+        font-size: 0.85rem;
     }
 }
 
-/* Touch-friendly interactions */
 @media (hover: none) and (pointer: coarse) {
     .skillProgress {
         min-height: 60px;
     }
 
     .skillProgress:active {
-        transform: scale(0.98);
-        background: rgba(255, 255, 255, 0.1);
+        transform: translate(2px, 2px);
+        box-shadow: 1px 1px 0 var(--sp-border), inset 0 0 0 1px var(--sp-border-hi);
     }
 }

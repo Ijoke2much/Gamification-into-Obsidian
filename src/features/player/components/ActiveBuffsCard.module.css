@@ -3,19 +3,20 @@
    ======================================== */
 
 .buffsCard {
-    background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(76, 175, 80, 0.05));
-    border: 2px solid rgba(76, 175, 80, 0.3);
-    border-radius: 12px;
+    background: var(--pixel-panel, linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(76, 175, 80, 0.05)));
+    border: 2px solid var(--pixel-border-dark, rgba(76, 175, 80, 0.3));
+    border-radius: var(--pixel-card-radius, 12px);
     padding: 20px;
     margin-bottom: 20px;
-    box-shadow: 0 4px 20px rgba(76, 175, 80, 0.1);
-    transition: all 0.3s ease;
+    box-shadow: var(--pixel-shadow, 0 4px 20px rgba(76, 175, 80, 0.1)), inset 0 0 0 1px var(--pixel-border-light, transparent);
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+    font-family: inherit;
 }
 
 .buffsCard:hover {
-    border-color: rgba(76, 175, 80, 0.5);
-    box-shadow: 0 6px 25px rgba(76, 175, 80, 0.15);
-    transform: translateY(-2px);
+    border-color: var(--pixel-border-dark, rgba(76, 175, 80, 0.5));
+    box-shadow: var(--pixel-shadow, 0 6px 25px rgba(76, 175, 80, 0.15)), inset 0 0 0 1px var(--pixel-border-light, transparent);
+    transform: translate(-1px, -1px);
 }
 
 .buffsHeader {

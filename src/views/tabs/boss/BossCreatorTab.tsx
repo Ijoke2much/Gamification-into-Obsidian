@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Notice, Vault, TFile } from 'obsidian';
+import { Vault, TFile } from 'obsidian';
 import { BossPhase, BossCreationOptions, Boss } from '../../../features/quests/types/BossTypes';
 import { createBoss } from '../../../features/quests/utils/bossFactory';
 import { getAllSkills, SkillMetadata } from '../../../shared/utils/skillDiscovery';
+import { pixelNotice } from '../../../shared/utils/noticeUtils';
 
 type Props = { vault: Vault; onCreate: (boss: Boss) => void; defaultQuest?: { id: string; title: string } };
 
@@ -105,12 +106,12 @@ export default function BossCreatorTab({ vault, onCreate, defaultQuest }: Props)
   const validate = () => {
     const th = phases.map(p => p.hpThreshold);
     const invalid = th.some(t => t < 0 || t > 100) || [...th].sort((a,b)=>b-a).join(',') !== th.join(',');
-    if (invalid) { new Notice('Phase thresholds must be in descending % from 100 to 0.', 3000); return false; }
+    if (invalid) { pixelNotice('Phase thresholds must be in descending % from 100 to 0.', 3000); return false; }
     return true;
   };
 
   const handleCreate = () => {
-    if (!selectedSkill) return new Notice('Select a skill to tie theme/type.', 3000);
+    if (!selectedSkill) return pixelNotice('Select a skill to tie theme/type.', 3000);
     if (!validate()) return;
 
     const estimated = toEstimatedDuration(timeValue, timeUnit);
@@ -154,7 +155,7 @@ export default function BossCreatorTab({ vault, onCreate, defaultQuest }: Props)
 
     const boss = createBoss(options);
     onCreate(boss);
-    new Notice('Boss created!', 2000);
+    pixelNotice('Boss created!', 2000);
   };
 
   return (
@@ -334,5 +335,4 @@ export default function BossCreatorTab({ vault, onCreate, defaultQuest }: Props)
     </div>
   );
 }
-
 

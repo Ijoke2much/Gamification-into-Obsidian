@@ -246,7 +246,7 @@ export const QuestTimelineView: React.FC<QuestTimelineViewProps> = ({
       }
 
       // Update quest via the quest system
-      const { QuestSystemIntegration } = await import('../index');
+      const { QuestSystemIntegration } = await import('../questSystemIntegration');
       await QuestSystemIntegration.updateQuest(editingField.questId, updates);
       
       // Refresh the quest list
@@ -273,7 +273,7 @@ export const QuestTimelineView: React.FC<QuestTimelineViewProps> = ({
 
       const newSubtasks = [...(quest.subtasks || []), { text: text.trim(), completed: false }];
       
-      const { QuestSystemIntegration } = await import('../index');
+      const { QuestSystemIntegration } = await import('../questSystemIntegration');
       await QuestSystemIntegration.updateQuest(questId, { subtasks: newSubtasks });
       
       // Refresh the quest list
@@ -293,7 +293,7 @@ export const QuestTimelineView: React.FC<QuestTimelineViewProps> = ({
       const newSubtasks = [...(quest.subtasks || [])];
       newSubtasks.splice(subtaskIndex, 1);
       
-      const { QuestSystemIntegration } = await import('../index');
+      const { QuestSystemIntegration } = await import('../questSystemIntegration');
       await QuestSystemIntegration.updateQuest(questId, { subtasks: newSubtasks });
       
       // Refresh the quest list

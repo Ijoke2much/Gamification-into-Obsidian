@@ -12,17 +12,31 @@
 }
 
 .body {
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: 1fr;
-    gap: 1px;
+    display: flex;
+    align-items: stretch;
+    flex: 1;
+    min-width: 0;
     height: 100%;
-    background: linear-gradient(145deg, #2a2d3a, #1e1f2e);
-    border: 2px solid var(--background-modifier-border);
-    border-radius: 8px;
+    background: linear-gradient(145deg, var(--go-panel-strong, #2a2d3a), var(--go-bg, #1e1f2e));
+    border: 2px solid var(--go-border, var(--background-modifier-border));
+    border-radius: var(--go-radius, 8px);
     padding: 3px;
     overflow: hidden;
     position: relative;
+}
+
+.svgBattery,
+.svgPixel {
+    display: block;
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    position: relative;
+    z-index: 1;
+}
+
+.svgPixel {
+    shape-rendering: crispEdges;
 }
 
 .body::before {
@@ -36,8 +50,8 @@
 
 .cell {
     height: 100%;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: var(--go-progress-track, rgba(255, 255, 255, 0.1));
+    border: 1px solid var(--go-border, rgba(255, 255, 255, 0.2));
     border-radius: 4px;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
@@ -49,7 +63,11 @@
 }
 
 .filled {
-    background: linear-gradient(180deg, #4ade80, #22c55e) !important;
+    background: linear-gradient(
+        180deg,
+        var(--go-progress-fill, #4ade80),
+        var(--go-progress-fill-strong, #22c55e)
+    ) !important;
     position: relative;
     box-shadow: inset 0 1px 3px rgba(74, 222, 128, 0.5),
         inset 0 -1px 3px rgba(0, 0, 0, 0.2),
@@ -83,9 +101,9 @@
     width: 10px;
     height: calc(100% - 8px);
     margin-left: 8px;
-    background: linear-gradient(145deg, #3a3d4a, #2a2d3a);
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 3px;
+    background: linear-gradient(145deg, var(--go-panel-strong, #3a3d4a), var(--go-panel, #2a2d3a));
+    border: 1px solid var(--go-border, var(--background-modifier-border));
+    border-radius: var(--go-radius, 3px);
     position: relative;
 }
 
@@ -105,7 +123,7 @@
     justify-content: center;
     font-size: 12px;
     font-weight: 700;
-    color: var(--text-normal);
+    color: var(--go-exp-text, var(--text-normal));
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6),
         0 0 10px rgba(255, 255, 255, 0.1);
     pointer-events: none;
@@ -203,4 +221,39 @@
     100% {
         opacity: 0.3;
     }
+}
+
+/* Chunky segmented battery (Energy HUD pixel variant) */
+.pixelBattery {
+    filter: none;
+    image-rendering: pixelated;
+}
+
+.pixelBattery:hover {
+    transform: none;
+    filter: none;
+}
+
+.pixelBattery .body {
+    border-radius: 0;
+    padding: 2px;
+    background: var(--go-progress-track, #1a1d31);
+    border: 2px solid var(--go-border, var(--pixel-border-dark, #0f1120));
+    box-shadow: inset 0 0 0 1px var(--go-border-strong, var(--pixel-border-light, #5b61a2));
+}
+
+.pixelBattery .body::before {
+    border-radius: 0;
+    display: none;
+}
+
+.pixelBattery .cap {
+    border-radius: 0;
+    background: var(--go-panel-strong, var(--pixel-panel-alt, #2e3152));
+    border: 2px solid var(--go-border, var(--pixel-border-dark, #0f1120));
+    box-shadow: inset 0 0 0 1px var(--go-border-strong, var(--pixel-border-light, #5b61a2));
+}
+
+.pixelBattery .cap::before {
+    border-radius: 0;
 }

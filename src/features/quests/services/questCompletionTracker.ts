@@ -2,8 +2,9 @@
 // Automatically detects quest completion and awards rewards
 
 import { App, TFile } from 'obsidian';
-import { showGameNotice } from '../../../shared/utils/noticeUtils';
-import { resolvePluginSettings, buildCompletionNoticeText } from '../../../shared/utils/questCompletionPipeline';
+import { resolvePluginSettings, emitQuestCompletionFeedback, parseEnergyCostFromMarkdownLine } from '../../../shared/utils/questCompletionPipeline';
+import { parseActivityProfileFromTaskLine } from '../../../shared/utils/questWellbeingProfiles';
+import { getPluginSettingsFromApp } from '../../../shared/utils/gameplayConfig';
 
 export class QuestCompletionTracker {
     private app: App;
@@ -111,6 +112,13 @@ export class QuestCompletionTracker {
 
             console.log(`[QuestTracker] Quest completed: "${title}" in ${filePath}:${lineNumber}`);
 
+            const energyFromLine = (() => {
+                const m = taskLine.match(/🔋\s*(\d+)/);
+                if (m) return Math.min(100, parseInt(m[1], 10));
+                return parseEnergyCostFromMarkdownLine(taskLine);
+            })();
+            const activityId = parseActivityProfileFromTaskLine(taskLine);
+
             // Build a minimal Quest-shaped object so the shared pipeline can handle rewards.
             const questShim = {
                 xp,
@@ -118,10 +126,12 @@ export class QuestCompletionTracker {
                 coins,
                 skills,
                 stats: [] as string[],
+                ...(typeof energyFromLine === "number" ? { energyCost: energyFromLine } : {}),
+                ...(activityId !== "generic" ? { activityProfile: activityId } : {}),
             } as unknown as import('../utils/taskParser').Quest;
 
             const { awardQuestRewards } = await import('../../../shared/utils/questCompletionPipeline');
-            const rewardResult = await awardQuestRewards(this.app.vault, questShim);
+            const rewardResult = await awardQuestRewards(this.app.vault, questShim, undefined, this.app);
 
             const { achievementEventService } = await import('../../achievements/services/achievementEventService');
             await achievementEventService.processGameEvent({
@@ -135,8 +145,8 @@ export class QuestCompletionTracker {
                 timestamp: new Date()
             });
 
-            const settings = resolvePluginSettings(this.app);
-            showGameNotice(`✅ Quest Complete! "${title}" (${buildCompletionNoticeText(rewardResult, settings).replace('✅ Quest Complete! ', '')})`, 5000);
+            const settings = getPluginSettingsFromApp(this.app) ?? resolvePluginSettings(this.app);
+            emitQuestCompletionFeedback(rewardResult, settings);
 
         } catch (error) {
             console.error('[QuestTracker] Error processing quest completion:', error);

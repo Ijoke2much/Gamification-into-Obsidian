@@ -1,3 +1,4 @@
+import { pixelNotice } from '../../../shared/utils/noticeUtils';
 import {
     CraftingRecipe,
     CraftingSession,
@@ -12,7 +13,11 @@ import {
 import { PlayerData } from '../../../data/models/PlayerData';
 import { readInventory, dropItem, addOrIncrementInventoryItem } from '../../inventory/utils/updateInventoryFile';
 import { ShopItem } from '../../shop/utils/ShopParser';
-import { App, Notice } from 'obsidian';
+import { App } from 'obsidian';
+import { DEFAULT_CRAFTING_MATERIALS } from '../data/defaultMaterials';
+import { DEFAULT_CRAFTING_RECIPES } from '../data/defaultRecipes';
+import { getCraftingMaterials, findMaterialByIdOrName } from './craftingMaterialRegistry';
+import { getCraftingRecipes, findRecipeById } from './craftingRecipeRegistry';
 
 export class CraftingEngine {
     private static readonly STORAGE_KEY = 'crafting-sessions';
@@ -52,7 +57,7 @@ export class CraftingEngine {
             console.log('🔨 [Crafting Engine] Added material to inventory:', material.name, 'x' + quantity);
 
             // Show notification
-            new Notice(`🔨 Crafting Material Acquired: ${material.icon} ${material.name} x${quantity}`, 3000);
+            pixelNotice(`🔨 Crafting Material Acquired: ${material.icon} ${material.name} x${quantity}`, 3000);
         } catch (error) {
             console.error('🔨 [Crafting Engine] Error adding material to inventory:', error);
             throw error;
@@ -61,31 +66,7 @@ export class CraftingEngine {
 
     // Default crafting materials with quality
     static getDefaultMaterials(): CraftingMaterial[] {
-        return [
-            // Common materials
-            { id: 'wood', name: 'Wood', icon: '🪵', rarity: 'common', category: 'organic', description: 'Basic wooden material', baseValue: 1, quality: 'normal', qualityMultiplier: 1.0, source: 'gathering', location: 'forest' },
-            { id: 'stone', name: 'Stone', icon: '🪨', rarity: 'common', category: 'mineral', description: 'Basic stone material', baseValue: 1, quality: 'normal', qualityMultiplier: 1.0, source: 'gathering', location: 'mountain' },
-            { id: 'herb', name: 'Herb', icon: '🌿', rarity: 'common', category: 'herb', description: 'Common medicinal herb', baseValue: 2, quality: 'fresh', qualityMultiplier: 1.5, source: 'gathering', location: 'garden' },
-            { id: 'iron', name: 'Iron Ore', icon: '⛏️', rarity: 'common', category: 'mineral', description: 'Basic metal ore', baseValue: 3, quality: 'normal', qualityMultiplier: 1.0, source: 'gathering', location: 'cave' },
-
-            // Uncommon materials
-            { id: 'silver', name: 'Silver', icon: '🥈', rarity: 'uncommon', category: 'mineral', description: 'Precious metal', baseValue: 8, quality: 'refined', qualityMultiplier: 1.3, source: 'gathering', location: 'mountain' },
-            { id: 'crystal', name: 'Crystal', icon: '💎', rarity: 'uncommon', category: 'crystal', description: 'Magical crystal', baseValue: 10, quality: 'normal', qualityMultiplier: 1.0, source: 'gathering', location: 'cave' },
-            { id: 'essence', name: 'Life Essence', icon: '✨', rarity: 'uncommon', category: 'essence', description: 'Pure life energy', baseValue: 12, quality: 'fresh', qualityMultiplier: 1.5, source: 'gathering', location: 'garden' },
-
-            // Rare materials
-            { id: 'gold', name: 'Gold', icon: '🥇', rarity: 'rare', category: 'mineral', description: 'Precious gold', baseValue: 25, quality: 'refined', qualityMultiplier: 1.3, source: 'gathering', location: 'mountain' },
-            { id: 'diamond', name: 'Diamond', icon: '💎', rarity: 'rare', category: 'crystal', description: 'Rare gemstone', baseValue: 30, quality: 'masterwork', qualityMultiplier: 2.0, source: 'gathering', location: 'cave' },
-            { id: 'phoenix', name: 'Phoenix Feather', icon: '🔥', rarity: 'rare', category: 'mystical', description: 'Legendary feather', baseValue: 50, quality: 'fresh', qualityMultiplier: 1.5, source: 'reward', location: 'quest' },
-
-            // Epic materials
-            { id: 'dragon', name: 'Dragon Scale', icon: '🐉', rarity: 'epic', category: 'mystical', description: 'Ancient dragon scale', baseValue: 100, quality: 'masterwork', qualityMultiplier: 2.0, source: 'quest', location: 'dragon_lair' },
-            { id: 'star', name: 'Stardust', icon: '⭐', rarity: 'epic', category: 'essence', description: 'Cosmic energy', baseValue: 150, quality: 'refined', qualityMultiplier: 1.3, source: 'gathering', location: 'observatory' },
-
-            // Legendary materials
-            { id: 'void', name: 'Void Essence', icon: '🌌', rarity: 'legendary', category: 'mystical', description: 'Pure void energy', baseValue: 500, quality: 'masterwork', qualityMultiplier: 2.0, source: 'quest', location: 'void_realm' },
-            { id: 'time', name: 'Time Crystal', icon: '⏰', rarity: 'legendary', category: 'crystal', description: 'Frozen time itself', baseValue: 1000, quality: 'masterwork', qualityMultiplier: 2.0, source: 'quest', location: 'time_temple' }
-        ];
+        return [...DEFAULT_CRAFTING_MATERIALS];
     }
 
     // Gathering locations
@@ -262,220 +243,7 @@ export class CraftingEngine {
 
     // Enhanced crafting recipes
     static getDefaultRecipes(): CraftingRecipe[] {
-        return [
-            {
-                id: 'basic-sword',
-                name: 'Basic Sword',
-                description: 'A simple wooden sword',
-                icon: '⚔️',
-                category: 'weapon',
-                materials: [
-                    { materialId: 'wood', quantity: 3, required: true, qualityRequired: 'normal' },
-                    { materialId: 'stone', quantity: 1, required: true, qualityRequired: 'normal' }
-                ],
-                craftingTime: 30,
-                difficulty: 'easy',
-                skillRequired: 1,
-                craftingStation: 'workbench',
-                guaranteedItem: {
-                    name: 'Basic Sword',
-                    category: 'weapon',
-                    rarity: 'common',
-                    effects: ['Attack +5'],
-                    icon: '⚔️',
-                    description: 'A simple but effective weapon',
-                    quality: 'basic'
-                },
-                xpReward: 10,
-                boogersReward: 5,
-                skillXp: 5
-            },
-            {
-                id: 'mystical-potion',
-                name: 'Mystical Potion',
-                description: 'A potion with random magical effects',
-                icon: '🧪',
-                category: 'consumable',
-                materials: [
-                    { materialId: 'herb', quantity: 2, required: true, qualityRequired: 'fresh' },
-                    { materialId: 'essence', quantity: 1, required: true, qualityRequired: 'fresh' },
-                    { materialId: 'crystal', quantity: 1, required: false, qualityRequired: 'normal' }
-                ],
-                craftingTime: 60,
-                difficulty: 'medium',
-                skillRequired: 3,
-                craftingStation: 'alchemy_lab',
-                possibleResults: [
-                    { name: 'Healing Potion', category: 'consumable', rarity: 'common', effects: ['Restore 50 HP'], icon: '❤️', description: 'Basic healing', weight: 40, quality: 'basic' },
-                    { name: 'Mana Potion', category: 'consumable', rarity: 'common', effects: ['Restore 50 MP'], icon: '🔮', description: 'Basic mana restoration', weight: 30, quality: 'basic' },
-                    { name: 'Strength Elixir', category: 'consumable', rarity: 'uncommon', effects: ['Attack +10 for 1 hour'], icon: '💪', description: 'Temporary strength boost', weight: 20, duration: 3600, quality: 'fine' },
-                    { name: 'Invisibility Potion', category: 'consumable', rarity: 'rare', effects: ['Invisible for 30 minutes'], icon: '👻', description: 'Become invisible', weight: 10, duration: 1800, quality: 'superior' }
-                ],
-                xpReward: 25,
-                boogersReward: 15,
-                skillXp: 15
-            },
-            {
-                id: 'random-treasure',
-                name: 'Random Treasure',
-                description: 'Craft something completely random!',
-                icon: '🎁',
-                category: 'mystical',
-                materials: [
-                    { materialId: 'wood', quantity: 1, required: true, qualityRequired: 'normal' },
-                    { materialId: 'stone', quantity: 1, required: true, qualityRequired: 'normal' },
-                    { materialId: 'herb', quantity: 1, required: true, qualityRequired: 'fresh' }
-                ],
-                craftingTime: 45,
-                difficulty: 'easy',
-                skillRequired: 1,
-                craftingStation: 'workbench',
-                possibleResults: [
-                    { name: 'Mystery Box', category: 'mystical', rarity: 'common', effects: ['Random effect'], icon: '📦', description: 'Who knows what\'s inside?', weight: 50, quality: 'basic' },
-                    { name: 'Lucky Charm', category: 'mystical', rarity: 'uncommon', effects: ['Luck +5'], icon: '🍀', description: 'Brings good fortune', weight: 30, quality: 'fine' },
-                    { name: 'Ancient Artifact', category: 'mystical', rarity: 'rare', effects: ['All stats +3'], icon: '🏺', description: 'Mysterious ancient power', weight: 15, quality: 'superior' },
-                    { name: 'Legendary Relic', category: 'mystical', rarity: 'epic', effects: ['Immortality for 1 minute'], icon: '👑', description: 'Brief taste of immortality', weight: 5, duration: 60, quality: 'masterwork' }
-                ],
-                xpReward: 15,
-                boogersReward: 10,
-                skillXp: 10
-            },
-            // === ENHANCED CONSUMABLES ===
-            {
-                id: 'health_potion_minor',
-                name: 'Minor Health Potion',
-                description: 'A simple healing draught that restores vitality',
-                icon: '🧪',
-                category: 'consumable',
-                materials: [
-                    { materialId: 'herb', quantity: 2, required: true, qualityRequired: 'fresh' }
-                ],
-                craftingTime: 20,
-                difficulty: 'easy',
-                skillRequired: 1,
-                craftingStation: 'alchemy_lab',
-                guaranteedItem: {
-                    name: 'Minor Health Potion',
-                    category: 'consumable',
-                    rarity: 'common',
-                    effects: ['Restore 25 Energy'],
-                    icon: '🧪',
-                    description: 'A simple healing draught that restores some vitality',
-                    quality: 'basic'
-                },
-                xpReward: 15,
-                boogersReward: 8,
-                skillXp: 10
-            },
-            {
-                id: 'focus_elixir',
-                name: 'Focus Elixir',
-                description: 'A blue concoction that sharpens the mind',
-                icon: '💙',
-                category: 'consumable',
-                materials: [
-                    { materialId: 'crystal', quantity: 1, required: true, qualityRequired: 'normal' },
-                    { materialId: 'herb', quantity: 3, required: true, qualityRequired: 'fresh' }
-                ],
-                craftingTime: 45,
-                difficulty: 'medium',
-                skillRequired: 3,
-                craftingStation: 'alchemy_lab',
-                guaranteedItem: {
-                    name: 'Focus Elixir',
-                    category: 'consumable',
-                    rarity: 'uncommon',
-                    effects: ['Focus +50% for 1 hour'],
-                    icon: '💙',
-                    description: 'A blue concoction that sharpens the mind and enhances concentration',
-                    quality: 'fine'
-                },
-                xpReward: 30,
-                boogersReward: 15,
-                skillXp: 20
-            },
-            {
-                id: 'energy_bar',
-                name: 'Energy Bar',
-                description: 'A nutritious bar that provides sustained energy',
-                icon: '🍫',
-                category: 'consumable',
-                materials: [
-                    { materialId: 'herb', quantity: 1, required: true, qualityRequired: 'fresh' },
-                    { materialId: 'wood', quantity: 1, required: true, qualityRequired: 'normal' }
-                ],
-                craftingTime: 15,
-                difficulty: 'easy',
-                skillRequired: 1,
-                craftingStation: 'workbench',
-                guaranteedItem: {
-                    name: 'Energy Bar',
-                    category: 'consumable',
-                    rarity: 'common',
-                    effects: ['Restore 15 Energy', 'Motivation +20% for 30 minutes'],
-                    icon: '🍫',
-                    description: 'A nutritious bar that provides sustained energy',
-                    quality: 'basic'
-                },
-                xpReward: 12,
-                boogersReward: 6,
-                skillXp: 8
-            },
-            {
-                id: 'scroll_knowledge',
-                name: 'Scroll of Knowledge',
-                description: 'An ancient scroll that imparts wisdom',
-                icon: '📜',
-                category: 'consumable',
-                materials: [
-                    { materialId: 'essence', quantity: 1, required: true, qualityRequired: 'normal' },
-                    { materialId: 'crystal', quantity: 1, required: true, qualityRequired: 'normal' }
-                ],
-                craftingTime: 90,
-                difficulty: 'medium',
-                skillRequired: 5,
-                craftingStation: 'enchanting_table',
-                guaranteedItem: {
-                    name: 'Scroll of Knowledge',
-                    category: 'consumable',
-                    rarity: 'rare',
-                    effects: ['Instant +100 XP'],
-                    icon: '📜',
-                    description: 'An ancient scroll that imparts wisdom and experience',
-                    quality: 'superior'
-                },
-                xpReward: 50,
-                boogersReward: 25,
-                skillXp: 30
-            },
-            {
-                id: 'dragons_vigor',
-                name: "Dragon's Vigor",
-                description: 'A legendary potion brewed from dragon essence',
-                icon: '🔥',
-                category: 'consumable',
-                materials: [
-                    { materialId: 'dragon', quantity: 1, required: true, qualityRequired: 'masterwork' },
-                    { materialId: 'essence', quantity: 2, required: true, qualityRequired: 'refined' }
-                ],
-                craftingTime: 180,
-                difficulty: 'hard',
-                skillRequired: 8,
-                craftingStation: 'alchemy_lab',
-                guaranteedItem: {
-                    name: "Dragon's Vigor",
-                    category: 'consumable',
-                    rarity: 'epic',
-                    effects: ['XP +100% for 2 hours', 'Fully restore energy'],
-                    icon: '🔥',
-                    description: 'A legendary potion brewed from dragon essence that grants immense power',
-                    quality: 'masterwork'
-                },
-                xpReward: 150,
-                boogersReward: 75,
-                skillXp: 100
-            }
-        ];
+        return [...DEFAULT_CRAFTING_RECIPES];
     }
 
     // Get player's crafting skill
@@ -528,7 +296,7 @@ export class CraftingEngine {
 
     // Get player's available materials (from actual inventory)
     static async getPlayerMaterialsFromInventory(app: App): Promise<CraftingMaterial[]> {
-        const allMaterials = this.getDefaultMaterials();
+        const allMaterials = getCraftingMaterials();
         const playerMaterials: CraftingMaterial[] = [];
 
         try {
@@ -537,11 +305,7 @@ export class CraftingEngine {
 
             // Convert inventory items to crafting materials
             for (const inventoryItem of inventory) {
-                // Find the material definition by name
-                const material = allMaterials.find(m =>
-                    m.name.toLowerCase() === inventoryItem.name.toLowerCase() ||
-                    m.id.toLowerCase() === inventoryItem.name.toLowerCase()
-                );
+                const material = findMaterialByIdOrName(allMaterials, inventoryItem.name);
 
                 if (material) {
                     // Create a copy with the actual quantity from inventory
@@ -571,7 +335,7 @@ export class CraftingEngine {
 
     // Keep the old function for backward compatibility
     static getPlayerMaterials(playerData: PlayerData): CraftingMaterial[] {
-        const allMaterials = this.getDefaultMaterials();
+        const allMaterials = getCraftingMaterials();
         const playerMaterials: CraftingMaterial[] = [];
 
         // For now, give players some basic materials to start with
@@ -592,11 +356,15 @@ export class CraftingEngine {
         try {
             const inventory = await readInventory(app.vault);
 
+            const allMaterials = getCraftingMaterials();
+
             // Check if we have enough of each required material
             for (const requirement of recipe.materials) {
                 if (requirement.required) {
-                    const inventoryItem = inventory.find(item =>
-                        item.name.toLowerCase() === requirement.materialId.toLowerCase()
+                    const def = findMaterialByIdOrName(allMaterials, requirement.materialId);
+                    const lookupName = def?.name ?? requirement.materialId;
+                    const inventoryItem = inventory.find(
+                        (item) => item.name.toLowerCase() === lookupName.toLowerCase()
                     );
 
                     if (!inventoryItem || (inventoryItem.quantity || 1) < requirement.quantity) {
@@ -609,7 +377,9 @@ export class CraftingEngine {
             // Consume the materials
             for (const requirement of recipe.materials) {
                 if (requirement.required) {
-                    await dropItem(app, requirement.materialId);
+                    const def = findMaterialByIdOrName(allMaterials, requirement.materialId);
+                    const lookupName = def?.name ?? requirement.materialId;
+                    await dropItem(app, lookupName);
                 }
             }
 
@@ -718,7 +488,7 @@ export class CraftingEngine {
 
         // Generate materials based on chances
         const gatheredMaterials: CraftingMaterial[] = [];
-        const allMaterials = this.getDefaultMaterials();
+        const allMaterials = getCraftingMaterials();
 
         location.materials.forEach(materialChance => {
             if (Math.random() * 100 < materialChance.chance) {
@@ -759,7 +529,7 @@ export class CraftingEngine {
 
         // Generate materials based on chances
         const gatheredMaterials: CraftingMaterial[] = [];
-        const allMaterials = this.getDefaultMaterials();
+        const allMaterials = getCraftingMaterials();
 
         location.materials.forEach(materialChance => {
             if (Math.random() * 100 < materialChance.chance) {
@@ -808,16 +578,14 @@ export class CraftingEngine {
             const { canCraft, missingMaterials } = this.canCraftRecipe(recipe, playerMaterials, playerData);
             if (!canCraft) {
                 // Show failure notification for missing materials
-                new Notice(`❌ Crafting Failed: Missing materials: ${missingMaterials.join(', ')}`, 3000);
+                pixelNotice(`❌ Crafting Failed: Missing materials: ${missingMaterials.join(', ')}`, 3000);
                 return null;
             }
-
-
 
             // Consume materials from inventory
             const materialsConsumed = await this.consumeMaterialsForCrafting(app, recipe);
             if (!materialsConsumed) {
-                new Notice(`❌ Crafting Failed: Unable to consume materials from inventory`, 3000);
+                pixelNotice(`❌ Crafting Failed: Unable to consume materials from inventory`, 3000);
                 return null;
             }
 
@@ -830,13 +598,13 @@ export class CraftingEngine {
             const craftingRoll = Math.random() * 100;
             if (craftingRoll > successChance) {
                 // Crafting failed - show failure notification
-                new Notice(`❌ Crafting Failed: ${recipe.name} (${Math.round(successChance)}% chance)`, 3000);
+                pixelNotice(`❌ Crafting Failed: ${recipe.name} (${Math.round(successChance)}% chance)`, 3000);
 
                 // Award some XP even on failure
                 const failureXP = Math.floor(recipe.xpReward * 0.25);
                 if (failureXP > 0) {
                     this.awardCraftingExperience(playerData, failureXP);
-                    new Notice(`🛠️ Crafting Skill Gained: +${failureXP} XP!`, 2000);
+                    pixelNotice(`🛠️ Crafting Skill Gained: +${failureXP} XP!`, 2000);
                 }
 
                 return null;
@@ -866,7 +634,7 @@ export class CraftingEngine {
 
                 // Show success notification
                 const criticalText = result.criticalSuccess ? ' ✨CRITICAL SUCCESS!✨' : '';
-                new Notice(`✅ Crafted ${result.icon} ${result.name}${criticalText}! +${xpGained} XP`, 4000);
+                pixelNotice(`✅ Crafted ${result.icon} ${result.name}${criticalText}! +${xpGained} XP`, 4000);
 
                 // Trigger achievement events
                 try {
@@ -914,7 +682,7 @@ export class CraftingEngine {
 
                         // Show success notification
                         const criticalText = craftedResult.criticalSuccess ? ' ✨CRITICAL SUCCESS!✨' : '';
-                        new Notice(`✅ Crafted ${craftedResult.icon} ${craftedResult.name}${criticalText}! +${xpGained} XP`, 4000);
+                        pixelNotice(`✅ Crafted ${craftedResult.icon} ${craftedResult.name}${criticalText}! +${xpGained} XP`, 4000);
 
                         // Trigger achievement events
                         try {
@@ -991,7 +759,7 @@ export class CraftingEngine {
 
     // Start a crafting session
     static startCrafting(recipeId: string, playerData: PlayerData): CraftingSession {
-        const recipe = this.getDefaultRecipes().find(r => r.id === recipeId);
+        const recipe = findRecipeById(recipeId);
 
         const session: CraftingSession = {
             id: `session_${Date.now()}`,
@@ -1044,14 +812,9 @@ export class CraftingEngine {
         localStorage.setItem(this.STORAGE_KEY, JSON.stringify(sessions));
     }
 
-    // Get recipes
+    // Get recipes (vault + built-in merge when cache loaded)
     static getRecipes(): CraftingRecipe[] {
-        try {
-            const stored = localStorage.getItem(this.RECIPES_KEY);
-            return stored ? JSON.parse(stored) : this.getDefaultRecipes();
-        } catch {
-            return this.getDefaultRecipes();
-        }
+        return getCraftingRecipes();
     }
 
     // Save recipes
@@ -1064,8 +827,6 @@ export class CraftingEngine {
         localStorage.setItem(this.LOCATIONS_KEY, JSON.stringify(locations));
     }
 
-
-
     // Helper function to award crafting experience
     private static awardCraftingExperience(playerData: PlayerData, xp: number): void {
         // This would typically update the player's crafting skill
@@ -1075,7 +836,6 @@ export class CraftingEngine {
         // In a real implementation, you would update the player data:
         // playerData.craftingSkill = (playerData.craftingSkill || 0) + xp;
     }
-
 
 }
 

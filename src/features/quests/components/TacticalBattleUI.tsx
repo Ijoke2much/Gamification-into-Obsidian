@@ -1,4 +1,5 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import type { Quest } from '../utils/taskParser';
 import type { PlayerData } from '../../../data/models/PlayerData';
 import type GamifiedObsidianPlugin from '../../../core/main';
@@ -10,6 +11,37 @@ import {
   parseBattleWeaponId
 } from '../utils/battleWeapons';
 import type { TacticalBattleCompletionExtras } from '../utils/tacticalBattleCompletion';
+import {
+  damageArmor,
+  getBossArmorPercent,
+  isAttackReady,
+  readBoss,
+  settleArmorRegen,
+  writeBossState,
+  BOSS_UPDATED_EVENT,
+  type BossFileData,
+} from '../utils/bossFile';
+import {
+  BOSS_RAID_UPDATED_EVENT,
+  getBossRaidFocus,
+  patchBossRaidFocus,
+  recordBossFileBattleStrike,
+} from '../utils/bossRaidService';
+import {
+  applyBossRaidStrike,
+  catchUpBossRaidStrikes,
+  gainRaidFocus,
+  getBossStrikeCountdownLabel,
+  getRaidFocusCooldownMultiplier,
+  getRaidFocusDamageMultiplier,
+  RAID_BOSS_STRIKE_CATCHUP_MAX,
+  RAID_FOCUS_GAIN_MOVE,
+  RAID_FOCUS_GAIN_STRIKE,
+  RAID_FOCUS_GAIN_VAULT_HIT,
+  RAID_FOCUS_PASSIVE_INTERVAL_MS,
+  RAID_FOCUS_PASSIVE_REGEN,
+} from '../utils/bossRaidPressure';
+import type { DungeonRaidLoot } from '../utils/journeyLootService';
 import styles from './TacticalBattleUI.module.css';
 
 /** Boss HP from deadline alone (mirrors % of project time remaining). `relief` > 1 softens deadline pressure slightly. */
@@ -73,6 +105,20 @@ interface TacticalBattleUIProps {
   onQuestFail?: (questTitle: string) => void;
   onClose: () => void;
   onSubtaskToggle?: (questTitle: string, subtaskIndex: number) => void;
+  /** When set, the fight runs the file-backed two-bar rules (HP + armor). */
+  bossFile?: BossFileData;
+  /** Fired once a file-backed boss is felled (HP → 0), after its stats reset. */
+  onBossFileVictory?: (boss: BossFileData) => void | Promise<void>;
+  /** Skip the fight and open directly on the victory screen (debug preview). */
+  victoryPreview?: boolean;
+  /** Premium spoils preview for dungeon gate raids (applied on Continue). */
+  dungeonRaidLootPreview?: DungeonRaidLoot | null;
+  /** Boss already felled via vault quests — open on victory screen to claim. */
+  bossRaidPendingVictory?: boolean;
+  /** Weakness label for the active raid, e.g. "Weak to skill: Writing". */
+  bossRaidAffinityLabel?: string;
+  /** Vault quest strikes applied toward this boss. */
+  bossRaidProgress?: { applied: number; required: number };
 }
 
 const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
@@ -82,8 +128,30 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
   onQuestComplete,
   onQuestFail,
   onClose,
-  onSubtaskToggle
+  onSubtaskToggle,
+  bossFile,
+  onBossFileVictory,
+  victoryPreview = false,
+  dungeonRaidLootPreview = null,
+  bossRaidPendingVictory = false,
+  bossRaidAffinityLabel,
+  bossRaidProgress,
 }) => {
+  // File-backed boss mode: HP falls to real task completion, armor to moves.
+  const bossFileMode = !!bossFile;
+  const [fileBoss, setFileBoss] = useState<BossFileData | null>(bossFile ?? null);
+  const [raidFocus, setRaidFocus] = useState(() => getBossRaidFocus().focus);
+  const raidFocusMax = getBossRaidFocus().max;
+  const raidCatchUpDoneRef = useRef(false);
+  const bossStrikeBusyRef = useRef(false);
+  const lastPassiveRegenRef = useRef(Date.now());
+  const prevVaultStrikesRef = useRef(bossRaidProgress?.applied ?? 0);
+
+  const persistRaidFocus = useCallback((next: number) => {
+    const clamped = patchBossRaidFocus(next);
+    setRaidFocus(clamped);
+    return clamped;
+  }, []);
   // Check if this is a tutorial/training boss FIRST (needed for initial state)
   const isTutorialBoss = quest.title.includes('Training Dummy') || 
                          quest.title.includes('Practice Beast') ||
@@ -93,13 +161,15 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
                          quest.tags?.includes('practice') ||
                          quest.className === 'training';
 
+  const preferQuickComplete = plugin?.settings?.preferQuickComplete !== false;
+
   const battleStateKey = `tactical-battle-${quest.id}`;
 
   const [battleState, setBattleState] = useState({
     isActive: true,
-    currentTurn: 1,
+    currentTurn: victoryPreview ? 7 : 1,
     playerTurn: true,
-    battlePhase: 'battle' as 'preparation' | 'battle' | 'victory' | 'defeat',
+    battlePhase: (victoryPreview || bossRaidPendingVictory ? 'victory' : 'battle') as 'preparation' | 'battle' | 'victory' | 'defeat',
     // NEW: Time pressure system
     timeRemaining: isTutorialBoss 
       ? 3 * 60 * 60 * 1000  // Tutorial bosses: 3 hours in ms
@@ -113,7 +183,7 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
   const [bossData, setBossData] = useState({
     name: quest.title,
     emoji: '🐉',
-    currentHp: quest.xp || 400,
+    currentHp: victoryPreview ? 0 : (quest.xp || 400),
     maxHp: quest.xp || 400,
     phase: 1,
     mood: 'Confident' as 'Confident' | 'FOCUSED' | 'ENRAGED' | 'DESPERATE',
@@ -161,6 +231,20 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
     };
   });
 
+  // In boss-file mode, mirror the file's HP/identity into the displayed boss.
+  useEffect(() => {
+    if (!bossFile) return;
+    setFileBoss(bossFile);
+    setBossData(prev => ({
+      ...prev,
+      name: bossFile.name,
+      emoji: bossFile.emoji,
+      currentHp: bossFile.currentHp,
+      maxHp: bossFile.maxHp,
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bossFile?.filePath]);
+
   // ==========================
   // Resizable bottom controls splitter
   // ==========================
@@ -168,9 +252,9 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
   const [controlsHeight, setControlsHeight] = useState<number>(() => {
     try {
       const saved = localStorage.getItem('tactical-controls-height');
-      return saved ? Number(saved) : Math.round(window.innerHeight * 0.38);
+      return saved ? Number(saved) : Math.round(window.innerHeight * 0.42);
     } catch {
-      return Math.round(window.innerHeight * 0.38);
+      return Math.round(window.innerHeight * 0.42);
     }
   });
   const [draggingSplit, setDraggingSplit] = useState(false);
@@ -272,6 +356,7 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
   const [showLevelUpFlash, setShowLevelUpFlash] = useState(false);
   const [xpAnimProgress, setXpAnimProgress] = useState<number>(0);
   const [levelUpOccurred, setLevelUpOccurred] = useState<boolean>(false);
+  const [claimingVictoryLoot, setClaimingVictoryLoot] = useState(false);
   
   // Subquest modal
   const [showSubquestModal, setShowSubquestModal] = useState(false);
@@ -311,18 +396,21 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
   const [momentumRushReady, setMomentumRushReady] = useState(false);
 
   // Load quest tasks from actual quest data - use state to make it reactive
-  const [questTasks, setQuestTasks] = useState(() => 
+  const [questTasks, setQuestTasks] = useState(() =>
     quest.subtasks?.map((subtask, index) => ({
       id: index + 1,
       description: subtask.text,
       damage: Math.floor((quest.xp || 100) / (quest.subtasks?.length || 1)),
-      completed: subtask.completed,
+      completed: victoryPreview ? true : subtask.completed,
       energyCost: Math.floor((quest.energyCost || 10) / (quest.subtasks?.length || 1))
     })) || []
   );
 
-  // Update questTasks when quest.subtasks changes
+  // Update questTasks when quest.subtasks changes.
+  // In boss-file mode the parent rebuilds the quest each render, so skip the
+  // resync there — task completion is tracked locally and must not revert.
   useEffect(() => {
+    if (bossFileMode) return;
     setQuestTasks(
       quest.subtasks?.map((subtask, index) => ({
         id: index + 1,
@@ -332,10 +420,62 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
         energyCost: Math.floor((quest.energyCost || 10) / (quest.subtasks?.length || 1))
       })) || []
     );
-  }, [quest.subtasks, quest.xp, quest.energyCost]);
+  }, [quest.subtasks, quest.xp, quest.energyCost, bossFileMode]);
+
+  // Sync boss HP when vault quests strike the active raid.
+  useEffect(() => {
+    if (!bossFileMode || !plugin || !fileBoss?.filePath) return;
+
+    const syncBossFromVault = async () => {
+      const fresh = await readBoss(plugin.app, fileBoss.filePath);
+      if (!fresh) return;
+      setFileBoss(fresh);
+      setBossData((prev) => ({
+        ...prev,
+        name: fresh.name,
+        currentHp: fresh.currentHp,
+        maxHp: fresh.maxHp,
+      }));
+      const applied = bossRaidProgress?.applied ?? fresh.tasks.filter((t) => t.completed).length;
+      setQuestTasks((prev) => prev.map((t, i) => ({ ...t, completed: i < applied })));
+
+      if (applied > prevVaultStrikesRef.current) {
+        const delta = applied - prevVaultStrikesRef.current;
+        persistRaidFocus(
+          gainRaidFocus(getBossRaidFocus().focus, RAID_FOCUS_GAIN_VAULT_HIT * delta)
+        );
+        prevVaultStrikesRef.current = applied;
+      }
+
+      if (battleState.battlePhase !== 'battle') return;
+
+      if (bossRaidPendingVictory || fresh.currentHp <= 0) {
+        setBattleState((prev) => ({ ...prev, battlePhase: 'victory' }));
+        addBattleLog(`💥 ${fresh.name} falls! Real work carried the day.`, 'player');
+      }
+    };
+
+    void syncBossFromVault();
+    window.addEventListener(BOSS_UPDATED_EVENT, syncBossFromVault);
+    window.addEventListener(BOSS_RAID_UPDATED_EVENT, syncBossFromVault);
+    return () => {
+      window.removeEventListener(BOSS_UPDATED_EVENT, syncBossFromVault);
+      window.removeEventListener(BOSS_RAID_UPDATED_EVENT, syncBossFromVault);
+    };
+  }, [
+    bossFileMode,
+    plugin,
+    fileBoss?.filePath,
+    battleState.battlePhase,
+    bossRaidPendingVictory,
+    bossRaidProgress?.applied,
+    persistRaidFocus,
+  ]);
 
   // Load saved battle state on mount
   useEffect(() => {
+    if (victoryPreview || bossRaidPendingVictory) return;
+
     if (isTutorialBoss) {
       console.log('🔄 Tutorial boss detected - starting fresh battle (no saved state)');
       localStorage.removeItem(battleStateKey);
@@ -344,6 +484,16 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
       setMoveRewardTotals({ xp: 0, coins: 0 });
       setBattleWeaponId(clampBattleWeaponToInventory('balanced', playerData.inventory));
       setMomentumRushReady(false);
+      setWeaponPickerOpen(true);
+      return;
+    }
+
+    // File-backed raids store HP on the boss note — never restore a stale victory phase.
+    if (bossFileMode) {
+      localStorage.removeItem(battleStateKey);
+      setBattleState((prev) =>
+        prev.battlePhase === 'victory' ? { ...prev, battlePhase: 'battle', currentTurn: 1 } : prev
+      );
       setWeaponPickerOpen(true);
       return;
     }
@@ -402,7 +552,7 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
 
   // Save battle state whenever it changes (but not victory state for tutorial bosses)
   useEffect(() => {
-    if (weaponPickerOpen) {
+    if (victoryPreview || weaponPickerOpen || bossFileMode) {
       return;
     }
     // Don't save victory state for tutorial bosses
@@ -518,6 +668,10 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
 
   const bossHpPercent = (displayBossHp / Math.max(1, bossData.maxHp)) * 100;
   const playerHpPercent = (playerBattleData.currentHp / playerBattleData.maxHp) * 100;
+  const raidFocusPercent = (raidFocus / Math.max(1, raidFocusMax)) * 100;
+  const raidFocusDamageMult = getRaidFocusDamageMultiplier(raidFocus);
+  const bossStrikeLabel =
+    bossFileMode && fileBoss ? getBossStrikeCountdownLabel(fileBoss, nowMs) : '';
   
   // Update player HP when energy changes
   useEffect(() => {
@@ -580,6 +734,62 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
     if (task.completed || isAnimating || battleState.turnsBlocked > 0) {
       if (battleState.turnsBlocked > 0) {
         addBattleLog(`⛔ ${battleState.blockReason} Can't take actions right now.`, 'system');
+      }
+      return;
+    }
+
+    // ── Boss-file mode: tap strikes on the boss note (resets each gate) ──
+    if (bossFileMode && fileBoss && plugin) {
+      setIsAnimating(true);
+      try {
+        const fileTask = fileBoss.tasks[task.id - 1];
+        if (!fileTask) {
+          addBattleLog('No strike slot found on this boss note.', 'system');
+          return;
+        }
+
+        const focusMult = getRaidFocusDamageMultiplier(raidFocus);
+        const strike = await recordBossFileBattleStrike(plugin.app, fileBoss, fileTask.lineIndex, {
+          damageMultiplier: focusMult,
+        });
+        if (!strike) {
+          addBattleLog('That strike was already landed.', 'system');
+          return;
+        }
+
+        persistRaidFocus(gainRaidFocus(raidFocus, RAID_FOCUS_GAIN_STRIKE));
+
+        const updatedTasks = questTasks.map((t) =>
+          t.id === task.id ? { ...t, completed: true } : t
+        );
+        setQuestTasks(updatedTasks);
+        setFileBoss(strike.boss);
+        setBossData((prev) => ({
+          ...prev,
+          currentHp: strike.boss.currentHp,
+          maxHp: strike.boss.maxHp,
+        }));
+        setBattleState((prev) => ({ ...prev, currentTurn: prev.currentTurn + 1 }));
+
+        const dampNote = strike.result.damped ? ' (guarded)' : '';
+        const focusNote = focusMult < 1 ? ' (low focus)' : '';
+        addBattleLog(`✓ ${task.description} — −${strike.result.hpDamage} HP${dampNote}${focusNote}`, 'player');
+        setDamageDisplay({
+          amount: strike.result.hpDamage,
+          type: 'boss-damage',
+          moveName: task.description,
+        });
+        setBossShaking(true);
+        setTimeout(() => setBossShaking(false), 500);
+        setTimeout(() => setDamageDisplay(null), 1500);
+
+        if (strike.defeated) {
+          setBossData((prev) => ({ ...prev, currentHp: 0 }));
+          addBattleLog(`💥 ${fileBoss.name} falls! Real work carried the day.`, 'player');
+          setBattleState((prev) => ({ ...prev, battlePhase: 'victory' }));
+        }
+      } finally {
+        setIsAnimating(false);
       }
       return;
     }
@@ -694,6 +904,78 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
     setBattleLog(prev => [...prev, newEntry]);
   };
 
+  const runBossRaidStrike = useCallback(async () => {
+    if (!bossFileMode || !fileBoss || !plugin || battleState.battlePhase !== 'battle') return;
+    if (bossStrikeBusyRef.current || !isAttackReady(fileBoss, Date.now())) return;
+
+    bossStrikeBusyRef.current = true;
+    try {
+      const currentFocus = getBossRaidFocus().focus;
+      const result = applyBossRaidStrike(fileBoss, currentFocus, Date.now());
+      await writeBossState(plugin.app, result.boss);
+      setFileBoss(result.boss);
+      persistRaidFocus(result.nextFocus);
+      addBattleLog(`💢 ${result.message}`, 'boss');
+      if (result.armorRestored > 0) {
+        addBattleLog(`🛡 Boss fortified +${result.armorRestored} armor`, 'boss');
+      }
+      addBattleLog(`−${result.focusDamage} raid focus`, 'system');
+      setBossShaking(true);
+      setAttackFlashing(true);
+      window.setTimeout(() => {
+        setBossShaking(false);
+        setAttackFlashing(false);
+      }, 500);
+    } finally {
+      bossStrikeBusyRef.current = false;
+    }
+  }, [bossFileMode, fileBoss, plugin, battleState.battlePhase, persistRaidFocus]);
+
+  // Catch up boss strikes after time away from the battle UI.
+  useEffect(() => {
+    if (!bossFileMode || !fileBoss || !plugin || raidCatchUpDoneRef.current) return;
+    if (battleState.battlePhase !== 'battle') return;
+
+    raidCatchUpDoneRef.current = true;
+    const currentFocus = getBossRaidFocus().focus;
+    const { boss, focus, strikes } = catchUpBossRaidStrikes(fileBoss, currentFocus);
+
+    if (strikes.length === 0) return;
+
+    void (async () => {
+      await writeBossState(plugin.app, boss);
+      setFileBoss(boss);
+      persistRaidFocus(focus);
+      for (const strike of strikes) {
+        addBattleLog(`💢 ${strike.message}`, 'boss');
+        if (strike.armorRestored > 0) {
+          addBattleLog(`🛡 Boss fortified +${strike.armorRestored} armor`, 'boss');
+        }
+        addBattleLog(`−${strike.focusDamage} raid focus`, 'system');
+      }
+      if (strikes.length >= RAID_BOSS_STRIKE_CATCHUP_MAX) {
+        addBattleLog('Boss pressure stacked while you were away — rally with real tasks!', 'system');
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bossFileMode, fileBoss?.filePath, plugin, battleState.battlePhase]);
+
+  // Boss strike timer tick + passive raid focus recovery.
+  useEffect(() => {
+    if (!bossFileMode || battleState.battlePhase !== 'battle') return;
+
+    void runBossRaidStrike();
+
+    if (
+      Date.now() - lastPassiveRegenRef.current >= RAID_FOCUS_PASSIVE_INTERVAL_MS &&
+      raidFocus > 0 &&
+      raidFocus < raidFocusMax
+    ) {
+      lastPassiveRegenRef.current = Date.now();
+      persistRaidFocus(gainRaidFocus(raidFocus, RAID_FOCUS_PASSIVE_REGEN));
+    }
+  }, [nowMs, bossFileMode, battleState.battlePhase, runBossRaidStrike, raidFocus, raidFocusMax, persistRaidFocus]);
+
   const clearBattleState = () => {
     localStorage.removeItem(battleStateKey);
     console.log('🗑️ Cleared battle state for:', quest.id);
@@ -757,7 +1039,7 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
         
       } else {
         // For real quests, use QuestSystemIntegration
-        const { QuestSystemIntegration } = await import('../index');
+        const { QuestSystemIntegration } = await import('../questSystemIntegration');
         
         // Create new subtasks array with the new task
         const newSubtasks = [
@@ -1072,10 +1354,21 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
   // Trigger XP animation when victory occurs
   useEffect(() => {
     if (battleState.battlePhase === 'victory') {
-      const baseXp = quest.xp || 100;
-      const completionBonus = (questTasks.every(t => t.completed) ? (quest.xp || 0) * 0.2 : 0);
-      const finisherXp = getWeaponDef(battleWeaponId).finisherBonusXp;
-      const gained = Math.round(baseXp + completionBonus + moveRewardTotals.xp + finisherXp);
+      const isDungeonRaidVictoryAnim = bossFileMode && !!dungeonRaidLootPreview;
+      const baseXp = isDungeonRaidVictoryAnim
+        ? dungeonRaidLootPreview!.xp
+        : quest.xp || 100;
+      const completionBonus = isDungeonRaidVictoryAnim
+        ? 0
+        : questTasks.every((t) => t.completed)
+          ? (quest.xp || 0) * 0.2
+          : 0;
+      const finisherXp = isDungeonRaidVictoryAnim
+        ? 0
+        : getWeaponDef(battleWeaponId).finisherBonusXp;
+      const gained = Math.round(
+        baseXp + completionBonus + (isDungeonRaidVictoryAnim ? 0 : moveRewardTotals.xp) + finisherXp
+      );
       const before = playerData.xp || 0;
       const required = playerData.xpRequired || 100;
       const after = before + gained;
@@ -1105,6 +1398,8 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
     }
   }, [
     battleState.battlePhase,
+    bossFileMode,
+    dungeonRaidLootPreview,
     quest.xp,
     questTasks,
     playerData.xp,
@@ -1118,7 +1413,7 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
     if (battleState.currentTurn > 0 && battleState.currentTurn % 5 === 0) {
       const checkForNewTasks = async () => {
         try {
-          const { QuestSystemIntegration } = await import('../index');
+          const { QuestSystemIntegration } = await import('../questSystemIntegration');
           const allQuests = QuestSystemIntegration.getQuests();
           const updatedQuest = allQuests.find((q: Quest) => q.id === quest.id);
           
@@ -1159,6 +1454,44 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
     const readyAt = moveReadyAt[move.id] ?? 0;
     if (nowMs < readyAt) {
       addBattleLog(`⏳ ${move.name} recharges in ${formatCooldownRemaining(readyAt, nowMs)}`, 'system');
+      return;
+    }
+
+    // ── Boss-file mode: moves break ARMOR (not HP); tasks are the kill path ──
+    if (bossFileMode && fileBoss && plugin) {
+      setIsAnimating(true);
+      const projectMs = initialProjectTimeMs ?? Math.max(battleState.timeRemaining, 3 * 24 * 60 * 60 * 1000);
+      const weaponDef = getWeaponDef(battleWeaponId);
+      const baseCooldownMs = getMoveCooldownMs(projectMs, move.cooldownShareOfProject);
+      let effectiveCooldownMs = Math.round(baseCooldownMs * weaponDef.moveCooldownMult);
+      effectiveCooldownMs = Math.round(
+        effectiveCooldownMs * getRaidFocusCooldownMultiplier(raidFocus)
+      );
+
+      const statKey = move.stat as keyof NonNullable<typeof playerData.stats>;
+      const statValue = (playerData.stats?.[statKey] as number | undefined) ?? 1;
+      const statMultiplier = Math.max(0.1, statValue / 100);
+      const armorHit = Math.max(1, Math.round(move.dmg * statMultiplier * weaponDef.moveDamageMult));
+
+      const result = damageArmor(fileBoss, armorHit, Date.now());
+      void writeBossState(plugin.app, result.boss);
+      setFileBoss(result.boss);
+      setMoveReadyAt(prev => ({ ...prev, [move.id]: Date.now() + effectiveCooldownMs }));
+      setBattleState(prev => ({ ...prev, currentTurn: prev.currentTurn + 1 }));
+
+      setBossShaking(true);
+      setAttackFlashing(true);
+      setTimeout(() => setBossShaking(false), 500);
+      setTimeout(() => setAttackFlashing(false), 400);
+      setDamageDisplay({ amount: result.armorDamage, type: 'boss-damage', moveName: `${move.name} (armor)` });
+      setTimeout(() => setDamageDisplay(null), 1500);
+
+      addBattleLog(
+        `⚔️ ${move.name} — −${result.armorDamage} armor${result.armorBroke ? ' — armor shattered! Tasks now hit full.' : ''}`,
+        'player'
+      );
+      persistRaidFocus(gainRaidFocus(raidFocus, RAID_FOCUS_GAIN_MOVE));
+      setTimeout(() => setIsAnimating(false), 600);
       return;
     }
 
@@ -1385,10 +1718,31 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
     turnsTaken: battleState.currentTurn
   });
 
-  const handleVictoryContinue = () => {
-    if (!isTutorialBoss) {
-      onQuestComplete(quest.title, buildVictoryExtras());
+  const handleVictoryContinue = async () => {
+    if (claimingVictoryLoot) return;
+    if (victoryPreview) {
+      onClose();
+      return;
     }
+    setClaimingVictoryLoot(true);
+    try {
+      if (bossFileMode) {
+        if (fileBoss) await onBossFileVictory?.(fileBoss);
+      } else if (!isTutorialBoss) {
+        onQuestComplete(quest.title, buildVictoryExtras());
+      }
+    } catch (error) {
+      console.error('[TacticalBattleUI] Victory continue failed:', error);
+    } finally {
+      setClaimingVictoryLoot(false);
+      onClose();
+    }
+  };
+
+  const handleQuickCompleteQuest = () => {
+    if (bossFileMode || !preferQuickComplete || isTutorialBoss) return;
+    clearBattleState();
+    onQuestComplete(quest.title);
     onClose();
   };
 
@@ -1479,14 +1833,25 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
   // Victory Screen
   if (battleState.battlePhase === 'victory') {
     const finisherBonusXp = getWeaponDef(battleWeaponId).finisherBonusXp;
-    const rewards = {
-      xp: quest.xp || 100,
-      coins: (quest.xp || 100) * 2,
-      completionBonus: questTasks.every(t => t.completed) ? (quest.xp || 0) * 0.2 : 0,
-      moveBonusXp: moveRewardTotals.xp,
-      moveBonusCoins: moveRewardTotals.coins,
-      finisherBonusXp
-    };
+    const isDungeonRaidVictory = bossFileMode && !!dungeonRaidLootPreview;
+    const rewards = isDungeonRaidVictory
+      ? {
+          xp: dungeonRaidLootPreview!.xp,
+          cp: dungeonRaidLootPreview!.cp,
+          coins: dungeonRaidLootPreview!.coins,
+          completionBonus: 0,
+          moveBonusXp: 0,
+          moveBonusCoins: 0,
+          finisherBonusXp: 0,
+        }
+      : {
+          xp: quest.xp || 100,
+          coins: (quest.xp || 100) * 2,
+          completionBonus: questTasks.every(t => t.completed) ? (quest.xp || 0) * 0.2 : 0,
+          moveBonusXp: moveRewardTotals.xp,
+          moveBonusCoins: moveRewardTotals.coins,
+          finisherBonusXp,
+        };
 
     return (
       <div className={`${styles.victoryScreen} ${styles.tacticalBattlePixel}`}>
@@ -1504,6 +1869,11 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
         ))}
         
         <div className={styles.victoryContent}>
+          {victoryPreview && (
+            <div className={styles.victoryPreviewTag} aria-hidden="true">
+              VICTORY PREVIEW — no rewards applied
+            </div>
+          )}
           <div className={styles.victoryHeader}>
             <h1 className={styles.victoryTitle}>🎉 VICTORY! 🎉</h1>
             <p className={styles.victorySubtitle}>{bossData.name} has been defeated!</p>
@@ -1588,35 +1958,49 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
           </div>
 
           <div className={styles.victoryRewards}>
-            <h2 className={styles.rewardsTitle}>Rewards Earned</h2>
+            <h2 className={styles.rewardsTitle}>
+              {isDungeonRaidVictory ? 'Gate spoils' : 'Rewards Earned'}
+            </h2>
             <div className={styles.rewardsList}>
               <div className={styles.rewardItem}>
                 <span className={styles.rewardIcon}>⭐</span>
                 <span className={styles.rewardText}>{rewards.xp} XP</span>
               </div>
+              {isDungeonRaidVictory && (
+                <div className={styles.rewardItem}>
+                  <span className={styles.rewardIcon}>✨</span>
+                  <span className={styles.rewardText}>{rewards.cp} CP</span>
+                </div>
+              )}
               <div className={styles.rewardItem}>
                 <span className={styles.rewardIcon}>💰</span>
                 <span className={styles.rewardText}>{rewards.coins} Coins</span>
               </div>
-              {rewards.completionBonus > 0 && (
+              {isDungeonRaidVictory && (
+                <div className={styles.rewardItem}>
+                  <span className={styles.rewardIcon}>📦</span>
+                  <span className={styles.rewardText}>Bonus materials (rolled on continue)</span>
+                </div>
+              )}
+              {!isDungeonRaidVictory && rewards.completionBonus > 0 && (
                 <div className={styles.rewardItem}>
                   <span className={styles.rewardIcon}>🏆</span>
                   <span className={styles.rewardText}>+{Math.round(rewards.completionBonus)} XP Bonus (All Tasks!)</span>
                 </div>
               )}
-              {rewards.moveBonusXp > 0 && (
+              {!isDungeonRaidVictory && rewards.moveBonusXp > 0 && (
                 <div className={styles.rewardItem}>
                   <span className={styles.rewardIcon}>⚔️</span>
                   <span className={styles.rewardText}>+{rewards.moveBonusXp} XP (battle moves, capped)</span>
                 </div>
               )}
-              {rewards.moveBonusCoins > 0 && (
+              {!isDungeonRaidVictory && rewards.moveBonusCoins > 0 && (
                 <div className={styles.rewardItem}>
                   <span className={styles.rewardIcon}>🪙</span>
                   <span className={styles.rewardText}>+{rewards.moveBonusCoins} coins (battle moves, capped)</span>
                 </div>
               )}
-              {rewards.finisherBonusXp > 0 && (
+              {!isDungeonRaidVictory && rewards.finisherBonusXp > 0 && (
                 <div className={styles.rewardItem}>
                   <span className={styles.rewardIcon}>🔨</span>
                   <span className={styles.rewardText}>+{rewards.finisherBonusXp} XP (Hammer of Closure)</span>
@@ -1662,9 +2046,22 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
               </button>
             </div>
           ) : (
-            <button type="button" className={styles.victoryButton} onClick={handleVictoryContinue}>
-              Continue — apply rewards
-            </button>
+            <div className={styles.victoryFooter}>
+              <button
+                type="button"
+                className={styles.victoryButton}
+                disabled={claimingVictoryLoot}
+                onClick={() => void handleVictoryContinue()}
+              >
+                {claimingVictoryLoot
+                  ? 'Claiming…'
+                  : victoryPreview
+                    ? 'Close preview'
+                    : isDungeonRaidVictory
+                      ? 'Continue — claim gate spoils'
+                      : 'Continue — apply rewards'}
+              </button>
+            </div>
           )}
         </div>
         {showLevelUpFlash && <div className={styles.levelUpFlash} />}
@@ -1680,61 +2077,62 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
 
   return (
     <div className={`${styles.tacticalBattle} ${styles.tacticalBattlePixel}`} ref={containerRef}>
-      {weaponPickerOpen && (
-        <div className={styles.weaponPickerOverlay} aria-hidden="false">
-          <div className={styles.weaponPickerModal}>
-            <div className={styles.weaponPickerTitle}>Choose your weapon</div>
-            <p className={styles.weaponPickerSubtitle}>
-              Loadout applies for this battle only. Weapons match your{' '}
-              <strong>PlayerData inventory</strong> (name e.g. <code className={styles.weaponFmHint}>Rapier</code> or{' '}
-              <code className={styles.weaponFmHint}>battle_weapon: rapier</code>). If none match, the full catalog is
-              shown.
-            </p>
-            <div className={styles.weaponGrid}>
-              {loadoutWeaponRows.map(({ id }) => {
-                const w = getWeaponDef(id);
-                const selected = battleWeaponId === id;
-                return (
-                  <button
-                    key={id}
-                    type="button"
-                    className={`${styles.weaponCard} ${selected ? styles.weaponCardSelected : ''}`}
-                    title={`${w.label} — ${w.summary}`}
-                    onClick={() => setBattleWeaponId(id)}
-                  >
-                    <span className={styles.weaponCardIcon}>{w.icon}</span>
-                    <span className={styles.weaponCardName}>{w.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-            {(() => {
-              const w = getWeaponDef(battleWeaponId);
-              const row = loadoutWeaponRows.find(r => r.id === battleWeaponId);
-              const note = row?.inventoryNote?.trim();
-              const bodyText = note ? `${note}\n\n${w.blurb}` : w.blurb;
-              return (
-                <div className={styles.weaponPickerPreview}>
-                  <div className={styles.weaponPickerPreviewBar} aria-hidden />
-                  <div className={styles.weaponPickerPreviewBody}>
-                    <div className={styles.weaponPickerPreviewTitle}>
-                      {w.label} — {w.summary}
-                    </div>
-                    <div className={styles.weaponPickerPreviewText}>{bodyText}</div>
-                  </div>
+      {weaponPickerOpen &&
+        createPortal(
+          <div className={styles.weaponPickerOverlay} aria-hidden="false">
+            <div className={styles.weaponPickerModal}>
+              <div className={styles.weaponPickerModalBody}>
+                <div className={styles.weaponPickerTitle}>Choose your weapon</div>
+                <p className={styles.weaponPickerSubtitle}>
+                  Loadout applies for this battle only. Weapons match your{' '}
+                  <strong>PlayerData inventory</strong> (name e.g. <code className={styles.weaponFmHint}>Rapier</code> or{' '}
+                  <code className={styles.weaponFmHint}>battle_weapon: rapier</code>). If none match, the full catalog is
+                  shown.
+                </p>
+                <div className={styles.weaponGrid}>
+                  {loadoutWeaponRows.map(({ id }) => {
+                    const w = getWeaponDef(id);
+                    const selected = battleWeaponId === id;
+                    return (
+                      <button
+                        key={id}
+                        type="button"
+                        className={`${styles.weaponCard} ${selected ? styles.weaponCardSelected : ''}`}
+                        title={`${w.label} — ${w.summary}`}
+                        onClick={() => setBattleWeaponId(id)}
+                      >
+                        <span className={styles.weaponCardIcon}>{w.icon}</span>
+                        <span className={styles.weaponCardName}>{w.label}</span>
+                      </button>
+                    );
+                  })}
                 </div>
-              );
-            })()}
-            <button
-              type="button"
-              className={styles.weaponPickerConfirm}
-              onClick={() => commitBattleLoadout(battleWeaponId)}
-            >
-              Lock in & fight
-            </button>
-          </div>
-        </div>
-      )}
+                {(() => {
+                  const w = getWeaponDef(battleWeaponId);
+                  const row = loadoutWeaponRows.find(r => r.id === battleWeaponId);
+                  const note = row?.inventoryNote?.trim();
+                  const bodyText = note ? `${note}\n\n${w.blurb}` : w.blurb;
+                  return (
+                    <div className={styles.weaponPickerPreview}>
+                      <div className={styles.weaponPickerPreviewTitle}>
+                        {w.label} — {w.summary}
+                      </div>
+                      <div className={styles.weaponPickerPreviewText}>{bodyText}</div>
+                    </div>
+                  );
+                })()}
+              </div>
+              <button
+                type="button"
+                className={styles.weaponPickerConfirm}
+                onClick={() => commitBattleLoadout(battleWeaponId)}
+              >
+                Lock in & fight
+              </button>
+            </div>
+          </div>,
+          document.body
+        )}
 
       {/* FULL-SCREEN DAMAGE DISPLAY */}
       {damageDisplay && (
@@ -1904,15 +2302,46 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
             </div>
             
             <div className={styles.hpBarContainer}>
-              <div className={styles.hpBarSegmented}>
-                {Array.from({ length: 10 }).map((_, i) => (
-                  <div 
-                    key={i} 
-                    className={`${styles.hpSegment} ${i < Math.ceil(playerHpPercent / 10) ? styles.filled : ''}`}
-                  />
-                ))}
-              </div>
-              <div className={styles.hpText}>{playerBattleData.currentHp} / {playerBattleData.maxHp} ENERGY</div>
+              {bossFileMode ? (
+                <>
+                  <div className={`${styles.hpBarSegmented} ${styles.raidFocusBar}`}>
+                    {Array.from({ length: 10 }).map((_, i) => (
+                      <div
+                        key={i}
+                        className={`${styles.hpSegment} ${styles.raidFocusSegment} ${
+                          i < Math.ceil(raidFocusPercent / 10) ? styles.filled : ''
+                        } ${raidFocusPercent <= 30 ? styles.raidFocusLow : ''}`}
+                      />
+                    ))}
+                  </div>
+                  <div className={styles.hpText}>
+                    {raidFocus} / {raidFocusMax} RAID FOCUS
+                    {raidFocusDamageMult < 1 && (
+                      <span className={styles.raidFocusPenalty}>
+                        {' '}
+                        · strikes ×{raidFocusDamageMult.toFixed(2)}
+                      </span>
+                    )}
+                  </div>
+                  <div className={styles.raidFocusHint}>
+                    Raid-only meter — not your vault energy. Complete tasks to rally.
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className={styles.hpBarSegmented}>
+                    {Array.from({ length: 10 }).map((_, i) => (
+                      <div
+                        key={i}
+                        className={`${styles.hpSegment} ${i < Math.ceil(playerHpPercent / 10) ? styles.filled : ''}`}
+                      />
+                    ))}
+                  </div>
+                  <div className={styles.hpText}>
+                    {playerBattleData.currentHp} / {playerBattleData.maxHp} ENERGY
+                  </div>
+                </>
+              )}
             </div>
             
             <div className={styles.characterName}>{playerData.name || playerBattleData.name}</div>
@@ -2013,7 +2442,35 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
                 )}
               </div>
             </div>
-            
+
+            {bossFileMode && fileBoss && (() => {
+              const armorDisplay = settleArmorRegen(fileBoss, nowMs);
+              const armorPercent = getBossArmorPercent(armorDisplay);
+              const armorUp = armorDisplay.currentArmor > 0;
+              return (
+                <div style={{ margin: '4px 0 2px' }} title="Break armor with moves; complete tasks to lower HP">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 10, fontWeight: 700, color: armorUp ? '#fbbf24' : '#64748b', letterSpacing: '0.04em' }}>
+                    <span>{armorUp ? '🛡 ARMOR' : '🛡 ARMOR BROKEN'}</span>
+                    <span>{armorDisplay.currentArmor}/{armorDisplay.maxArmor}</span>
+                  </div>
+                  <div style={{ height: 8, border: '2px solid #3f2d0b', background: '#0d1020', overflow: 'hidden' }}>
+                    <span style={{ display: 'block', height: '100%', width: `${armorPercent}%`, background: armorUp ? 'linear-gradient(90deg,#b45309,#fbbf24)' : 'linear-gradient(90deg,#334155,#475569)', transition: 'width 0.3s ease' }} />
+                  </div>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: armorUp ? '#fbbf24' : '#a3e635', textAlign: 'center', marginTop: 2 }}>
+                    {armorUp ? 'Tasks deal reduced HP — use moves to break armor' : 'Tasks land full damage!'}
+                  </div>
+                  <div
+                    className={`${styles.bossStrikeTimer} ${
+                      bossStrikeLabel === 'STRIKING' ? styles.bossStrikeTimerReady : ''
+                    }`}
+                  >
+                    <span>Boss strike</span>
+                    <span>{bossStrikeLabel}</span>
+                  </div>
+                </div>
+              );
+            })()}
+
             <div className={styles.characterName}>{bossData.name}</div>
             <div className={styles.characterPhase}>Phase {bossData.phase} - {bossData.mood}</div>
             
@@ -2042,8 +2499,8 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
         
       </div>
       
-      {/* FINAL BLOW OVERLAY */}
-      {finalBlowReady && battleState.battlePhase === 'battle' && (
+      {/* FINAL BLOW OVERLAY (disabled in boss-file mode — HP falls straight to tasks) */}
+      {!bossFileMode && finalBlowReady && battleState.battlePhase === 'battle' && (
         <div className={styles.finalBlowOverlay}>
           <div className={styles.finalBlowContent}>
             <div className={styles.finalBlowTitle}>Deliver the Final Blow</div>
@@ -2216,17 +2673,56 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
         <div className={styles.tasksPanel}>
           <div className={styles.panelHeader}>
             <span className={styles.panelIcon}>📋</span>
-            <span className={styles.panelTitle}>Quest Tasks</span>
-            <button 
-              className={styles.addSubquestButton}
-              type="button"
-              onClick={() => setShowSubquestModal(true)}
-              title="Add new subquest (Boss will grow stronger!)"
-            >
-              + Subquest
-            </button>
+            <span className={styles.panelTitle}>
+              {bossFileMode ? 'Gate strikes' : 'Quest Tasks'}
+            </span>
+            {!bossFileMode && (
+              <button
+                className={styles.addSubquestButton}
+                type="button"
+                onClick={() => setShowSubquestModal(true)}
+                title="Add new subquest (Boss will grow stronger!)"
+              >
+                + Subquest
+              </button>
+            )}
           </div>
-          
+
+          {bossFileMode ? (
+            <div className={styles.bossRaidVaultPanel}>
+              <p className={styles.bossRaidVaultHint}>
+                Tap each strike below to hit the boss. Vault quests also land strikes if you
+                complete them while this raid is active. Use moves to break armor first.
+              </p>
+              {bossRaidAffinityLabel && (
+                <p className={styles.bossRaidAffinity}>{bossRaidAffinityLabel}</p>
+              )}
+              <div className={styles.bossRaidProgress}>
+                <span className={styles.bossRaidProgressLabel}>Strikes landed</span>
+                <span className={styles.bossRaidProgressValue}>
+                  {bossRaidProgress?.applied ?? questTasks.filter((t) => t.completed).length}
+                  /{bossRaidProgress?.required ?? questTasks.length}
+                </span>
+              </div>
+              <div className={styles.tasksList}>
+                {questTasks.map((task) => (
+                  <button
+                    key={task.id}
+                    type="button"
+                    className={`${styles.taskButton} ${task.completed ? styles.completed : ''}`}
+                    disabled={task.completed || isAnimating}
+                    onClick={() => void executeTask(task)}
+                  >
+                    <div className={styles.taskHeader}>
+                      <span className={styles.taskNumber}>#{task.id}</span>
+                      {task.completed && <span className={styles.taskComplete}>✓</span>}
+                    </div>
+                    <div className={styles.taskDescription}>{task.description}</div>
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
           <div className={styles.tasksList}>
             {questTasks.map(task => (
               <button 
@@ -2246,6 +2742,7 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
               </button>
             ))}
           </div>
+          )}
         </div>
         
       </div>
@@ -2286,6 +2783,18 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
               <div className={styles.exitSaved}>Saved at {new Date(lastSavedAt).toLocaleTimeString()}</div>
             )}
             <div className={styles.exitActions}>
+              {!bossFileMode && preferQuickComplete && !isTutorialBoss && battleState.battlePhase === 'battle' && (
+                <button
+                  type="button"
+                  className={styles.quickCompleteButton}
+                  onClick={() => {
+                    setShowExitConfirm(false);
+                    handleQuickCompleteQuest();
+                  }}
+                >
+                  Complete quest (skip battle)
+                </button>
+              )}
               <button className={styles.exitConfirm} onClick={onClose}>Exit</button>
               <button className={styles.exitCancel} onClick={() => setShowExitConfirm(false)}>Stay</button>
             </div>

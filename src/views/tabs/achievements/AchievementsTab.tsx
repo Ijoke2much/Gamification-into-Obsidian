@@ -1,7 +1,8 @@
 // Enhanced Achievements Tab - Display achievement progress and unlocked badges
 // Optimized for 250px sidebar width with compact layout
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import ReactDOM from "react-dom";
 import {
 	AchievementTracker,
 	Achievement,
@@ -9,15 +10,44 @@ import {
 	AchievementCategory,
 	BadgeTier,
 } from "../../../data/models/AchievementSystem";
+import achStyles from "./AchievementsTab.module.css";
 
 export interface AchievementsTabProps {
 	tracker: AchievementTracker;
 	onRefresh?: () => void;
+	highlightAchievementId?: string | null;
 }
+
+const TIER_CLASS: Record<BadgeTier, string> = {
+	bronze: achStyles.tierBronze,
+	silver: achStyles.tierSilver,
+	gold: achStyles.tierGold,
+	legendary: achStyles.tierLegendary,
+};
+
+const TIER_CHIP_CLASS: Record<BadgeTier, string> = {
+	bronze: achStyles.tierChipBronze,
+	silver: achStyles.tierChipSilver,
+	gold: achStyles.tierChipGold,
+	legendary: achStyles.tierChipLegendary,
+};
+
+const ALL_CATEGORIES: AchievementCategory[] = [
+	"quest",
+	"progress",
+	"collection",
+	"special",
+	"pomodoro",
+	"energy",
+	"habits",
+	"crafting",
+	"boss",
+];
 
 export default function AchievementsTab({
 	tracker,
 	onRefresh,
+	highlightAchievementId = null,
 }: AchievementsTabProps) {
 	const [selectedCategory, setSelectedCategory] = useState<
 		AchievementCategory | "all"
@@ -27,12 +57,48 @@ export default function AchievementsTab({
 	const [showLocked, setShowLocked] = useState<boolean>(true);
 	const [searchTerm, setSearchTerm] = useState<string>("");
 	const [sortBy, setSortBy] = useState<"progress" | "tier" | "name" | "date">("progress");
-	const [viewMode, setViewMode] = useState<"grid" | "list">("list"); // Default to list for sidebar
+	const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
 	const [recentlyUnlocked, setRecentlyUnlocked] = useState<string[]>([]);
+	const [detailEntry, setDetailEntry] = useState<{
+		achievement: Achievement;
+		playerData: PlayerAchievement;
+	} | null>(null);
+	const shellRef = useRef<HTMLDivElement>(null);
 
 	const allAchievements = tracker.getAllAchievements();
 	const completedCount = tracker.getCompletedAchievements().length;
 	const totalCount = allAchievements.length;
+	const recentUnlocks = useMemo(() => tracker.getRecentlyUnlocked(), [tracker, allAchievements]);
+	const showcase = useMemo(() => tracker.getShowcaseAchievements(), [tracker, allAchievements]);
+	const tierCounts = useMemo(() => tracker.getTierCounts(), [tracker, allAchievements]);
+
+	useEffect(() => {
+		if (!highlightAchievementId || !shellRef.current) return;
+		const el = shellRef.current.querySelector(
+			`[data-achievement-id="${highlightAchievementId}"]`
+		);
+		if (el) {
+			el.scrollIntoView({ behavior: "smooth", block: "center" });
+			setRecentlyUnlocked((prev) =>
+				prev.includes(highlightAchievementId)
+					? prev
+					: [...prev, highlightAchievementId]
+			);
+			const timer = window.setTimeout(() => {
+				setRecentlyUnlocked((prev) =>
+					prev.filter((id) => id !== highlightAchievementId)
+				);
+			}, 4000);
+			return () => window.clearTimeout(timer);
+		}
+	}, [highlightAchievementId]);
+
+	const openDetail = useCallback(
+		(achievement: Achievement, playerData: PlayerAchievement) => {
+			setDetailEntry({ achievement, playerData });
+		},
+		[]
+	);
 
 	// Filter achievements based on selected criteria
 	const filteredAchievements = allAchievements.filter(
@@ -108,7 +174,6 @@ export default function AchievementsTab({
 		};
 
 		const isCompleted = status === "completed";
-		const isRecentlyUnlocked = recentlyUnlocked.includes(status);
 
 		return {
 			borderColor: tierColors[tier],
@@ -118,7 +183,7 @@ export default function AchievementsTab({
 			background: isCompleted
 				? `linear-gradient(135deg, ${tierColors[tier]}20, ${tierColors[tier]}10, rgba(255,255,255,0.03))`
 				: "linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))",
-			transform: isRecentlyUnlocked ? "scale(1.01)" : "scale(1)",
+			transform: "scale(1)",
 			transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
 			border: isCompleted ? `1px solid ${tierColors[tier]}` : "1px solid rgba(255,255,255,0.08)",
 		};
@@ -153,27 +218,18 @@ export default function AchievementsTab({
 		const isCompleted = playerData.status === "completed";
 		const isLocked = playerData.status === "locked";
 		const isInProgress = playerData.status === "in_progress";
+		const isHighlighted = recentlyUnlocked.includes(achievement.id);
 
-		// Add to recently unlocked for animation
-		useEffect(() => {
-			if (isCompleted && playerData.unlockedDate) {
-				const unlockTime = new Date(playerData.unlockedDate).getTime();
-				const now = Date.now();
-				// If unlocked within last 24 hours, add to recent
-				if (now - unlockTime < 24 * 60 * 60 * 1000) {
-					setRecentlyUnlocked(prev => [...prev, achievement.id]);
-					// Remove from recent after animation
-					setTimeout(() => {
-						setRecentlyUnlocked(prev => prev.filter(id => id !== achievement.id));
-					}, 3000);
-				}
-			}
-		}, [isCompleted, playerData.unlockedDate, achievement.id]);
+		const cardClassName = isHighlighted ? achStyles.highlightPulse : undefined;
 
 		// Grid view (compact card)
 		if (viewMode === "grid") {
 			return (
 				<div
+					data-achievement-card
+					data-achievement-id={achievement.id}
+					data-achievement-view="grid"
+					className={cardClassName}
 					style={{
 						...getTierStyle(achievement.tier, playerData.status),
 						borderRadius: "8px",
@@ -189,6 +245,15 @@ export default function AchievementsTab({
 						minHeight: "120px",
 						justifyContent: "center",
 					}}
+					onClick={() => openDetail(achievement, playerData)}
+					onKeyDown={(e) => {
+						if (e.key === "Enter" || e.key === " ") {
+							e.preventDefault();
+							openDetail(achievement, playerData);
+						}
+					}}
+					role="button"
+					tabIndex={0}
 					onMouseEnter={(e) => {
 						if (isCompleted) {
 							e.currentTarget.style.transform = "scale(1.05)";
@@ -297,6 +362,10 @@ export default function AchievementsTab({
 		// List view (detailed card)
 		return (
 			<div
+				data-achievement-card
+				data-achievement-id={achievement.id}
+				data-achievement-view="list"
+				className={cardClassName}
 				style={{
 					...getTierStyle(achievement.tier, playerData.status),
 					borderRadius: "8px",
@@ -307,6 +376,15 @@ export default function AchievementsTab({
 					cursor: "pointer",
 					fontSize: "12px",
 				}}
+				onClick={() => openDetail(achievement, playerData)}
+				onKeyDown={(e) => {
+					if (e.key === "Enter" || e.key === " ") {
+						e.preventDefault();
+						openDetail(achievement, playerData);
+					}
+				}}
+				role="button"
+				tabIndex={0}
 				onMouseEnter={(e) => {
 					if (isCompleted) {
 						e.currentTarget.style.transform = "scale(1.02) translateY(-1px)";
@@ -574,6 +652,9 @@ export default function AchievementsTab({
 
 	return (
 		<div
+			ref={shellRef}
+			className={achStyles.pixelAchievementsShell}
+			data-pixel-shell="achievements"
 			style={{
 				padding: "16px",
 				maxHeight: "80vh",
@@ -605,7 +686,7 @@ export default function AchievementsTab({
 					WebkitTextFillColor: "transparent",
 					textShadow: "0 2px 4px rgba(0,0,0,0.3)",
 				}}>
-					🏆 Achievements
+					🏆 Trophy Gallery
 				</h2>
 				<div style={{ 
 					fontSize: "14px", 
@@ -659,6 +740,80 @@ export default function AchievementsTab({
 					{Math.round((completedCount / totalCount) * 100)}% Complete
 				</div>
 			</div>
+
+			<div className={achStyles.galleryHero}>
+				<h3 className={achStyles.galleryHeroTitle}>TROPHY ROOM</h3>
+				<p className={achStyles.galleryHeroSub}>
+					Badges earned across quests, focus, habits, crafting, and gate raids.
+				</p>
+				<div className={achStyles.tierStrip}>
+					{(["bronze", "silver", "gold", "legendary"] as BadgeTier[]).map((tier) => (
+						<div
+							key={tier}
+							className={`${achStyles.tierChip} ${TIER_CHIP_CLASS[tier]}`}
+						>
+							<span className={achStyles.tierChipLabel}>{tier}</span>
+							<span className={achStyles.tierChipCount}>
+								{tierCounts[tier].earned}/{tierCounts[tier].total}
+							</span>
+						</div>
+					))}
+				</div>
+			</div>
+
+			{recentUnlocks.length > 0 && (
+				<section className={achStyles.recentSection}>
+					<h3 className={achStyles.sectionLabel}>RECENT UNLOCKS</h3>
+					<div className={achStyles.recentRow}>
+						{recentUnlocks.slice(0, 8).map(({ achievement, playerData }) => (
+							<button
+								key={achievement.id}
+								type="button"
+								className={achStyles.recentBadge}
+								data-achievement-id={achievement.id}
+								onClick={() => openDetail(achievement, playerData)}
+							>
+								<span className={achStyles.recentIcon}>{achievement.icon}</span>
+								<span className={achStyles.recentTitle} title={achievement.title}>
+									{achievement.title}
+								</span>
+								<span className={`${achStyles.showcaseTier} ${TIER_CLASS[achievement.tier]}`}>
+									{achievement.tier}
+								</span>
+							</button>
+						))}
+					</div>
+				</section>
+			)}
+
+			{showcase.length > 0 ? (
+				<section className={achStyles.showcaseSection}>
+					<h3 className={achStyles.sectionLabel}>SHOWCASE</h3>
+					<div className={achStyles.showcaseRow}>
+						{showcase.map(({ achievement, playerData }) => (
+							<button
+								key={achievement.id}
+								type="button"
+								className={achStyles.showcaseBadge}
+								data-achievement-id={achievement.id}
+								onClick={() => openDetail(achievement, playerData)}
+							>
+								<span className={achStyles.showcaseIcon}>{achievement.icon}</span>
+								<span className={achStyles.showcaseTitle} title={achievement.title}>
+									{achievement.title}
+								</span>
+								<span className={`${achStyles.showcaseTier} ${TIER_CLASS[achievement.tier]}`}>
+									{achievement.tier}
+								</span>
+							</button>
+						))}
+					</div>
+				</section>
+			) : (
+				<div className={achStyles.emptyGallery}>
+					No trophies yet — complete quests and gate raids to fill the room.
+				</div>
+			)}
 
 			{/* Compact Filter Controls */}
 			<div
@@ -731,15 +886,7 @@ export default function AchievementsTab({
 						>
 							All
 						</button>
-						{(
-							[
-								"quest",
-								"progress",
-								"collection",
-								"special",
-								"pomodoro",
-							] as AchievementCategory[]
-						).map((category) => {
+						{ALL_CATEGORIES.map((category) => {
 							const info = getCategoryInfo(category);
 							return (
 								<button
@@ -1065,6 +1212,92 @@ export default function AchievementsTab({
 					}
 				`}
 			</style>
+
+			{detailEntry &&
+				ReactDOM.createPortal(
+					<div
+						className={achStyles.detailBackdrop}
+						role="dialog"
+						aria-modal="true"
+						onClick={() => setDetailEntry(null)}
+						onKeyDown={(e) => e.key === "Escape" && setDetailEntry(null)}
+					>
+						<div className={achStyles.detailPanel} onClick={(e) => e.stopPropagation()}>
+							<button
+								type="button"
+								className={achStyles.detailClose}
+								onClick={() => setDetailEntry(null)}
+								aria-label="Close"
+							>
+								×
+							</button>
+							<div className={achStyles.detailIcon}>{detailEntry.achievement.icon}</div>
+							<h3 className={achStyles.detailTitle}>{detailEntry.achievement.title}</h3>
+							<p className={achStyles.detailDesc}>{detailEntry.achievement.description}</p>
+							<div className={achStyles.detailMeta}>
+								<span className={`${achStyles.showcaseTier} ${TIER_CLASS[detailEntry.achievement.tier]}`}>
+									{detailEntry.achievement.tier}
+								</span>
+								<span className={achStyles.showcaseTier}>
+									{getCategoryInfo(detailEntry.achievement.category).icon}{" "}
+									{getCategoryInfo(detailEntry.achievement.category).name}
+								</span>
+								{detailEntry.playerData.status === "completed" && detailEntry.playerData.unlockedDate && (
+									<span className={achStyles.showcaseTier}>
+										🏆 {new Date(detailEntry.playerData.unlockedDate).toLocaleDateString()}
+									</span>
+								)}
+							</div>
+							{detailEntry.playerData.status !== "locked" && (
+								<div style={{ marginBottom: 12 }}>
+									<div
+										style={{
+											background: "rgba(255,255,255,0.1)",
+											borderRadius: 6,
+											height: 8,
+											overflow: "hidden",
+										}}
+									>
+										<div
+											style={{
+												background: detailEntry.playerData.status === "completed"
+													? "linear-gradient(90deg, #4CAF50, #66BB6A)"
+													: "linear-gradient(90deg, #2196F3, #42A5F5)",
+												height: "100%",
+												width: `${detailEntry.playerData.progress}%`,
+											}}
+										/>
+									</div>
+									<div style={{ fontSize: 12, color: "#aaa", marginTop: 4 }}>
+										{Math.round(detailEntry.playerData.progress)}%
+										{detailEntry.playerData.currentValue !== undefined && (
+											<> ({detailEntry.playerData.currentValue}/{detailEntry.achievement.criteria.target})</>
+										)}
+									</div>
+								</div>
+							)}
+							{detailEntry.achievement.rewards && (
+								<div className={achStyles.detailRewards}>
+									<strong>Rewards:</strong>{" "}
+									{[
+										detailEntry.achievement.rewards.xp
+											? `+${detailEntry.achievement.rewards.xp} XP`
+											: null,
+										detailEntry.achievement.rewards.coins
+											? `+${detailEntry.achievement.rewards.coins} coins`
+											: null,
+										detailEntry.achievement.rewards.title
+											? `title "${detailEntry.achievement.rewards.title}"`
+											: null,
+									]
+										.filter(Boolean)
+										.join(" · ") || "Bragging rights"}
+								</div>
+							)}
+						</div>
+					</div>,
+					document.body
+				)}
 		</div>
 	);
 }

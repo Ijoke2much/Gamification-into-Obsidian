@@ -1,13 +1,49 @@
 .mobileSkillTree {
     height: 100vh;
     width: 100vw;
-    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    --st-bg: var(--go-bg, #1b1d2f);
+    --st-panel: var(--go-panel, #252742);
+    --st-panel-alt: var(--go-card-soft, #2e3152);
+    --st-border: var(--go-border, #0f1120);
+    --st-border-hi: var(--go-border-strong, #5b61a2);
+    --st-text: var(--go-text, #ecefff);
+    --st-muted: var(--go-muted, #bac2e3);
+    --st-hi: var(--go-gold, #ffd166);
+    --st-accent: var(--go-accent, #8ecae6);
+    --st-success: var(--go-success, #4ade80);
+    --st-progress-track: var(--go-progress-track, var(--st-bg));
+    --st-progress-fill: var(--go-cp-progress-fill, var(--go-progress-fill, #22c55e));
+    --st-progress-fill-strong: var(--go-cp-progress-fill-strong, var(--go-progress-fill-strong, #16a34a));
+    /* Align SkillProgressVisual tokens when tree is standalone */
+    --pixel-bg: var(--st-bg);
+    --pixel-panel: var(--st-panel);
+    --pixel-panel-alt: var(--st-panel-alt);
+    --pixel-border-dark: var(--st-border);
+    --pixel-border-light: var(--st-border-hi);
+    --pixel-accent: var(--st-accent);
+    --pixel-highlight: var(--st-hi);
+    --pixel-text: var(--st-text);
+    --pixel-muted: var(--st-muted);
+    --pixel-ok: var(--st-success);
+    background: var(--st-panel);
     display: flex;
     flex-direction: column;
     overflow: hidden;
     position: relative;
     transform-origin: center center;
     transition: transform 0.3s ease;
+    font-family: var(--go-font-body, "VT323", "Courier New", monospace);
+    color: var(--st-text);
+    image-rendering: pixelated;
+}
+
+.mobileSkillTreeEmbedded {
+    height: 100%;
+    max-height: 100%;
+    width: 100%;
+    border: 2px solid var(--pixel-border-dark, #0f1120);
+    box-sizing: border-box;
+    box-shadow: inset 0 0 0 1px var(--pixel-border-light, #5b61a2);
 }
 
 /* Mobile Header */
@@ -15,343 +51,656 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 16px;
-    background: rgba(0, 0, 0, 0.3);
-    backdrop-filter: blur(10px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 12px 14px;
+    background: var(--st-panel-alt);
+    border-bottom: 2px solid var(--st-border);
     flex-shrink: 0;
+    box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .backButton {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 8px;
+    background: var(--st-panel);
+    border: 2px solid var(--st-border);
+    border-radius: 0;
     padding: 8px 12px;
-    color: #fff;
-    font-size: 14px;
+    color: var(--st-text);
+    font-size: 0.95rem;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: transform 0.1s ease;
     min-width: 60px;
+    font-family: inherit;
+    font-weight: 600;
+    box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.35);
 }
 
 .backButton:active {
-    background: rgba(255, 255, 255, 0.2);
-    transform: scale(0.95);
+    transform: translate(2px, 2px);
+    box-shadow: none;
 }
 
 .title {
     margin: 0;
-    font-size: 18px;
-    font-weight: 600;
-    color: #fff;
+    font-family: var(--go-font-display, "Press Start 2P", "VT323", monospace);
+    font-size: 0.5rem;
+    line-height: 1.5;
+    color: var(--st-hi);
     text-align: center;
     flex: 1;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
 }
 
 .zoomButton {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 8px;
+    background: var(--st-panel);
+    border: 2px solid var(--st-border);
+    border-radius: 0;
     padding: 8px;
-    color: #fff;
+    color: var(--st-text);
     font-size: 16px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: transform 0.1s ease;
     min-width: 40px;
+    box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.35);
 }
 
 .zoomButton:active {
-    background: rgba(255, 255, 255, 0.2);
-    transform: scale(0.95);
+    transform: translate(2px, 2px);
+    box-shadow: none;
 }
 
 /* Search and Filter Bar */
 .searchFilterBar {
     display: flex;
     gap: 8px;
-    padding: 12px 16px;
-    background: rgba(0, 0, 0, 0.2);
+    padding: 10px 12px;
+    background: var(--st-bg);
+    border-bottom: 2px solid var(--st-border);
     flex-shrink: 0;
 }
 
 .searchInput {
     flex: 1;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 8px;
+    background: var(--st-panel-alt);
+    border: 2px solid var(--st-border);
+    border-radius: 0;
     padding: 10px 12px;
-    color: #fff;
-    font-size: 14px;
+    color: var(--st-text);
+    font-size: 1rem;
     outline: none;
+    font-family: inherit;
+    box-shadow: inset 0 0 0 1px rgba(91, 97, 162, 0.35);
 }
 
 .searchInput::placeholder {
-    color: rgba(255, 255, 255, 0.6);
+    color: var(--st-muted);
 }
 
 .classFilter {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 8px;
+    background: var(--st-panel-alt);
+    border: 2px solid var(--st-border);
+    border-radius: 0;
     padding: 10px 12px;
-    color: #fff;
-    font-size: 14px;
+    color: var(--st-text);
+    font-size: 0.95rem;
     outline: none;
     min-width: 120px;
+    font-family: inherit;
+    box-shadow: inset 0 0 0 1px rgba(91, 97, 162, 0.35);
+}
+
+.scopeHintPill {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 12px;
+    font-size: 0.85rem;
+    color: var(--st-muted);
+    border: 2px dashed var(--st-border);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.drilldownBar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    background: var(--st-panel-alt);
+    border-bottom: 2px solid var(--st-border);
+    flex-shrink: 0;
+}
+
+.drilldownBack {
+    padding: 8px 12px;
+    background: var(--st-panel);
+    border: 2px solid var(--st-border);
+    color: var(--st-accent);
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.35);
+}
+
+.drilldownBack:active {
+    transform: translate(1px, 1px);
+    box-shadow: none;
+}
+
+.drilldownTitle {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--st-hi);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+/* Class browser (By class → vault notes) */
+.classBrowserContainer.grid {
+    align-items: stretch;
+}
+
+.classBrowserCard {
+    display: flex;
+    gap: 12px;
+    padding: 12px;
+    background: var(--st-panel-alt);
+    border: 2px solid var(--st-border);
+    box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.35), inset 0 0 0 1px rgba(91, 97, 162, 0.3);
+    min-width: 0;
+}
+
+.classBrowserCardLarge {
+    flex-direction: column;
+    padding: 16px;
+}
+
+.classBrowserCardList {
+    width: 100%;
+    max-width: 100%;
+    align-self: stretch;
+    box-sizing: border-box;
+}
+
+.classBrowserCardIcon {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.75rem;
+    background: var(--st-bg);
+    border: 2px solid var(--st-border);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+.classBrowserCardLarge .classBrowserCardIcon {
+    width: 56px;
+    height: 56px;
+    font-size: 2rem;
+}
+
+.classBrowserCardBody {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.classBrowserName {
+    margin: 0;
+    font-family: var(--go-font-display, "Press Start 2P", "VT323", monospace);
+    font-size: 0.45rem;
+    line-height: 1.5;
+    color: var(--st-text);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    word-break: break-word;
+}
+
+.classBrowserTagline {
+    margin: 0;
+    font-size: 0.85rem;
+    color: var(--st-muted);
+    line-height: 1.35;
+    font-style: italic;
+}
+
+.classBrowserStats {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 8px 0;
+    border-top: 1px solid rgba(91, 97, 162, 0.35);
+    border-bottom: 1px solid rgba(91, 97, 162, 0.25);
+    margin: 4px 0;
+}
+
+.classBrowserLevelRow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 0.82rem;
+}
+
+.classBrowserLevel {
+    font-weight: 700;
+    color: var(--st-text);
+}
+
+.classBrowserSkillCount {
+    font-size: 0.75rem;
+    color: var(--st-muted);
+}
+
+.classBrowserProgressTrack {
+    width: 100%;
+    height: 8px;
+    background: var(--st-progress-track);
+    border: 2px solid var(--st-border);
+    overflow: hidden;
+    box-shadow: inset 0 0 0 1px rgba(91, 97, 162, 0.35);
+}
+
+.classBrowserProgressFill {
+    height: 100%;
+    border-radius: 0;
+    transition: width 0.25s ease;
+    background: repeating-linear-gradient(
+        -45deg,
+        var(--st-progress-fill),
+        var(--st-progress-fill) 4px,
+        var(--st-progress-fill-strong) 4px,
+        var(--st-progress-fill-strong) 8px
+    );
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.15);
+}
+
+.classBrowserCpLine {
+    font-size: 0.8rem;
+    color: var(--st-muted);
+    font-weight: 600;
+}
+
+.classBrowserCpPct {
+    font-style: italic;
+    font-weight: 500;
+}
+
+.classBrowserMetaRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 0.75rem;
+    color: var(--st-muted);
+    justify-content: space-between;
+}
+
+.classBrowserActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: auto;
+}
+
+.classOpenBtn,
+.classSkillsBtn {
+    padding: 8px 12px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 700;
+    border: 2px solid var(--st-border);
+    cursor: pointer;
+    box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.3);
+}
+
+.classOpenBtn {
+    background: var(--st-accent);
+    color: var(--st-bg);
+}
+
+.classSkillsBtn {
+    background: var(--st-panel);
+    color: var(--st-text);
+}
+
+.classOpenBtn:active,
+.classSkillsBtn:active {
+    transform: translate(1px, 1px);
+    box-shadow: none;
+}
+
+.scopeBar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 8px 12px;
+    background: var(--st-bg);
+    border-bottom: 2px solid var(--st-border);
+    flex-shrink: 0;
+}
+
+.scopeLabel {
+    font-size: 0.8rem;
+    color: var(--st-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.scopeSegment {
+    display: flex;
+    border: 2px solid var(--st-border);
+    box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.35);
+}
+
+.scopeButton {
+    padding: 8px 12px;
+    background: var(--st-panel);
+    border: none;
+    border-right: 2px solid var(--st-border);
+    color: var(--st-muted);
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+
+.scopeButton:last-child {
+    border-right: none;
+}
+
+.scopeButton:hover {
+    background: var(--st-panel-alt);
+    color: var(--st-text);
+}
+
+.scopeButtonActive {
+    background: var(--st-accent);
+    color: var(--st-bg);
+}
+
+.scopeButtonActive:hover {
+    background: var(--st-accent);
+    color: var(--st-bg);
+    filter: brightness(1.05);
 }
 
 /* View Mode Toggle */
 .viewModeToggle {
     display: flex;
-    padding: 8px 16px;
-    gap: 4px;
-    background: rgba(0, 0, 0, 0.2);
+    padding: 8px 12px;
+    gap: 6px;
+    background: var(--st-bg);
+    border-bottom: 2px solid var(--st-border);
     flex-shrink: 0;
 }
 
 .viewButton {
     flex: 1;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 6px;
+    background: var(--st-panel);
+    border: 2px solid var(--st-border);
+    border-radius: 0;
     padding: 8px 4px;
-    color: #fff;
-    font-size: 12px;
+    color: var(--st-muted);
+    font-size: 0.75rem;
+    font-family: "Press Start 2P", "VT323", monospace;
+    line-height: 1.35;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: transform 0.08s ease, color 0.12s ease;
+    box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.35);
 }
 
 .viewButton.active {
-    background: rgba(74, 222, 128, 0.3);
-    border-color: rgba(74, 222, 128, 0.5);
-    color: #4ade80;
+    background: var(--st-accent);
+    border-color: var(--st-border);
+    color: var(--st-bg);
 }
 
 .viewButton:active {
-    transform: scale(0.95);
+    transform: translate(2px, 2px);
+    box-shadow: none;
+}
+
+/* Single scroll parent — avoids clipped scaled content */
+.skillsScroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
 }
 
 /* Skills Container */
 .skillsContainer {
-    flex: 1;
-    overflow-y: auto;
     padding: 16px;
     display: flex;
     flex-direction: column;
     gap: 12px;
+    overflow: visible;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    align-items: stretch;
 }
 
-/* Grid View */
 .skillsContainer.grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 12px;
-    padding: 16px;
+    align-items: start;
 }
 
-/* List View */
 .skillsContainer.list {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    padding: 16px;
+    gap: 6px;
 }
 
-.skillsContainer.list .skillCard {
-    display: flex;
-    align-items: center;
-    padding: 12px 16px;
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    transition: all 0.2s ease;
-}
-
-.skillsContainer.list .skillCard:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.2);
-    transform: translateX(4px);
-}
-
-.skillsContainer.list .skillCard .skillIcon {
-    font-size: 20px;
-    margin-right: 12px;
-    flex-shrink: 0;
-}
-
-.skillsContainer.list .skillCard .skillInfo {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.skillsContainer.list .skillCard .skillName {
-    font-size: 16px;
-    font-weight: 600;
-    color: #fff;
-    margin: 0;
-}
-
-.skillsContainer.list .skillCard .skillClass {
-    font-size: 12px;
-    color: #888;
-    background: rgba(0, 0, 0, 0.3);
-    padding: 2px 8px;
-    border-radius: 12px;
-    align-self: flex-start;
-}
-
-.skillsContainer.list .skillCard .progressContainer {
-    margin: 0;
-    min-width: 200px;
-}
-
-.skillsContainer.list .skillCard .progressBar {
-    height: 6px;
-    margin-bottom: 4px;
-}
-
-.skillsContainer.list .skillCard .progressText {
-    font-size: 11px;
-    color: #ccc;
-}
-
-/* Tree View */
-.skillsContainer.tree {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    padding: 16px;
-}
-
-.treeClassGroup {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    overflow: hidden;
-}
-
-.treeClassHeader {
-    background: rgba(255, 255, 255, 0.1);
-    padding: 12px 16px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+.listSkillRow {
     cursor: pointer;
-    transition: all 0.2s ease;
+    overflow: visible;
+    outline: none;
+    width: 100%;
+    max-width: 100%;
+    align-self: stretch;
+    box-sizing: border-box;
 }
 
-.treeClassHeader:hover {
-    background: rgba(255, 255, 255, 0.15);
+.listSkillRow > div {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
-.treeClassTitle {
-    font-size: 16px;
-    font-weight: 600;
-    color: #fff;
-    margin: 0;
+.listSkillRow:focus-visible {
+    outline: 2px solid var(--st-accent);
+    outline-offset: 2px;
+}
+
+.hubFilterHint {
     display: flex;
     align-items: center;
+    padding: 8px 10px;
+    font-size: 0.85rem;
+    color: var(--st-muted);
+    border: 2px dashed var(--st-border);
+    white-space: nowrap;
+}
+
+.skillsContainer.hub {
+    gap: 14px;
+}
+
+.classStrip {
+    display: flex;
+    flex-wrap: wrap;
     gap: 8px;
+    padding-bottom: 4px;
 }
 
-.treeClassIcon {
-    font-size: 18px;
+.classChip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+    background: var(--st-panel-alt);
+    border: 2px solid var(--st-border);
+    color: var(--st-text);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.85rem;
+    box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.35);
 }
 
-.treeClassCount {
-    background: rgba(74, 222, 128, 0.2);
-    color: #4ade80;
-    padding: 2px 8px;
-    border-radius: 12px;
-    font-size: 12px;
-    font-weight: 500;
+.classChipActive {
+    background: var(--st-accent);
+    color: var(--st-bg);
+    border-color: var(--st-border);
 }
 
-.treeClassToggle {
-    color: #888;
-    font-size: 14px;
-    transition: transform 0.2s ease;
+.classChipIcon {
+    font-size: 1.1rem;
 }
 
-.treeClassToggle.expanded {
-    transform: rotate(90deg);
+.classChipName {
+    font-weight: 600;
 }
 
-.treeSkillsContainer {
-    padding: 8px;
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 8px;
-}
-
-.treeSkillsContainer.collapsed {
-    display: none;
-}
-
-.treeSkillCard {
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+.classChipCount {
+    font-size: 0.75rem;
+    opacity: 0.9;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 2px 6px;
     border-radius: 8px;
+}
+
+.classChipActive .classChipCount {
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.hubPanel {
+    border: 2px solid var(--st-border);
+    background: var(--st-bg);
     padding: 12px;
-    transition: all 0.2s ease;
-    cursor: pointer;
+    box-shadow: inset 0 0 0 1px rgba(91, 97, 162, 0.25);
 }
 
-.treeSkillCard:hover {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 255, 255, 0.15);
-    transform: translateY(-2px);
+.hubParent {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 10px;
+    background: var(--st-panel-alt);
+    border: 2px solid var(--st-border);
 }
 
-.treeSkillCard .skillIcon {
-    font-size: 20px;
-    margin-bottom: 8px;
+.hubParentIcon {
+    font-size: 1.75rem;
+    line-height: 1;
 }
 
-.treeSkillCard .skillName {
-    font-size: 14px;
-    font-weight: 600;
-    color: #fff;
-    margin: 0 0 6px 0;
+.hubParentText {
+    flex: 1;
+    min-width: 0;
 }
 
-.treeSkillCard .levelInfo {
-    font-size: 11px;
-    color: #888;
-    margin-bottom: 8px;
+.hubParentLabel {
+    font-size: 0.55rem;
+    font-family: "Press Start 2P", monospace;
+    color: var(--st-muted);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    line-height: 1.4;
 }
 
-.treeSkillCard .progressBar {
-    height: 4px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 2px;
-    overflow: hidden;
+.hubParentName {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--st-hi);
+}
+
+.hubParentHint {
+    font-size: 0.8rem;
+    color: var(--st-muted);
+    margin-top: 6px;
+    line-height: 1.35;
+}
+
+.hubConnector {
+    height: 8px;
+    border-left: 2px dotted var(--st-accent);
+    margin-left: 24px;
+    margin-top: 4px;
     margin-bottom: 4px;
+    opacity: 0.7;
 }
 
-.treeSkillCard .progressFill {
-    height: 100%;
-    border-radius: 2px;
-    transition: width 0.5s ease;
+.hubSkills {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding-left: 8px;
 }
 
-.treeSkillCard .progressText {
-    font-size: 10px;
-    color: #ccc;
+.hubEmptySkills {
+    margin: 0;
+    padding: 12px 14px;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    color: var(--st-muted);
+    border: 2px dashed var(--st-border);
+    background: var(--st-panel-alt);
+}
+
+.hubSkillRow {
+    display: flex;
+    align-items: flex-start;
+    gap: 0;
+    overflow: visible;
+}
+
+.hubSkillStem {
+    width: 12px;
+    flex-shrink: 0;
+    border-left: 2px dotted var(--st-accent);
+    margin-right: 10px;
+    min-height: 48px;
+    opacity: 0.65;
+}
+
+.hubSkillRow> :last-child {
+    flex: 1;
+    min-width: 0;
+}
+
+.skillsContainer.card {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 16px;
 }
 
 .skillCard {
     cursor: pointer;
-    transition: all 0.2s ease;
-    border-radius: 8px;
-    overflow: hidden;
+    transition: transform 0.12s ease;
+    border-radius: 0;
+    overflow: visible;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
 }
 
 .skillCard:active {
-    transform: scale(0.98);
+    transform: scale(0.99);
+}
+
+.cardMode {
+    min-height: auto;
 }
 
 .skillClass {
@@ -495,12 +844,12 @@
         padding: 6px 16px;
     }
 
-    .skillsContainer {
+    .skillsScroll .skillsContainer {
         padding: 12px 16px;
     }
 
     .skillsContainer.grid {
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
         gap: 8px;
     }
 }
@@ -541,39 +890,31 @@
         padding: 8px 20px;
     }
 
+    .skillsScroll {
+        min-height: 0;
+    }
+
     .skillsContainer {
         padding: 20px;
     }
 
     /* Enhanced grid layout for desktop */
     .skillsContainer.grid {
-        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-        gap: 8px;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 12px;
     }
 
     /* Ultra-wide desktop support */
     @media (min-width: 1440px) {
         .skillsContainer.grid {
-            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-            gap: 6px;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 10px;
         }
     }
 
-    /* Desktop-specific view modes */
-    .skillsContainer.compact {
-        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-        gap: 4px;
-    }
-
-    .skillsContainer.detailed {
-        grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-        gap: 16px;
-    }
-
     .skillsContainer.card {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-        gap: 16px;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 14px;
     }
 
     /* Desktop zoom controls */
@@ -605,7 +946,7 @@
         appearance: none;
         width: 16px;
         height: 16px;
-        background: #4ade80;
+        background: var(--st-success);
         border-radius: 50%;
         cursor: pointer;
     }
@@ -680,32 +1021,9 @@
     }
 
     .viewModeButton.active {
-        background: rgba(74, 222, 128, 0.3);
-        border-color: rgba(74, 222, 128, 0.5);
-        color: #4ade80;
-    }
-
-    /* Desktop skill card variants */
-    .skillCard.compact {
-        padding: 6px;
-        font-size: 11px;
-    }
-
-    .skillCard.compact .skillIcon {
-        font-size: 16px;
-    }
-
-    .skillCard.compact .skillName {
-        font-size: 12px;
-    }
-
-    .skillCard.detailed {
-        padding: 16px;
-        font-size: 14px;
-    }
-
-    .skillCard.detailed .skillIcon {
-        font-size: 28px;
+        background: color-mix(in srgb, var(--st-success) 30%, transparent);
+        border-color: color-mix(in srgb, var(--st-success) 50%, transparent);
+        color: var(--st-success);
     }
 
     /* Hide mobile-specific elements on desktop */
@@ -715,6 +1033,515 @@
 
     .zoomControls {
         display: none;
+    }
+}
+
+/* ─── Paths (hub): soft “mindfulness mock” — no tiers ─── */
+.pathsSoftRoot {
+    --st-bg: #fdfbf5;
+    --st-panel: #ede6dc;
+    --st-panel-alt: #f5f0e8;
+    --st-border: #d4c4e8;
+    --st-text: #2f2a3c;
+    --st-muted: #6b6280;
+    --st-hi: #6b4eae;
+    --st-accent: #8b74c9;
+    --pixel-bg: #fdfbf5;
+    --pixel-panel: #f5f0e8;
+    --pixel-panel-alt: #ebe4d8;
+    --pixel-border-dark: #cfc2e0;
+    --pixel-border-light: #e8dff5;
+    --pixel-accent: #8b74c9;
+    --pixel-highlight: #d4a84b;
+    --pixel-text: #2f2a3c;
+    --pixel-muted: #6b6280;
+    background: var(--st-bg);
+    color: var(--st-text);
+}
+
+.pathsSoftRoot .mobileHeader {
+    background: var(--st-panel-alt);
+    border-color: var(--st-border);
+}
+
+.pathsSoftRoot .backButton,
+.pathsSoftRoot .zoomButton {
+    background: var(--st-panel);
+    border-color: var(--st-border);
+    color: var(--st-text);
+    box-shadow: 2px 2px 0 rgba(47, 42, 60, 0.08);
+}
+
+.pathsSoftRoot .title {
+    color: var(--st-hi);
+}
+
+.pathsSoftRoot .viewButton.active {
+    background: var(--st-accent);
+    color: #fff;
+}
+
+.pathsSoftRoot .scopeButtonActive {
+    background: var(--st-accent);
+    color: #fff;
+}
+
+.pathsSoftRoot .desktopControls {
+    background: var(--st-panel-alt);
+    border-bottom: 1px solid var(--st-border);
+}
+
+.pathsSoftRoot .viewModeButton {
+    background: #fffef9;
+    color: var(--st-text);
+    border: 1px solid var(--st-border);
+}
+
+.pathsSoftRoot .viewModeButton:hover {
+    background: #f5ebc4;
+}
+
+.pathsSoftRoot .viewModeButton.active {
+    background: var(--st-accent);
+    border-color: #6b4eae;
+    color: #fff;
+}
+
+.pathsSoftRoot .zoomLevelIndicator,
+.pathsSoftRoot .desktopZoomControls .zoomLevelIndicator {
+    background: #fffef9;
+    color: var(--st-text);
+    border: 1px solid var(--st-border);
+}
+
+.pathsSoftRoot .keyboardShortcuts {
+    background: var(--st-panel-alt);
+    color: var(--st-text);
+    border: 1px solid var(--st-border);
+}
+
+.pathsSoftRoot .shortcutHint kbd {
+    background: #fffef9;
+    color: var(--st-text);
+    border: 1px solid var(--st-border);
+}
+
+.pathsSoftLayout {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    width: 100%;
+    font-family: "JetBrains Mono", "IBM Plex Mono", "SF Mono", ui-monospace, monospace;
+}
+
+.pathsCategoryTabs {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 4px 2px 10px;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+}
+
+.pathsTab {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex-shrink: 0;
+    padding: 10px 14px;
+    background: #fffef9;
+    border: 2px solid var(--st-border);
+    border-radius: 10px;
+    color: var(--st-text);
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    box-shadow: 0 2px 0 rgba(47, 42, 60, 0.06);
+    transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pathsTab:hover {
+    background: #f5ebc4;
+    border-color: #c9b8e0;
+}
+
+.pathsTabActive {
+    background: linear-gradient(180deg, #c4b5e8 0%, #b29dd9 100%);
+    border-color: #6b4eae;
+    color: #fff;
+    box-shadow: 0 3px 0 rgba(107, 78, 174, 0.35);
+}
+
+.pathsTabActive:hover {
+    background: linear-gradient(180deg, #cbb8f0 0%, #b8a5df 100%);
+    color: #fff;
+}
+
+.pathsTabIcon {
+    font-size: 1.1rem;
+    line-height: 1;
+    filter: saturate(1.1);
+}
+
+.pathsTabLabel {
+    max-width: 140px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pathsTabCount {
+    font-size: 0.65rem;
+    opacity: 0.85;
+    padding: 2px 6px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.08);
+}
+
+.pathsTabActive .pathsTabCount {
+    background: rgba(255, 255, 255, 0.25);
+    color: #fff;
+}
+
+.pathsBody {
+    display: flex;
+    flex-direction: row;
+    gap: 16px;
+    align-items: stretch;
+    flex-wrap: wrap;
+    width: 100%;
+}
+
+.pathsCanvas {
+    flex: 1;
+    min-width: 240px;
+    background: #fffef9;
+    border: 2px solid var(--st-border);
+    border-radius: 14px;
+    box-shadow: 0 8px 28px rgba(47, 42, 60, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    padding: 14px 16px 18px;
+    box-sizing: border-box;
+}
+
+.pathsCanvasTop {
+    margin-bottom: 14px;
+}
+
+.pathsCanvasTitleRow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.pathsCanvasEmoji {
+    font-size: 1.75rem;
+    line-height: 1;
+    margin-top: 2px;
+}
+
+.pathsCanvasTitles {
+    flex: 1;
+    min-width: 0;
+}
+
+.pathsCanvasHeading {
+    margin: 0 0 8px 0;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--st-text);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.pathsProgressRow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.75rem;
+    color: var(--st-muted);
+}
+
+.pathsProgressLabel {
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.pathsProgressTrack {
+    flex: 1;
+    min-width: 80px;
+    max-width: 200px;
+    height: 8px;
+    background: #e8dff5;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid #ddd0f0;
+}
+
+.pathsProgressFill {
+    height: 100%;
+    border-radius: 6px;
+    background: linear-gradient(90deg, #9ecbf7, #7ab8f2);
+    transition: width 0.25s ease;
+}
+
+.pathsProgressFraction {
+    font-variant-numeric: tabular-nums;
+}
+
+.pathsZoomMini {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+    padding: 4px 6px;
+    background: #f5f0e8;
+    border: 1px solid var(--st-border);
+    border-radius: 8px;
+}
+
+.pathsZoomMiniBtn {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    border-radius: 6px;
+    background: #fffef9;
+    color: var(--st-text);
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    line-height: 1;
+    box-shadow: 0 1px 0 rgba(47, 42, 60, 0.12);
+}
+
+.pathsZoomMiniBtn:active {
+    transform: translateY(1px);
+}
+
+.pathsZoomMiniPct {
+    min-width: 40px;
+    text-align: center;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--st-muted);
+}
+
+.pathsNodeScroll {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    padding: 8px 4px 4px;
+    max-height: min(52vh, 420px);
+    overflow-y: auto;
+}
+
+.pathsEmpty {
+    margin: 0;
+    padding: 16px;
+    font-size: 0.85rem;
+    color: var(--st-muted);
+    line-height: 1.45;
+    text-align: center;
+}
+
+.pathsNodeRow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+}
+
+.pathsBranchLine {
+    width: 0;
+    flex-shrink: 0;
+    height: 14px;
+    border-left: 2px dashed #b8a9c9;
+    margin: 0 auto 4px;
+    opacity: 0.85;
+}
+
+.pathsNode {
+    width: 100%;
+    max-width: 280px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    grid-template-rows: auto auto;
+    gap: 4px 10px;
+    align-items: center;
+    padding: 12px 14px;
+    background: #fffef9;
+    border: 2px dashed #c4b5e8;
+    border-radius: 12px;
+    cursor: pointer;
+    text-align: left;
+    font-family: inherit;
+    color: var(--st-text);
+    box-shadow: 0 3px 12px rgba(107, 78, 174, 0.12);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.12s ease;
+}
+
+.pathsNode:hover {
+    border-color: #8b74c9;
+    box-shadow: 0 4px 16px rgba(107, 78, 174, 0.18);
+}
+
+.pathsNodeSelected {
+    border-style: solid;
+    border-color: #6b4eae;
+    background: linear-gradient(180deg, #faf6ff 0%, #fffef9 100%);
+    box-shadow: 0 0 0 2px rgba(139, 116, 201, 0.25), 0 6px 20px rgba(107, 78, 174, 0.2);
+}
+
+.pathsNodeFaded {
+    opacity: 0.55;
+    filter: grayscale(0.15);
+}
+
+.pathsNodeEmoji {
+    grid-row: 1 / span 2;
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+.pathsNodeName {
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pathsNodeLevel {
+    grid-column: 3;
+    grid-row: 1;
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: var(--st-muted);
+}
+
+.pathsNodeMicroBar {
+    grid-column: 2 / -1;
+    grid-row: 2;
+    height: 4px;
+    background: #e8dff5;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.pathsNodeMicroFill {
+    display: block;
+    height: 100%;
+    border-radius: 4px;
+    background: linear-gradient(90deg, #7ad99c, #5ccf8a);
+}
+
+.pathsAside {
+    width: 260px;
+    flex-shrink: 0;
+    box-sizing: border-box;
+    padding: 16px 18px;
+    background: #fffef9;
+    border: 2px solid var(--st-border);
+    border-radius: 14px;
+    box-shadow: 0 6px 22px rgba(47, 42, 60, 0.07);
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.pathsAsideLead {
+    font-size: 1.5rem;
+    line-height: 1;
+    margin: 0;
+}
+
+.pathsAsideTitle {
+    margin: 0;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--st-text);
+}
+
+.pathsAsideText {
+    margin: 0;
+    font-size: 0.78rem;
+    line-height: 1.5;
+    color: var(--st-muted);
+}
+
+.pathsAsideSkillName {
+    margin: 0;
+    font-size: 0.85rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--st-hi);
+}
+
+.pathsAsideMeta {
+    margin: 0;
+    font-size: 0.72rem;
+    line-height: 1.45;
+    color: var(--st-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+.pathsAsideDesc {
+    margin: 0;
+    font-size: 0.75rem;
+    line-height: 1.45;
+    color: var(--st-text);
+}
+
+.pathsAsideOpenBtn {
+    margin-top: 4px;
+    padding: 10px 14px;
+    background: linear-gradient(180deg, #9b86bd 0%, #8b74c9 100%);
+    border: 2px solid #6b4eae;
+    border-radius: 10px;
+    color: #fff;
+    font-family: inherit;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    box-shadow: 0 3px 0 rgba(107, 78, 174, 0.35);
+}
+
+.pathsAsideOpenBtn:active {
+    transform: translateY(2px);
+    box-shadow: none;
+}
+
+.pathsAsideBonus {
+    margin-top: auto;
+    padding-top: 12px;
+    border-top: 1px dashed var(--st-border);
+    font-size: 0.68rem;
+    line-height: 1.45;
+    color: var(--st-muted);
+}
+
+@media (max-width: 720px) {
+    .pathsAside {
+        width: 100%;
+    }
+
+    .pathsNodeScroll {
+        max-height: none;
     }
 }
 

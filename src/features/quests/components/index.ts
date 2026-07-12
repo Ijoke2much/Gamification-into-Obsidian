@@ -2,7 +2,6 @@
 export { QuestCard } from './QuestCard';
 export { CinematicQuestCard } from './CinematicQuestCard';
 export { MobileCinematicQuestCard } from './MobileCinematicQuestCard';
-export { CinematicQuestCardDemo } from './CinematicQuestCardDemo';
 export { QuestCalendarView } from './QuestCalendarView';
 
 // Quest Card Components

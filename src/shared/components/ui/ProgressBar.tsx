@@ -1,4 +1,5 @@
 import React from "react";
+import styles from "./ProgressBar.module.css";
 
 interface ProgressBarProps {
 	progress: number; // 0 to 100
@@ -6,6 +7,8 @@ interface ProgressBarProps {
 	height?: number; // Optional height in px
 	labelPosition?: "center" | "below";
 	variant?: "green" | "purple";
+	/** Square segments / pixel frame (Player tab) */
+	appearance?: "smooth" | "pixel";
 }
 
 export const ProgressBar: React.FC<ProgressBarProps> = ({
@@ -14,29 +17,71 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
 	height = 20,
 	labelPosition = "center",
 	variant = "green",
+	appearance = "smooth",
 }) => {
-	const percentage = Math.max(progress, 2); // Ensure minimum width for visibility
+	const pct = Math.max(0, Math.min(100, Number(progress) || 0));
+	const percentage = appearance === "pixel" ? Math.max(pct, 0) : Math.max(progress, 2);
 
 	const colors =
 		variant === "purple"
 			? {
-					border: "#a78bfa", // violet-400
-					from: "#a78bfa",
-					to: "#ec4899", // pink-500
-					glow: "#a78bfa",
+					border: "var(--go-progress-fill, #a78bfa)",
+					from: "var(--go-progress-fill, #a78bfa)",
+					to: "var(--go-progress-fill-strong, #ec4899)",
+					glow: "var(--go-progress-glow, rgba(167, 139, 250, 0.45))",
 			  }
 			: {
-					border: "#4ade80",
-					from: "#4ade80",
-					to: "#22d3ee",
-					glow: "#4ade80",
+					border: "var(--go-progress-fill, #4ade80)",
+					from: "var(--go-progress-fill, #4ade80)",
+					to: "var(--go-progress-fill-strong, #22d3ee)",
+					glow: "var(--go-progress-glow, rgba(74, 222, 128, 0.35))",
 			  };
+
+	if (appearance === "pixel") {
+		const bar = (
+			<div
+				className={styles.pixelTrack}
+				style={
+					{
+						"--pb-height": `${height}px`,
+						borderColor: colors.border,
+					} as React.CSSProperties
+				}
+			>
+				<div
+					className={styles.pixelFill}
+					style={{
+						width: `${percentage}%`,
+						background: `linear-gradient(180deg, ${colors.from} 0%, ${colors.to} 100%)`,
+						boxShadow: `inset 0 2px 0 rgba(255,255,255,0.2)`,
+					}}
+				/>
+				{labelPosition === "center" && (
+					<div className={styles.pixelLabel}>
+						{label ? label : `${Math.round(pct)}%`}
+					</div>
+				)}
+			</div>
+		);
+
+		if (labelPosition === "below") {
+			return (
+				<div style={{ width: "100%" }}>
+					{bar}
+					<div className={styles.pixelLabelBelow}>
+						{label ? label : `${Math.round(pct)}%`}
+					</div>
+				</div>
+			);
+		}
+		return bar;
+	}
 
 	const bar = (
 		<div
 			style={{
 				width: "100%",
-				background: "#333",
+				background: "var(--go-progress-track, #333)",
 				borderRadius: "8px",
 				height: `${height}px`,
 				position: "relative",
@@ -69,7 +114,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
 						display: "flex",
 						alignItems: "center",
 						justifyContent: "center",
-						color: "white",
+						color: "var(--go-exp-text, white)",
 						fontWeight: "bold",
 						fontSize: "0.85rem",
 						textShadow: "0 0 2px black",
@@ -90,7 +135,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
 					style={{
 						marginTop: 6,
 						textAlign: "center",
-						color: "white",
+						color: "var(--go-exp-text, white)",
 						fontWeight: 700,
 						fontSize: "0.9rem",
 						textShadow: "0 0 2px black",

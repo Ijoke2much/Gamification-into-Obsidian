@@ -1,9 +1,10 @@
 // Achievement Event Service
 // Connects game events to achievement progress tracking
 
-import { AchievementTracker } from '../../../data/models/AchievementSystem';
+import { ACHIEVEMENTS, AchievementTracker } from '../../../data/models/AchievementSystem';
 import { EnhancedAchievementProcessor } from '../utils/achievementProcessor';
-import { Notice } from 'obsidian';
+import { emitAchievementUnlocked } from '../../../shared/utils/achievementGalleryEvents';
+import { pixelNotice } from '../../../shared/utils/noticeUtils';
 
 export interface GameEvent {
     type: 'quest_completed' | 'task_completed' | 'pomodoro_completed' | 'level_up' |
@@ -271,7 +272,7 @@ export class AchievementEventService {
 
         if (result?.type === 'unlocked') {
             // Show notification for unlocked achievement
-            new Notice(`🏆 Achievement Unlocked: ${result.achievement.title}!`, 5000);
+            pixelNotice(`🏆 Achievement Unlocked: ${result.achievement.title}!`, 5000);
 
             // Trigger achievement notification component if available
             this.triggerAchievementNotification(result.achievement);
@@ -279,10 +280,10 @@ export class AchievementEventService {
     }
 
     private triggerAchievementNotification(achievement: { id: string; title: string; description?: string }): void {
-        // Dispatch custom event for achievement notification
-        document.dispatchEvent(new CustomEvent('achievement-unlocked', {
-            detail: { achievement }
-        }));
+        const full = ACHIEVEMENTS.find((a) => a.id === achievement.id);
+        if (full) {
+            emitAchievementUnlocked(full);
+        }
     }
 
     private countEventsByType(type: string): number {

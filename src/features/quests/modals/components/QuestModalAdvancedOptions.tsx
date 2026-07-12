@@ -1,5 +1,6 @@
-import React from 'react';
-import styles from '../QuestModal.module.css';
+import React from "react";
+import type { QuestTimelineTheme } from "../../utils/taskParser";
+import styles from "../QuestModal.module.css";
 
 interface QuestModalAdvancedOptionsProps {
     showAdvancedOptions: boolean;
@@ -26,6 +27,9 @@ interface QuestModalAdvancedOptionsProps {
     setQuestBanner: (banner: string) => void;
     bannerAlign: string;
     setBannerAlign: (align: string) => void;
+
+    timelineTheme: QuestTimelineTheme | undefined;
+    setTimelineTheme: (theme: QuestTimelineTheme | undefined) => void;
     
     // Features tab props
     subtasks: Array<{ text: string; completed: boolean; description?: string }>;
@@ -61,6 +65,8 @@ export const QuestModalAdvancedOptions: React.FC<QuestModalAdvancedOptionsProps>
     setQuestBanner,
     bannerAlign,
     setBannerAlign,
+    timelineTheme,
+    setTimelineTheme,
     subtasks,
     newSubtask,
     setNewSubtask,
@@ -558,30 +564,62 @@ export const QuestModalAdvancedOptions: React.FC<QuestModalAdvancedOptionsProps>
                                     gap: 8,
                                     flexWrap: "wrap",
                                 }}>
-                                    {[
-                                        { name: "Blue", color: "#3b82f6" },
-                                        { name: "Purple", color: "#8b5cf6" },
-                                        { name: "Green", color: "#10b981" },
-                                        { name: "Red", color: "#ef4444" },
-                                        { name: "Orange", color: "#f97316" },
-                                        { name: "Pink", color: "#ec4899" },
-                                    ].map((scheme) => (
-                                        <button
-                                            key={scheme.name}
-                                            type="button"
-                                            style={{
-                                                width: 40,
-                                                height: 40,
-                                                borderRadius: 8,
-                                                backgroundColor: scheme.color,
-                                                border: "2px solid transparent",
-                                                cursor: "pointer",
-                                                transition: "all 0.2s ease",
-                                            }}
-                                            title={scheme.name}
-                                        />
-                                    ))}
+                                    {(
+                                        [
+                                            { name: "Blue", theme: "blue" as const, color: "#3b82f6" },
+                                            { name: "Purple", theme: "violet" as const, color: "#8b5cf6" },
+                                            { name: "Green", theme: "green" as const, color: "#10b981" },
+                                            { name: "Red", theme: "red" as const, color: "#ef4444" },
+                                            { name: "Orange", theme: "amber" as const, color: "#f97316" },
+                                            { name: "Pink", theme: "pink" as const, color: "#ec4899" },
+                                        ] satisfies Array<{
+                                            name: string;
+                                            theme: QuestTimelineTheme;
+                                            color: string;
+                                        }>
+                                    ).map((scheme) => {
+                                        const selected = timelineTheme === scheme.theme;
+                                        return (
+                                            <button
+                                                key={scheme.name}
+                                                type="button"
+                                                aria-label={`${scheme.name} time block color`}
+                                                aria-pressed={selected}
+                                                onClick={() =>
+                                                    setTimelineTheme(
+                                                        selected ? undefined : scheme.theme
+                                                    )
+                                                }
+                                                style={{
+                                                    width: 40,
+                                                    height: 40,
+                                                    borderRadius: 8,
+                                                    backgroundColor: scheme.color,
+                                                    border: selected
+                                                        ? "2px solid var(--text-normal)"
+                                                        : "2px solid transparent",
+                                                    boxShadow: selected
+                                                        ? "0 0 0 2px var(--background-modifier-border)"
+                                                        : undefined,
+                                                    cursor: "pointer",
+                                                    transition: "all 0.2s ease",
+                                                }}
+                                                title={`${scheme.name}${selected ? " (selected)" : ""}`}
+                                            />
+                                        );
+                                    })}
                                 </div>
+                                <p
+                                    style={{
+                                        marginTop: 8,
+                                        marginBottom: 0,
+                                        fontSize: 11,
+                                        color: "var(--text-muted)",
+                                    }}
+                                >
+                                    Uses this color on the sidebar day-schedule blocks after you save the quest.
+                                    Click again to clear and follow the schedule color mode.
+                                </p>
                             </div>
                         </div>
                     )}

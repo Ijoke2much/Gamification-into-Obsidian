@@ -2,6 +2,16 @@ import { PlayerData } from '../../data/models/PlayerData';
 import { readPlayerData, updatePlayerData } from '../../features/player/utils/playerDataUtils';
 import { Vault } from 'obsidian';
 import { performanceManager } from '../utils/performanceManager';
+import { getRankFromLevel, type Rank } from '../../features/player/utils/playerRank';
+
+export interface XPGainResult {
+  leveledUp: boolean;
+  oldLevel: number;
+  newLevel: number;
+  rankChanged: boolean;
+  oldRank: Rank;
+  newRank: Rank;
+}
 
 export type PlayerStateChange =
   | {
@@ -375,7 +385,9 @@ class PlayerStore {
     return true;
   }
 
-  async addXP(amount: number): Promise<void> {
+  async addXP(amount: number): Promise<XPGainResult> {
+    const oldLevel = this.data?.level || 1;
+    const oldRank = getRankFromLevel(oldLevel);
     const oldData = { ...this.data };
 
     await this.update(data => {
@@ -406,6 +418,17 @@ class PlayerStore {
       };
     });
 
+    const newLevel = this.data?.level || oldLevel;
+    const newRank = getRankFromLevel(newLevel);
+    const result: XPGainResult = {
+      leveledUp: newLevel > oldLevel,
+      oldLevel,
+      newLevel,
+      rankChanged: newRank !== oldRank,
+      oldRank,
+      newRank,
+    };
+
     // Trigger achievement events
     try {
       const { achievementEventService } = await import('../../features/achievements/services/achievementEventService');
@@ -425,6 +448,8 @@ class PlayerStore {
     } catch (error) {
       console.warn('[PlayerStore] Failed to trigger achievement events:', error);
     }
+
+    return result;
   }
 
   async updateStats(statsUpdate: Partial<PlayerData['stats']>): Promise<void> {

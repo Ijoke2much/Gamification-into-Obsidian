@@ -1,6 +1,7 @@
-import { Notice } from 'obsidian';
+;
 import { Boss, PlayerStats } from '../types/BossTypes';
 import { EnhancedBattleState } from '../types/EnhancedMoveTypes';
+import { pixelNotice } from '../../../shared/utils/noticeUtils';
 
 /**
  * Productivity Equipment System
@@ -194,14 +195,14 @@ export class ProductivityEquipmentSystem {
     async equipItem(itemId: string, slot: EquipmentSlot): Promise<boolean> {
         const equipment = this.equipmentEffects.get(itemId);
         if (!equipment) {
-            new Notice(`❌ Equipment "${itemId}" not found`, 3000);
+            pixelNotice(`❌ Equipment "${itemId}" not found`, 3000);
             return false;
         }
 
         // Check if player has the item
         const quantity = this.playerInventory.get(itemId) || 0;
         if (quantity < 1) {
-            new Notice(`❌ You don't have "${equipment.name}" in your inventory`, 3000);
+            pixelNotice(`❌ You don't have "${equipment.name}" in your inventory`, 3000);
             return false;
         }
 
@@ -215,7 +216,7 @@ export class ProductivityEquipmentSystem {
         this.equippedGear.set(slot, equipment);
         this.saveEquippedGear();
 
-        new Notice(`✅ Equipped "${equipment.name}"`, 3000);
+        pixelNotice(`✅ Equipped "${equipment.name}"`, 3000);
         return true;
     }
 
@@ -236,7 +237,7 @@ export class ProductivityEquipmentSystem {
         this.equippedGear.delete(slot);
         this.saveEquippedGear();
 
-        new Notice(`📦 Unequipped "${equipment.name}"`, 3000);
+        pixelNotice(`📦 Unequipped "${equipment.name}"`, 3000);
         return true;
     }
 
@@ -318,13 +319,13 @@ export class ProductivityEquipmentSystem {
     async useConsumable(itemId: string): Promise<boolean> {
         const equipment = this.equipmentEffects.get(itemId);
         if (!equipment || equipment.type !== 'consumable') {
-            new Notice(`❌ "${itemId}" is not a consumable item`, 3000);
+            pixelNotice(`❌ "${itemId}" is not a consumable item`, 3000);
             return false;
         }
 
         const quantity = this.playerInventory.get(itemId) || 0;
         if (quantity < 1) {
-            new Notice(`❌ You don't have "${equipment.name}" in your inventory`, 3000);
+            pixelNotice(`❌ You don't have "${equipment.name}" in your inventory`, 3000);
             return false;
         }
 
@@ -334,7 +335,7 @@ export class ProductivityEquipmentSystem {
         // Apply temporary effects
         this.applyTemporaryEffect(equipment);
 
-        new Notice(`✅ Used "${equipment.name}"`, 3000);
+        pixelNotice(`✅ Used "${equipment.name}"`, 3000);
         return true;
     }
 
@@ -417,13 +418,13 @@ export class ProductivityEquipmentSystem {
     async craftItem(itemId: string): Promise<boolean> {
         const equipment = this.equipmentEffects.get(itemId);
         if (!equipment) {
-            new Notice(`❌ Equipment "${itemId}" not found`, 3000);
+            pixelNotice(`❌ Equipment "${itemId}" not found`, 3000);
             return false;
         }
 
         const canCraft = this.canCraft(itemId);
         if (!canCraft.canCraft) {
-            new Notice(`❌ Missing materials: ${canCraft.missingMaterials.join(', ')}`, 5000);
+            pixelNotice(`❌ Missing materials: ${canCraft.missingMaterials.join(', ')}`, 5000);
             return false;
         }
 
@@ -439,7 +440,7 @@ export class ProductivityEquipmentSystem {
         const currentQuantity = this.playerInventory.get(itemId) || 0;
         this.playerInventory.set(itemId, currentQuantity + 1);
 
-        new Notice(`✅ Crafted "${equipment.name}"`, 3000);
+        pixelNotice(`✅ Crafted "${equipment.name}"`, 3000);
         return true;
     }
 

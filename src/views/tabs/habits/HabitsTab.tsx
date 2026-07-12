@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { showGameNotice } from '../../../shared/utils/noticeUtils';
-import { HabitData, getTreeStageForStreak, checkAndUpdateTreeMilestones, saveHabitsToFile, loadHabitsFromFile, calculateStreak, isCompletedToday, getLocalDateString, calculateStreakFromCompletedDates } from '../../../features/habits/utils/habitsUtils';
+import { HabitData, getTreeStageForStreak, getDisplayTreeStage, applyEvolutionMissPenalties, adjustEvolutionPenaltyForStreakChange, checkAndUpdateTreeMilestones, saveHabitsToFile, loadHabitsFromFile, calculateStreak, isCompletedToday, getLocalDateString, calculateStreakFromCompletedDates } from '../../../features/habits/utils/habitsUtils';
 import { calculateTreeRewards, DEFAULT_TREE_REWARD_CONFIG, getTreeItemDrop, checkSpecialBonuses } from '../../../features/habits/utils/treeRewardSystem';
 import { SeasonalTreeEventManager } from '../../../features/habits/utils/seasonalTreeEvents';
 import { TreeVisualEffectsManager } from '../../../features/habits/utils/treeVisualEffects';
@@ -120,13 +120,27 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
                         ? dates.slice().sort().slice(-1)[0]
                         : habit.lastCompleted;
 
-                    return {
+                    const merged = {
                         ...habit,
                         streak: newStreak,
                         longestStreak: Math.max(habit.longestStreak || 0, newStreak),
                         lastCompleted: latestDate || habit.lastCompleted
                     };
+                    return applyEvolutionMissPenalties(merged);
                 });
+
+                const prevById = new Map(loadedHabits.map(h => [h.id, h]));
+                const evolutionDirty = normalizedHabits.some(h => {
+                    const o = prevById.get(h.id);
+                    return (
+                        !o ||
+                        (o.evolutionPenalty ?? 0) !== (h.evolutionPenalty ?? 0) ||
+                        o.lastEvolutionEvalDate !== h.lastEvolutionEvalDate
+                    );
+                });
+                if (evolutionDirty) {
+                    await saveHabitsToFile(plugin.app.vault, normalizedHabits);
+                }
 
                 setHabits(normalizedHabits);
             } catch (error) {
@@ -264,7 +278,7 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
         if (habits.length > 0) {
             const newTreeRewards: {[habitId: string]: { xp: number; cp: number; coins: number }} = {};
             habits.forEach(habit => {
-                const treeStage = getTreeStageForStreak(habit.streak);
+                const treeStage = getDisplayTreeStage(habit);
                 if (treeStage > 0) {
                     const baseReward = habit.reward || { xp: 10, cp: 5, coins: 25 };
                     const rewards = calculateTreeRewards(
@@ -419,6 +433,8 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
 
                 // Always derive streak from the set of completed dates so it matches the visible history
                 newStreak = calculateStreakFromCompletedDates(newCompletedDates);
+                const oldStreak = habit.streak;
+                const evolutionPenalty = adjustEvolutionPenaltyForStreakChange(habit, oldStreak, newStreak);
 
                 // Update weekly progress if it's for today
                 const newWeeklyProgress = [...habit.weeklyProgress];
@@ -429,6 +445,7 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
                 return {
                     ...habit,
                     streak: newStreak,
+                    evolutionPenalty,
                     lastCompleted: !isCurrentlyCompleted ? targetDate : habit.lastCompleted,
                     weeklyProgress: newWeeklyProgress,
                     totalCompletions: !isCurrentlyCompleted ? habit.totalCompletions + 1 : Math.max(0, habit.totalCompletions - 1),
@@ -470,9 +487,9 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
                         }, 1000);
                     }
                     
-                    // Check for stage transitions
-                    const oldStage = getTreeStageForStreak(habit.streak - 1);
-                    const newStage = getTreeStageForStreak(habit.streak);
+                    // Check for stage transitions (visible evolution stage)
+                    const oldStage = originalHabit ? getDisplayTreeStage(originalHabit) : 0;
+                    const newStage = getDisplayTreeStage(habit);
                     if (newStage > oldStage) {
                         setTimeout(() => {
                             TreeVisualEffectsManager.triggerStageTransition(
@@ -688,7 +705,8 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
             scheduleType: habitFormData.scheduleType || 'daily',
             scheduleDays: (habitFormData.scheduleDays && habitFormData.scheduleDays.length > 0)
                 ? habitFormData.scheduleDays
-                : [0, 1, 2, 3, 4, 5, 6]
+                : [0, 1, 2, 3, 4, 5, 6],
+            evolutionPenalty: 0
         };
 
         const updatedHabits = [...habits, habit];
@@ -785,7 +803,14 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
     };
 
     if (loading) {
-        return <div className={styles.loading}>Loading habits...</div>;
+        return (
+            <div
+                className={`${styles.loading} ${styles.pixelHabitsShell}`}
+                data-pixel-shell="habits"
+            >
+                Loading habits...
+            </div>
+        );
     }
 
     const todayStr = getLocalDateString();
@@ -793,6 +818,17 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
 
     const visibleHabits = habits.filter(h => h.archived !== true);
     const completedTodayCount = visibleHabits.filter(habit => isCompletedToday(habit)).length;
+    const todayScheduledHabits = visibleHabits.filter((habit) => {
+        const scheduleType = habit.scheduleType || 'daily';
+        const scheduleDays = habit.scheduleDays && habit.scheduleDays.length > 0
+            ? habit.scheduleDays
+            : [0, 1, 2, 3, 4, 5, 6];
+
+        return scheduleType === 'daily' || scheduleDays.includes(dow);
+    });
+    const quickCheckHabits = todayScheduledHabits.filter((habit) => {
+        return !(habit.completedDates || []).includes(todayStr) && habit.lastCompleted !== todayStr;
+    });
 
     const filteredHabits = habits.filter((habit) => {
         const isArchived = habit.archived === true;
@@ -814,7 +850,7 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
     });
 
     return (
-        <div className={styles.container}>
+        <div className={`${styles.container} ${styles.pixelHabitsShell}`} data-pixel-shell="habits">
             {/* Header */}
             <div className={styles.header}>
                 <div className={styles.headerInfo}>
@@ -840,6 +876,56 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
                 <button className={`${styles.tab} ${activeTab === 'done' ? styles.tabActive : ''}`} onClick={() => setActiveTab('done')}>Done</button>
                 <button className={`${styles.tab} ${activeTab === 'archived' ? styles.tabActive : ''}`} onClick={() => setActiveTab('archived')}>Archived</button>
             </div>
+
+            {(activeTab === 'today' || activeTab === 'all') && (
+                <section className={styles.quickCheckPanel} aria-label="Quick check today's habits">
+                    <div className={styles.quickCheckHeader}>
+                        <div>
+                            <div className={styles.quickCheckTitle}>Quick Check</div>
+                            <div className={styles.quickCheckSubtitle}>
+                                {quickCheckHabits.length > 0
+                                    ? `${quickCheckHabits.length} habit${quickCheckHabits.length === 1 ? '' : 's'} left today`
+                                    : 'All scheduled habits are checked off'}
+                            </div>
+                        </div>
+                        <span className={styles.quickCheckBadge}>
+                            {todayScheduledHabits.length - quickCheckHabits.length}/{todayScheduledHabits.length}
+                        </span>
+                    </div>
+
+                    {quickCheckHabits.length > 0 ? (
+                        <div className={styles.quickCheckList}>
+                            {quickCheckHabits.map((habit) => {
+                                const skills = habit.skills && habit.skills.length > 0
+                                    ? habit.skills
+                                    : [habit.skill || habit.description || 'No Skill'];
+
+                                return (
+                                    <button
+                                        key={habit.id}
+                                        type="button"
+                                        className={styles.quickCheckItem}
+                                        onClick={() => handleToggleCompletion(habit.id)}
+                                        title={`Check off ${habit.name}`}
+                                    >
+                                        <span className={styles.quickCheckBox} aria-hidden>✓</span>
+                                        <span className={styles.quickCheckEmoji} aria-hidden>{habit.emoji}</span>
+                                        <span className={styles.quickCheckName}>{habit.name}</span>
+                                        <span
+                                            className={styles.quickCheckSkill}
+                                            style={{ backgroundColor: habit.skillColor || habit.color }}
+                                        >
+                                            {skills[0]}
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    ) : (
+                        <div className={styles.quickCheckEmpty}>Nice, your habit inbox is clear for today.</div>
+                    )}
+                </section>
+            )}
 
             {/* Seasonal Events Banner */}
             {activeEvents.length > 0 && (
@@ -947,7 +1033,10 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
                     const today = getLocalDateString();
                     const isCompletedToday = (habit.completedDates || []).includes(today);
                     const isHeatmapExpanded = expandedHeatmaps[habit.id];
-                    
+                    const treeOpen = !!treeSectionsOpen[habit.id];
+                    const treePanelId = `habit-tree-panel-${habit.id}`;
+                    const treeTriggerId = `habit-tree-trigger-${habit.id}`;
+
                     return (
                         <div key={habit.id} className={styles.habitCard}>
                             {/* Habit Header */}
@@ -955,13 +1044,16 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
                                 <div className={styles.habitInfo}>
                                     <div className={styles.habitMeta}>
                                         <span className={styles.habitEmoji}>{habit.emoji}</span>
-                                        <div>
-                                            <h3 className={styles.habitName}>{habit.name}</h3>
+                                        <div className={styles.habitTitleBlock}>
+                                            <h3 className={styles.habitName} title={habit.name}>
+                                                {habit.name}
+                                            </h3>
                                             <div className={styles.habitTags}>
                                                 {(habit.skills && habit.skills.length > 0 ? habit.skills : [habit.skill || habit.description || 'No Skill']).map((s, idx) => (
-                                                    <span 
+                                                    <span
                                                         key={idx}
-                                                        className={styles.skillTag} 
+                                                        className={styles.skillTag}
+                                                        title={s}
                                                         style={{ backgroundColor: habit.skillColor || habit.color }}
                                                     >
                                                         {s}
@@ -1030,27 +1122,46 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
                                 </div>
                             </div>
 
-                            {/* Tree Section - Collapsible Dropdown */}
-                            <div className={styles.treeSectionDropdown}>
-                                <button 
+                            {/* Tree Section - compact toggle tied to this habit */}
+                            <div
+                                className={`${styles.treeSectionDropdown} ${treeOpen ? styles.treeSectionDropdownExpanded : ''}`}
+                            >
+                                <button
+                                    type="button"
                                     className={styles.treeSectionToggle}
+                                    id={treeTriggerId}
+                                    aria-expanded={treeOpen}
+                                    aria-controls={treePanelId}
+                                    title={treeOpen ? 'Hide habit tree' : `Show tree for “${habit.name}”`}
                                     onClick={() => {
-                                        setTreeSectionsOpen(prev => {
-                                            const newState = { ...prev, [habit.id]: !prev[habit.id] };
-                                    
-                                            return newState;
-                                        });
+                                        setTreeSectionsOpen((prev) => ({
+                                            ...prev,
+                                            [habit.id]: !prev[habit.id],
+                                        }));
                                     }}
                                 >
-                                    <span className={styles.toggleIcon}>
-                                        {treeSectionsOpen[habit.id] ? '▼' : '▶'}
+                                    <span className={styles.toggleIcon} aria-hidden>
+                                        {treeOpen ? '▼' : '▶'}
                                     </span>
-                                    <span className={styles.toggleTitle}>🌳 Tree Growth</span>
-                                    <span className={styles.toggleBadge}>Stage {getTreeStageForStreak(habit.streak)}</span>
+                                    <span className={styles.toggleTitle}>
+                                        <span className={styles.toggleTreeGlyph} aria-hidden>
+                                            🌳
+                                        </span>
+                                        <span className={styles.toggleTitleText}>
+                                            <span className={styles.toggleTreeLabel}>Tree</span>
+                                            <span className={styles.toggleHabitName}>{habit.name}</span>
+                                        </span>
+                                    </span>
+                                    <span className={styles.toggleBadge}>Stage {getDisplayTreeStage(habit)}</span>
                                 </button>
-                                
-                                {treeSectionsOpen[habit.id] && (
-                                    <div className={styles.treeSectionContent}>
+
+                                {treeOpen && (
+                                    <div
+                                        id={treePanelId}
+                                        role="region"
+                                        aria-labelledby={treeTriggerId}
+                                        className={styles.treeSectionContent}
+                                    >
                                         {/* Full-Width Window View Tree Display */}
                                         <div className={styles.windowTreeContainer}>
                                             {/* Window Frame Effect */}
@@ -1069,9 +1180,9 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
                                                         }}
                                                     >
                                                         <img
-                                                            src={treeStages[getTreeStageForStreak(habit.streak)]}
-                                                            alt={`Tree Stage ${getTreeStageForStreak(habit.streak) + 1}`}
-                                                            className={`${styles.windowTree} ${styles.pixelTree} stage-${getTreeStageForStreak(habit.streak)}`}
+                                                            src={treeStages[Math.min(getDisplayTreeStage(habit), treeStages.length - 1)]}
+                                                            alt={`Tree Stage ${getDisplayTreeStage(habit) + 1}`}
+                                                            className={`${styles.windowTree} ${styles.pixelTree} stage-${getDisplayTreeStage(habit)}`}
                                                         />
                                                         
                                                         {/* Progress Indicator */}
@@ -1094,7 +1205,7 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
                                                         {/* Tree Stats Overlay */}
                                                         <div className={styles.treeStatsOverlay}>
                                                             <div>Streak: {habit.streak} days</div>
-                                                            <div>Stage: {getTreeStageForStreak(habit.streak) + 1}/5</div>
+                                                            <div>Stage: {getDisplayTreeStage(habit) + 1}/6</div>
                                                             <div>Next: {7 - (habit.streak % 7)} days</div>
                                                         </div>
                                                         
@@ -1114,13 +1225,14 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
                                                 <div className={styles.treeInfoCompact}>
                                                     {/* Level Badge */}
                                                     <div className={styles.levelBadgeCompact}>
-                                                        <span className={styles.levelNumberCompact}>Lv.{getTreeStageForStreak(habit.streak) + 1}</span>
+                                                        <span className={styles.levelNumberCompact}>Lv.{getDisplayTreeStage(habit) + 1}</span>
                                                         <span className={styles.stageNameCompact}>
-                                                            {getTreeStageForStreak(habit.streak) === 0 && "🌱 Sprout"}
-                                                            {getTreeStageForStreak(habit.streak) === 1 && "🌿 Sapling"}
-                                                            {getTreeStageForStreak(habit.streak) === 2 && "🪴 Young"}
-                                                            {getTreeStageForStreak(habit.streak) === 3 && "🌳 Mature"}
-                                                            {getTreeStageForStreak(habit.streak) === 4 && "🌳✨ World"}
+                                                            {getDisplayTreeStage(habit) === 0 && "🌱 Seed"}
+                                                            {getDisplayTreeStage(habit) === 1 && "🌱 Sprout"}
+                                                            {getDisplayTreeStage(habit) === 2 && "🌿 Sapling"}
+                                                            {getDisplayTreeStage(habit) === 3 && "🪴 Young"}
+                                                            {getDisplayTreeStage(habit) === 4 && "🌳 Mature"}
+                                                            {getDisplayTreeStage(habit) === 5 && "🌳✨ World"}
                                                         </span>
                                                     </div>
                                                     
@@ -1168,7 +1280,7 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
                                                         ].map((stage, index) => (
                                                             <div 
                                                                 key={index} 
-                                                                className={`${styles.stageCard} ${getTreeStageForStreak(habit.streak) === stage.stage ? styles.activeStage : ''}`}
+                                                                className={`${styles.stageCard} ${getDisplayTreeStage(habit) === stage.stage ? styles.activeStage : ''}`}
                                                             >
                                                                 <span className={styles.stageIcon}>{stage.icon}</span>
                                                                 <span className={styles.stageName}>{stage.name}</span>

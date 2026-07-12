@@ -5,7 +5,8 @@ import { createEnhancedTaskDiscovery } from './enhancedTaskDiscovery';
 import { productivityEquipmentSystem, EquipmentBattleModifiers } from './productivityEquipmentSystem';
 import { dynamicBossEvents, EventBattleModifiers } from './dynamicBossEvents';
 import { materialRewardSystem, MaterialReward } from './materialRewardSystem';
-import { Notice } from 'obsidian';
+;
+import { pixelNotice } from '../../../shared/utils/noticeUtils';
 
 /**
  * Enhanced Battle Integration System
@@ -41,10 +42,10 @@ export class EnhancedBattleIntegration {
             await this.taskDiscovery.performAutoRefresh();
 
             this.isInitialized = true;
-            new Notice('🎮 Enhanced Battle System initialized!', 3000);
+            pixelNotice('🎮 Enhanced Battle System initialized!', 3000);
         } catch (error) {
             console.error('Failed to initialize enhanced battle system:', error);
-            new Notice('❌ Failed to initialize enhanced battle system', 5000);
+            pixelNotice('❌ Failed to initialize enhanced battle system', 5000);
         }
     }
 

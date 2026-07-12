@@ -218,15 +218,9 @@ const SidebarBossViewComponent: React.FC<SidebarBossViewProps> = ({ app, plugin 
 				</h2>
 				<button
 					className={styles.fullViewButton}
-					onClick={() => {
-						openBossInMainWorkspace(() => {
-							window.dispatchEvent(
-								new CustomEvent('openBossSystem', { detail: { tab: 'selection' } })
-							);
-						});
-					}}
+					onClick={() => openBossInMainWorkspace()}
 				>
-					Full View
+					Gate Battle
 				</button>
 			</div>
 
@@ -243,27 +237,17 @@ const SidebarBossViewComponent: React.FC<SidebarBossViewProps> = ({ app, plugin 
 			<div className={styles.quickActions}>
 				<button
 					className={styles.actionButton}
-					onClick={() => {
-						openBossInMainWorkspace(() => {
-							window.dispatchEvent(new CustomEvent('openBossCreation'));
-						});
-					}}
+					onClick={() => void plugin.focusQuestHubSection('dungeon')}
 				>
-					<span>➕</span>
-					Create Boss
+					<span>🚪</span>
+					Open Dungeon
 				</button>
 				<button
 					className={styles.actionButton}
-					onClick={() => {
-						openBossInMainWorkspace(() => {
-							window.dispatchEvent(
-								new CustomEvent('openBossAnalytics', { detail: { tab: 'analytics' } })
-							);
-						});
-					}}
+					onClick={() => void plugin.openCreateBossModal()}
 				>
-					<span>📊</span>
-					Analytics
+					<span>⚔️</span>
+					Forge Boss
 				</button>
 			</div>
 		</div>

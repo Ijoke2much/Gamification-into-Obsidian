@@ -75,8 +75,14 @@
   align-items: center;
 }
 
+.actionColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
 .addButton {
-  flex: 1;
+  width: 100%;
   border: 1px solid rgba(91, 156, 255, 0.5);
   background: linear-gradient(135deg, rgba(74, 143, 255, 0.25), rgba(83, 217, 255, 0.2));
   color: var(--text-normal);
@@ -85,6 +91,22 @@
   font-size: 12px;
   padding: 8px;
   cursor: pointer;
+}
+
+.captureButton {
+  width: 100%;
+  border: 1px solid rgba(102, 126, 234, 0.45);
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.18), rgba(118, 75, 162, 0.16));
+  color: var(--text-normal);
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 11px;
+  padding: 7px 8px;
+  cursor: pointer;
+}
+
+.captureButton:hover {
+  filter: brightness(1.06);
 }
 
 .energyChip {
@@ -361,13 +383,133 @@
   background: rgba(35, 62, 112, 0.78);
 }
 
+.timelineDayShell {
+  position: relative;
+  z-index: 2;
+}
+
 .timelineHeaderIcon {
   border: none;
-  background: transparent;
+  background: rgba(30, 44, 72, 0.55);
   color: var(--text-muted);
   cursor: pointer;
   font-size: 14px;
   line-height: 1;
+  width: 28px;
+  height: 26px;
+  border-radius: 6px;
+  border: 1px solid rgba(100, 130, 180, 0.28);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition:
+    background 0.12s ease,
+    border-color 0.12s ease,
+    color 0.12s ease;
+}
+
+.timelineHeaderIcon:hover {
+  color: rgba(210, 224, 255, 0.9);
+  border-color: rgba(150, 186, 240, 0.45);
+  background: rgba(35, 54, 92, 0.75);
+}
+
+.timelineHeaderIconActive {
+  color: rgba(150, 255, 200, 0.95);
+  border-color: rgba(120, 200, 160, 0.55);
+  background: rgba(24, 56, 48, 0.55);
+}
+
+.daySchedulePanel {
+  margin-top: 4px;
+  margin-bottom: 8px;
+  max-height: 220px;
+  overflow: auto;
+  border-radius: 10px;
+  border: 1px solid rgba(120, 145, 187, 0.35);
+  background: linear-gradient(180deg, rgba(20, 32, 56, 0.92), rgba(14, 24, 44, 0.88));
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.28);
+  padding: 8px 8px 6px;
+}
+
+.daySchedulePanelDate {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: rgba(195, 210, 240, 0.85);
+  margin-bottom: 6px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(100, 130, 180, 0.22);
+}
+
+.dayScheduleEmpty {
+  font-size: 12px;
+  color: rgba(160, 180, 210, 0.72);
+  padding: 4px 2px 6px;
+}
+
+.dayScheduleList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.dayScheduleRow {
+  width: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  text-align: left;
+  border: 1px solid rgba(100, 130, 180, 0.2);
+  border-radius: 8px;
+  background: rgba(18, 30, 52, 0.55);
+  padding: 6px 8px;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+.dayScheduleRow:hover {
+  border-color: rgba(140, 175, 230, 0.42);
+  background: rgba(28, 44, 78, 0.72);
+}
+
+.dayScheduleTime {
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-weight: 700;
+  color: rgba(150, 200, 255, 0.9);
+  white-space: nowrap;
+  min-width: 0;
+  letter-spacing: 0.02em;
+}
+
+.dayScheduleRowBody {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.dayScheduleTitle {
+  font-size: 12px;
+  line-height: 1.3;
+  color: rgba(220, 232, 255, 0.95);
+  word-break: break-word;
+  width: 100%;
+}
+
+.dayScheduleBadge {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(180, 200, 230, 0.65);
 }
 
 .timelinePlanner {
@@ -697,6 +839,14 @@
   --tb-left: rgba(219, 246, 202, 0.97);
 }
 
+.timelineThemeRed {
+  --tb-bg-a: rgba(248, 130, 130, 0.9);
+  --tb-bg-b: rgba(239, 101, 101, 0.86);
+  --tb-dot: rgba(255, 235, 235, 0.24);
+  --tb-border: rgba(254, 168, 168, 0.78);
+  --tb-left: rgba(254, 214, 214, 0.97);
+}
+
 .timelineFreeSummary {
   margin-top: 8px;
   font-size: 11px;
@@ -912,4 +1062,181 @@
   text-align: center;
   color: rgba(201, 223, 255, 0.92);
   background: rgba(37, 67, 120, 0.18);
+}
+
+.pixelSidebarQuestShell {
+  isolation: isolate;
+}
+
+/* Pixel / RPG shell — tokens from visualThemeManager (Classic preset by default) */
+.container.pixelSidebarQuestShell {
+  padding: 10px;
+  gap: 10px;
+  background: var(--pixel-bg);
+  color: var(--pixel-text);
+  font-family: var(--gamify-font-ui, "Press Start 2P", "VT323", "Courier New", monospace);
+  font-size: 11px;
+  line-height: 1.6;
+  border: 2px solid var(--pixel-border-dark);
+  border-radius: var(--pixel-card-radius);
+  box-sizing: border-box;
+  box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light);
+}
+
+.container.pixelSidebarQuestShell .panelTitle {
+  font-family: "Press Start 2P", "VT323", monospace;
+  font-size: 12px;
+  color: var(--pixel-text);
+  text-shadow: 2px 2px 0 var(--pixel-border-dark);
+}
+
+.container.pixelSidebarQuestShell .linkButton {
+  border-radius: var(--pixel-card-radius);
+  border: 2px solid var(--pixel-border-dark);
+  background: var(--pixel-panel-alt);
+  color: var(--pixel-muted);
+  font-family: "Press Start 2P", monospace;
+  font-size: 7px;
+  box-shadow: var(--pixel-shadow-pressed);
+}
+
+.container.pixelSidebarQuestShell .addButton {
+  border-radius: var(--pixel-card-radius);
+  border: 2px solid var(--pixel-border-dark);
+  background: var(--pixel-panel-alt);
+  color: var(--pixel-accent);
+  font-family: "Press Start 2P", monospace;
+  font-size: 8px;
+  box-shadow: var(--pixel-shadow);
+}
+
+.container.pixelSidebarQuestShell .addButton:hover {
+  transform: translate(1px, 1px);
+  box-shadow: var(--pixel-shadow-pressed);
+}
+
+.container.pixelSidebarQuestShell .captureButton {
+  border-radius: var(--pixel-card-radius);
+  border: 2px solid var(--pixel-border-dark);
+  background: var(--pixel-panel-alt);
+  color: var(--pixel-text, var(--text-normal));
+  font-family: "Press Start 2P", monospace;
+  font-size: 7px;
+  box-shadow: var(--pixel-shadow);
+}
+
+.container.pixelSidebarQuestShell .captureButton:hover {
+  transform: translate(1px, 1px);
+  box-shadow: var(--pixel-shadow-pressed);
+}
+
+.container.pixelSidebarQuestShell .section {
+  border-radius: var(--pixel-card-radius);
+  border: 2px solid var(--pixel-border-dark);
+  background: var(--pixel-panel);
+  box-shadow: var(--pixel-shadow-pressed);
+}
+
+.container.pixelSidebarQuestShell .calendarSection {
+  background: var(--pixel-panel);
+  border-color: var(--pixel-border-dark);
+}
+
+.container.pixelSidebarQuestShell .sectionTitle {
+  font-family: "Press Start 2P", monospace;
+  font-size: 8px;
+  color: var(--pixel-accent);
+  text-shadow: 1px 1px 0 var(--pixel-border-dark);
+}
+
+.container.pixelSidebarQuestShell .calendarCollapseBtn {
+  border-radius: var(--pixel-card-radius);
+  border: 2px solid var(--pixel-border-dark);
+  background: var(--pixel-panel-alt);
+  color: var(--pixel-text);
+  box-shadow: var(--pixel-shadow-pressed);
+}
+
+.container.pixelSidebarQuestShell .timelineHeader {
+  font-family: "Press Start 2P", monospace;
+  font-size: 9px;
+}
+
+.container.pixelSidebarQuestShell .timelineNowBtn {
+  border-radius: var(--pixel-card-radius);
+  border: 2px solid var(--pixel-border-dark);
+  background: var(--pixel-panel-alt);
+  color: #86efac;
+  font-family: "Press Start 2P", monospace;
+  font-size: 7px;
+  box-shadow: var(--pixel-shadow-pressed);
+}
+
+.container.pixelSidebarQuestShell .timelineTrack {
+  border-radius: var(--pixel-card-radius);
+  border: 2px solid var(--pixel-border-dark);
+}
+
+.container.pixelSidebarQuestShell .timelineNowMarkerLabel {
+  border-radius: var(--pixel-card-radius);
+  border: 2px solid var(--pixel-border-dark);
+  font-family: "Press Start 2P", monospace;
+  font-size: 6px;
+}
+
+.container.pixelSidebarQuestShell .timelineEmptyAdd {
+  border-radius: var(--pixel-card-radius);
+  border: 2px solid var(--pixel-border-dark);
+  font-family: "Press Start 2P", monospace;
+  font-size: 8px;
+  box-shadow: var(--pixel-shadow-pressed);
+}
+
+.container.pixelSidebarQuestShell .timelineQuestBlock {
+  border-radius: var(--pixel-card-radius) !important;
+  border: 2px solid var(--pixel-border-dark) !important;
+  box-shadow: 2px 2px 0 var(--pixel-border-dark);
+}
+
+.container.pixelSidebarQuestShell .timelineQuestTitle {
+  font-family: "Press Start 2P", monospace;
+  font-size: 9px !important;
+}
+
+.container.pixelSidebarQuestShell .timelineQuestTime {
+  font-family: "VT323", monospace;
+  font-size: 13px !important;
+}
+
+.container.pixelSidebarQuestShell .filterSelect {
+  border-radius: var(--pixel-card-radius);
+  border: 2px solid var(--pixel-border-dark);
+  background: var(--pixel-panel-alt);
+  color: var(--pixel-text);
+  font-family: "VT323", monospace;
+  font-size: 14px;
+}
+
+.container.pixelSidebarQuestShell .inboxGroupTitle {
+  font-family: "Press Start 2P", monospace;
+  font-size: 8px;
+}
+
+.container.pixelSidebarQuestShell .inboxItem {
+  border-radius: var(--pixel-card-radius);
+  border: 2px solid var(--pixel-border-dark);
+  background: var(--pixel-panel-alt);
+}
+
+.container.pixelSidebarQuestShell .inboxItemTitle {
+  font-family: "VT323", monospace;
+  font-size: 13px;
+}
+
+.container.pixelSidebarQuestShell .timelinePlanner::-webkit-scrollbar-thumb {
+  border-radius: 0;
+}
+
+.container.pixelSidebarQuestShell .timelinePlanner::-webkit-scrollbar-track {
+  border-radius: 0;
 }

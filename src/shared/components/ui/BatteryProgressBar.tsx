@@ -1,15 +1,22 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import styles from './BatteryProgressBar.module.css';
 
 interface BatteryProgressBarProps {
-  percent: number; // 0-100
-  segments?: number; // number of cells/segments in the battery
-  width?: number; // total width in px
-  height?: number; // battery height in px (excluding cap)
+  percent: number;
+  segments?: number;
+  width?: number;
+  height?: number;
   showLabel?: boolean;
   className?: string;
   statType?: 'energy' | 'focus' | 'motivation' | 'calm' | 'stress' | 'default';
+  pixel?: boolean;
+  statLabel?: string;
 }
+
+const EMPTY_FILL_PIXEL = 'var(--go-progress-track, #2f3558)';
+const EMPTY_FILL_DEFAULT = 'var(--go-progress-track, #3d4154)';
+const STROKE_PIXEL = 'var(--go-border, #0f1120)';
+const STROKE_DEFAULT = 'var(--go-border, rgba(255,255,255,0.22))';
 
 export const BatteryProgressBar: React.FC<BatteryProgressBarProps> = ({
   percent,
@@ -19,55 +26,75 @@ export const BatteryProgressBar: React.FC<BatteryProgressBarProps> = ({
   showLabel = false,
   className = '',
   statType = 'default',
+  pixel = false,
+  statLabel,
 }) => {
-  const clamped = Math.max(0, Math.min(100, Math.round(percent)));
+  const gradId = useMemo(
+    () => `bat-grad-${Math.random().toString(36).slice(2, 11)}`,
+    []
+  );
+
+  const n = Number(percent);
+  const clamped = Math.max(0, Math.min(100, Math.round(Number.isFinite(n) ? n : 0)));
   const filledSegments = Math.round((clamped / 100) * segments);
-  
-  // Debug logging
-  console.log(`[BatteryProgressBar] percent: ${percent}, clamped: ${clamped}, filledSegments: ${filledSegments}/${segments}`);
 
   const getStatColors = () => {
     const colors = {
       energy: {
-        high: { from: '#ef4444', to: '#dc2626', glow: '#ef4444' },    // Red energy
-        medium: { from: '#f97316', to: '#ea580c', glow: '#f97316' },  // Orange
-        low: { from: '#fbbf24', to: '#f59e0b', glow: '#fbbf24' },     // Yellow
-        critical: { from: '#dc2626', to: '#991b1b', glow: '#dc2626' } // Dark red
+        high: { from: '#ef4444', to: '#dc2626', glow: '#ef4444' },
+        medium: { from: '#f97316', to: '#ea580c', glow: '#f97316' },
+        low: { from: '#fbbf24', to: '#f59e0b', glow: '#fbbf24' },
+        critical: { from: '#dc2626', to: '#991b1b', glow: '#dc2626' },
       },
       focus: {
-        high: { from: '#3b82f6', to: '#2563eb', glow: '#3b82f6' },    // Blue focus
-        medium: { from: '#6366f1', to: '#4f46e5', glow: '#6366f1' },  // Indigo
-        low: { from: '#8b5cf6', to: '#7c3aed', glow: '#8b5cf6' },     // Purple
-        critical: { from: '#9333ea', to: '#7e22ce', glow: '#9333ea' } // Dark purple
+        high: { from: '#3b82f6', to: '#2563eb', glow: '#3b82f6' },
+        medium: { from: '#6366f1', to: '#4f46e5', glow: '#6366f1' },
+        low: { from: '#8b5cf6', to: '#7c3aed', glow: '#8b5cf6' },
+        critical: { from: '#9333ea', to: '#7e22ce', glow: '#9333ea' },
       },
       motivation: {
-        high: { from: '#f59e0b', to: '#d97706', glow: '#f59e0b' },    // Amber motivation
-        medium: { from: '#eab308', to: '#ca8a04', glow: '#eab308' },  // Yellow
-        low: { from: '#facc15', to: '#eab308', glow: '#facc15' },     // Light yellow
-        critical: { from: '#d97706', to: '#b45309', glow: '#d97706' } // Dark amber
+        high: { from: '#f59e0b', to: '#d97706', glow: '#f59e0b' },
+        medium: { from: '#eab308', to: '#ca8a04', glow: '#eab308' },
+        low: { from: '#facc15', to: '#eab308', glow: '#facc15' },
+        critical: { from: '#d97706', to: '#b45309', glow: '#d97706' },
       },
       calm: {
-        high: { from: '#10b981', to: '#059669', glow: '#10b981' },    // Green calm
-        medium: { from: '#22c55e', to: '#16a34a', glow: '#22c55e' },  // Light green
-        low: { from: '#4ade80', to: '#22c55e', glow: '#4ade80' },     // Bright green
-        critical: { from: '#059669', to: '#047857', glow: '#059669' } // Dark green
+        high: { from: '#10b981', to: '#059669', glow: '#10b981' },
+        medium: { from: '#22c55e', to: '#16a34a', glow: '#22c55e' },
+        low: { from: '#4ade80', to: '#22c55e', glow: '#4ade80' },
+        critical: { from: '#059669', to: '#047857', glow: '#059669' },
       },
       stress: {
-        high: { from: '#dc2626', to: '#991b1b', glow: '#dc2626' },    // Red stress (bad)
-        medium: { from: '#ef4444', to: '#dc2626', glow: '#ef4444' },  // Light red
-        low: { from: '#f87171', to: '#ef4444', glow: '#f87171' },     // Pink red
-        critical: { from: '#991b1b', to: '#7f1d1d', glow: '#991b1b' } // Very dark red
+        high: { from: '#dc2626', to: '#991b1b', glow: '#dc2626' },
+        medium: { from: '#ef4444', to: '#dc2626', glow: '#ef4444' },
+        low: { from: '#f87171', to: '#ef4444', glow: '#f87171' },
+        critical: { from: '#991b1b', to: '#7f1d1d', glow: '#991b1b' },
       },
       default: {
-        high: { from: '#10b981', to: '#059669', glow: '#10b981' },
-        medium: { from: '#f59e0b', to: '#d97706', glow: '#f59e0b' },
-        low: { from: '#f97316', to: '#ea580c', glow: '#f97316' },
-        critical: { from: '#ef4444', to: '#dc2626', glow: '#ef4444' }
-      }
+        high: {
+          from: 'var(--go-progress-fill, #10b981)',
+          to: 'var(--go-progress-fill-strong, #059669)',
+          glow: 'var(--go-progress-glow, #10b981)',
+        },
+        medium: {
+          from: 'var(--go-progress-fill, #f59e0b)',
+          to: 'var(--go-progress-fill-strong, #d97706)',
+          glow: 'var(--go-progress-glow, #f59e0b)',
+        },
+        low: {
+          from: 'var(--go-progress-fill, #f97316)',
+          to: 'var(--go-progress-fill-strong, #ea580c)',
+          glow: 'var(--go-progress-glow, #f97316)',
+        },
+        critical: {
+          from: 'var(--go-progress-fill, #ef4444)',
+          to: 'var(--go-progress-fill-strong, #dc2626)',
+          glow: 'var(--go-progress-glow, #ef4444)',
+        },
+      },
     };
 
     const statColors = colors[statType] || colors.default;
-    
     if (clamped >= 80) return statColors.high;
     if (clamped >= 50) return statColors.medium;
     if (clamped >= 20) return statColors.low;
@@ -81,48 +108,87 @@ export const BatteryProgressBar: React.FC<BatteryProgressBarProps> = ({
     return styles.critical;
   };
 
+  const levelColors = getStatColors();
+
+  const rootClass = [
+    styles.battery,
+    getLevelClass(),
+    pixel ? styles.pixelBattery : '',
+    className,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  const a11yName = statLabel?.trim() || 'Battery';
+
+  const pad = pixel ? 2 : 3;
+  const gap = pixel ? 2 : 1;
+  const cellW = 8;
+  const vbH = 24;
+  const vbW = segments * cellW + Math.max(0, segments - 1) * gap + pad * 2;
+
+  const emptyFill = pixel ? EMPTY_FILL_PIXEL : EMPTY_FILL_DEFAULT;
+  const stroke = pixel ? STROKE_PIXEL : STROKE_DEFAULT;
+
+  const rects = useMemo(
+    () =>
+      Array.from({ length: segments }, (_, idx) => {
+        const isFilled = idx < filledSegments;
+        const x = pad + idx * (cellW + gap);
+        const y = pad;
+        const h = vbH - pad * 2;
+        return { idx, isFilled, x, y, w: cellW, h };
+      }),
+    [segments, filledSegments, pad, gap, vbH, cellW]
+  );
+
   return (
     <div
-      className={`${styles.battery} ${getLevelClass()} ${className}`}
-      style={{ 
+      className={rootClass}
+      style={{
         width: width ? `${width}px` : '100%',
         maxWidth: width ? `${width}px` : '400px',
         minWidth: '120px',
-        height: `${height}px` 
+        height: `${height}px`,
       }}
-      aria-label={`Battery at ${clamped}%`}
+      aria-label={`${a11yName} ${clamped}%`}
+      title={`${a11yName} ${clamped}%`}
     >
       <div className={styles.body}>
-        {Array.from({ length: segments }).map((_, idx) => {
-          const isFilled = idx < filledSegments;
-          const colors = getStatColors();
-          
-          return (
-            <div
+        <svg
+          className={pixel ? styles.svgPixel : styles.svgBattery}
+          viewBox={`0 0 ${vbW} ${vbH}`}
+          preserveAspectRatio="none"
+          width="100%"
+          height="100%"
+          aria-hidden="true"
+        >
+          <defs>
+            <linearGradient id={gradId} x1="0%" y1="0%" x2="0%" y2="100%">
+              <stop offset="0%" stopColor={levelColors.from} />
+              <stop offset="100%" stopColor={levelColors.to} />
+            </linearGradient>
+          </defs>
+          {rects.map(({ idx, isFilled, x, y, w, h }) => (
+            <rect
               key={idx}
-              className={`${styles.cell} ${isFilled ? styles.filled : ''}`}
-              data-filled={isFilled}
-              data-segment={idx}
-              style={{
-                background: isFilled 
-                  ? `linear-gradient(135deg, ${colors.from}, ${colors.to})`
-                  : 'rgba(255, 255, 255, 0.1)',
-                boxShadow: isFilled 
-                  ? `inset 0 1px 3px rgba(255, 255, 255, 0.2), 0 0 8px ${colors.glow}40`
-                  : 'none'
-              }}
+              x={x}
+              y={y}
+              width={w}
+              height={h}
+              rx={pixel ? 0 : 1}
+              ry={pixel ? 0 : 1}
+              fill={isFilled ? `url(#${gradId})` : emptyFill}
+              stroke={stroke}
+              strokeWidth={pixel ? 1 : 0.75}
             />
-          );
-        })}
+          ))}
+        </svg>
       </div>
       <div className={styles.cap} />
-      {showLabel && (
-        <div className={styles.label}>{clamped}%</div>
-      )}
+      {showLabel && <div className={styles.label}>{clamped}%</div>}
     </div>
   );
 };
 
 export default BatteryProgressBar;
-
-

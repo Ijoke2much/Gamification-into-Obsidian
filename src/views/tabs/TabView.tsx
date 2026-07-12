@@ -1,6 +1,7 @@
-import React, { useState, useRef, useEffect, useCallback, Suspense } from "react";
+import React, { useState, useRef, useEffect, useCallback, useMemo, Suspense } from "react";
+import { createPortal } from "react-dom";
 import type GamifiedObsidianPlugin from "src/core/main";
-import { Notice, TFile } from "obsidian";
+import { TFile } from 'obsidian';
 import { ErrorBoundary } from "../../shared/components/ErrorBoundary";
 import { safeAsync } from "../../shared/utils/errorHandler";
 import { ProgressBar } from "src/shared/components/ui/ProgressBar";
@@ -15,7 +16,21 @@ import { ActiveArtifactsCard } from "../../features/player/components/ActiveArti
 import { ActiveBuffsCard } from "../../features/player/components/ActiveBuffsCard";
 import { ClickableTooltip } from "../../shared/components/ui/ClickableTooltip";
 import { GlobalNotificationSystem } from "../../shared/components/ui/GlobalNotificationSystem";
+import { CeremonyHost } from "../../shared/components/ui/CeremonyHost";
+import { AchievementUnlockHost } from "../../features/achievements/components/AchievementUnlockHost";
+import { onAchievementGalleryOpen } from "../../shared/utils/achievementGalleryEvents";
 
+import { pixelNotice } from '../../shared/utils/noticeUtils';
+import {
+    getResolvedGameplayConfig,
+    isEnergySystemEnabled,
+    isPlayerTabEnabled,
+    type PlayerTabKey,
+} from '../../shared/utils/gameplayConfig';
+import { resolveEnergyHudConfig } from '../../shared/utils/energyHudConfig';
+import { onSettingsUpdated } from '../../shared/utils/settingsEvents';
+import { getAppliedVisualTheme } from '../../shared/utils/visualThemeManager';
+import { SystemResourceBar } from '../../shared/components/ui/system';
 import {
     PlayerIcon,
     ShopIcon,
@@ -27,7 +42,7 @@ import {
 import { EnhancedEnergyHUD } from "../../features/energy/components/EnhancedEnergyHUD";
 import SkillTreeModal from "../../features/skillTree/modals/SkillTreeModal";
 import { InventoryModalClass } from "../../features/inventory/modals/InventoryModalClass";
-import { useMobileOptimizations, useMobilePerformance } from "../../shared/hooks/useMobileOptimizations";
+import { useMobileOptimizations } from "../../shared/hooks/useMobileOptimizations";
 import { currencyDisplay } from "../../shared/services/currencyDisplayService";
 import { MobileErrorBoundary } from "../../shared/components/MobileErrorBoundary";
 
@@ -51,7 +66,7 @@ const EnergyDebug = process.env.NODE_ENV === 'development' ? React.lazy(() => im
 
 // Import CSS modules
 import styles from "./TabView.module.css";
-import cardStyles from "../../features/player/components/PlayerInfoCard.module.css";
+import cardStyles from "../../features/player/components/PlayerTabCards.module.css";
 
 // Add HabitsIcon component (you can create this or use an existing icon)
 const HabitsIcon = (
@@ -78,15 +93,10 @@ const AnalyticsIcon = (
     </svg>
 );
 
-const BossBattleIcon = (
+const SettingsIcon = (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-        <path d="M14.5 17.5L3 6V3h3l11.5 11.5"/>
-        <path d="M13 19l6-6"/>
-        <path d="M16 16l4 4"/>
-        <path d="M19 21l2-2"/>
-        <path d="M9.5 4.5L21 16v3h-3L6.5 7.5"/>
-        <path d="M11 2l2 2"/>
-        <path d="M6.5 9.5L4 12"/>
+        <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+        <circle cx="12" cy="12" r="3"/>
     </svg>
 );
 
@@ -116,7 +126,6 @@ const SkillTreeCardIcon = (
         <circle cx="12" cy="19" r="1.3" fill="#15803d" />
     </svg>
 );
-
 
 // Mobile-optimized loading component
 const TabLoadingState: React.FC<{ tabName: string }> = ({ tabName }) => {
@@ -160,7 +169,6 @@ const TABS = [
     { key: "player", label: "Player", icon: PlayerIcon },
     { key: "shop", label: "Shop", icon: ShopIcon },
     { key: "quests", label: "Quests", icon: QuestIcon },
-    { key: "boss", label: "Boss Battle", icon: BossBattleIcon },
     { key: "habits", label: "Habits", icon: HabitsIcon },
     { key: "crafting", label: "Crafting", icon: CraftingIcon },
     { key: "achievements", label: "Achievements", icon: AchievementsIcon },
@@ -185,18 +193,24 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
     });
     const [playerData, setPlayerData] = useState<PlayerData | null>(null);
     const [loading, setLoading] = useState(true);
-    const [dropdownOpen, setDropdownOpen] = useState(false);
     const [stats, setStats] = useState<Stat[]>([]);
-    const dropdownRef = useRef<HTMLDivElement>(null);
+    const tabRibbonRef = useRef<HTMLDivElement>(null);
     const [showStats, setShowStats] = useState(false);
     const [saving, setSaving] = useState(false);
     const [visible, setVisible] = useState(!document.hidden);
-    const [pinned, setPinned] = useState<string[]>(() => {
+    const [pinned] = useState<string[]>(() => {
         try { return JSON.parse(localStorage.getItem('gamification-pinned-tabs') || '[]'); } catch { return []; }
     });
     const [showSkillTreeModal, setShowSkillTreeModal] = useState(false);
     // Keep Pomodoro mounted after first open so the timer doesn't reset on tab switch
     const [hasMountedPomodoro, setHasMountedPomodoro] = useState(() => selectedTab === 'pomodoro');
+    const [visualThemeRevision, setVisualThemeRevision] = useState(0);
+    const appliedVisualTheme = useMemo(
+        () => getAppliedVisualTheme(),
+        [visualThemeRevision]
+    );
+
+    useEffect(() => onSettingsUpdated(() => setVisualThemeRevision((n) => n + 1)), []);
 
     // Debug logging
     console.log('🎮 PlayerTabView component loaded, selectedTab:', selectedTab);
@@ -211,7 +225,7 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
         mobileClasses, 
         useSwipe
     } = useMobileOptimizations();
-    
+
     // Simple mobile initialization - let Obsidian handle viewport
     useEffect(() => {
         if (isMobile) {
@@ -227,18 +241,37 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
             };
         }
     }, [isMobile]);
-    
-    const { debounce } = useMobilePerformance();
 
     // Create achievement tracker instance for AchievementsTab
     const [achievementTracker] = useState(() => new AchievementTracker());
+    const [highlightAchievementId, setHighlightAchievementId] = useState<string | null>(null);
+    const [settingsRevision, setSettingsRevision] = useState(0);
 
-    // Feature flags filtering
-    const featureFlags = plugin.settings?.featureFlags || { enableAnalyticsTab: true, enableEnergyDebug: false };
-    const filteredTabs = TABS.filter(t => {
-        if (t.key === 'analytics' && !featureFlags.enableAnalyticsTab) return false;
-        return true;
-    });
+    useEffect(() => {
+        return onAchievementGalleryOpen((achievementId) => {
+            setSelectedTab("achievements");
+            if (achievementId) setHighlightAchievementId(achievementId);
+        });
+    }, []);
+
+    useEffect(() => {
+        return onSettingsUpdated(() => setSettingsRevision((v) => v + 1));
+    }, []);
+
+    const gameplayConfig = useMemo(
+        () => getResolvedGameplayConfig(plugin.app),
+        [plugin.settings, settingsRevision]
+    );
+    const energySystemOn = isEnergySystemEnabled(plugin.settings);
+    const energyHudConfig = useMemo(
+        () => resolveEnergyHudConfig(plugin.settings),
+        [plugin.settings, settingsRevision]
+    );
+    const penaltiesUiOn = gameplayConfig.penaltiesEnabled;
+
+    const filteredTabs = TABS.filter((t) =>
+        isPlayerTabEnabled(gameplayConfig, t.key as PlayerTabKey)
+    );
     useEffect(() => {
         const tabExists = filteredTabs.some(t => t.key === selectedTab);
         if (!tabExists) {
@@ -249,19 +282,16 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
         }
     }, [filteredTabs, selectedTab]);
 
-    // Pinned tabs ordering
-    useEffect(() => {
-        localStorage.setItem('gamification-pinned-tabs', JSON.stringify(pinned));
-    }, [pinned]);
+    // Pinned tabs ordering (legacy localStorage order preserved)
     const displayTabs = [
         ...pinned.map(k => filteredTabs.find(t => t.key === k)).filter(Boolean) as typeof TABS,
         ...filteredTabs.filter(t => !pinned.includes(t.key))
     ];
-    const togglePin = (key: string) => {
-        setPinned(p => p.includes(key) ? p.filter(k => k !== key) : [...p, key]);
-    };
-
     const currentTab = displayTabs.find(tab => tab.key === selectedTab) || displayTabs[0] || TABS[0];
+
+    const openPluginSettings = useCallback(() => {
+        plugin.openPluginSettings();
+    }, [plugin]);
 
     // Save tab state to localStorage whenever it changes
     useEffect(() => {
@@ -340,7 +370,7 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
             for (let s = 0; s < n; s++) {
                 idx = (idx + 1) % n;
                 const key = displayTabs[idx].key;
-                if (key !== 'boss' && key !== 'analytics') {
+                if (key !== 'analytics') {
                     setSelectedTab(key);
                     return;
                 }
@@ -353,7 +383,7 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
             for (let s = 0; s < n; s++) {
                 idx = (idx - 1 + n) % n;
                 const key = displayTabs[idx].key;
-                if (key !== 'boss' && key !== 'analytics') {
+                if (key !== 'analytics') {
                     setSelectedTab(key);
                     return;
                 }
@@ -369,22 +399,12 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
     //     }
     // }, [isMobile, preventZoom]);
 
-    // Debounced dropdown close for mobile
-    const debouncedCloseDropdown = useCallback(
-        debounce(() => setDropdownOpen(false), 100),
-        [debounce]
-    );
-
     useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                debouncedCloseDropdown();
-            }
-        };
-
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, [debouncedCloseDropdown]);
+        const ribbon = tabRibbonRef.current;
+        if (!ribbon) return;
+        const activeTab = ribbon.querySelector<HTMLElement>(`[data-tab-key="${selectedTab}"]`);
+        activeTab?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+    }, [selectedTab]);
 
     // Manual reload function for button clicks
     const reloadPlayerData = useCallback(async () => {
@@ -562,11 +582,11 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
                 modal.open();
             } else {
                 console.error('📱 Modal constructor failed on mobile');
-                new Notice('Avatar picker not available on mobile');
+                pixelNotice('Avatar picker not available on mobile');
             }
         } catch (error) {
             console.error('📱 Mobile avatar picker error:', error);
-            new Notice('Avatar picker not available on mobile');
+            pixelNotice('Avatar picker not available on mobile');
         }
     };
 
@@ -576,9 +596,17 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
 
     return (
         <MobileErrorBoundary>
-            <div className={`${styles.container} ${isMobile ? mobileClasses.container : ''} gamification-container gamification-plugin`} data-gamification-plugin {...swipeHandlers}>
+            <div
+                className={`${styles.container} ${isMobile ? mobileClasses.container : ''} gamification-container gamification-plugin`}
+                data-gamification-plugin
+                data-gamification-visual-theme={appliedVisualTheme.preset}
+                data-gamification-shell={appliedVisualTheme.shell}
+                {...swipeHandlers}
+            >
             {/* Global Notification System */}
             <GlobalNotificationSystem />
+            <CeremonyHost />
+            <AchievementUnlockHost />
             
             {/* Debug reload button - hidden on mobile in production */}
             {(!isMobile || process.env.NODE_ENV === 'development') && (
@@ -605,7 +633,7 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
                             }
                         } catch (error) {
                             console.error("Error checking player level:", error);
-                            new Notice("❌ Error checking player level", 3000);
+                            pixelNotice("❌ Error checking player level", 3000);
                         }
                     }}
                     className={`${styles.reloadButton} ${mobileClasses.button}`}
@@ -875,90 +903,22 @@ ${testResults.join('\n')}`;
                 </div>
             ) : (
                 <>
-                    {/* Mobile dropdown vs Desktop ribbon */}
-                    {isMobile ? (
+                    <div className={styles.tabNavBar}>
                         <div
-                            ref={dropdownRef}
-                            className={`${styles.dropdown} ${styles.mobileDropdown}`}
+                            ref={tabRibbonRef}
+                            className={styles.tabRibbon}
+                            role="tablist"
+                            aria-label="Main tabs"
                         >
-                            <div
-                                className={
-                                    dropdownOpen
-                                        ? `${styles.dropdownToggle} ${styles.dropdownToggleActive} ${mobileClasses.button}`
-                                        : `${styles.dropdownToggle} ${mobileClasses.button}`
-                                }
-                                onClick={() => setDropdownOpen((v) => !v)}
-                                role="button"
-                                tabIndex={0}
-                                aria-label={`Current tab: ${currentTab.label}. Click to change tab.`}
-                                aria-expanded={dropdownOpen}
-                                aria-haspopup="listbox"
-                                onKeyDown={(e) => {
-                                    if (e.key === 'Enter' || e.key === ' ') {
-                                        e.preventDefault();
-                                        setDropdownOpen((v) => !v);
-                                    }
-                                }}
-                            >
-                                <span style={{ marginRight: 8 }}>
-                                    {currentTab.icon}
-                                </span>
-                                {currentTab.label}
-                                <span
-                                    className={styles.dropdownArrow}
-                                    style={{ transform: dropdownOpen ? 'rotate(180deg)' : 'rotate(0deg)' }}
-                                >
-                                    ▼
-                                </span>
-                            </div>
-                            {dropdownOpen && (
-                                <div
-                                    className={`${styles.dropdownMenu} ${styles.mobileDropdownMenu}`}
-                                    role="listbox"
-                                    aria-label="Available tabs"
-                                >
-                                    {displayTabs.map((tab) => (
-                                        <div
-                                            key={tab.key}
-                                            className={
-                                                selectedTab === tab.key
-                                                    ? `${styles.dropdownItem} ${styles.dropdownItemActive} ${mobileClasses.touchTarget}`
-                                                    : `${styles.dropdownItem} ${mobileClasses.touchTarget}`
-                                            }
-                                            onClick={() => {
-                                                selectTabKey(tab.key);
-                                                setDropdownOpen(false);
-                                            }}
-                                            role="option"
-                                            aria-selected={selectedTab === tab.key}
-                                            tabIndex={0}
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter' || e.key === ' ') {
-                                                    e.preventDefault();
-                                                    selectTabKey(tab.key);
-                                                    setDropdownOpen(false);
-                                                }
-                                            }}
-                                        >
-                                            <span style={{ marginRight: 8 }}>
-                                                {tab.icon}
-                                            </span>
-                                            {tab.label}
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
-                        </div>
-                    ) : (
-                        <div className={styles.tabRibbon} role="tablist" aria-label="Main tabs">
                             {displayTabs.map((tab) => (
                                 <button
                                     key={tab.key}
+                                    data-tab-key={tab.key}
                                     onClick={() => selectTabKey(tab.key)}
                                     className={
                                         selectedTab === tab.key
-                                            ? `${styles.tabButton} ${styles.tabButtonActive}`
-                                            : styles.tabButton
+                                            ? `${styles.tabButton} ${styles.tabButtonActive} ${isMobile ? mobileClasses.touchTarget : ''}`
+                                            : `${styles.tabButton} ${isMobile ? mobileClasses.touchTarget : ''}`
                                     }
                                     role="tab"
                                     aria-selected={selectedTab === tab.key}
@@ -966,22 +926,25 @@ ${testResults.join('\n')}`;
                                 >
                                     <span className={styles.tabIcon}>{tab.icon}</span>
                                     <span className={styles.tabLabel}>{tab.label}</span>
-                                    <span
-                                        className={styles.tabPin}
-                                        onClick={(e) => { e.stopPropagation(); togglePin(tab.key); }}
-                                        title={pinned.includes(tab.key) ? 'Unpin' : 'Pin'}
-                                    >
-                                        {pinned.includes(tab.key) ? '★' : '☆'}
-                                    </span>
                                 </button>
                             ))}
                         </div>
-                    )}
+                        <div className={styles.tabNavDivider} aria-hidden="true" />
+                        <button
+                            type="button"
+                            className={`${styles.settingsButton} ${isMobile ? mobileClasses.touchTarget : ''}`}
+                            onClick={openPluginSettings}
+                            title="Plugin settings"
+                            aria-label="Open gamification settings"
+                        >
+                            {SettingsIcon}
+                        </button>
+                    </div>
 
                     {/* Mobile-optimized tab content */}
                     <div className={`${styles.tabContent} ${isMobile ? mobileClasses.scrollable : ''}`}>
                         {selectedTab === "player" && (
-                            <div className={`${styles.gridCol} ${isMobile ? mobileClasses.container : ''}`}>
+                            <div className={`${styles.gridCol} ${isMobile ? mobileClasses.container : ''} ${appliedVisualTheme.preset === 'system-hunter' ? cardStyles.playerTabSystem : ''}`}>
                                 {/* Avatar & Main Info Card */}
                                 <PlayerInfoCard
                                     playerData={playerData}
@@ -1003,51 +966,64 @@ ${testResults.join('\n')}`;
                                         <div className={cardStyles.levelValue}>{playerData.level}</div>
                                     </div>
 
-                                    <div className={`${cardStyles.expCard} ${isMobile ? mobileClasses.card : ''}`}>
-                                        <div className={cardStyles.cardLabel} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                                            <span style={{ display: 'inline-flex', alignItems: 'center' }} aria-hidden="true">
-                                                <svg
-                                                    width="14"
-                                                    height="14"
-                                                    viewBox="0 0 24 24"
-                                                    fill="none"
-                                                    stroke="currentColor"
-                                                    strokeWidth="2"
-                                                    strokeLinecap="round"
-                                                    strokeLinejoin="round"
-                                                    xmlns="http://www.w3.org/2000/svg"
-                                                >
-                                                    <title>Experience</title>
-                                                    <rect x="4" y="4" width="16" height="16" rx="4" />
-                                                    <text x="12" y="16" textAnchor="middle" fontSize="10" fill="currentColor">
-                                                        XP
-                                                    </text>
-                                                </svg>
-                                            </span>
-                                            EXP
-                                        </div>
-                                        <ProgressBar
-                                            progress={Math.min(
-                                                100,
-                                                Math.max(
-                                                    0,
-                                                    Math.round(
-                                                        (Number(playerData.xp || 0) /
-                                                            Math.max(1, Number(playerData.xpRequired || 1))) *
-                                                            100
-                                                    )
-                                                )
-                                            )}
-                                            height={14}
-                                            labelPosition="center"
-                                            label={`${Number(playerData.xp || 0)}/${Math.max(1, Number(playerData.xpRequired || 1))}`}
-                                        />
+                                    <div className={`${cardStyles.expCard} ${isMobile ? mobileClasses.card : ''} ${appliedVisualTheme.preset === 'system-hunter' ? cardStyles.expCardSystem : ''}`}>
+                                        {appliedVisualTheme.preset === 'system-hunter' ? (
+                                            <SystemResourceBar
+                                                label="EXP"
+                                                icon="exp"
+                                                current={Number(playerData.xp || 0)}
+                                                max={Math.max(1, Number(playerData.xpRequired || 1))}
+                                            />
+                                        ) : (
+                                            <>
+                                                <div className={cardStyles.cardLabel} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                                                    <span style={{ display: 'inline-flex', alignItems: 'center' }} aria-hidden="true">
+                                                        <svg
+                                                            width="14"
+                                                            height="14"
+                                                            viewBox="0 0 24 24"
+                                                            fill="none"
+                                                            stroke="currentColor"
+                                                            strokeWidth="2"
+                                                            strokeLinecap="round"
+                                                            strokeLinejoin="round"
+                                                            xmlns="http://www.w3.org/2000/svg"
+                                                        >
+                                                            <title>Experience</title>
+                                                            <rect x="4" y="4" width="16" height="16" rx="4" />
+                                                            <text x="12" y="16" textAnchor="middle" fontSize="10" fill="currentColor">
+                                                                XP
+                                                            </text>
+                                                        </svg>
+                                                    </span>
+                                                    EXP
+                                                </div>
+                                                <ProgressBar
+                                                    progress={Math.min(
+                                                        100,
+                                                        Math.max(
+                                                            0,
+                                                            Math.round(
+                                                                (Number(playerData.xp || 0) /
+                                                                    Math.max(1, Number(playerData.xpRequired || 1))) *
+                                                                    100
+                                                            )
+                                                        )
+                                                    )}
+                                                    height={16}
+                                                    labelPosition="center"
+                                                    appearance="pixel"
+                                                    label={`${Number(playerData.xp || 0)}/${Math.max(1, Number(playerData.xpRequired || 1))}`}
+                                                />
+                                            </>
+                                        )}
                                     </div>
                                 </div>
                                 {/* Currency, Skill Tree & Inventory Side by Side */}
                                 <div className={`${cardStyles.cardRow} ${isMobile ? styles.mobileCardRow : ''}`} style={{
                                   flexDirection: isMobile ? 'column' : 'row',
-                                  gap: isMobile ? '12px' : '16px'
+                                  gap: isMobile ? '12px' : '16px',
+                                  alignItems: 'stretch',
                                 }}>
                                     {/* Currency Card */}
                                     <div className={`${cardStyles.coinsCard} ${mobileClasses.card}`}>
@@ -1104,20 +1080,24 @@ ${testResults.join('\n')}`;
                                         <span className={cardStyles.actionLabel}>Stats</span>
                                     </button>
                                 </div>
-                                                                                                 {/* Energy HUD with Rejuvenating Features */}
-                                <div className={`${cardStyles.energyCard} ${mobileClasses.card}`}>
-                                    <EnhancedEnergyHUD 
-                                        showRecommendations={true}
+                                {energySystemOn && energyHudConfig.showHud && (
+                                <div
+                                    className={`${cardStyles.energyCard} ${cardStyles.energyCardFlush} ${mobileClasses.card}`}
+                                >
+                                    <EnhancedEnergyHUD
+                                        variant="pixel"
+                                        showRecommendations={energyHudConfig.showRecommendations}
                                         compact={false}
                                         autoRefresh={visible}
+                                        visibleStats={energyHudConfig.visibleStats}
+                                        hudTitle={energyHudConfig.hudTitle}
                                     />
                                 </div>
-                                
-                                {/* Active Buffs */}
+                                )}
+
                                 <ActiveBuffsCard />
-                                
-                                {/* Penalty Status */}
-                                <PenaltyStatusCard />
+
+                                {penaltiesUiOn && <PenaltyStatusCard />}
                                 
                                 {/* Active Artifacts */}
                                 <ActiveArtifactsCard />
@@ -1153,7 +1133,13 @@ ${testResults.join('\n')}`;
 
                         <ErrorBoundary componentName="Achievements Tab">
                             <Suspense fallback={<TabLoadingState tabName="Achievements" />}>
-                                {selectedTab === "achievements" && (<AchievementsTab tracker={achievementTracker} onRefresh={reloadPlayerData} />)}
+                                {selectedTab === "achievements" && (
+                                    <AchievementsTab
+                                        tracker={achievementTracker}
+                                        onRefresh={reloadPlayerData}
+                                        highlightAchievementId={highlightAchievementId}
+                                    />
+                                )}
                             </Suspense>
                         </ErrorBoundary>
 
@@ -1166,7 +1152,6 @@ ${testResults.join('\n')}`;
                                 )}
                             </Suspense>
                         </ErrorBoundary>
-
 
                         <ErrorBoundary componentName="Analytics Tab">
                             <Suspense fallback={<TabLoadingState tabName="Analytics" />}>
@@ -1194,23 +1179,24 @@ ${testResults.join('\n')}`;
                 </>
             )}
         {/* Stats Modal */}
-        {showStats && (
+        {showStats && createPortal(
             <div className={styles.modalBackdrop} role="dialog" aria-modal="true" onClick={() => setShowStats(false)}>
-                <div className={styles.modalPanel} onClick={(e) => e.stopPropagation()}>
+                <div className={`${styles.modalPanel} ${styles.statsModalPanel}`} onClick={(e) => e.stopPropagation()}>
                     <div className={styles.modalHeader}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <span style={{ display: 'inline-flex', alignItems: 'center' }}>{StatsIcon}</span>
-                            <h3 style={{ margin: 0 }}>Stats</h3>
+                        <div className={styles.statsModalTitleRow}>
+                            <span className={styles.statsModalIcon}>{StatsIcon}</span>
+                            <h3 className={styles.statsModalTitle}>Stats</h3>
                         </div>
                         <button onClick={() => setShowStats(false)} className={styles.reloadButton} aria-label="Close stats">✕</button>
                     </div>
                     <ErrorBoundary componentName="Stats Modal">
                         <Suspense fallback={<TabLoadingState tabName="Stats" />}>
-                            <StatsTabView plugin={plugin} />
+                            <StatsTabView plugin={plugin} variant="modal" />
                         </Suspense>
                     </ErrorBoundary>
                 </div>
-            </div>
+            </div>,
+            document.body
         )}
 
         {/* Skill Tree Modal */}

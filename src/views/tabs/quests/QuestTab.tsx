@@ -12,18 +12,26 @@ import { handleFailQuestAddDebt } from '../../../features/quests/utils/questUtil
 import { QuestSearchBar, QuestFilters as QuestFiltersComponent, QuestSortDropdown } from '../../../features/quests/components/QuestSearchAndSort';
 import { QuestBoardHeader } from '../../../features/quests/components/QuestBoardHeader';
 import { QuestModal } from '../../../features/quests/modals/QuestModal';
+import { openQuickCaptureModal } from '../../../features/quests/modals/QuickCaptureModal';
 import { QuestTemplateWizard } from '../../../features/quests/components/QuestTemplateWizard';
 import { AdvancedQuestDashboard } from '../../../features/quests/components/AdvancedQuestDashboard';
 import { AdvancedSearchFilters } from '../../../features/quests/components/AdvancedSearchFilters';
 import { SearchResults } from '../../../features/quests/components/SearchResults';
 import { SearchResult } from '../../../features/quests/types/SearchTypes';
 import { currencyDisplay } from '../../../shared/services/currencyDisplayService';
+import { onSettingsUpdated } from '../../../shared/utils/settingsEvents';
+import { resolveEnergyHudConfig } from '../../../shared/utils/energyHudConfig';
 // Lazy-load heavy views
 const QuestCalendarView = lazy(() => import('../../../features/quests/components/QuestCalendarView').then(m => ({ default: m.QuestCalendarView })));
 const QuestTimelineView = lazy(() => import('../../../features/quests/components/QuestTimelineView').then(m => ({ default: m.QuestTimelineView })));
 const TimelineModal = lazy(() => import('../../../features/quests/components/TimelineModal').then(m => ({ default: m.TimelineModal })));
 const UnifiedQuestView = lazy(() => import('../../../features/quests/components/UnifiedQuestView').then(m => ({ default: m.UnifiedQuestView })));
 import type { Quest } from '../../../features/quests/utils/taskParser';
+import {
+	buildProjectSummaries,
+	listOpenContractTitles,
+} from '../../../features/quests/utils/questProjectUtils';
+import { isClosedContract } from '../../../features/quests/utils/projectContractDisplay';
 import { TFile } from 'obsidian';
 import styles from './QuestTab.module.css';
 // Boss view is now handled by the full-page BossView
@@ -197,6 +205,11 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
     addQuestOptimistically,
   } = useQuestManagement(plugin);
 
+  const openContractOptions = useMemo(
+    () => listOpenContractTitles(buildProjectSummaries(quests), isClosedContract),
+    [quests]
+  );
+
   // Track whether we've successfully loaded quests at least once so that
   // subsequent refreshes (e.g. after creating a quest) don't blank the whole tab.
   const [hasLoadedOnce, setHasLoadedOnce] = useState(false);
@@ -253,6 +266,15 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
   
+  const [settingsRevision, setSettingsRevision] = useState(0);
+
+  useEffect(() => onSettingsUpdated(() => setSettingsRevision((v) => v + 1)), []);
+
+  const energyHudConfig = useMemo(
+    () => resolveEnergyHudConfig(plugin.settings),
+    [plugin.settings, settingsRevision]
+  );
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingQuest, setEditingQuest] = useState<Quest | null>(null);
   const [isTemplateWizardOpen, setIsTemplateWizardOpen] = useState(false);
@@ -497,6 +519,10 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
     setEditingQuest(null);
     setIsModalOpen(true);
   }, []);
+
+  const handleQuickCapture = useCallback(() => {
+    openQuickCaptureModal(plugin.app, plugin.settings);
+  }, [plugin]);
 
   const handleAddQuestForDate = useCallback((date: Date) => {
     const dateStr = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')}`;
@@ -826,7 +852,11 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
   }
 
   return (
-    <div ref={questTabRef} className={styles.questTabContainer}>
+    <div
+      ref={questTabRef}
+      className={`${styles.questTabContainer} ${styles.pixelQuestShell}`}
+      data-pixel-shell="quests"
+    >
       {/* Mobile-specific CSS */}
       <style>{`
         @keyframes pulse {
@@ -856,21 +886,14 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
       `}</style>
       <QuestBoardHeader 
         onAddQuest={handleCreateQuest}
+        onQuickCapture={handleQuickCapture}
       />
       
       {/* Keyboard Shortcuts Help */}
-      <div style={{
-        position: "absolute",
-        top: "8px",
-        right: "8px",
-        background: "rgba(0, 0, 0, 0.8)",
-        color: "rgba(255, 255, 255, 0.7)",
-        padding: "4px 8px",
-        borderRadius: "4px",
-        fontSize: "9px",
-        zIndex: 1000,
-        cursor: "help"
-      }} title="Keyboard Shortcuts: N=New Quest, /=Search, F=Filters, C=Compact, V=Bulk Mode, T=Templates, B=Boss, ESC=Clear">
+      <div
+        className={styles.shortcutsHint}
+        title="Keyboard Shortcuts: N=New Quest, /=Search, F=Filters, C=Compact, V=Bulk Mode, T=Templates, B=Boss, ESC=Clear"
+      >
         ⌨️ Shortcuts
       </div>
       
@@ -961,16 +984,7 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
             />
             
             {/* Advanced Search Toggle - Full width below filters */}
-            <div style={{
-              marginTop: '8px',
-              padding: '12px',
-              background: 'rgba(59, 130, 246, 0.1)',
-              border: '1px solid rgba(59, 130, 246, 0.3)',
-              borderRadius: '8px',
-              marginBottom: '20px',
-              minWidth: '100%',
-              boxSizing: 'border-box'
-            }}>
+            <div className={styles.advancedSearchBanner}>
               <button
                 onClick={handleAdvancedSearchToggle}
                 className={`${styles.actionButton} ${styles.filterButton} ${showAdvancedSearch ? styles.active : ''}`}
@@ -1001,17 +1015,7 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
 
         {/* Bulk Operations Toolbar */}
         {bulkMode && (
-          <div style={{
-            background: "rgba(59, 130, 246, 0.1)",
-            border: "1px solid rgba(59, 130, 246, 0.3)",
-            borderRadius: "8px",
-            padding: "12px",
-            marginTop: "8px",
-            display: "flex",
-            alignItems: "center",
-            gap: "8px",
-            flexWrap: "wrap"
-          }}>
+          <div className={styles.bulkToolbar}>
             <span style={{ 
               color: "rgba(59, 130, 246, 1)", 
               fontWeight: "600", 
@@ -1119,6 +1123,8 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
         setActiveQuickFilter={setActiveQuickFilter}
         quests={enhancedQuests}
         currentEnergy={currentEnergy}
+        compactMode={plugin.settings.gameplayProfile === 'lite'}
+        trackEnergyCost={energyHudConfig.trackEnergyCost}
       />
 
       {/* Quick Filter Results Summary + Pagination */}
@@ -1599,6 +1605,7 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
           quest={editingQuest}
           onClose={handleCloseModal}
           onSubmit={handleCloseModal}
+          openContracts={openContractOptions}
           prefill={(window as Window & { __questQuickPrefill?: { dueISO?: string; estimatedMinutes?: number; title?: string; description?: string } }).__questQuickPrefill}
         />
       )}

@@ -1,7 +1,8 @@
 import { Boss, BossProgress } from '../../../features/quests/types/BossTypes';
 import { Quest } from '../../../features/quests/utils/taskParser';
 import { bossManagementService } from '../../../features/quests/utils/bossManagementService';
-import { Notice } from 'obsidian';
+;
+import { pixelNotice } from '../../../shared/utils/noticeUtils';
 
 interface BossData {
     boss: Boss;
@@ -203,11 +204,11 @@ export const saveAndActivateBoss = (customBoss: CustomBossData): boolean => {
             (bossManagementService as any).saveToStorage();
         }
 
-        new Notice(`Boss "${customBoss.name}" created and activated successfully!`);
+        pixelNotice(`Boss "${customBoss.name}" created and activated successfully!`);
         return true;
     } catch (error) {
         console.error('Failed to create active boss:', error);
-        new Notice('Failed to create active boss');
+        pixelNotice('Failed to create active boss');
         return false;
     }
 };

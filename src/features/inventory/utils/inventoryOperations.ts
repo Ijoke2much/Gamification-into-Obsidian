@@ -1,7 +1,8 @@
-import { App, Notice } from 'obsidian';
+import { App } from 'obsidian';
 import { EnhancedInventoryItem, InventoryFilter, InventorySortOptions, BulkOperation, ItemStatistics } from '../types/EnhancedInventoryTypes';
 import { readInventory, writeInventory, dropItem, sellItem, useItem, equipItem } from './updateInventoryFile';
 import { EnhancedInventoryParser } from './enhancedInventoryParser';
+import { pixelNotice } from '../../../shared/utils/noticeUtils';
 
 export class InventoryOperations {
 
@@ -170,7 +171,7 @@ export class InventoryOperations {
             message += ` (${totalValue} coins earned)`;
         }
 
-        new Notice(message, 3000);
+        pixelNotice(message, 3000);
     }
 
     // Enhanced inventory reading with parsing
@@ -275,9 +276,9 @@ export class InventoryOperations {
         try {
             const inventory = JSON.parse(jsonData) as EnhancedInventoryItem[];
             await this.writeEnhancedInventory(app, inventory);
-            new Notice(`Imported ${inventory.length} items successfully`, 3000);
+            pixelNotice(`Imported ${inventory.length} items successfully`, 3000);
         } catch (error) {
-            new Notice('Failed to import inventory: Invalid JSON format', 3000);
+            pixelNotice('Failed to import inventory: Invalid JSON format', 3000);
             throw error;
         }
     }

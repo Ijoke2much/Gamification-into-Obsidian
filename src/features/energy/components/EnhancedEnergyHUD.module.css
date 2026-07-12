@@ -185,14 +185,27 @@
 .recHeader {
     display: flex;
     justify-content: space-between;
-    align-items: center;
+    align-items: flex-start;
+    gap: 12px;
     margin-bottom: 6px;
+}
+
+/* Duration + confidence stacked so they never overlap the title row corner */
+.recHeaderMeta {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 4px;
+    flex-shrink: 0;
+    min-width: min-content;
 }
 
 .recTitle {
     font-size: 14px;
     font-weight: 600;
     color: var(--text-normal);
+    min-width: 0;
+    flex: 1;
 }
 
 .recDuration {
@@ -269,15 +282,14 @@
 }
 
 .confidence {
-    position: absolute;
-    top: 8px;
-    right: 8px;
+    display: block;
     font-size: 10px;
     color: var(--text-muted);
     background: var(--background-primary);
     padding: 2px 6px;
     border-radius: 4px;
     border: 1px solid var(--background-modifier-border);
+    white-space: nowrap;
 }
 
 .showMoreButton {
@@ -438,4 +450,187 @@
     50% {
         opacity: 0.7;
     }
+}
+
+/* --- Pixel / RPG variant (Player tab; uses parent --pixel-* tokens) --- */
+.energyHUD.pixelSkin {
+    font-family: "Press Start 2P", "VT323", "Courier New", monospace;
+    background: var(--pixel-panel, var(--background-primary));
+    border: 2px solid var(--pixel-border-dark, var(--background-modifier-border));
+    border-radius: 0;
+    box-shadow: var(--pixel-shadow, 3px 3px 0 #0f1120),
+        inset 0 0 0 1px var(--pixel-border-light, #5b61a2);
+    color: var(--pixel-text, var(--text-normal));
+    margin: 0;
+    padding-bottom: 20px;
+    transition: box-shadow 0.08s ease, transform 0.08s ease;
+    image-rendering: pixelated;
+}
+
+.energyHUD.pixelSkin:hover {
+    transform: none;
+    box-shadow: var(--pixel-shadow, 3px 3px 0 #0f1120),
+        inset 0 0 0 1px var(--pixel-border-light, #5b61a2);
+}
+
+.energyHUD.pixelSkin .header {
+    border-bottom: 2px solid var(--pixel-border-dark, var(--background-modifier-border));
+    padding-bottom: 10px;
+    margin-bottom: 12px;
+}
+
+.energyHUD.pixelSkin .title {
+    font-size: 10px;
+    line-height: 1.6;
+    color: var(--pixel-text, var(--text-normal));
+}
+
+.energyHUD.pixelSkin .lastUpdate {
+    font-size: 7px;
+    color: var(--pixel-muted, var(--text-muted));
+}
+
+.energyHUD.pixelSkin .trend {
+    border-radius: 0;
+    border: 2px solid var(--pixel-border-dark, var(--background-modifier-border));
+    font-size: 7px;
+    box-shadow: inset 0 0 0 1px var(--pixel-border-light, transparent);
+}
+
+.energyHUD.pixelSkin .statName {
+    font-size: 8px;
+    color: var(--pixel-text, var(--text-normal));
+}
+
+.energyHUD.pixelSkin .statValue {
+    font-size: 7px;
+    color: var(--pixel-muted, var(--text-muted));
+}
+
+.energyHUD.pixelSkin .statsContainer {
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.energyHUD.pixelSkin .statRow {
+    align-items: center;
+    gap: 6px;
+}
+
+.energyHUD.pixelSkin .statInfo {
+    min-width: 0;
+    gap: 4px;
+}
+
+.energyHUD.pixelSkin .statBar {
+    min-width: 0;
+    align-self: center;
+}
+
+.statEditBtn {
+    flex-shrink: 0;
+    width: 30px;
+    height: 30px;
+    margin-left: 6px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    line-height: 1;
+    border: 2px solid var(--pixel-border-dark, var(--background-modifier-border));
+    background: var(--pixel-panel-alt, var(--background-secondary));
+    color: var(--pixel-text, var(--text-normal));
+    border-radius: 0;
+    box-shadow: var(--pixel-shadow-pressed, 1px 1px 0 #000),
+        inset 0 0 0 1px var(--pixel-border-light, transparent);
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.statEditBtn:hover {
+    transform: translate(-1px, -1px);
+}
+
+.statEditBtn:active {
+    transform: translate(0, 0);
+    box-shadow: var(--pixel-shadow-pressed, none);
+}
+
+.energyHUD.pixelSkin .recommendationsTitle {
+    font-size: 9px;
+    color: var(--pixel-highlight, var(--text-normal));
+}
+
+.energyHUD.pixelSkin .recommendationCard {
+    border-radius: 0;
+    border: 2px solid var(--pixel-border-dark, var(--background-modifier-border));
+    background: var(--pixel-panel-alt, var(--background-secondary));
+    box-shadow: var(--pixel-shadow-pressed, none),
+        inset 0 0 0 1px var(--pixel-border-light, transparent);
+}
+
+.energyHUD.pixelSkin .recommendationCard:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 3px 3px 0 var(--pixel-border-dark, #000),
+        inset 0 0 0 1px var(--pixel-border-light, transparent);
+}
+
+.energyHUD.pixelSkin .recDuration {
+    border-radius: 0;
+    border: 1px solid var(--pixel-border-dark, transparent);
+}
+
+.energyHUD.pixelSkin .confidence {
+    border-radius: 0;
+    border: 1px solid var(--pixel-border-dark, transparent);
+}
+
+.energyHUD.pixelSkin .startButton,
+.energyHUD.pixelSkin .customizeButton {
+    border-radius: 0;
+    border: 2px solid var(--pixel-border-dark, transparent);
+    font-size: 7px;
+    box-shadow: var(--pixel-shadow-pressed, none);
+}
+
+.energyHUD.pixelSkin .startButton:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 2px 2px 0 var(--pixel-border-dark, #000);
+}
+
+.energyHUD.pixelSkin .quickAction {
+    border-radius: 0;
+    border: 2px solid var(--pixel-border-dark, var(--background-modifier-border));
+    background: var(--pixel-panel-alt, var(--background-secondary));
+    font-size: 7px;
+    box-shadow: var(--pixel-shadow-pressed, none),
+        inset 0 0 0 1px var(--pixel-border-light, transparent);
+}
+
+.energyHUD.pixelSkin .quickAction:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 3px 3px 0 var(--pixel-border-dark, #000),
+        inset 0 0 0 1px var(--pixel-border-light, transparent);
+}
+
+.energyHUD.pixelSkin .quickActions {
+    margin-bottom: 4px;
+}
+
+.energyHUD.pixelSkin .showMoreButton {
+    border-radius: 0;
+    border: 2px dashed var(--pixel-border-light, var(--background-modifier-border));
+    font-size: 7px;
+}
+
+.energyHUD.compact.pixelSkin {
+    border-radius: 0;
+    padding: 10px;
+}
+
+.energyHUD.compact.pixelSkin .compactStat {
+    border-radius: 0;
+    border: 2px solid var(--pixel-border-dark, transparent);
+    font-size: 8px;
 }

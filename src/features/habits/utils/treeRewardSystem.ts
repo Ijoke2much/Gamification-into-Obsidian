@@ -1,4 +1,4 @@
-import { getLocalDateString } from './habitsUtils';
+import { getLocalDateString, getDisplayTreeStage } from './habitsUtils';
 
 export interface TreeRewardConfig {
   enableProgressiveRewards: boolean;
@@ -332,7 +332,7 @@ export const checkSpecialBonuses = (
 
     switch (bonus.triggerCondition.type) {
       case 'tree_stage':
-        shouldTrigger = habit.currentTreeStage >= bonus.triggerCondition.value;
+        shouldTrigger = getDisplayTreeStage(habit) >= bonus.triggerCondition.value;
         break;
       case 'streak_milestone':
         shouldTrigger = habit.streak >= bonus.triggerCondition.value;

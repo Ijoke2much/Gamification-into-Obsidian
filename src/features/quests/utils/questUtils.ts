@@ -1,6 +1,20 @@
-import { App, TFile, Vault, Notice } from "obsidian";
+import { App, TFile, Vault } from 'obsidian';
 import { updatePlayerData } from "../../../shared/utils/progressUpdater";
+import {
+    applyQuestEnergyCost,
+    parseEnergyCostFromMarkdownLine,
+} from "../../../shared/utils/questCompletionPipeline";
+import {
+    applyQuestWellbeingEffects,
+    normalizeActivityProfileId,
+    parseActivityProfileFromTaskLine,
+} from "../../../shared/utils/questWellbeingProfiles";
 import { MaterialInventoryManager } from "../../../shared/services/materialInventoryManager";
+import { pixelNotice } from '../../../shared/utils/noticeUtils';
+import { getPluginSettingsFromApp, isFailureDebtEnabled } from '../../../shared/utils/gameplayConfig';
+import { resolveEnergyHudConfig } from '../../../shared/utils/energyHudConfig';
+import type { QuestTimelineTheme } from './taskParser';
+import { appendCompletedDate, QUEST_TIMELINE_THEMES } from './taskParser';
 
 // Priority and difficulty options
 export const PRIORITY_OPTIONS = ["Lowest", "Low", "Medium", "High", "Highest"];
@@ -42,6 +56,28 @@ export const getRandomInRange = (min: number, max: number): number => {
     return Math.floor(Math.random() * (max - min + 1)) + min;
 };
 
+/** Quest modal / contract forms use Title Case tiers (Easy, Medium, Hard). */
+export function normalizeDifficultyTier(difficulty: string): string {
+    const trimmed = difficulty.trim();
+    if (!trimmed) return "Medium";
+    return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
+}
+
+/** Roll XP from priority tier — same ranges as the create-quest modal. */
+export function rollQuestRewardXp(priority: string): number {
+    return getRandomInRange(...getXPRange(priority));
+}
+
+/** Roll CP from difficulty tier — same ranges as the create-quest modal. */
+export function rollQuestRewardCp(difficulty: string): number {
+    return getRandomInRange(...getCPRange(normalizeDifficultyTier(difficulty)));
+}
+
+/** Currency reward written to markdown (10% of XP, matches generateMarkdownTask). */
+export function rollQuestRewardCoins(xp: number): number {
+    return Math.round(xp * 0.1);
+}
+
 // Sanitize values for class names
 export function sanitizeForClassName(value: string): string {
     return value.replace(/\s+/g, "-");
@@ -62,8 +98,15 @@ export function generateMarkdownTask({
     estimatedTime,
     banner,
     bannerAlign,
+    timelineTheme,
     customRewards,
     enhancedRewards,
+    /** Resolved stamina cost (1–100) written as 🔋 in the task line; omit to skip embedding. */
+    energyCost,
+    /** Wellbeing activity profile; non-generic appends #activity/<slug> to the line. */
+    activityProfile,
+    /** Link to a guild contract (`[project:: Name]`). */
+    project,
     metadataStyle = "emoji",
 }: {
     title: string;
@@ -79,8 +122,13 @@ export function generateMarkdownTask({
     estimatedTime?: string;
     banner?: string;
     bannerAlign?: string;
+    /** Persists as ` // timelineTheme:blue` suffix on the `#gamified-task` line */
+    timelineTheme?: QuestTimelineTheme;
     customRewards?: string[];
     enhancedRewards?: any[]; // Enhanced custom rewards
+    energyCost?: number;
+    activityProfile?: string;
+    project?: string;
     metadataStyle?: "emoji" | "tags";
 }): string {
     const sanitizedDifficulty = sanitizeForClassName(difficulty);
@@ -104,12 +152,12 @@ export function generateMarkdownTask({
         if (typeof cp === "number") emojiMeta.push(`⭐${cp}`);
         if (typeof xp === "number") emojiMeta.push(`✨${xp}`);
         const coins = Math.round((typeof xp === "number" ? xp : 0) * 0.1);
-        emojiMeta.push(`��${coins}`);
+        emojiMeta.push(`🪙${coins}`);
         // Add priority emoji after coins
         if (priorityEmoji) emojiMeta.push(priorityEmoji);
         if (recur && recur.trim()) emojiMeta.push(`🔁${recur}`);
         if (skills.length > 0)
-            emojiMeta.push(`🛠️${skills.join(",")}`);
+            emojiMeta.push(`🛠️[${skills.join(",")}]`);
         // Add stats if they exist (using 📊 emoji for stats)
         // Note: This will be added when quest creation supports stats
         // Add difficulty as separate metadata (not as priority emoji)
@@ -121,6 +169,13 @@ export function generateMarkdownTask({
             };
             const emoji = difficultyToEmoji[sanitizedDifficulty.toLowerCase()] || '⚖️';
             emojiMeta.push(emoji);
+        }
+        if (
+            typeof energyCost === "number" &&
+            Number.isFinite(energyCost) &&
+            energyCost > 0
+        ) {
+            emojiMeta.push(`🔋${Math.min(100, Math.floor(energyCost))}`);
         }
         // Add banner if present
         if (banner) emojiMeta.push(`🖼️${banner}`);
@@ -135,12 +190,21 @@ export function generateMarkdownTask({
         `difficulty: ${sanitizedDifficulty}`,
         `xp: ${xp}`,
         `cp: ${cp}`,
+        typeof energyCost === "number" &&
+        Number.isFinite(energyCost) &&
+        energyCost > 0
+            ? `energy: ${Math.min(100, Math.floor(energyCost))}`
+            : null,
         due ? `due: ${due}` : null,
         recur ? `recur: ${recur}` : null,
         estimatedTime ? `time: ${estimatedTime}` : null,
         `skills: ${skills.join(", ")}`,
         banner ? `banner: ${banner}` : null,
         bannerAlign ? `bannerAlign: ${bannerAlign}` : null,
+        timelineTheme &&
+        (QUEST_TIMELINE_THEMES as readonly string[]).includes(timelineTheme)
+            ? `timelineTheme: ${timelineTheme}`
+            : null,
         customRewards && customRewards.length > 0
             ? `rewards: ${customRewards.join(", ")}`
             : null,
@@ -152,12 +216,21 @@ export function generateMarkdownTask({
         difficulty: sanitizedDifficulty,
         xp,
         cp,
+        ...(typeof energyCost === "number" &&
+        Number.isFinite(energyCost) &&
+        energyCost > 0
+            ? { energy: Math.min(100, Math.floor(energyCost)) }
+            : {}),
         ...(due ? { due } : {}),
         ...(recur ? { recur } : {}),
         ...(estimatedTime ? { time: estimatedTime } : {}),
         skills: skills,
         ...(banner ? { banner } : {}),
         ...(bannerAlign ? { bannerAlign } : {}),
+        ...(timelineTheme &&
+        (QUEST_TIMELINE_THEMES as readonly string[]).includes(timelineTheme)
+            ? { timelineTheme }
+            : {}),
         ...(customRewards && customRewards.length > 0
             ? { rewards: customRewards }
             : {}),
@@ -176,6 +249,19 @@ export function generateMarkdownTask({
     // Only use emoji metadata style - no duplicate date/metadata
     if (emojiMeta.length > 0) {
         md += " " + emojiMeta.join(" ");
+    }
+    if (project?.trim()) {
+        md += ` [project:: ${project.trim()}]`;
+    }
+    const ap = normalizeActivityProfileId(activityProfile);
+    if (ap !== "generic") {
+        md += ` #activity/${ap}`;
+    }
+    if (
+        timelineTheme &&
+        (QUEST_TIMELINE_THEMES as readonly string[]).includes(timelineTheme)
+    ) {
+        md += ` // timelineTheme:${timelineTheme}`;
     }
     // Note: Removed tags/curly braces metadata to prevent duplicate {due:} appearing
 
@@ -214,7 +300,7 @@ export async function handleCompleteQuestFromPomodoro(
     const questFile = app.vault.getAbstractFileByPath("GamifiedTasks.md");
 
     if (!(questFile instanceof TFile)) {
-        new Notice("GamifiedTasks.md not found.");
+        pixelNotice("GamifiedTasks.md not found.");
         return;
     }
 
@@ -225,12 +311,12 @@ export async function handleCompleteQuestFromPomodoro(
     );
 
     if (questIndex === -1) {
-        new Notice(`Quest not found: ${questTitle}`);
+        pixelNotice(`Quest not found: ${questTitle}`);
         return;
     }
 
     // Mark the quest as completed
-    lines[questIndex] = lines[questIndex].replace("- [ ]", "- [x]");
+    lines[questIndex] = appendCompletedDate(lines[questIndex].replace("- [ ]", "- [x]"));
     await vault.modify(questFile, lines.join("\n"));
 
     // Extract XP and CP from the line if possible (fallbacks if missing)
@@ -274,10 +360,26 @@ export async function handleCompleteQuestFromPomodoro(
     const cp = matchCP ? parseInt(matchCP[1]) : xp;
 
     // Debug notice for parsed values
-    new Notice(`[Quest Parser] Parsed → XP: ${xp}, CP: ${cp}, Skills: ${skills.join(', ') || 'none'}, Stats: ${stats.join(', ') || 'none'}`);
+    pixelNotice(`[Quest Parser] Parsed → XP: ${xp}, CP: ${cp}, Skills: ${skills.join(', ') || 'none'}, Stats: ${stats.join(', ') || 'none'}`);
     const coins = Math.round(xp * 0.1);
 
     await updatePlayerData(vault, xp, coins, cp);
+
+    const pluginSettings = getPluginSettingsFromApp(app);
+    const hudConfig = resolveEnergyHudConfig(pluginSettings);
+
+    const parsedEnergy = parseEnergyCostFromMarkdownLine(line);
+    if (hudConfig.trackEnergyCost) {
+        await applyQuestEnergyCost(
+            typeof parsedEnergy === "number" ? { energyCost: parsedEnergy } : {}
+        );
+    }
+
+    if (hudConfig.activeWellbeingStats.length > 0) {
+        await applyQuestWellbeingEffects({
+            activityProfile: parseActivityProfileFromTaskLine(line),
+        }, pluginSettings);
+    }
 
     // Distribute CP to skill/class/master class/stat
     // This function is no longer imported, so it's removed.
@@ -312,9 +414,9 @@ export async function handleCompleteQuestFromPomodoro(
         const plugin = (app as any).plugins?.plugins?.["Gamification-into-Obsidian"];
         const currencyName = plugin?.settings?.currencyName || "Coins";
         const currencySymbol = plugin?.settings?.currencySymbol || "🪙";
-        new Notice(`✅ Task Complete! ${xp} XP, ${cp} CP, ${currencySymbol} ${coins} ${currencyName}`, 0);
+        pixelNotice(`✅ Task Complete! ${xp} XP, ${cp} CP, ${currencySymbol} ${coins} ${currencyName}`, 0);
     } catch {
-        new Notice(`✅ Task Complete! ${xp} XP, ${cp} CP, ${coins} Coins`, 0);
+        pixelNotice(`✅ Task Complete! ${xp} XP, ${cp} CP, ${coins} Coins`, 0);
     }
 
     if (onQuestComplete) {
@@ -330,7 +432,7 @@ export async function handleFailQuestAddDebt(
 ) {
     const questFile = app.vault.getAbstractFileByPath("GamifiedTasks.md");
     if (!(questFile instanceof TFile)) {
-        new Notice("GamifiedTasks.md not found.");
+        pixelNotice("GamifiedTasks.md not found.");
         return;
     }
 
@@ -340,7 +442,7 @@ export async function handleFailQuestAddDebt(
         line.includes(questTitle) && line.includes("#gamified-task")
     );
     if (questIndex === -1) {
-        new Notice(`Quest not found: ${questTitle}`);
+        pixelNotice(`Quest not found: ${questTitle}`);
         return;
     }
 
@@ -374,19 +476,28 @@ export async function handleFailQuestAddDebt(
         }
     })();
 
+    const settings = getPluginSettingsFromApp(app);
+
+    if (!isFailureDebtEnabled(settings)) {
+        try {
+            pixelNotice(`❌ Quest failed: ${questTitle}. (No debt — failure penalties are off in settings.)`);
+        } catch {
+            pixelNotice(`❌ Quest failed: ${questTitle}.`);
+        }
+        return;
+    }
+
     // Read settings for percentage overrides and daily caps
-    const plugin = (app as any).plugins?.plugins?.["Gamification-into-Obsidian"]; // best-effort access
-    const settings = plugin?.settings ?? {};
-    const pct = priority === '⏫' || priority === '🔺' ? (settings.penaltyHighPct ?? 0.3)
-        : priority === '🔼' ? (settings.penaltyMediumPct ?? 0.2)
-            : (settings.penaltyLowPct ?? 0.1);
+    const pct = priority === '⏫' || priority === '🔺' ? (settings?.penaltyHighPct ?? 0.3)
+        : priority === '🔼' ? (settings?.penaltyMediumPct ?? 0.2)
+            : (settings?.penaltyLowPct ?? 0.1);
     let debtXP = Math.max(0, Math.round(xp * pct));
     let debtCoins = Math.max(0, Math.round(coins * pct));
 
     // Enforce daily caps (tracked naively in frontmatter per day key)
     const todayKey = new Date().toISOString().slice(0, 10);
-    const capXP = Number(settings.dailyDebtCapXP ?? 500);
-    const capCoins = Number(settings.dailyDebtCapCoins ?? 50);
+    const capXP = Number(settings?.dailyDebtCapXP ?? 500);
+    const capCoins = Number(settings?.dailyDebtCapCoins ?? 50);
 
     // Write/update debt and cap trackers in PlayerData
     const playerPath = 'SkillTree/PlayerData.md';
@@ -412,8 +523,8 @@ export async function handleFailQuestAddDebt(
         const plugin = (app as any).plugins?.plugins?.["Gamification-into-Obsidian"];
         const currencyName = plugin?.settings?.currencyName || "Coins";
         const currencySymbol = plugin?.settings?.currencySymbol || "🪙";
-        new Notice(`❌ Quest failed: ${questTitle}. Debt added: ${appliedDebtXP} XP, ${currencySymbol} ${appliedDebtCoins} ${currencyName.toLowerCase()}`);
+        pixelNotice(`❌ Quest failed: ${questTitle}. Debt added: ${appliedDebtXP} XP, ${currencySymbol} ${appliedDebtCoins} ${currencyName.toLowerCase()}`);
     } catch {
-        new Notice(`❌ Quest failed: ${questTitle}. Debt added: ${appliedDebtXP} XP, ${appliedDebtCoins} coins`);
+        pixelNotice(`❌ Quest failed: ${questTitle}. Debt added: ${appliedDebtXP} XP, ${appliedDebtCoins} coins`);
     }
 }

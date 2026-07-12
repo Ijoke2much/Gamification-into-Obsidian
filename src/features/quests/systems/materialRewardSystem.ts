@@ -1,6 +1,7 @@
-import { Notice } from 'obsidian';
+;
 import { Boss } from '../types/BossTypes';
 import { equipmentCraftingSystem } from './equipmentCraftingSystem';
+import { pixelNotice } from '../../../shared/utils/noticeUtils';
 
 /**
  * Material Reward System
@@ -533,15 +534,15 @@ export class MaterialRewardSystem {
 
         if (rewards.length === 1) {
             const reward = rewards[0];
-            new Notice(`🎁 Found ${reward.quantity}x ${reward.materialName}!`, 4000);
+            pixelNotice(`🎁 Found ${reward.quantity}x ${reward.materialName}!`, 4000);
         } else {
-            new Notice(`🎁 Found ${totalItems} crafting materials!`, 4000);
+            pixelNotice(`🎁 Found ${totalItems} crafting materials!`, 4000);
         }
 
         // Show rare material notifications separately
         const rareRewards = rewards.filter(r => ['epic', 'legendary'].includes(r.rarity));
         for (const rareReward of rareRewards) {
-            new Notice(`✨ RARE: ${rareReward.quantity}x ${rareReward.materialName}!`, 6000);
+            pixelNotice(`✨ RARE: ${rareReward.quantity}x ${rareReward.materialName}!`, 6000);
         }
     }
 

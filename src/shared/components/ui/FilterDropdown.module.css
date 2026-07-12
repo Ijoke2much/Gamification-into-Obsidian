@@ -8,10 +8,10 @@
 }
 
 .dropdownCard {
-    background: #191a23;
-    border: 2px solid rgba(255, 255, 255, 0.13);
-    border-radius: 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.10);
+    background: var(--go-panel, #191a23);
+    border: 2px solid var(--go-border, rgba(255, 255, 255, 0.13));
+    border-radius: var(--go-radius, 12px);
+    box-shadow: var(--go-shadow-soft, 0 2px 8px rgba(0, 0, 0, 0.10));
     padding: 16px 18px 10px 18px;
     margin-bottom: 18px;
     display: flex;
@@ -21,7 +21,7 @@
 
 .label {
     font-size: 14px;
-    color: #b0b8d1;
+    color: var(--go-muted, #b0b8d1);
     font-weight: 800;
     letter-spacing: 1px;
     margin-bottom: 8px;
@@ -31,10 +31,10 @@
 .dropdown {
     width: 100%;
     padding: 10px 14px;
-    border-radius: 8px;
-    border: 1.5px solid rgba(255, 255, 255, 0.18);
-    background: #23243a;
-    color: #fff;
+    border-radius: var(--go-radius, 8px);
+    border: 1.5px solid var(--go-border, rgba(255, 255, 255, 0.18));
+    background: var(--go-card-soft, #23243a);
+    color: var(--go-text, #fff);
     font-size: 16px;
     font-weight: 700;
     cursor: pointer;
@@ -46,8 +46,8 @@
 
 .dropdown:hover,
 .dropdown:focus {
-    border: 1.5px solid #a084f7;
-    box-shadow: 0 2px 8px rgba(160, 132, 247, 0.15);
+    border: 1.5px solid var(--go-accent, #a084f7);
+    box-shadow: 0 2px 8px var(--go-accent-soft, rgba(160, 132, 247, 0.15));
 }
 
 .dropdownMenu {
@@ -55,9 +55,9 @@
     top: 100%;
     left: 0;
     right: 0;
-    background: #23243a;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 8px;
+    background: var(--go-card-soft, #23243a);
+    border: 1px solid var(--go-border, rgba(255, 255, 255, 0.2));
+    border-radius: var(--go-radius, 8px);
     margin-top: 4px;
     z-index: 1000;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
@@ -66,5 +66,5 @@
 .arrow {
     font-size: 18px;
     margin-left: 8px;
-    color: #a084f7;
+    color: var(--go-accent, #a084f7);
 }

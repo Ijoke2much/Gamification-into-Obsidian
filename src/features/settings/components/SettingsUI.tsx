@@ -5,7 +5,14 @@ import {
   SETTINGS_PRESETS, 
   SettingsPreset,
   SETTINGS_GROUPS,
-  DEFAULT_SETTINGS
+  DEFAULT_SETTINGS,
+  BALANCED_GAMEPLAY_MODULES,
+  DEFAULT_GAMEPLAY_MODULES,
+  HARDCORE_GAMEPLAY_MODULES,
+  LITE_GAMEPLAY_MODULES,
+  type GamificationModules,
+  type NotificationLevel,
+  type EnergyHudMode,
 } from '../../../core/settings';
 import { Card } from '../../../shared/components/ui/Card';
 import { TutorialSettingsPanel } from '../../tutorial/components/TutorialSettingsPanel';
@@ -15,31 +22,54 @@ import { listPlayerDataBackups, restorePlayerDataBackup } from '../../player/uti
 import { DEFAULT_PLAYER } from '../../../data/models/PlayerData';
 import type { App } from 'obsidian';
 import { TFile, TFolder } from 'obsidian';
+import type GamifiedObsidianPlugin from '../../../core/main';
 import styles from './SettingsUI.module.css';
+import { GameDataHubPanel } from './GameDataHubPanel';
+import { GameplayOnboardingModal } from './GameplayOnboardingModal';
+import { areSettingsEqual } from '../../../shared/utils/settingsSnapshot';
+import type { GameplayProfile } from '../../../core/settings';
 
 interface SettingsUIProps {
   settings: GamificationPluginSettings;
   onSettingsChange: (settings: GamificationPluginSettings) => void;
   onSave: () => Promise<void>;
   app?: App; // Obsidian App instance for file operations
+  plugin?: GamifiedObsidianPlugin;
 }
 
 type ViewMode = 'groups' | 'category';
 
 export const SettingsUI: React.FC<SettingsUIProps> = ({
-  settings,
+  settings: settingsFromPlugin,
   onSettingsChange,
   onSave,
-  app
+  app,
+  plugin,
 }) => {
+  // Local state so controls re-render when toggled (parent only mutates plugin.settings).
+  const [settings, setSettings] = useState(settingsFromPlugin);
+  const [savedSettings, setSavedSettings] = useState(settingsFromPlugin);
+
   const [viewMode, setViewMode] = useState<ViewMode>('groups');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [validation, setValidation] = useState(validateSettings(settings));
+  const [validation, setValidation] = useState(validateSettings(settingsFromPlugin));
   const [isSaving, setIsSaving] = useState(false);
   const [showPresets, setShowPresets] = useState(false);
   const [showPreviews, setShowPreviews] = useState(true);
+
+  useEffect(() => {
+    setSettings(settingsFromPlugin);
+    setSavedSettings(settingsFromPlugin);
+  }, [settingsFromPlugin]);
+
+  const isDirty = useMemo(
+    () => !areSettingsEqual(settings, savedSettings),
+    [settings, savedSettings]
+  );
+
+  const showOnboarding = settings.gameplayOnboardingComplete !== true;
 
   // Update validation when settings change
   useEffect(() => {
@@ -61,36 +91,113 @@ export const SettingsUI: React.FC<SettingsUIProps> = ({
     }
     
     current[keys[keys.length - 1]] = value;
-    onSettingsChange(newSettings as unknown as GamificationPluginSettings);
+    const next = newSettings as unknown as GamificationPluginSettings;
+    setSettings(next);
+    onSettingsChange(next);
+  };
+
+  const patchSettings = (patch: Partial<GamificationPluginSettings>) => {
+    const merged = { ...settings, ...patch };
+    if (patch.modules) {
+      merged.modules = {
+        ...BALANCED_GAMEPLAY_MODULES,
+        ...settings.modules,
+        ...patch.modules,
+      };
+    }
+    setSettings(merged);
+    onSettingsChange(merged);
   };
 
   // Apply preset
   const applyPreset = (preset: SettingsPreset) => {
     if (preset.name === "Safe Defaults") {
-      // For Safe Defaults, use the complete DEFAULT_SETTINGS
-      onSettingsChange({ ...DEFAULT_SETTINGS });
+      const next = { ...DEFAULT_SETTINGS };
+      setSettings(next);
+      onSettingsChange(next);
     } else {
       const newSettings = { ...settings, ...preset.settings };
+      if (preset.settings.modules) {
+        newSettings.modules = {
+          ...BALANCED_GAMEPLAY_MODULES,
+          ...settings.modules,
+          ...preset.settings.modules,
+        };
+      }
+      setSettings(newSettings);
       onSettingsChange(newSettings);
     }
     setShowPresets(false);
   };
 
-  // Save settings
-  const handleSave = async () => {
-    if (!validation.isValid) {
+  const getProfileModules = (profile: GameplayProfile): GamificationModules => {
+    if (profile === 'hardcore') return { ...HARDCORE_GAMEPLAY_MODULES };
+    if (profile === 'lite') return { ...LITE_GAMEPLAY_MODULES };
+    return { ...BALANCED_GAMEPLAY_MODULES };
+  };
+
+  const openGameModulesCategory = () => {
+    setSelectedGroup('advanced');
+    setSelectedCategory('game-modules');
+    setViewMode('category');
+  };
+
+  const applyOnboardingProfile = (profile: GameplayProfile): GamificationPluginSettings => {
+    const merged: GamificationPluginSettings = {
+      ...settings,
+      gameplayProfile: profile,
+      modules: getProfileModules(profile),
+      gameplayOnboardingComplete: true,
+      notificationLevel: profile === 'lite' ? 'quiet' : 'normal',
+      preferQuickComplete: profile !== 'hardcore',
+      energyHudMode: profile === 'hardcore' ? 'full' : 'simple',
+    };
+    setSettings(merged);
+    onSettingsChange(merged);
+    return merged;
+  };
+
+  const saveSettingsSnapshot = async (nextSettings: GamificationPluginSettings) => {
+    const result = validateSettings(nextSettings);
+    if (!result.isValid) {
       alert('Please fix validation errors before saving');
       return;
     }
-    
+
+    setSettings(nextSettings);
+    onSettingsChange(nextSettings);
     setIsSaving(true);
     try {
       await onSave();
+      setSavedSettings(nextSettings);
     } catch (error) {
       console.error('Failed to save settings:', error);
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleOnboardingProfileSelect = async (profile: GameplayProfile) => {
+    await saveSettingsSnapshot(applyOnboardingProfile(profile));
+  };
+
+  const handleOnboardingDismissBalanced = async () => {
+    await saveSettingsSnapshot(applyOnboardingProfile('balanced'));
+  };
+
+  const handleOnboardingCustomize = () => {
+    const merged: GamificationPluginSettings = {
+      ...settings,
+      gameplayOnboardingComplete: true,
+    };
+    setSettings(merged);
+    onSettingsChange(merged);
+    openGameModulesCategory();
+  };
+
+  // Save settings
+  const handleSave = async () => {
+    await saveSettingsSnapshot(settings);
   };
 
   // Filter groups based on search
@@ -249,13 +356,30 @@ export const SettingsUI: React.FC<SettingsUIProps> = ({
             <TimelineSettingsSection settings={settings} onSettingChange={updateSetting} />
           )}
           {currentCategory.id === 'energy' && (
-            <EnergySettingsSection settings={settings} onSettingChange={updateSetting} />
+            <EnergySettingsSection settings={settings} onSettingChange={updateSetting} onPatchSettings={patchSettings} />
+          )}
+          {currentCategory.id === 'game-modules' && (
+            <ModulesSettingsSection settings={settings} onSettingChange={updateSetting} onPatchSettings={patchSettings} />
+          )}
+          {currentCategory.id === 'experience-feel' && (
+            <ExperienceFeelSettingsSection settings={settings} onPatchSettings={patchSettings} />
           )}
           {currentCategory.id === 'penalties' && (
             <PenaltySettingsSection settings={settings} onSettingChange={updateSetting} />
           )}
           {currentCategory.id === 'shop' && (
             <ShopSettingsSection settings={settings} onSettingChange={updateSetting} />
+          )}
+          {currentCategory.id === 'game-data-hub' && (
+            plugin ? (
+              <GameDataHubPanel plugin={plugin} />
+            ) : (
+              <div className={styles.settingsSection}>
+                <Card className={styles.settingsCard}>
+                  <p>Reload this settings panel from the Gamification plugin to use the Game data hub.</p>
+                </Card>
+              </div>
+            )
           )}
           {currentCategory.id === 'tree' && (
             <TreeSettingsSection settings={settings} onSettingChange={updateSetting} />
@@ -269,13 +393,13 @@ export const SettingsUI: React.FC<SettingsUIProps> = ({
           {currentCategory.id === 'theming' && (
             <AppearanceSettings 
               settings={settings} 
-              onSettingsChange={(newSettings) => onSettingsChange({ ...settings, ...newSettings })} 
+              onSettingsChange={patchSettings}
             />
           )}
           {currentCategory.id === 'internationalization' && (
             <AppearanceSettings 
               settings={settings} 
-              onSettingsChange={(newSettings) => onSettingsChange({ ...settings, ...newSettings })} 
+              onSettingsChange={patchSettings}
             />
           )}
           {currentCategory.id === 'tutorials' && (
@@ -336,8 +460,12 @@ export const SettingsUI: React.FC<SettingsUIProps> = ({
       case 'energy':
         previews.push(
           <div key="energy-hud" className={styles.previewItem}>
+            <span className={styles.previewLabel}>HUD mode:</span>
+            <span className={styles.previewValue}>{settings.energyHudMode ?? 'simple'}</span>
+          </div>,
+          <div key="energy-hud-visible" className={styles.previewItem}>
             <span className={styles.previewLabel}>Energy HUD:</span>
-            <span className={styles.previewValue}>{settings.enableEnergyHUD ? 'Enabled' : 'Disabled'}</span>
+            <span className={styles.previewValue}>{settings.enableEnergyHUD !== false && settings.energyHudMode !== 'off' ? 'Enabled' : 'Disabled'}</span>
           </div>,
           <div key="reset-hour" className={styles.previewItem}>
             <span className={styles.previewLabel}>Reset Hour:</span>
@@ -364,6 +492,28 @@ export const SettingsUI: React.FC<SettingsUIProps> = ({
 
   return (
     <div className={styles.settingsContainer}>
+      {showOnboarding && (
+        <GameplayOnboardingModal
+          onSelectProfile={handleOnboardingProfileSelect}
+          onCustomize={handleOnboardingCustomize}
+          onDismissBalanced={handleOnboardingDismissBalanced}
+        />
+      )}
+
+      {isDirty && (
+        <div className={styles.unsavedBanner} role="status">
+          <span>You have unsaved changes.</span>
+          <button
+            type="button"
+            className={styles.unsavedBannerButton}
+            onClick={handleSave}
+            disabled={!validation.isValid || isSaving}
+          >
+            {isSaving ? 'Saving…' : 'Save now'}
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
@@ -402,11 +552,11 @@ export const SettingsUI: React.FC<SettingsUIProps> = ({
             📋 Presets
           </button>
           <button
-            className={`${styles.saveButton} ${isSaving ? styles.saving : ''}`}
+            className={`${styles.saveButton} ${isSaving ? styles.saving : ''} ${isDirty ? styles.saveButtonDirty : ''}`}
             onClick={handleSave}
             disabled={!validation.isValid || isSaving}
           >
-            {isSaving ? '💾 Saving...' : '💾 Save Settings'}
+            {isSaving ? '💾 Saving...' : isDirty ? '💾 Save Settings *' : '💾 Save Settings'}
           </button>
         </div>
       </div>
@@ -621,19 +771,56 @@ const QuestSettingsSection: React.FC<{
 const EnergySettingsSection: React.FC<{
   settings: GamificationPluginSettings;
   onSettingChange: (path: string, value: unknown) => void;
-}> = ({ settings, onSettingChange }) => (
+  onPatchSettings: (patch: Partial<GamificationPluginSettings>) => void;
+}> = ({ settings, onSettingChange, onPatchSettings }) => (
   <div className={styles.settingsSection}>
     <Card className={styles.settingsCard}>
-      <h3>⚡ Energy System Settings</h3>
+      <h3>⚡ Energy display</h3>
+      <p className={styles.helperText} style={{ marginTop: 0, marginBottom: '16px' }}>
+        Choose how many wellbeing bars appear on the Player tab. Hidden stats are not updated by quests or daily reset.
+      </p>
       <div className={styles.settingGroup}>
+        <label>
+          HUD mode:
+          <select
+            value={settings.energyHudMode ?? 'simple'}
+            onChange={(e) => {
+              const mode = e.target.value as EnergyHudMode;
+              onPatchSettings({
+                energyHudMode: mode,
+                enableEnergyHUD: mode !== 'off',
+              });
+            }}
+          >
+            <option value="off">Off — hide energy tracking</option>
+            <option value="simple">Simple — Energy + Stress (recommended)</option>
+            <option value="focus">Focus pair — Focus + Motivation</option>
+            <option value="full">Full — all five stats + smart tips</option>
+          </select>
+        </label>
         <label className={styles.checkboxLabel}>
           <input
             type="checkbox"
-            checked={settings.enableEnergyHUD ?? true}
-            onChange={(e) => onSettingChange('enableEnergyHUD', e.target.checked)}
+            checked={settings.enableEnergyHUD !== false && (settings.energyHudMode ?? 'simple') !== 'off'}
+            onChange={(e) => {
+              if (e.target.checked) {
+                onPatchSettings({
+                  enableEnergyHUD: true,
+                  energyHudMode: settings.energyHudMode === 'off' ? 'simple' : (settings.energyHudMode ?? 'simple'),
+                });
+              } else {
+                onPatchSettings({ enableEnergyHUD: false, energyHudMode: 'off' });
+              }
+            }}
           />
-          Enable Energy HUD
+          Show energy card on Player tab
         </label>
+      </div>
+    </Card>
+
+    <Card className={styles.settingsCard}>
+      <h3>🔄 Daily reset</h3>
+      <div className={styles.settingGroup}>
         <label>
           Daily Reset Hour (0-23):
           <input
@@ -648,7 +835,10 @@ const EnergySettingsSection: React.FC<{
     </Card>
 
     <Card className={styles.settingsCard}>
-      <h3>🔄 Daily Restore Values</h3>
+      <h3>🔄 Daily restore values</h3>
+      <p className={styles.helperText} style={{ marginTop: 0, marginBottom: '12px' }}>
+        Only applied for stats visible in your HUD mode.
+      </p>
       <div className={styles.settingGroup}>
         <label>
           Energy:
@@ -700,11 +890,234 @@ const EnergySettingsSection: React.FC<{
   </div>
 );
 
+const ExperienceFeelSettingsSection: React.FC<{
+  settings: GamificationPluginSettings;
+  onPatchSettings: (patch: Partial<GamificationPluginSettings>) => void;
+}> = ({ settings, onPatchSettings }) => (
+  <div className={styles.settingsSection}>
+    <Card className={styles.settingsCard}>
+      <h3>🔔 Notifications</h3>
+      <p className={styles.helperText} style={{ marginTop: 0, marginBottom: '16px' }}>
+        Control how chatty reward and status toasts are during play.
+      </p>
+      <div className={styles.settingGroup}>
+        <label>
+          Notification level:
+          <select
+            value={settings.notificationLevel ?? 'normal'}
+            onChange={(e) =>
+              onPatchSettings({ notificationLevel: e.target.value as NotificationLevel })
+            }
+          >
+            <option value="normal">Normal — full messages</option>
+            <option value="quiet">Quiet — shorter toasts, dedupe repeats</option>
+            <option value="minimal">Minimal — errors and important alerts only</option>
+          </select>
+        </label>
+      </div>
+    </Card>
+
+    <Card className={styles.settingsCard}>
+      <h3>⚔️ Boss battles</h3>
+      <p className={styles.helperText} style={{ marginTop: 0, marginBottom: '16px' }}>
+        When enabled, you can finish quests from the quest board or exit battle without the final-blow step.
+        Hardcore profile turns this off by default.
+      </p>
+      <div className={styles.settingGroup}>
+        <label className={styles.checkboxLabel}>
+          <input
+            type="checkbox"
+            checked={settings.preferQuickComplete !== false}
+            onChange={(e) => onPatchSettings({ preferQuickComplete: e.target.checked })}
+          />
+          Allow quick-complete without boss battle
+        </label>
+      </div>
+    </Card>
+
+    <Card className={styles.settingsCard}>
+      <h3>📋 Quest filters</h3>
+      <p className={styles.helperText} style={{ marginTop: 0 }}>
+        Lite profile shows All, Today, Quick Wins, and Overdue by default with a &quot;More filters&quot; toggle.
+        Balanced and Hardcore show the full filter row.
+      </p>
+    </Card>
+  </div>
+);
+
+const ModulesSettingsSection: React.FC<{
+  settings: GamificationPluginSettings;
+  onSettingChange: (path: string, value: unknown) => void;
+  onPatchSettings: (patch: Partial<GamificationPluginSettings>) => void;
+}> = ({ settings, onSettingChange, onPatchSettings }) => {
+  const modules: GamificationModules = {
+    ...BALANCED_GAMEPLAY_MODULES,
+    ...(settings.modules ?? {}),
+  };
+
+  const setModule = (key: keyof GamificationModules, value: boolean) => {
+    onSettingChange('modules', { ...modules, [key]: value });
+  };
+
+  return (
+    <div className={styles.settingsSection}>
+      <Card className={styles.settingsCard}>
+        <h3>🎮 Gameplay profile</h3>
+        <p className={styles.helperText} style={{ marginTop: 0, marginBottom: '16px' }}>
+          Profiles set recommended tab and system defaults. Customize individual modules below.
+        </p>
+        <div className={styles.settingGroup}>
+          <label>
+            Profile:
+            <select
+              value={settings.gameplayProfile ?? 'balanced'}
+              onChange={(e) => {
+                const profile = e.target.value as GamificationPluginSettings['gameplayProfile'];
+                const bundle =
+                  profile === 'hardcore'
+                    ? { ...HARDCORE_GAMEPLAY_MODULES }
+                    : profile === 'lite'
+                      ? { ...LITE_GAMEPLAY_MODULES }
+                      : { ...BALANCED_GAMEPLAY_MODULES };
+                onPatchSettings({
+                  gameplayProfile: profile,
+                  modules: bundle,
+                  notificationLevel: profile === 'lite' ? 'quiet' : 'normal',
+                  preferQuickComplete: profile !== 'hardcore',
+                  energyHudMode: profile === 'hardcore' ? 'full' : 'simple',
+                });
+              }}
+            >
+              <option value="lite">Lite — quests, pomodoro, energy</option>
+              <option value="balanced">Balanced (recommended)</option>
+              <option value="hardcore">Hardcore — everything on</option>
+            </select>
+          </label>
+        </div>
+      </Card>
+
+      <Card className={styles.settingsCard}>
+        <h3>📑 Player tabs</h3>
+        <div className={styles.settingGroup}>
+          <label className={styles.checkboxLabel}>
+            <input type="checkbox" checked={modules.enableShopTab === true} onChange={(e) => setModule('enableShopTab', e.target.checked)} />
+            Shop tab
+          </label>
+          <label className={styles.checkboxLabel}>
+            <input type="checkbox" checked={modules.enableCraftingTab === true} onChange={(e) => setModule('enableCraftingTab', e.target.checked)} />
+            Crafting tab
+          </label>
+          <label className={styles.checkboxLabel}>
+            <input type="checkbox" checked={modules.enableHabitsTab === true} onChange={(e) => setModule('enableHabitsTab', e.target.checked)} />
+            Habits tab
+          </label>
+          <label className={styles.checkboxLabel}>
+            <input type="checkbox" checked={modules.enableAchievementsTab === true} onChange={(e) => setModule('enableAchievementsTab', e.target.checked)} />
+            Achievements tab
+          </label>
+          <label className={styles.checkboxLabel}>
+            <input type="checkbox" checked={modules.enablePomodoroTab === true} onChange={(e) => setModule('enablePomodoroTab', e.target.checked)} />
+            Pomodoro tab
+          </label>
+          <label className={styles.checkboxLabel}>
+            <input type="checkbox" checked={modules.enableAnalyticsTab === true} onChange={(e) => setModule('enableAnalyticsTab', e.target.checked)} />
+            Analytics tab
+          </label>
+        </div>
+        <p className={styles.helperText}>Player and Quests tabs are always visible.</p>
+      </Card>
+
+      <Card className={styles.settingsCard}>
+        <h3>⚙️ Systems</h3>
+        <div className={styles.settingGroup}>
+          <label className={styles.checkboxLabel}>
+            <input type="checkbox" checked={modules.enableBossBattles === true} onChange={(e) => setModule('enableBossBattles', e.target.checked)} />
+            Boss battles (arena &amp; sidebar boss)
+          </label>
+          <label className={styles.checkboxLabel}>
+            <input type="checkbox" checked={modules.enableEnergySystem === true} onChange={(e) => setModule('enableEnergySystem', e.target.checked)} />
+            Energy system (HUD, costs, daily reset)
+          </label>
+          <label className={styles.checkboxLabel}>
+            <input type="checkbox" checked={modules.enableProductivityGear === true} onChange={(e) => setModule('enableProductivityGear', e.target.checked)} />
+            Productivity equipment (inventory modal)
+          </label>
+        </div>
+      </Card>
+    </div>
+  );
+};
+
 const PenaltySettingsSection: React.FC<{
   settings: GamificationPluginSettings;
   onSettingChange: (path: string, value: unknown) => void;
-}> = ({ settings, onSettingChange }) => (
+}> = ({ settings, onSettingChange }) => {
+  const modules: GamificationModules = {
+    ...BALANCED_GAMEPLAY_MODULES,
+    ...(settings.modules ?? {}),
+  };
+
+  const setModule = (key: keyof GamificationModules, value: boolean) => {
+    onSettingChange('modules', { ...modules, [key]: value });
+  };
+
+  const subPenaltyDisabled = !modules.enablePenalties;
+
+  return (
   <div className={styles.settingsSection}>
+    <Card className={styles.settingsCard}>
+      <h3>⚙️ Penalty modules</h3>
+      <p className={styles.helperText} style={{ marginTop: 0, marginBottom: '16px' }}>
+        Penalties are off by default. Configure tabs and systems under Feature Modules.
+      </p>
+      <div className={styles.settingGroup}>
+        <label className={styles.checkboxLabel}>
+          <input
+            type="checkbox"
+            checked={modules.enablePenalties === true}
+            onChange={(e) => setModule('enablePenalties', e.target.checked)}
+          />
+          Enable penalties (master switch)
+        </label>
+        <label className={styles.checkboxLabel}>
+          <input
+            type="checkbox"
+            disabled={subPenaltyDisabled}
+            checked={modules.enableOverduePenalties === true}
+            onChange={(e) => setModule('enableOverduePenalties', e.target.checked)}
+          />
+          Overdue quest penalties (reduced rewards, debt, debuffs)
+        </label>
+        <label className={styles.checkboxLabel}>
+          <input
+            type="checkbox"
+            disabled={subPenaltyDisabled}
+            checked={modules.enableBossPenalties === true}
+            onChange={(e) => setModule('enableBossPenalties', e.target.checked)}
+          />
+          Boss battle timeout penalties
+        </label>
+        <label className={styles.checkboxLabel}>
+          <input
+            type="checkbox"
+            disabled={subPenaltyDisabled}
+            checked={modules.enableFailureDebt === true}
+            onChange={(e) => setModule('enableFailureDebt', e.target.checked)}
+          />
+          Failure debt (mark quest failed)
+        </label>
+        <label className={styles.checkboxLabel}>
+          <input
+            type="checkbox"
+            disabled={subPenaltyDisabled}
+            checked={modules.enablePomodoroPenalties === true}
+            onChange={(e) => setModule('enablePomodoroPenalties', e.target.checked)}
+          />
+          Pomodoro attachment penalties
+        </label>
+      </div>
+    </Card>
+
     <Card className={styles.settingsCard}>
       <h3>⚠️ Failure Penalties</h3>
       <div className={styles.settingGroup}>
@@ -776,7 +1189,8 @@ const PenaltySettingsSection: React.FC<{
       </div>
     </Card>
   </div>
-);
+  );
+};
 
 const ShopSettingsSection: React.FC<{
   settings: GamificationPluginSettings;
@@ -785,6 +1199,10 @@ const ShopSettingsSection: React.FC<{
   <div className={styles.settingsSection}>
     <Card className={styles.settingsCard}>
       <h3>🛒 Shop System Settings</h3>
+      <p className={styles.helperText} style={{ marginTop: 0, marginBottom: '16px' }}>
+        To add or edit shop items (written to Shop.md), go to{' '}
+        <strong>Rewards &amp; Progression → Game data hub</strong> in these settings.
+      </p>
       <div className={styles.settingGroup}>
         <label className={styles.checkboxLabel}>
           <input
@@ -1179,14 +1597,9 @@ const PerformanceSettingsSection: React.FC<{
           />
           Enable Beta Mode (debug buttons/logs)
         </label>
-        <label className={styles.checkboxLabel}>
-          <input
-            type="checkbox"
-            checked={settings.featureFlags?.enableAnalyticsTab ?? true}
-            onChange={(e) => onSettingChange('featureFlags.enableAnalyticsTab', e.target.checked)}
-          />
-          Show Analytics Tab
-        </label>
+        <p className={styles.helperText} style={{ marginTop: 0 }}>
+          Analytics tab visibility is controlled under Advanced → Feature Modules.
+        </p>
         <label className={styles.checkboxLabel}>
           <input
             type="checkbox"
@@ -1298,7 +1711,83 @@ const FileSettingsSection: React.FC<{
             placeholder="GamifiedTasks.md"
           />
         </label>
+        <label>
+          Quest storage mode:
+          <select
+            value={settings.questStorageMode || 'list'}
+            onChange={(e) =>
+              onSettingChange('questStorageMode', e.target.value as 'list' | 'per-note')
+            }
+          >
+            <option value="list">List file (append to markdown)</option>
+            <option value="per-note">One task per note</option>
+          </select>
+        </label>
+        {(settings.questStorageMode || 'list') === 'per-note' && (
+          <label>
+            Task notes folder:
+            <input
+              type="text"
+              value={settings.taskNoteFolder || 'Gamified/Tasks'}
+              onChange={(e) => onSettingChange('taskNoteFolder', e.target.value || 'Gamified/Tasks')}
+              placeholder="Gamified/Tasks"
+            />
+          </label>
+        )}
+        <label>
+          Projects / contracts file:
+          <input
+            type="text"
+            value={settings.projectsFilePath || 'GamifiedProjects.md'}
+            onChange={(e) =>
+              onSettingChange('projectsFilePath', e.target.value || 'GamifiedProjects.md')
+            }
+            placeholder="GamifiedProjects.md"
+          />
+        </label>
+        <label>
+          Brain dump file:
+          <input
+            type="text"
+            value={settings.captureFilePath || 'Capture.md'}
+            onChange={(e) => onSettingChange('captureFilePath', e.target.value || 'Capture.md')}
+            placeholder="Capture.md"
+          />
+        </label>
+        <label>
+          Capture tag presets (comma-separated):
+          <input
+            type="text"
+            value={(settings.captureTags || ['idea', 'work', 'plugin', 'personal', 'read-later']).join(', ')}
+            onChange={(e) => {
+              const tags = e.target.value
+                .split(',')
+                .map((t) => t.trim().replace(/^#/, ''))
+                .filter(Boolean);
+              onSettingChange('captureTags', tags.length ? tags : ['idea', 'work', 'plugin', 'personal', 'read-later']);
+            }}
+            placeholder="idea, work, plugin, personal, read-later"
+          />
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={settings.captureRememberLastTag !== false}
+            onChange={(e) => onSettingChange('captureRememberLastTag', e.target.checked)}
+          />
+          Remember last capture tag between sessions
+        </label>
       </div>
+      <p className={styles.helperText}>
+        Contract headers from the Projects tab are appended to the projects file. Task steps link via{' '}
+        <code>[project:: Name]</code> and usually live in the default quest file or task notes folder.
+      </p>
+      {(settings.questStorageMode || 'list') === 'per-note' && (
+        <p className={styles.helperText}>
+          New quests (default save location) create a note under the task folder. List files above
+          are still loaded for projects and legacy tasks.
+        </p>
+      )}
       {/* Saved quest locations that appear in the quest creation modal */}
       <h4>Quest Save Locations</h4>
       <p className={styles.helperText}>

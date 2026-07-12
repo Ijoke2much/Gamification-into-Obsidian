@@ -1,7 +1,8 @@
 import { Vault, TFile, TAbstractFile } from 'obsidian';
-import { Notice } from 'obsidian';
+;
 import { Boss, BossProgress } from '../types/BossTypes';
 import { bossManagementService } from '../utils/bossManagementService';
+import { pixelNotice } from '../../../shared/utils/noticeUtils';
 
 /**
  * Enhanced Task Discovery System
@@ -448,11 +449,11 @@ export class EnhancedTaskDiscovery {
                 ? `📈 Boss "${boss.name}" gained ${hpAdjustment} HP from new tasks!`
                 : `📉 Boss "${boss.name}" lost ${Math.abs(hpAdjustment)} HP from removed tasks!`;
 
-            new Notice(message, 5000);
+            pixelNotice(message, 5000);
 
             // Log scope change
             if (discoveryData.scopeChange.impact !== 'minor') {
-                new Notice(`🔄 ${discoveryData.scopeChange.description}`, 7000);
+                pixelNotice(`🔄 ${discoveryData.scopeChange.description}`, 7000);
             }
 
         } catch (error) {

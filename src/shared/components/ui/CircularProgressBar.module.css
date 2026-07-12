@@ -13,30 +13,30 @@
   position: absolute;
   font-weight: bold;
   font-size: 1.2em;
-  color: #ffffff;
+  color: var(--go-exp-text, #ffffff);
   text-shadow: 0 0 4px #000000;
 }
 
 /* Quest active aura */
 .progress-ring.active {
-  filter: drop-shadow(0 0 10px rgba(0, 255, 200, 0.7)) drop-shadow(0 0 18px rgba(0, 255, 200, 0.4));
+  filter: drop-shadow(0 0 10px var(--go-progress-glow, rgba(0, 255, 200, 0.7))) drop-shadow(0 0 18px var(--go-accent-soft, rgba(0, 255, 200, 0.4)));
 }
 
 /* Pulse when complete */
 @keyframes pulse {
   0% {
     transform: scale(1);
-    filter: drop-shadow(0 0 6px lime);
+    filter: drop-shadow(0 0 6px var(--go-success, lime));
   }
 
   50% {
     transform: scale(1.1);
-    filter: drop-shadow(0 0 16px lime);
+    filter: drop-shadow(0 0 16px var(--go-success, lime));
   }
 
   100% {
     transform: scale(1);
-    filter: drop-shadow(0 0 6px lime);
+    filter: drop-shadow(0 0 6px var(--go-success, lime));
   }
 }
 

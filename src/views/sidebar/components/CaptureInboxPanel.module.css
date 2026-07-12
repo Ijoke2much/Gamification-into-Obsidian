@@ -1,0 +1,171 @@
+.section {
+	border: 1px solid rgba(120, 147, 198, 0.28);
+	background: linear-gradient(180deg, rgba(22, 38, 72, 0.55), rgba(12, 24, 48, 0.45));
+	border-radius: 10px;
+	padding: 8px;
+}
+
+.header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	margin-bottom: 8px;
+}
+
+.title {
+	font-size: 11px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var(--text-muted);
+}
+
+.count {
+	color: var(--text-accent, #7dd3fc);
+}
+
+.collapseBtn {
+	border: 1px solid rgba(120, 147, 198, 0.35);
+	background: rgba(18, 35, 69, 0.66);
+	color: rgba(214, 227, 252, 0.86);
+	border-radius: 8px;
+	width: 28px;
+	height: 28px;
+	cursor: pointer;
+	flex-shrink: 0;
+}
+
+.tagRow {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	margin-bottom: 8px;
+}
+
+.tagChip {
+	border: 1px solid rgba(120, 147, 198, 0.3);
+	background: rgba(18, 35, 69, 0.5);
+	color: rgba(214, 227, 252, 0.82);
+	border-radius: 999px;
+	padding: 3px 8px;
+	font-size: 10px;
+	cursor: pointer;
+}
+
+.tagChipActive {
+	border-color: rgba(125, 211, 252, 0.65);
+	background: rgba(59, 130, 246, 0.25);
+	color: var(--text-normal);
+}
+
+.list {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.row {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 8px;
+	border-radius: 8px;
+	border: 1px solid rgba(255, 255, 255, 0.06);
+	background: rgba(255, 255, 255, 0.03);
+}
+
+.rowTitle {
+	flex: 1;
+	min-width: 0;
+	font-size: 12px;
+	font-weight: 600;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.categoryBadge {
+	font-size: 9px;
+	padding: 2px 6px;
+	border-radius: 999px;
+	background: rgba(102, 126, 234, 0.2);
+	color: rgba(214, 227, 252, 0.9);
+	flex-shrink: 0;
+}
+
+.rowActions {
+	display: flex;
+	gap: 3px;
+	flex-shrink: 0;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+}
+
+.actionBtn {
+	border: 1px solid rgba(120, 147, 198, 0.35);
+	background: rgba(18, 35, 69, 0.66);
+	color: rgba(214, 227, 252, 0.9);
+	border-radius: 6px;
+	font-size: 9px;
+	padding: 3px 5px;
+	cursor: pointer;
+	white-space: nowrap;
+}
+
+.todayBtn {
+	border-color: rgba(52, 211, 153, 0.45);
+	background: rgba(16, 185, 129, 0.18);
+}
+
+.actionBtn:hover {
+	filter: brightness(1.08);
+}
+
+.empty {
+	font-size: 11px;
+	color: var(--text-muted);
+	padding: 8px 4px;
+	text-align: center;
+}
+
+.footer {
+	display: flex;
+	gap: 6px;
+	margin-top: 8px;
+	flex-wrap: wrap;
+}
+
+.footerBtn {
+	flex: 1;
+	min-width: 0;
+	border: 1px solid rgba(120, 147, 198, 0.35);
+	background: rgba(18, 35, 69, 0.5);
+	color: rgba(214, 227, 252, 0.86);
+	border-radius: 6px;
+	font-size: 10px;
+	padding: 6px 8px;
+	cursor: pointer;
+}
+
+:global(.pixelSidebarQuestShell) .section {
+	border-radius: var(--pixel-card-radius, 10px);
+	border: 2px solid var(--pixel-border-dark, rgba(120, 147, 198, 0.35));
+	background: var(--pixel-panel, rgba(12, 24, 48, 0.45));
+	box-shadow: var(--pixel-shadow-pressed, none);
+}
+
+:global(.pixelSidebarQuestShell) .title {
+	font-family: "Press Start 2P", monospace;
+	font-size: 7px;
+	color: var(--pixel-accent, #7dd3fc);
+	text-shadow: 1px 1px 0 var(--pixel-border-dark, #000);
+}
+
+:global(.pixelSidebarQuestShell) .rowTitle,
+:global(.pixelSidebarQuestShell) .actionBtn,
+:global(.pixelSidebarQuestShell) .footerBtn,
+:global(.pixelSidebarQuestShell) .tagChip {
+	font-family: "Press Start 2P", monospace;
+	font-size: 7px;
+}

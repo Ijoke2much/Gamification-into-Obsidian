@@ -9,6 +9,7 @@ import {
   TimeEditor
 } from './InlineEditors';
 import styles from './QuestCalendarView.module.css';
+import { BatteryProgressBar } from '../../../shared/components/ui/BatteryProgressBar';
 
 interface QuestCalendarViewProps {
   quests: Quest[];
@@ -250,7 +251,7 @@ export const QuestCalendarView: React.FC<QuestCalendarViewProps> = ({
       }
 
       // Update quest via the quest system
-      const { QuestSystemIntegration } = await import('../index');
+      const { QuestSystemIntegration } = await import('../questSystemIntegration');
       await QuestSystemIntegration.updateQuest(editingField.questId, updates);
       
       // Refresh the quest list
@@ -396,32 +397,18 @@ export const QuestCalendarView: React.FC<QuestCalendarViewProps> = ({
     <div className={styles.calendarContainer}>
       {/* Debug Info - Only show if no quests are found */}
       {quests.length === 0 && (
-        <div style={{
-          background: '#fff3cd',
-          border: '1px solid #ffc107',
-          borderRadius: '8px',
-          padding: '16px',
-          marginBottom: '16px',
-          color: '#856404'
-        }}>
-          <strong>⚠️ No quests found</strong>
-          <p style={{ margin: '8px 0', fontSize: '13px' }}>
+        <div className={styles.emptyQuestBanner}>
+          <strong className={styles.emptyQuestBannerTitle}>⚠️ No quests found</strong>
+          <p className={styles.emptyQuestBannerText}>
             The calendar couldn't find any quests in your GamifiedTasks.md file.
           </p>
           <button
+            type="button"
+            className={styles.reloadQuestsBtn}
             onClick={() => {
               window.console.log('🔄 Forcing quest reload...');
               const win = window as Window & { manualLoadQuests?: () => void };
               win.manualLoadQuests?.();
-            }}
-            style={{
-              background: '#ffc107',
-              border: 'none',
-              padding: '8px 16px',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              fontWeight: 'bold',
-              color: '#856404'
             }}
           >
             🔄 Reload Quests
@@ -431,15 +418,7 @@ export const QuestCalendarView: React.FC<QuestCalendarViewProps> = ({
 
       {/* Month hint - show if quests exist but not in current month */}
       {quests.length > 0 && calendarDays.filter(day => day.isCurrentMonth).every(day => day.questCount === 0) && (
-        <div style={{
-          background: '#d1ecf1',
-          border: '1px solid #bee5eb',
-          borderRadius: '8px',
-          padding: '12px',
-          marginBottom: '12px',
-          color: '#0c5460',
-          fontSize: '13px'
-        }}>
+        <div className={styles.monthHintBanner}>
           <strong>💡 Tip:</strong> You have {quests.length} quest{quests.length !== 1 ? 's' : ''} total, but none in {monthNames[currentMonth.getMonth()]} {currentMonth.getFullYear()}.
           {(() => {
             // Find which months have quests
@@ -515,10 +494,13 @@ export const QuestCalendarView: React.FC<QuestCalendarViewProps> = ({
 
       {/* Energy Level Indicator */}
       <div className={styles.energyIndicator}>
-        <div className={styles.energyBar}>
-          <div 
-            className={styles.energyFill}
-            style={{ width: `${Math.min(currentEnergy, 100)}%` }}
+        <div className={styles.energyBatteryWrap}>
+          <BatteryProgressBar
+            percent={Math.min(currentEnergy, 100)}
+            statType="energy"
+            pixel
+            segments={12}
+            height={24}
           />
         </div>
         <span className={styles.energyText}>Energy: {currentEnergy}/100</span>

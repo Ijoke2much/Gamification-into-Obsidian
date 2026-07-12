@@ -1,0 +1,3494 @@
+.hubNav {
+	display: grid;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+	gap: 6px;
+	margin-bottom: 4px;
+}
+
+.hubNavBtn {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 2px;
+	min-height: 52px;
+	padding: 6px 4px;
+	border: 2px solid var(--background-modifier-border);
+	border-radius: 8px;
+	background: var(--background-secondary);
+	color: var(--text-muted);
+	cursor: pointer;
+	font-size: 10px;
+	font-weight: 600;
+	line-height: 1.2;
+	transition: border-color 0.12s ease, background 0.12s ease, color 0.12s ease;
+}
+
+.hubNavBtn:hover {
+	border-color: rgba(91, 156, 255, 0.45);
+	color: var(--text-normal);
+}
+
+.hubNavBtnActive {
+	border-color: rgba(255, 215, 0, 0.55);
+	background: linear-gradient(180deg, rgba(255, 215, 0, 0.12), rgba(255, 215, 0, 0.04));
+	color: var(--text-normal);
+	box-shadow: inset 0 0 0 1px rgba(255, 215, 0, 0.2);
+}
+
+.hubNavIcon {
+	font-size: 16px;
+	line-height: 1;
+}
+
+.hubNavLabel {
+	text-align: center;
+}
+
+.hubNavPixel .hubNavBtn {
+	border-radius: 0;
+	font-family: "VT323", monospace;
+	font-size: 12px;
+}
+
+.hubNavPixel .hubNavBtnActive {
+	border-color: #ffd700;
+	box-shadow: 3px 3px 0 #000;
+}
+
+.panelSection {
+	border: 1px solid var(--background-modifier-border);
+	background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent);
+	border-radius: 10px;
+	padding: 10px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.panelHeaderRow {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.panelTitle {
+	margin: 0;
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--text-normal);
+}
+
+.panelActionBtn {
+	border: 1px solid rgba(91, 156, 255, 0.45);
+	background: rgba(74, 143, 255, 0.15);
+	color: var(--text-normal);
+	border-radius: 6px;
+	font-size: 11px;
+	font-weight: 600;
+	padding: 4px 8px;
+	cursor: pointer;
+}
+
+.panelHint {
+	margin: 0;
+	font-size: 11px;
+	line-height: 1.45;
+	color: var(--text-muted);
+}
+
+.panelSectionGateOpen {
+	border: none;
+	background: transparent;
+	padding: 0 4px 4px;
+	gap: 8px;
+}
+
+.dungeonDebugSection {
+	margin-top: 16px;
+}
+
+/* ── Gate boss roster (System Hunter gate-break picker) ── */
+.gateRosterWrap {
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+
+.gateRoster {
+	margin: 0;
+	padding: 18px 14px 20px;
+	border: 1px solid var(--gamify-gate-border, rgba(34, 211, 238, 0.45));
+	border-radius: var(--pixel-card-radius, 8px);
+	background: var(--gamify-gate-bg, linear-gradient(180deg, rgba(10, 22, 40, 0.95), rgba(5, 8, 16, 0.98)));
+	box-shadow:
+		var(--gamify-gate-glow, 0 0 18px rgba(34, 211, 238, 0.12)),
+		inset 0 0 0 1px rgba(224, 242, 254, 0.06);
+}
+
+.gateRosterHeader {
+	margin-bottom: 4px;
+}
+
+.gateRosterPulse {
+	animation: gateRosterUnlockPulse 1.4s ease-out 3;
+}
+
+@keyframes gateRosterUnlockPulse {
+	0% {
+		box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.45), inset 0 0 0 1px rgba(224, 242, 254, 0.06);
+	}
+	70% {
+		box-shadow: 0 0 0 12px rgba(34, 211, 238, 0), inset 0 0 0 1px rgba(224, 242, 254, 0.06);
+	}
+	100% {
+		box-shadow: 0 0 18px rgba(34, 211, 238, 0.12), inset 0 0 0 1px rgba(224, 242, 254, 0.06);
+	}
+}
+
+.gateRosterSystemLabel {
+	font-size: 9px;
+	font-weight: 700;
+	letter-spacing: 0.28em;
+	color: var(--gamify-gate-accent, #22d3ee);
+	text-align: center;
+	margin-bottom: 6px;
+}
+
+.gateRosterTitle {
+	font-size: 12px;
+	font-weight: 800;
+	letter-spacing: 0.14em;
+	color: var(--gamify-gate-text, #f0f9ff);
+	text-align: center;
+	margin-bottom: 8px;
+}
+
+.gateRosterWhisper {
+	margin: 0 0 16px;
+	font-size: 11px;
+	line-height: 1.5;
+	color: var(--gamify-gate-muted, #94a3b8);
+	text-align: center;
+	font-style: italic;
+}
+
+.gateRosterList {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	max-height: min(58vh, 480px);
+	overflow-y: auto;
+	overflow-x: hidden;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: thin;
+	scrollbar-color: rgba(34, 211, 238, 0.35) rgba(5, 8, 16, 0.5);
+}
+
+.gateRosterList::-webkit-scrollbar {
+	width: 6px;
+}
+
+.gateRosterList::-webkit-scrollbar-thumb {
+	background: rgba(34, 211, 238, 0.35);
+	border-radius: 999px;
+}
+
+.gateRosterCard {
+	all: unset;
+	box-sizing: border-box;
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	width: 100%;
+	min-height: 200px;
+	padding: 28px 14px 16px;
+	border: 1px solid var(--gamify-gate-card-border, rgba(8, 145, 178, 0.35));
+	border-radius: var(--pixel-card-radius, 6px);
+	background: var(--gamify-gate-card-bg, rgba(5, 8, 16, 0.65));
+	cursor: pointer;
+	text-align: center;
+	overflow: visible;
+	transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease;
+}
+
+.gateRosterEditBtn {
+	all: unset;
+	box-sizing: border-box;
+	position: absolute;
+	top: 8px;
+	right: 8px;
+	z-index: 2;
+	width: 24px;
+	height: 24px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border: 1px solid var(--gamify-gate-card-border, rgba(8, 145, 178, 0.35));
+	border-radius: var(--pixel-card-radius, 4px);
+	background: var(--gamify-gate-card-bg, rgba(5, 8, 16, 0.85));
+	color: var(--gamify-gate-accent, #22d3ee);
+	font-size: 12px;
+	cursor: pointer;
+}
+
+.gateRosterEditBtn:hover {
+	border-color: var(--gamify-gate-accent, #22d3ee);
+	box-shadow: var(--gamify-gate-glow, 0 0 8px rgba(34, 211, 238, 0.2));
+}
+
+.gateRosterCard:focus-visible {
+	outline: 2px solid rgba(34, 211, 238, 0.75);
+	outline-offset: 2px;
+}
+
+.gateRosterCard:hover {
+	border-color: rgba(34, 211, 238, 0.55);
+}
+
+.gateRosterCardSelected {
+	border-color: var(--gamify-gate-border-strong, rgba(34, 211, 238, 0.85));
+	box-shadow:
+		var(--gamify-gate-glow, 0 0 14px rgba(34, 211, 238, 0.25)),
+		inset 0 0 0 1px rgba(34, 211, 238, 0.2);
+}
+
+.gateRosterRecommendedTag {
+	position: absolute;
+	top: 8px;
+	left: 8px;
+	z-index: 1;
+	font-size: 8px;
+	font-weight: 800;
+	letter-spacing: 0.08em;
+	color: #050810;
+	background: var(--gamify-gate-highlight, #fbbf24);
+	padding: 3px 6px;
+	border-radius: var(--pixel-card-radius, 2px);
+}
+
+.gateRosterPortrait {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 100%;
+	min-height: 120px;
+	margin-bottom: 12px;
+	padding: 8px 0;
+	overflow: visible;
+	background:
+		radial-gradient(ellipse at center, rgba(34, 211, 238, 0.14) 0%, transparent 72%);
+}
+
+.gateRosterEmoji {
+	font-size: 88px;
+	line-height: 1;
+	display: block;
+	filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.5));
+}
+
+.gateRosterCardSelected .gateRosterEmoji {
+	filter: drop-shadow(0 0 16px rgba(34, 211, 238, 0.4));
+}
+
+.gateRosterMeta {
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 8px;
+}
+
+.gateRosterName {
+	font-size: 14px;
+	font-weight: 800;
+	color: var(--gamify-gate-text, #e0f2fe);
+	line-height: 1.25;
+}
+
+.gateRosterBadges {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	align-items: center;
+	gap: 6px;
+	margin-top: 4px;
+}
+
+.gateRosterBadges .affinityPill {
+	margin-top: 0;
+	max-width: 100%;
+	text-align: center;
+	line-height: 1.25;
+}
+
+.gateRosterStats {
+	display: flex;
+	justify-content: center;
+	flex-wrap: wrap;
+	gap: 6px;
+	font-size: 10px;
+	font-weight: 700;
+	color: var(--pixel-muted, #64748b);
+}
+
+.gateRosterStatus {
+	display: inline-block;
+	font-size: 9px;
+	font-weight: 800;
+	letter-spacing: 0.1em;
+	color: var(--gamify-gate-accent, #22d3ee);
+	border: 1px solid var(--gamify-gate-border, rgba(34, 211, 238, 0.35));
+	padding: 3px 8px;
+	border-radius: var(--pixel-card-radius, 2px);
+}
+
+.gateRosterEmpty {
+	margin: 0;
+	padding: 24px 12px;
+	text-align: center;
+	font-size: 11px;
+	color: #94a3b8;
+	border: 1px dashed rgba(100, 116, 139, 0.45);
+	border-radius: 6px;
+}
+
+.gateRosterEmptyHint {
+	margin: 8px 0 0;
+	font-size: 10px;
+	color: #64748b;
+	line-height: 1.45;
+}
+
+.gateRosterFooter {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding: 0 2px;
+}
+
+.gateRosterSelectedHint {
+	margin: 0;
+	font-size: 10px;
+	color: #94a3b8;
+	text-align: center;
+}
+
+.gateRosterSelectedHint strong {
+	color: #e0f2fe;
+}
+
+.gateRosterEnterBtn {
+	all: unset;
+	box-sizing: border-box;
+	display: block;
+	width: 100%;
+	padding: 14px 12px;
+	border: 1px solid var(--gamify-gate-border, rgba(34, 211, 238, 0.65));
+	border-radius: var(--pixel-card-radius, 6px);
+	background: var(--gamify-gate-banner-bg, linear-gradient(180deg, rgba(8, 145, 178, 0.35), rgba(5, 8, 16, 0.9)));
+	color: var(--gamify-gate-text, #e0f2fe);
+	font-size: 12px;
+	font-weight: 800;
+	letter-spacing: 0.12em;
+	text-align: center;
+	cursor: pointer;
+}
+
+.gateRosterEnterBtn:hover:not(:disabled) {
+	border-color: var(--gamify-gate-accent, #22d3ee);
+	box-shadow: var(--gamify-gate-glow, 0 0 12px rgba(34, 211, 238, 0.25));
+}
+
+.gateRosterEnterBtn:disabled {
+	opacity: 0.45;
+	cursor: not-allowed;
+}
+
+.gateRosterActions {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin-top: 2px;
+}
+
+/* Active raid resume banner (Dungeon sidebar) */
+.gateRaidBanner {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 12px 14px;
+	margin-bottom: 12px;
+	border: 1px solid var(--gamify-gate-border-strong, rgba(34, 211, 238, 0.65));
+	border-radius: var(--pixel-card-radius, 6px);
+	background: var(--gamify-gate-banner-bg, linear-gradient(180deg, rgba(8, 145, 178, 0.22), rgba(5, 8, 16, 0.92)));
+	box-shadow: var(--gamify-gate-glow, 0 0 12px rgba(34, 211, 238, 0.15));
+}
+
+.gateRaidBannerHead {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.gateRaidBannerTag {
+	font-size: 9px;
+	font-weight: 800;
+	letter-spacing: 0.16em;
+	color: var(--gamify-gate-accent, #22d3ee);
+}
+
+.gateRaidBannerTitle {
+	font-size: 13px;
+	color: var(--gamify-gate-text, #e0f2fe);
+}
+
+.gateRaidBannerMeta {
+	margin: 0;
+	font-size: 10px;
+	line-height: 1.45;
+	color: var(--gamify-gate-muted, #94a3b8);
+}
+
+.gateRaidBannerBtn {
+	all: unset;
+	box-sizing: border-box;
+	display: block;
+	width: 100%;
+	padding: 10px 12px;
+	border: 1px solid var(--gamify-gate-accent, #22d3ee);
+	border-radius: var(--pixel-card-radius, 4px);
+	background: rgba(8, 145, 178, 0.25);
+	color: var(--gamify-gate-text, #e0f2fe);
+	font-size: 11px;
+	font-weight: 800;
+	letter-spacing: 0.08em;
+	text-align: center;
+	cursor: pointer;
+}
+
+.gateRaidBannerBtn:hover:not(:disabled) {
+	box-shadow: var(--gamify-gate-glow, 0 0 10px rgba(34, 211, 238, 0.25));
+}
+
+.gateRaidBannerBtn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.gateRosterActions .dungeonSecondary {
+	width: 100%;
+	color: #64748b;
+}
+
+.gateRosterActions .dungeonSecondary:hover {
+	color: #94a3b8;
+}
+
+.dungeonDebugPanel {
+	margin-top: 0;
+	border: 2px dashed #475569;
+	border-radius: 6px;
+	background: rgba(13, 16, 32, 0.55);
+}
+
+.inlineCode {
+	font-size: 10px;
+	padding: 1px 4px;
+	border-radius: 4px;
+	background: rgba(0, 0, 0, 0.25);
+	color: var(--text-normal);
+}
+
+.emptyCard {
+	text-align: center;
+	padding: 24px 12px;
+	border: 1px dashed var(--background-modifier-border);
+	border-radius: 8px;
+	color: var(--text-muted);
+	font-size: 12px;
+	line-height: 1.5;
+}
+
+.emptyEmoji {
+	font-size: 28px;
+	margin-bottom: 8px;
+}
+
+.projectList {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.projectCard {
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 8px;
+	background: var(--background-secondary);
+	overflow: hidden;
+}
+
+.projectCardMain {
+	width: 100%;
+	text-align: left;
+	border: none;
+	background: transparent;
+	padding: 10px;
+	cursor: pointer;
+	color: inherit;
+}
+
+.projectCardMain:hover {
+	background: var(--background-modifier-hover);
+}
+
+.projectCardTop {
+	display: flex;
+	justify-content: space-between;
+	align-items: baseline;
+	gap: 8px;
+	margin-bottom: 8px;
+}
+
+.projectName {
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--text-normal);
+}
+
+.projectPercent {
+	font-size: 12px;
+	font-weight: 700;
+	color: #fbbf24;
+}
+
+.projectBarTrack {
+	height: 8px;
+	border-radius: 4px;
+	background: rgba(0, 0, 0, 0.35);
+	overflow: hidden;
+	margin-bottom: 6px;
+}
+
+.projectBarFill {
+	height: 100%;
+	border-radius: 4px;
+	background: linear-gradient(90deg, #22c55e, #84cc16);
+	transition: width 0.2s ease;
+}
+
+.projectMeta {
+	font-size: 10px;
+	color: var(--text-muted);
+}
+
+.projectTaskList {
+	list-style: none;
+	margin: 0;
+	padding: 0 8px 8px;
+	border-top: 1px solid var(--background-modifier-border);
+}
+
+.projectTaskRow {
+	width: 100%;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 6px 4px;
+	border: none;
+	background: transparent;
+	cursor: pointer;
+	font-size: 11px;
+	color: var(--text-normal);
+	text-align: left;
+	border-radius: 4px;
+}
+
+.projectTaskRow:hover {
+	background: var(--background-modifier-hover);
+}
+
+.projectTaskTitle {
+	flex: 1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.projectMore {
+	font-size: 10px;
+	color: var(--text-muted);
+	padding: 4px 8px 2px;
+}
+
+.journeyCard,
+.dungeonCard {
+	border-radius: 8px;
+	padding: 14px;
+	border: 2px solid rgba(124, 58, 237, 0.35);
+	background: linear-gradient(180deg, rgba(26, 16, 48, 0.65), rgba(13, 16, 32, 0.85));
+}
+
+/* ── Journey overworld hub (inset scene + fight strip) ── */
+.journeyHub {
+	border: 3px solid #333;
+	padding: 10px 8px 12px;
+	background:
+		repeating-linear-gradient(0deg, transparent, transparent 4px, rgba(255, 255, 255, 0.025) 4px, rgba(255, 255, 255, 0.025) 5px),
+		#1a1f35;
+}
+
+.journeyHubSystem {
+	border: none;
+	padding: 0;
+	background: transparent;
+}
+
+.journeyRosterSystem {
+	margin-top: 0;
+	padding-top: 0;
+	border-top: none;
+}
+
+.journeyHubBody {
+	padding: 0 4px;
+}
+
+.sceneWindowIdle {
+	opacity: 0.92;
+}
+
+.sceneWindowIdle .sceneBanner {
+	object-position: center 45%;
+}
+
+.sceneWindowBattle .sceneBanner,
+.sceneWindowVictory .sceneBanner {
+	object-position: center 62%;
+}
+
+.sceneWindowBattle .foeMarker,
+.sceneWindowVictory .foeMarker {
+	bottom: 28%;
+}
+
+.sceneWindowVictory {
+	filter: saturate(1.05);
+}
+
+.sceneWindowFailed {
+	filter: saturate(0.85) hue-rotate(-15deg);
+}
+
+.sceneWindowFailed .foeMarker,
+.sceneWindowVictory .foeMarker {
+	bottom: 28%;
+}
+
+.sceneWindowUrgent {
+	border-color: #ef4444;
+	outline-color: #7f1d1d;
+	animation: gateUrgentPulse 1.8s ease-in-out infinite;
+}
+
+.sceneWindowUrgent .sceneBanner {
+	filter: saturate(1.1) contrast(1.05);
+}
+
+@keyframes gateUrgentPulse {
+	0%,
+	100% {
+		box-shadow: inset 0 0 0 2px #000, 4px 4px 0 #000, 0 0 0 rgba(239, 68, 68, 0);
+	}
+	50% {
+		box-shadow: inset 0 0 0 2px #000, 4px 4px 0 #000, 0 0 12px rgba(239, 68, 68, 0.45);
+	}
+}
+
+.journeyHubTitleUrgent {
+	color: #fca5a5;
+	text-shadow: 0 0 8px rgba(239, 68, 68, 0.35);
+}
+
+.gateCountdown {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	z-index: 3;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 2px;
+	padding: 8px 12px;
+	background: rgba(69, 10, 10, 0.82);
+	border: 2px solid #ef4444;
+	box-shadow: 0 0 0 2px #000, 4px 4px 0 #000;
+}
+
+.gateCountdownLabel {
+	font-size: 8px;
+	font-weight: 800;
+	color: #fecaca;
+	letter-spacing: 0.08em;
+}
+
+.gateCountdownValue {
+	font-size: 18px;
+	font-weight: 900;
+	color: #fff;
+	letter-spacing: 0.06em;
+	line-height: 1;
+}
+
+.encounterBadgeUrgent {
+	border-color: #ef4444;
+	color: #fecaca;
+	background: rgba(69, 10, 10, 0.85);
+}
+
+.encounterBadgeRaid {
+	border-color: #a855f7;
+	color: #e9d5ff;
+	background: rgba(46, 16, 101, 0.85);
+}
+
+.sceneIdleBadge {
+	position: absolute;
+	bottom: 12px;
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 2;
+	font-size: 8px;
+	font-weight: 700;
+	padding: 6px 10px;
+	background: rgba(0, 0, 0, 0.72);
+	border: 2px solid #64748b;
+	color: #cbd5e1;
+	letter-spacing: 0.06em;
+	white-space: nowrap;
+}
+
+.journeyRosterSection {
+	margin-top: 12px;
+	padding-top: 12px;
+	border-top: 2px solid #333;
+}
+
+.journeyRosterCompact {
+	margin-top: 8px;
+	padding-top: 8px;
+}
+
+.journeyRosterHeading {
+	margin: 0 0 8px;
+	font-size: 11px;
+	font-weight: 800;
+	color: #ffd700;
+	letter-spacing: 0.06em;
+}
+
+.journeyHubTitle {
+	margin: 0 0 10px;
+	font-size: 11px;
+	font-weight: 800;
+	color: #ffd700;
+	letter-spacing: 0.1em;
+	text-align: center;
+}
+
+.sceneGutter {
+	padding: 0 12px;
+	margin-bottom: 10px;
+}
+
+.sceneWindow {
+	position: relative;
+	border: 3px solid #c6c6c6;
+	outline: 3px solid #000;
+	box-shadow: inset 0 0 0 2px #000, 4px 4px 0 #000;
+	background: #000;
+	aspect-ratio: 16 / 10;
+	overflow: hidden;
+}
+
+.sceneBanner {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	object-position: center 55%;
+	display: block;
+	image-rendering: pixelated;
+	image-rendering: crisp-edges;
+}
+
+.sceneWindow::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	background:
+		linear-gradient(180deg, rgba(0, 0, 0, 0.35) 0%, transparent 28%, transparent 72%, rgba(0, 0, 0, 0.5) 100%),
+		repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0, 0, 0, 0.06) 2px, rgba(0, 0, 0, 0.06) 3px);
+}
+
+.dayBadge,
+.encounterBadge {
+	position: absolute;
+	top: 6px;
+	z-index: 2;
+	font-size: 9px;
+	font-weight: 700;
+	padding: 4px 6px;
+	letter-spacing: 0.04em;
+}
+
+.dayBadge {
+	left: 6px;
+	background: rgba(0, 0, 0, 0.75);
+	border: 2px solid #c6c6c6;
+	color: #e8e8f0;
+}
+
+.encounterBadge {
+	right: 6px;
+	background: rgba(0, 0, 0, 0.75);
+	border: 2px solid #ffd700;
+	color: #ffd700;
+}
+
+.foeMarker {
+	position: absolute;
+	left: 50%;
+	bottom: 22%;
+	transform: translateX(-50%);
+	z-index: 2;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 2px;
+}
+
+.foeBounce {
+	font-size: 22px;
+	line-height: 1;
+	filter: drop-shadow(2px 2px 0 #000);
+}
+
+.foeSpriteImg {
+	width: 28px;
+	height: 28px;
+	object-fit: contain;
+	image-rendering: pixelated;
+	display: block;
+}
+
+.foeShadow {
+	width: 20px;
+	height: 4px;
+	background: rgba(0, 0, 0, 0.45);
+	border-radius: 50%;
+}
+
+.sceneHpStrip {
+	position: absolute;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 2;
+	padding: 5px 8px 6px;
+	background: linear-gradient(180deg, transparent, rgba(0, 0, 0, 0.88));
+}
+
+.sceneHpLabel {
+	display: flex;
+	justify-content: space-between;
+	font-size: 9px;
+	font-weight: 700;
+	color: #fde68a;
+	margin-bottom: 4px;
+}
+
+.sceneHpSegs {
+	display: grid;
+	grid-template-columns: repeat(8, 1fr);
+	gap: 2px;
+}
+
+.sceneHpSegs span {
+	height: 6px;
+	background: #1a1f35;
+	border: 1px solid #333;
+}
+
+.sceneHpSegOn {
+	background: #ea580c !important;
+	box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.4);
+}
+
+.journeyActionRow {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 8px;
+	padding: 0 12px;
+	margin-bottom: 10px;
+}
+
+.btnStrike,
+.btnDungeon {
+	font-family: inherit;
+	font-size: 11px;
+	font-weight: 800;
+	padding: 10px 6px;
+	border: 3px solid;
+	box-shadow: 3px 3px 0 #000;
+	cursor: not-allowed;
+	opacity: 0.85;
+}
+
+.btnStrike {
+	border-color: #ffd700;
+	background: linear-gradient(180deg, #b45309, #92400e);
+	color: #fff;
+}
+
+.btnDungeon {
+	border-color: #64748b;
+	background: #1e293b;
+	color: #8892b0;
+}
+
+.journeyHubFooter {
+	padding: 0 6px;
+}
+
+.statPills {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-bottom: 8px;
+}
+
+.statPill {
+	font-size: 9px;
+	padding: 5px 7px;
+	border: 2px solid #444;
+	background: #0d1020;
+	color: var(--text-muted);
+}
+
+.statPill strong {
+	color: #a5f3fc;
+	font-weight: 700;
+}
+
+.statPillUrgent {
+	border-color: #ef4444;
+	color: #fecaca;
+	background: rgba(69, 10, 10, 0.55);
+	animation: statPillUrgentBlink 2s ease-in-out infinite;
+}
+
+.statPillRaidHint {
+	border-color: #a855f7;
+	color: #e9d5ff;
+	background: rgba(46, 16, 101, 0.45);
+}
+
+@keyframes statPillUrgentBlink {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.72;
+	}
+}
+
+.journeyDialogue {
+	border: 2px solid #475569;
+	border-left: 4px solid #ffd700;
+	background: #0f172a;
+	padding: 8px;
+	margin-bottom: 8px;
+}
+
+.journeyDialogueTag {
+	font-size: 9px;
+	font-weight: 800;
+	color: #ffd700;
+	margin-bottom: 6px;
+	letter-spacing: 0.06em;
+}
+
+.journeyDialogueText {
+	margin: 0;
+	font-size: 10px;
+	line-height: 1.5;
+	color: #cbd5e1;
+}
+
+.journeyFoeRow {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-bottom: 12px;
+}
+
+.journeyEmoji {
+	font-size: 36px;
+	line-height: 1;
+}
+
+.journeyFoeName {
+	font-size: 14px;
+	font-weight: 800;
+	color: #e8e8f0;
+}
+
+.journeyTimer {
+	font-size: 11px;
+	color: #8892b0;
+	margin-top: 2px;
+}
+
+.journeyHpLabel {
+	display: flex;
+	justify-content: space-between;
+	font-size: 10px;
+	color: #cbd5e1;
+	margin-bottom: 4px;
+}
+
+.journeyBarTrack {
+	height: 10px;
+	border-radius: 4px;
+	background: #1a1f35;
+	border: 1px solid #333;
+	overflow: hidden;
+	margin-bottom: 10px;
+}
+
+.journeyBarFill {
+	height: 100%;
+	background: linear-gradient(90deg, #7c3aed, #a855f7);
+}
+
+.journeyFlavor {
+	margin: 0 0 8px;
+	font-size: 11px;
+	line-height: 1.45;
+	color: #cbd5e1;
+}
+
+.journeyPhaseNote {
+	margin: 0;
+	font-size: 10px;
+	color: #8892b0;
+	font-style: italic;
+}
+
+.dungeonCardLocked {
+	border-color: rgba(100, 116, 139, 0.45);
+}
+
+.dungeonCardUnlocked {
+	border-color: rgba(255, 215, 0, 0.5);
+	box-shadow: 0 0 0 1px rgba(255, 215, 0, 0.15);
+}
+
+.dungeonCardPulse {
+	animation: dungeonUnlockPulse 1.2s ease-out 3;
+}
+
+@keyframes dungeonUnlockPulse {
+	0% {
+		box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.55);
+	}
+	70% {
+		box-shadow: 0 0 0 14px rgba(255, 215, 0, 0);
+	}
+	100% {
+		box-shadow: 0 0 0 0 rgba(255, 215, 0, 0);
+	}
+}
+
+.dungeonWeakenTrack {
+	margin-bottom: 12px;
+	padding: 10px 12px;
+	border: 2px solid rgba(100, 116, 139, 0.45);
+	border-radius: 8px;
+	background: rgba(13, 16, 32, 0.65);
+}
+
+.dungeonWeakenLabel {
+	display: flex;
+	justify-content: space-between;
+	font-size: 10px;
+	font-weight: 700;
+	color: #cbd5e1;
+	margin-bottom: 6px;
+}
+
+.dungeonWeakenBar {
+	height: 8px;
+	border: 2px solid #333;
+	background: #0d1020;
+	overflow: hidden;
+}
+
+.dungeonWeakenFill {
+	display: block;
+	height: 100%;
+	background: linear-gradient(90deg, #7c3aed, #ffd700);
+	transition: width 0.35s ease;
+}
+
+.dungeonWeakenHint {
+	margin: 6px 0 0;
+	font-size: 9px;
+	color: #8892b0;
+	text-align: center;
+}
+
+.dungeonDebugToggle {
+	width: 100%;
+	padding: 8px 10px;
+	border: none;
+	background: transparent;
+	color: #94a3b8;
+	font-size: 10px;
+	font-weight: 800;
+	letter-spacing: 0.06em;
+	text-align: left;
+	cursor: pointer;
+}
+
+.dungeonDebugToggle:hover {
+	color: #cbd5e1;
+}
+
+.dungeonDebugBody {
+	padding: 0 10px 10px;
+}
+
+.dungeonDebugStats {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 6px;
+	margin: 0 0 8px;
+	padding: 0;
+}
+
+.dungeonDebugStats div {
+	padding: 6px;
+	border: 1px solid #334155;
+	background: rgba(0, 0, 0, 0.25);
+}
+
+.dungeonDebugStats dt {
+	margin: 0;
+	font-size: 8px;
+	font-weight: 700;
+	color: #64748b;
+	text-transform: uppercase;
+}
+
+.dungeonDebugStats dd {
+	margin: 2px 0 0;
+	font-size: 10px;
+	font-weight: 800;
+	color: #e2e8f0;
+}
+
+.dungeonDebugHint {
+	margin: 0 0 6px;
+	font-size: 9px;
+	color: #8892b0;
+	line-height: 1.4;
+}
+
+.dungeonDebugActions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 8px;
+}
+
+.dungeonDebugBtn {
+	font-size: 9px;
+	font-weight: 700;
+	padding: 5px 8px;
+	border: 2px solid #475569;
+	background: #0f172a;
+	color: #cbd5e1;
+	cursor: pointer;
+}
+
+.dungeonDebugBtn:hover {
+	border-color: #64748b;
+	color: #fff;
+}
+
+.dungeonDebugEvent {
+	margin: 8px 0 0;
+	font-size: 9px;
+	color: #a5f3fc;
+	font-style: italic;
+}
+
+.dungeonIcon {
+	font-size: 32px;
+	text-align: center;
+	margin-bottom: 8px;
+}
+
+.dungeonTitle {
+	font-size: 14px;
+	font-weight: 800;
+	text-align: center;
+	color: #ffd700;
+	margin-bottom: 8px;
+}
+
+.dungeonBody {
+	margin: 0 0 12px;
+	font-size: 11px;
+	line-height: 1.45;
+	color: #cbd5e1;
+	text-align: center;
+}
+
+.dungeonCta {
+	display: block;
+	width: 100%;
+	padding: 10px 12px;
+	border: 2px solid rgba(255, 215, 0, 0.45);
+	border-radius: 8px;
+	background: linear-gradient(135deg, rgba(255, 215, 0, 0.25), rgba(245, 158, 11, 0.2));
+	color: #111827;
+	font-size: 12px;
+	font-weight: 800;
+	cursor: pointer;
+	margin-bottom: 8px;
+}
+
+.dungeonCta:disabled {
+	opacity: 0.45;
+	cursor: not-allowed;
+	border-color: rgba(100, 116, 139, 0.4);
+	background: rgba(30, 41, 59, 0.5);
+	color: var(--text-muted);
+}
+
+.dungeonSecondary {
+	display: block;
+	width: 100%;
+	padding: 6px;
+	border: none;
+	background: transparent;
+	color: var(--text-muted);
+	font-size: 10px;
+	cursor: pointer;
+	text-decoration: underline;
+}
+
+.dungeonSecondary:hover {
+	color: var(--text-normal);
+}
+
+/* ── Dungeon raid encounter ── */
+.raidPanel {
+	margin: 0 4px 12px;
+	padding: 12px;
+	border: 3px solid rgba(124, 58, 237, 0.55);
+	background: linear-gradient(180deg, rgba(30, 16, 48, 0.9), rgba(13, 16, 32, 0.95));
+}
+
+.raidTag {
+	font-size: 9px;
+	font-weight: 800;
+	letter-spacing: 0.1em;
+	color: #c4b5fd;
+	margin-bottom: 8px;
+}
+
+.raidBossHeader {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 12px;
+}
+
+.raidBossEmoji {
+	font-size: 30px;
+	line-height: 1;
+	filter: drop-shadow(2px 2px 0 #000);
+}
+
+.raidBossMeta {
+	min-width: 0;
+}
+
+.raidBossName {
+	font-size: 14px;
+	font-weight: 800;
+	color: #ede9fe;
+}
+
+.raidBossSub {
+	font-size: 9px;
+	font-weight: 700;
+	color: #a78bfa;
+	letter-spacing: 0.03em;
+	text-transform: uppercase;
+}
+
+.raidHpLabel {
+	display: flex;
+	justify-content: space-between;
+	font-size: 9px;
+	font-weight: 700;
+	color: #ddd6fe;
+	margin-bottom: 4px;
+}
+
+.raidHpBar {
+	height: 12px;
+	border: 2px solid #1e1b4b;
+	background: #0d1020;
+	overflow: hidden;
+	margin-bottom: 8px;
+}
+
+.raidHpFill {
+	display: block;
+	height: 100%;
+	background: linear-gradient(90deg, #7c3aed, #ef4444);
+	transition: width 0.3s ease;
+}
+
+.raidLastHit {
+	margin: 0 0 8px;
+	font-size: 10px;
+	font-weight: 700;
+	color: #fca5a5;
+	text-align: center;
+}
+
+.raidStrikeBtn {
+	display: block;
+	width: 100%;
+	padding: 12px;
+	border: 2px solid rgba(168, 85, 247, 0.6);
+	border-radius: 8px;
+	background: linear-gradient(135deg, rgba(124, 58, 237, 0.35), rgba(168, 85, 247, 0.25));
+	color: #f5f3ff;
+	font-size: 13px;
+	font-weight: 800;
+	cursor: pointer;
+	margin-bottom: 8px;
+}
+
+.raidStrikeBtn:hover {
+	border-color: #c084fc;
+	background: linear-gradient(135deg, rgba(124, 58, 237, 0.5), rgba(168, 85, 247, 0.35));
+}
+
+.raidActions {
+	display: flex;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.raidActions .dungeonSecondary {
+	width: auto;
+}
+
+/* ── Two-bar boss fight (file-backed) ── */
+.bossArmorBar {
+	height: 10px;
+	border: 2px solid #3f2d0b;
+	background: #0d1020;
+	overflow: hidden;
+	margin-bottom: 8px;
+}
+
+.bossArmorFill {
+	display: block;
+	height: 100%;
+	background: linear-gradient(90deg, #b45309, #fbbf24);
+	transition: width 0.3s ease;
+}
+
+.bossArmorFillBroken {
+	background: linear-gradient(90deg, #334155, #475569);
+}
+
+.bossAttackBtn {
+	display: block;
+	width: 100%;
+	padding: 10px;
+	border: 2px solid rgba(251, 191, 36, 0.6);
+	border-radius: 8px;
+	background: linear-gradient(135deg, rgba(180, 83, 9, 0.35), rgba(251, 191, 36, 0.22));
+	color: #fef3c7;
+	font-size: 12px;
+	font-weight: 800;
+	cursor: pointer;
+	margin-bottom: 8px;
+}
+
+.bossAttackBtn:hover:not(:disabled) {
+	border-color: #fbbf24;
+	background: linear-gradient(135deg, rgba(180, 83, 9, 0.5), rgba(251, 191, 36, 0.32));
+}
+
+.bossAttackBtn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.bossHint {
+	margin: 0 0 8px;
+	font-size: 9px;
+	font-weight: 700;
+	letter-spacing: 0.03em;
+	color: #a78bfa;
+	text-align: center;
+}
+
+.bossDampedHint {
+	color: #fbbf24;
+}
+
+.bossTaskList {
+	list-style: none;
+	margin: 0 0 10px;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.bossTaskItem {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	padding: 6px 8px;
+	border: 1px solid rgba(124, 58, 237, 0.25);
+	background: rgba(30, 16, 48, 0.5);
+	cursor: pointer;
+	font-size: 11px;
+	color: #ede9fe;
+	text-align: left;
+}
+
+.bossTaskItem:hover:not(:disabled) {
+	border-color: rgba(168, 85, 247, 0.6);
+}
+
+.bossTaskItem:disabled {
+	cursor: default;
+}
+
+.bossTaskItemDone {
+	opacity: 0.55;
+	text-decoration: line-through;
+}
+
+.bossTaskCheck {
+	flex-shrink: 0;
+	font-weight: 800;
+	color: #c084fc;
+}
+
+/* ── Journey shell: roster + active sub-nav ── */
+.journeyShell {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.journeySubNav {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 6px;
+}
+
+.journeySubNavBtn {
+	position: relative;
+	font-family: inherit;
+	font-size: 10px;
+	font-weight: 700;
+	padding: 8px 6px;
+	border: 2px solid var(--background-modifier-border);
+	background: var(--background-secondary);
+	color: var(--text-muted);
+	cursor: pointer;
+}
+
+.journeySubNavBtnActive {
+	border-color: #ffd700;
+	color: #ffd700;
+	background: rgba(255, 215, 0, 0.08);
+}
+
+.journeySubNavBtn:disabled {
+	opacity: 0.45;
+	cursor: not-allowed;
+}
+
+.journeySubNavDot {
+	position: absolute;
+	top: 4px;
+	right: 6px;
+	width: 6px;
+	height: 6px;
+	background: #22c55e;
+	border-radius: 50%;
+}
+
+.journeyRoster {
+	border: 3px solid #333;
+	padding: 10px;
+	background: #1a1f35;
+}
+
+.journeyError {
+	margin: 0 0 8px;
+	font-size: 10px;
+	color: #fca5a5;
+}
+
+.journeyNotice {
+	margin: 0 0 10px;
+	font-size: 10px;
+	color: #fde68a;
+	line-height: 1.45;
+}
+
+.rosterList {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.rosterCard {
+	border: 2px solid var(--background-modifier-border);
+	background: #0d1020;
+	padding: 10px;
+}
+
+.rosterCardTop {
+	display: flex;
+	gap: 10px;
+	margin-bottom: 10px;
+}
+
+.rosterEmoji {
+	font-size: 28px;
+	line-height: 1;
+	flex-shrink: 0;
+	width: 36px;
+	text-align: center;
+}
+
+.rosterSprite {
+	width: 36px;
+	height: 36px;
+	object-fit: contain;
+	image-rendering: pixelated;
+	display: block;
+}
+
+.rosterMeta {
+	flex: 1;
+	min-width: 0;
+}
+
+.rosterNameRow {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 6px;
+	margin-bottom: 6px;
+}
+
+.rosterName {
+	font-size: 12px;
+	font-weight: 800;
+	color: var(--text-normal);
+}
+
+.rosterBadge {
+	font-size: 8px;
+	font-weight: 800;
+	padding: 2px 5px;
+	border: 1px solid;
+	flex-shrink: 0;
+}
+
+.rosterBadgeAvailable {
+	border-color: #64748b;
+	color: #94a3b8;
+}
+
+.rosterBadgeActive {
+	border-color: #ffd700;
+	color: #ffd700;
+}
+
+.rosterBadgeCleared {
+	border-color: #22c55e;
+	color: #86efac;
+}
+
+.rosterBlurb {
+	margin: 0 0 6px;
+	font-size: 10px;
+	line-height: 1.45;
+	color: var(--text-muted);
+}
+
+.rosterStats {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	font-size: 9px;
+	color: #8892b0;
+}
+
+.rosterFaceBtn {
+	width: 100%;
+	font-family: inherit;
+	font-size: 10px;
+	font-weight: 800;
+	padding: 8px;
+	border: 2px solid #7c3aed;
+	background: rgba(124, 58, 237, 0.2);
+	color: #e9d5ff;
+	cursor: pointer;
+}
+
+.rosterFaceBtn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+	border-color: #444;
+	background: #1e293b;
+	color: var(--text-muted);
+}
+
+.foeDetailCard {
+	margin: 0 8px 10px;
+	padding: 10px;
+	border: 2px solid #475569;
+	border-left: 4px solid #7c3aed;
+	background: #0f172a;
+}
+
+.foeDetailName {
+	margin: 0 0 6px;
+	font-size: 12px;
+	font-weight: 800;
+	color: #f8fafc;
+}
+
+.foeDetailDesc {
+	margin: 0 0 8px;
+	font-size: 10px;
+	line-height: 1.5;
+	color: #cbd5e1;
+}
+
+.foeDetailHint {
+	margin: 0;
+	font-size: 9px;
+	color: #8892b0;
+	font-style: italic;
+	line-height: 1.45;
+}
+
+.btnLeave {
+	border-color: #64748b !important;
+	background: #1e293b !important;
+	color: #cbd5e1 !important;
+	cursor: pointer;
+	opacity: 1 !important;
+}
+
+.btnDebugTask {
+	font-family: inherit;
+	font-size: 10px;
+	font-weight: 800;
+	padding: 8px;
+	border: 2px dashed #475569;
+	background: rgba(71, 85, 105, 0.15);
+	color: #94a3b8;
+	cursor: pointer;
+}
+
+.btnDebugTask:hover {
+	border-color: #38bdf8;
+	color: #bae6fd;
+	background: rgba(56, 189, 248, 0.1);
+}
+
+.btnVictory {
+	grid-column: 1 / -1;
+	border-color: #22c55e !important;
+	background: linear-gradient(180deg, #166534, #14532d) !important;
+	color: #ecfdf5 !important;
+	cursor: pointer;
+	opacity: 1 !important;
+}
+
+.btnDungeonReady {
+	border-color: #7c3aed !important;
+	background: linear-gradient(180deg, #5b21b6, #4c1d95) !important;
+	color: #ede9fe !important;
+	cursor: pointer;
+	opacity: 1 !important;
+}
+
+.foeDefeated {
+	opacity: 0.35;
+	filter: grayscale(1);
+}
+
+.foeEscaped {
+	opacity: 0.7;
+	filter: grayscale(0.6);
+}
+
+.btnFailed {
+	width: 100%;
+	font-family: inherit;
+	font-size: 11px;
+	font-weight: 800;
+	padding: 10px;
+	border: 2px solid #64748b;
+	background: rgba(100, 116, 139, 0.2);
+	color: #cbd5e1;
+	cursor: pointer;
+	margin: 0 8px 10px;
+}
+
+.damageLogSection {
+	margin-bottom: 8px;
+	border: 2px solid #333;
+	background: #0d1020;
+	padding: 8px;
+	max-height: 140px;
+	overflow-y: auto;
+}
+
+.damageLogTitle {
+	font-size: 9px;
+	font-weight: 800;
+	color: #ffd700;
+	margin-bottom: 6px;
+	letter-spacing: 0.06em;
+}
+
+.damageLogEmpty {
+	margin: 0;
+	font-size: 10px;
+	color: var(--text-muted);
+}
+
+.damageLogList {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+}
+
+.damageLogRow {
+	display: flex;
+	justify-content: space-between;
+	align-items: baseline;
+	gap: 8px;
+	padding: 5px 0;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+	font-size: 10px;
+}
+
+.damageLogRow:last-child {
+	border-bottom: none;
+}
+
+.damageLogQuest {
+	flex: 1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	color: var(--text-normal);
+}
+
+.damageLogDmg {
+	flex-shrink: 0;
+	font-weight: 800;
+	color: #fb923c;
+}
+
+.damageLogGraze {
+	color: #94a3b8;
+	font-weight: 600;
+	font-style: italic;
+	opacity: 0.85;
+}
+
+.journeyOutcomePanel {
+	margin: 0 4px 12px;
+	padding: 12px 12px 14px;
+	border: 3px solid #333;
+	background: #0d1020;
+}
+
+.journeyOutcomeVictory {
+	border-color: rgba(255, 215, 0, 0.55);
+	background: linear-gradient(180deg, rgba(26, 32, 16, 0.85), rgba(13, 16, 32, 0.95));
+}
+
+.journeyOutcomeFailed {
+	border-color: rgba(239, 68, 68, 0.45);
+	background: linear-gradient(180deg, rgba(32, 16, 16, 0.85), rgba(13, 16, 32, 0.95));
+}
+
+.journeyOutcomeTag {
+	font-size: 9px;
+	font-weight: 800;
+	letter-spacing: 0.1em;
+	color: #ffd700;
+	margin-bottom: 6px;
+}
+
+.journeyOutcomeFailed .journeyOutcomeTag {
+	color: #fca5a5;
+}
+
+.journeyOutcomeTitle {
+	margin: 0 0 6px;
+	font-size: 14px;
+	font-weight: 800;
+	color: var(--text-normal);
+}
+
+.journeyOutcomeLead {
+	margin: 0 0 10px;
+	font-size: 11px;
+	line-height: 1.45;
+	color: #cbd5e1;
+}
+
+.journeyOutcomeStats {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 8px;
+	margin: 0 0 12px;
+	padding: 0;
+}
+
+.journeyOutcomeStats div {
+	padding: 6px 8px;
+	border: 2px solid #333;
+	background: rgba(0, 0, 0, 0.25);
+}
+
+.journeyOutcomeStats dt {
+	margin: 0;
+	font-size: 8px;
+	font-weight: 700;
+	color: #8892b0;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.journeyOutcomeStats dd {
+	margin: 2px 0 0;
+	font-size: 12px;
+	font-weight: 800;
+	color: #a5f3fc;
+}
+
+.journeyOutcomeLoot {
+	margin-bottom: 12px;
+	padding: 8px 10px;
+	border: 2px solid rgba(255, 215, 0, 0.35);
+	background: rgba(255, 215, 0, 0.06);
+}
+
+.journeyOutcomeLootLabel {
+	font-size: 8px;
+	font-weight: 800;
+	color: #ffd700;
+	letter-spacing: 0.08em;
+	margin-bottom: 4px;
+}
+
+.journeyOutcomeLootRow {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	font-size: 10px;
+	font-weight: 700;
+	color: #fde68a;
+}
+
+.journeyOutcomeHint {
+	margin: 0 0 12px;
+	font-size: 10px;
+	color: #8892b0;
+	font-style: italic;
+}
+
+.affinityPill {
+	display: inline-block;
+	margin-top: 6px;
+	font-size: 9px;
+	font-weight: 800;
+	letter-spacing: 0.03em;
+	padding: 2px 6px;
+	border: 1px solid;
+	width: fit-content;
+}
+
+.affinityPillNeutral {
+	border-color: #475569;
+	color: #94a3b8;
+	background: rgba(71, 85, 105, 0.15);
+}
+
+.affinityPillTarget {
+	border-color: #f59e0b;
+	color: #fcd34d;
+	background: rgba(245, 158, 11, 0.12);
+}
+
+.diffTagEasy {
+	border-color: #22c55e;
+	color: #86efac;
+}
+
+.diffTagMedium {
+	border-color: #f59e0b;
+	color: #fcd34d;
+}
+
+.diffTagHard {
+	border-color: #ef4444;
+	color: #fca5a5;
+}
+
+.rosterEditBtn {
+	flex-shrink: 0;
+	font-family: inherit;
+	font-size: 10px;
+	line-height: 1;
+	padding: 2px 5px;
+	border: 1px solid #475569;
+	background: transparent;
+	color: #94a3b8;
+	cursor: pointer;
+}
+
+.rosterEditBtn:hover {
+	border-color: #7c3aed;
+	color: #e9d5ff;
+}
+
+.rosterCreateBtn {
+	width: 100%;
+	margin-top: 10px;
+	font-family: inherit;
+	font-size: 10px;
+	font-weight: 800;
+	padding: 8px;
+	border: 2px dashed #475569;
+	background: transparent;
+	color: #94a3b8;
+	cursor: pointer;
+}
+
+.rosterCreateBtn:hover {
+	border-color: #7c3aed;
+	color: #e9d5ff;
+	background: rgba(124, 58, 237, 0.1);
+}
+
+.journeyEmptyActive {
+	text-align: center;
+	padding: 24px 12px;
+	border: 2px dashed var(--background-modifier-border);
+	color: var(--text-muted);
+	font-size: 11px;
+}
+
+.journeyEmptyActive p {
+	margin: 0 0 12px;
+}
+
+/* ── Projects guild contract board (matches pixel mockup) ── */
+.projectsHub {
+	border: 2px solid #8a6d3b;
+	border-radius: 10px;
+	padding: 8px;
+	background: #0e1226;
+	font-family: "VT323", "Press Start 2P", ui-monospace, monospace;
+	overflow: hidden;
+}
+
+.projectsHubBody {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+/* Banner: pixel-art guild hall image with gold frame */
+.guildBannerWrap {
+	position: relative;
+	margin-bottom: 16px;
+	border: 2px solid #c9a45c;
+	border-radius: 8px;
+	overflow: hidden;
+	box-shadow: inset 0 0 0 1px #000, 0 2px 0 rgba(0, 0, 0, 0.4);
+	background: #000;
+}
+
+.guildBannerImg {
+	display: block;
+	width: 100%;
+	height: auto;
+	image-rendering: pixelated;
+	image-rendering: crisp-edges;
+}
+
+/* Active contract card */
+.activeContract {
+	position: relative;
+	padding: 18px 12px 12px;
+	border: 2px solid #c9a45c;
+	border-radius: 10px;
+	background: linear-gradient(180deg, #141a33, #10142a);
+	box-shadow: 0 2px 0 rgba(0, 0, 0, 0.45);
+}
+
+.activeContractLabel {
+	position: absolute;
+	top: -12px;
+	left: 12px;
+	padding: 3px 12px;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.12em;
+	color: #ffd700;
+	background: #0e1226;
+	border: 2px solid #c9a45c;
+	border-radius: 999px;
+	white-space: nowrap;
+}
+
+.contractHead {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 10px;
+	margin: 0 0 8px;
+}
+
+.contractName {
+	font-size: 18px;
+	font-weight: 700;
+	color: #e9f5e9;
+	line-height: 1.2;
+	flex: 1;
+	min-width: 0;
+	letter-spacing: 0.02em;
+}
+
+.contractPct {
+	font-size: 22px;
+	font-weight: 800;
+	color: #ffd700;
+	flex-shrink: 0;
+	line-height: 1;
+}
+
+.contractPctSign {
+	font-size: 13px;
+	font-weight: 700;
+}
+
+.contractPctAmber {
+	composes: contractPct;
+	color: #fcd34d;
+}
+
+.contractPctMuted {
+	composes: contractPct;
+	color: #94a3b8;
+}
+
+.contractPctGreen {
+	composes: contractPct;
+	color: #86efac;
+}
+
+/* Status badges */
+.contractBadgeRow {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-bottom: 12px;
+}
+
+.contractBadge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 10px;
+	font-weight: 700;
+	padding: 3px 8px;
+	border: 2px solid #555;
+	border-radius: 6px;
+	letter-spacing: 0.06em;
+	white-space: nowrap;
+}
+
+.contractBadgeMomentum {
+	border-color: #2f9e44;
+	color: #69db7c;
+	background: rgba(34, 139, 60, 0.18);
+}
+
+.contractBadgeDue {
+	border-color: #b1462e;
+	color: #ff8a65;
+	background: rgba(150, 50, 30, 0.18);
+}
+
+.contractBadgeStalled {
+	border-color: #b1462e;
+	color: #ff8a65;
+	background: rgba(150, 50, 30, 0.16);
+}
+
+.contractBadgeUrgent {
+	border-color: #ef4444;
+	color: #fca5a5;
+	background: rgba(239, 68, 68, 0.15);
+}
+
+.contractBadgeReward {
+	border-color: #a78bfa;
+	color: #ddd6fe;
+	background: rgba(167, 139, 250, 0.14);
+}
+
+/* Milestone trail: icons on a segmented path */
+.milestoneSection {
+	margin-bottom: 12px;
+}
+
+.milestoneSectionLabel {
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.1em;
+	color: #8892b0;
+	margin-bottom: 8px;
+}
+
+.milestoneTrail {
+	display: flex;
+	align-items: flex-start;
+}
+
+.milestoneNode {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 3px;
+	min-width: 34px;
+	flex-shrink: 0;
+}
+
+.milestoneIcon {
+	font-size: 18px;
+	line-height: 22px;
+	filter: grayscale(1) brightness(0.7);
+}
+
+.milestoneNodeDone .milestoneIcon {
+	filter: none;
+}
+
+.milestoneCircle {
+	width: 16px;
+	height: 16px;
+	margin: 3px 0;
+	border: 2px solid #5a6175;
+	border-radius: 50%;
+	background: transparent;
+	box-sizing: border-box;
+}
+
+.milestoneCircleDone {
+	border-color: #ffd700;
+	background: #ffd700;
+}
+
+.milestoneLabel {
+	font-size: 9px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	color: #8892b0;
+}
+
+.milestoneNodeDone .milestoneLabel {
+	color: #c3cad9;
+}
+
+.milestoneSeg {
+	position: relative;
+	flex: 1;
+	height: 0;
+	margin-top: 11px;
+	border-top: 2px dashed #4a5168;
+}
+
+.milestoneSegDone {
+	border-top: 3px solid #2f9e44;
+	margin-top: 10px;
+}
+
+.milestoneSegDot {
+	position: absolute;
+	top: -5px;
+	left: 50%;
+	transform: translateX(-50%);
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: #4a5168;
+}
+
+.milestoneSegDone .milestoneSegDot {
+	background: #40c057;
+}
+
+/* Next waypoint panel */
+.waypoint {
+	border: 2px solid #2e5d8f;
+	border-radius: 8px;
+	background: #122036;
+	margin-bottom: 0;
+	overflow: hidden;
+}
+
+.waypointHeader {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	padding: 5px 10px;
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.12em;
+	color: #7db4e8;
+	background: rgba(46, 93, 143, 0.35);
+	border-bottom: 2px solid #2e5d8f;
+}
+
+.waypointHeaderLink {
+	flex-shrink: 0;
+	background: none;
+	border: none;
+	padding: 0;
+	font-family: inherit;
+	font-size: 9px;
+	font-weight: 700;
+	letter-spacing: 0.1em;
+	color: #7db4e8;
+	cursor: pointer;
+}
+
+.waypointHeaderLink:hover {
+	color: #ffd700;
+}
+
+.waypointBody {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 10px;
+}
+
+.waypointBodyClickable {
+	cursor: pointer;
+	transition: background 0.12s ease;
+}
+
+.waypointBodyClickable:hover {
+	background: rgba(77, 131, 196, 0.14);
+}
+
+.waypointBodyClickable:focus-visible {
+	outline: 2px solid #4d83c4;
+	outline-offset: -2px;
+}
+
+.waypointMarkerOpen {
+	transform: rotate(90deg);
+}
+
+.waypointCheckboxReady {
+	cursor: pointer;
+	border-color: #ffd700;
+	box-shadow: 0 0 6px rgba(255, 215, 0, 0.4);
+}
+
+.waypointCheckboxReady:hover {
+	background: rgba(255, 215, 0, 0.18);
+}
+
+.waypointCheckboxLocked {
+	cursor: not-allowed;
+	opacity: 0.55;
+	border-color: #5a6278;
+}
+
+.waypointCheckboxLocked:hover {
+	background: transparent;
+}
+
+/* Expanded subtask checklist under the waypoint row */
+.waypointSubtasks {
+	border-top: 2px solid #2e5d8f;
+	background: rgba(10, 18, 32, 0.55);
+	padding: 6px 10px 8px;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.waypointSubtaskRow {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 6px 6px;
+	border-radius: 6px;
+	cursor: pointer;
+	transition: background 0.12s ease;
+}
+
+.waypointSubtaskRow:hover {
+	background: rgba(77, 131, 196, 0.16);
+}
+
+.waypointSubtaskRow:focus-visible {
+	outline: 2px solid #4d83c4;
+	outline-offset: -2px;
+}
+
+.waypointSubtaskBox {
+	width: 14px;
+	height: 14px;
+	flex-shrink: 0;
+	border: 2px solid #8892b0;
+	border-radius: 3px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 10px;
+	color: #69db7c;
+	box-sizing: border-box;
+}
+
+.waypointSubtaskBoxDone {
+	border-color: #2f9e44;
+	background: rgba(47, 158, 68, 0.25);
+}
+
+.waypointSubtaskText {
+	font-size: 12px;
+	color: #d5dbe8;
+	line-height: 1.3;
+}
+
+.waypointSubtaskDone .waypointSubtaskText {
+	color: #8892b0;
+	text-decoration: line-through;
+}
+
+.waypointMarker {
+	color: #ffd700;
+	font-size: 11px;
+	flex-shrink: 0;
+	transition: transform 0.15s ease;
+}
+
+.waypointCheckbox {
+	width: 16px;
+	height: 16px;
+	flex-shrink: 0;
+	border: 2px solid #8892b0;
+	border-radius: 3px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 11px;
+	color: #69db7c;
+	box-sizing: border-box;
+}
+
+.waypointCheckboxDone {
+	border-color: #2f9e44;
+	background: rgba(47, 158, 68, 0.2);
+}
+
+.waypointText {
+	flex: 1;
+	min-width: 0;
+}
+
+.waypointTitle {
+	font-size: 14px;
+	font-weight: 700;
+	color: #ffd700;
+	line-height: 1.25;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.waypointDesc {
+	font-size: 11px;
+	color: #8892b0;
+	line-height: 1.35;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.waypointSide {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-shrink: 0;
+}
+
+.waypointCount {
+	font-size: 12px;
+	font-weight: 700;
+	color: #aab3c5;
+}
+
+.waypointSprite {
+	width: 30px;
+	height: 30px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 16px;
+	border: 2px solid #3a4258;
+	border-radius: 6px;
+	background: #1a2138;
+}
+
+.waypointExpanded {
+	padding: 0 8px 8px;
+	border-top: 1px solid rgba(100, 140, 200, 0.2);
+}
+
+.waypointExpandedDesc {
+	font-size: 10px;
+	color: #8892b0;
+	line-height: 1.4;
+	padding: 8px 4px 4px;
+}
+
+.waypointEmptyChecklist {
+	font-size: 10px;
+	color: #5c6580;
+	padding: 6px 4px 8px;
+	font-style: italic;
+}
+
+.waypointUpNext {
+	margin-top: 8px;
+	padding-top: 8px;
+	border-top: 1px dashed rgba(100, 140, 200, 0.25);
+}
+
+.waypointUpNextHeader {
+	font-size: 9px;
+	font-weight: 700;
+	letter-spacing: 0.1em;
+	color: #6b7590;
+	margin-bottom: 4px;
+}
+
+.waypointUpNextList {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+}
+
+.waypointUpNextRow {
+	width: 100%;
+	text-align: left;
+	font: inherit;
+	font-size: 10px;
+	color: #aab3c5;
+	background: rgba(13, 19, 34, 0.6);
+	border: 1px solid #2a3550;
+	border-radius: 4px;
+	padding: 5px 8px;
+	cursor: pointer;
+}
+
+.waypointUpNextRow:hover {
+	border-color: #4a5580;
+	color: #e8e8f0;
+}
+
+.waypointAddChecklist {
+	display: flex;
+	gap: 4px;
+	margin-top: 8px;
+	padding-top: 8px;
+	border-top: 1px dashed rgba(100, 140, 200, 0.25);
+}
+
+.waypointAddChecklistInput {
+	flex: 1;
+	min-width: 0;
+	font-family: inherit;
+	font-size: 11px;
+	padding: 6px 8px;
+	border-radius: 6px;
+	border: 2px solid #3a4258;
+	background: #0d1322;
+	color: #e8e8f0;
+}
+
+.waypointAddChecklistBtn {
+	flex-shrink: 0;
+	font-family: inherit;
+	font-size: 14px;
+	font-weight: 700;
+	padding: 4px 10px;
+	border-radius: 6px;
+	border: 2px solid #3a4258;
+	background: #1a2540;
+	color: #c9a45c;
+	cursor: pointer;
+}
+
+.waypointAddChecklistBtn:hover:not(:disabled) {
+	border-color: #c9a45c;
+}
+
+.waypointExpanded .waypointSubtasks {
+	margin-top: 4px;
+	border-top: none;
+	padding-top: 0;
+}
+
+.addWaypointBtn {
+	width: 100%;
+	font-family: inherit;
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	padding: 8px;
+	border-radius: 6px;
+	border: 2px dashed #3a4258;
+	background: transparent;
+	color: #8892b0;
+	cursor: pointer;
+}
+
+.addWaypointBtn:hover {
+	border-color: #6b7fd7;
+	color: #c9d4f0;
+}
+
+.contractMeta {
+	font-size: 10px;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	color: #8892b0;
+	margin: 4px 0 8px;
+}
+
+.stepQueue {
+	margin-top: 8px;
+	padding: 8px;
+	border: 2px solid #2a3550;
+	border-radius: 8px;
+	background: rgba(12, 18, 32, 0.85);
+}
+
+.stepQueueHeader {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.1em;
+	color: #8892b0;
+	margin-bottom: 6px;
+}
+
+.stepQueueCount {
+	font-size: 10px;
+	padding: 2px 6px;
+	border-radius: 999px;
+	border: 1px solid #3a4258;
+	color: #c9a45c;
+}
+
+.stepQueueList {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.stepQueueItem {
+	display: flex;
+	align-items: flex-start;
+	gap: 6px;
+	padding: 6px;
+	border-radius: 6px;
+	border: 1px solid transparent;
+}
+
+.stepQueueItemCurrent {
+	border-color: rgba(201, 164, 92, 0.35);
+	background: rgba(201, 164, 92, 0.08);
+}
+
+.stepQueueComplete {
+	flex-shrink: 0;
+	width: 18px;
+	height: 18px;
+	margin-top: 1px;
+	border: 2px solid #3a4258;
+	border-radius: 4px;
+	background: #0d1322;
+	color: #c9a45c;
+	font-size: 11px;
+	line-height: 1;
+	cursor: pointer;
+	padding: 0;
+}
+
+.stepQueueComplete:hover {
+	border-color: #c9a45c;
+}
+
+.stepQueueLabel {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	background: none;
+	border: none;
+	padding: 0;
+	text-align: left;
+	cursor: pointer;
+	color: inherit;
+	font: inherit;
+}
+
+.stepQueueTitle {
+	font-size: 11px;
+	font-weight: 700;
+	color: #e8e8f0;
+	line-height: 1.3;
+}
+
+.stepQueueDesc {
+	font-size: 10px;
+	color: #8892b0;
+	line-height: 1.3;
+}
+
+.stepQueueBadge {
+	flex-shrink: 0;
+	font-size: 9px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	color: #c9a45c;
+	padding-top: 2px;
+}
+
+/* Contract action footer — grouped CTAs, add-step, edit/abandon */
+.contractFooter {
+	margin-top: 12px;
+	padding-top: 10px;
+	border-top: 2px solid rgba(201, 164, 92, 0.22);
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.contractUtilityRow {
+	display: flex;
+	justify-content: center;
+	gap: 12px;
+}
+
+.contractUtilityBtn {
+	background: none;
+	border: none;
+	padding: 2px 4px;
+	font-family: inherit;
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	color: #8892b0;
+	cursor: pointer;
+}
+
+.contractUtilityBtn:hover {
+	color: #ffd700;
+}
+
+.contractUtilityBtnDanger:hover {
+	color: #ff8787;
+}
+
+/* CTA buttons */
+.contractCtaRow {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 8px;
+}
+
+.contractCta {
+	font-family: inherit;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	padding: 10px 6px;
+	border-radius: 8px;
+	line-height: 1.2;
+	cursor: pointer;
+	transition: filter 0.12s ease, transform 0.06s ease;
+	text-align: center;
+}
+
+.contractCta:hover:not(:disabled) {
+	filter: brightness(1.2);
+}
+
+.contractCta:active:not(:disabled) {
+	transform: translateY(1px);
+}
+
+.contractCta:disabled {
+	cursor: not-allowed;
+	opacity: 0.55;
+}
+
+.contractCtaBlue {
+	border: 2px solid #4d83c4;
+	background: #1d3a63;
+	color: #e8f1fb;
+	box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.35);
+}
+
+.contractCtaGold {
+	border: 2px solid #c9a45c;
+	background: #3a2d12;
+	color: #ffd700;
+	box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.35);
+}
+
+/* Full-width payout button shown when all contract work is done */
+.contractCtaTurnIn {
+	display: block;
+	width: 100%;
+	padding: 11px 4px;
+	font-size: 13px;
+	letter-spacing: 0.12em;
+	border: 2px solid #ffd700;
+	background: linear-gradient(180deg, #5a4310, #3a2d12);
+	color: #ffe066;
+	box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.35), 0 0 10px rgba(255, 215, 0, 0.35);
+	animation: turnInPulse 1.6s ease-in-out infinite;
+}
+
+.contractCtaTurnIn:hover:not(:disabled) {
+	filter: brightness(1.25);
+}
+
+.contractCtaTurnIn:disabled {
+	animation: none;
+}
+
+@keyframes turnInPulse {
+	0%,
+	100% {
+		box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.35), 0 0 6px rgba(255, 215, 0, 0.25);
+	}
+	50% {
+		box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.35), 0 0 14px rgba(255, 215, 0, 0.55);
+	}
+}
+
+/* Other contracts: compact horizontal cards */
+.rosterHeading {
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.14em;
+	color: #8892b0;
+	margin: 4px 2px 0;
+}
+
+.rosterContract {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 10px;
+	border: 2px solid #3a4258;
+	border-radius: 10px;
+	background: #10142a;
+	box-shadow: 0 2px 0 rgba(0, 0, 0, 0.4);
+}
+
+.rosterContractUrgent {
+	border-color: #8a4a2b;
+}
+
+.rosterContractStalled {
+	border-color: #3a4258;
+}
+
+.rosterIcon {
+	width: 32px;
+	height: 32px;
+	flex-shrink: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 16px;
+	border: 2px solid #3a4258;
+	border-radius: 6px;
+	background: #1a1530;
+}
+
+.rosterText {
+	flex: 1;
+	min-width: 0;
+}
+
+.rosterTitle {
+	font-size: 14px;
+	font-weight: 700;
+	color: #e8e8f0;
+	line-height: 1.25;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.rosterSubtitle {
+	font-size: 11px;
+	color: #8892b0;
+	line-height: 1.3;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.rosterProgress {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 3px;
+	flex-shrink: 0;
+}
+
+.rosterProgress .contractPct,
+.rosterProgress .contractPctAmber,
+.rosterProgress .contractPctMuted,
+.rosterProgress .contractPctGreen {
+	font-size: 14px;
+}
+
+.miniBar {
+	width: 52px;
+	height: 6px;
+	background: rgba(0, 0, 0, 0.5);
+	border: 1px solid #000;
+	border-radius: 3px;
+	overflow: hidden;
+}
+
+.miniBarFill {
+	height: 100%;
+	background: linear-gradient(90deg, #b1462e, #e8590c);
+	transition: width 0.2s ease;
+}
+
+.rosterContractClickable {
+	cursor: pointer;
+	transition: border-color 0.12s ease, background 0.12s ease;
+}
+
+.rosterContractClickable:hover {
+	border-color: #4d83c4;
+	background: #141a34;
+}
+
+.rosterContractClickable:focus-visible {
+	outline: 2px solid #4d83c4;
+	outline-offset: 2px;
+}
+
+.rosterChevron {
+	flex-shrink: 0;
+	font-size: 18px;
+	color: #5a6175;
+	line-height: 1;
+}
+
+.rosterChevronButton {
+	background: none;
+	border: none;
+	padding: 2px 6px;
+	margin: -2px -6px;
+	font-family: inherit;
+	cursor: pointer;
+	border-radius: 4px;
+}
+
+.rosterChevronButton:hover {
+	color: #ffd700;
+	background: rgba(77, 131, 196, 0.18);
+}
+
+/* Project filter chip (Tasks section) */
+.projectFilterChip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 8px;
+	border: 2px solid #c9a45c;
+	border-radius: 8px;
+	background: #3a2d12;
+	color: #ffd700;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	max-width: 100%;
+}
+
+.projectFilterChipLabel {
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.projectFilterChipClear {
+	background: none;
+	border: none;
+	padding: 0 2px;
+	color: #ffd700;
+	font-size: 13px;
+	font-weight: 700;
+	line-height: 1;
+	cursor: pointer;
+	font-family: inherit;
+}
+
+.projectFilterChipClear:hover {
+	color: #fff;
+}
+
+/* Quick "add step" row on the active contract */
+.addStepBtn {
+	width: 100%;
+	padding: 7px 4px;
+	font-family: inherit;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.1em;
+	color: #8892b0;
+	background: transparent;
+	border: 2px dashed #3a4258;
+	border-radius: 8px;
+	cursor: pointer;
+	transition: color 0.12s ease, border-color 0.12s ease;
+}
+
+.addStepBtn:hover {
+	color: #7db4e8;
+	border-color: #4d83c4;
+}
+
+.addStepForm {
+	display: flex;
+	gap: 6px;
+}
+
+.addStepInput {
+	flex: 1;
+	min-width: 0;
+	font-family: inherit;
+	font-size: 12px;
+	color: #e8e8f0;
+	background: #0d1322;
+	border: 2px solid #4d83c4;
+	border-radius: 6px;
+	padding: 6px 8px;
+	box-sizing: border-box;
+}
+
+.addStepInput:focus {
+	outline: none;
+	border-color: #7db4e8;
+}
+
+.addStepSubmit {
+	font-family: inherit;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	padding: 6px 12px;
+	color: #e8f1fb;
+	background: #1d3a63;
+	border: 2px solid #4d83c4;
+	border-radius: 6px;
+	cursor: pointer;
+}
+
+.addStepSubmit:hover:not(:disabled) {
+	filter: brightness(1.2);
+}
+
+.addStepSubmit:disabled {
+	opacity: 0.55;
+	cursor: not-allowed;
+}
+
+.addStepCancel {
+	font-family: inherit;
+	font-size: 12px;
+	padding: 6px 9px;
+	color: #8892b0;
+	background: transparent;
+	border: 2px solid #3a4258;
+	border-radius: 6px;
+	cursor: pointer;
+}
+
+.addStepCancel:hover {
+	color: #ff8787;
+	border-color: #8a4a2b;
+}
+
+/* Archived (completed/abandoned) contracts */
+.archivedSection {
+	margin-top: 6px;
+	border: 2px solid #2a3148;
+	border-radius: 10px;
+	background: #0d1120;
+	overflow: hidden;
+}
+
+.archivedSummary {
+	padding: 8px 12px;
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.14em;
+	color: #5a6175;
+	cursor: pointer;
+	list-style: none;
+	user-select: none;
+}
+
+.archivedSummary::-webkit-details-marker {
+	display: none;
+}
+
+.archivedSummary::before {
+	content: '▸ ';
+	color: #5a6175;
+}
+
+.archivedSection[open] .archivedSummary::before {
+	content: '▾ ';
+}
+
+.archivedSummary:hover {
+	color: #8892b0;
+}
+
+.archivedList {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 0 10px 10px;
+	opacity: 0.75;
+}
+
+/* Turn-in celebration overlay */
+.celebrationOverlay {
+	position: fixed;
+	inset: 0;
+	z-index: 1000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: rgba(5, 8, 18, 0.72);
+	animation: celebrationFadeIn 0.25s ease;
+	cursor: pointer;
+}
+
+.celebrationCard {
+	max-width: 320px;
+	width: calc(100% - 48px);
+	padding: 22px 18px;
+	text-align: center;
+	border: 3px solid #ffd700;
+	border-radius: 12px;
+	background: linear-gradient(180deg, #1c1733, #10142a);
+	box-shadow: 0 0 24px rgba(255, 215, 0, 0.45), inset 0 -4px 0 rgba(0, 0, 0, 0.4);
+	animation: celebrationPop 0.35s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+.celebrationStars {
+	font-size: 18px;
+	color: #ffd700;
+	letter-spacing: 0.4em;
+	margin-bottom: 8px;
+	animation: celebrationTwinkle 1.2s ease-in-out infinite;
+}
+
+.celebrationHeading {
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.18em;
+	color: #c9a45c;
+	margin-bottom: 6px;
+}
+
+.celebrationTitle {
+	font-size: 18px;
+	font-weight: 700;
+	color: #ffd700;
+	line-height: 1.3;
+	margin-bottom: 12px;
+}
+
+.celebrationRewards {
+	display: flex;
+	flex-wrap: wrap;
+	justify-content: center;
+	gap: 8px;
+	margin-bottom: 12px;
+}
+
+.celebrationReward {
+	padding: 4px 10px;
+	font-size: 12px;
+	font-weight: 700;
+	color: #e8e8f0;
+	border: 2px solid #3a4258;
+	border-radius: 999px;
+	background: #0d1322;
+}
+
+.celebrationHint {
+	font-size: 10px;
+	color: #8892b0;
+	letter-spacing: 0.06em;
+}
+
+@keyframes celebrationFadeIn {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+@keyframes celebrationPop {
+	from {
+		transform: scale(0.7);
+		opacity: 0;
+	}
+	to {
+		transform: scale(1);
+		opacity: 1;
+	}
+}
+
+@keyframes celebrationTwinkle {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.45;
+	}
+}
+
+/* New contract button + form */
+.newContractBtn {
+	width: 100%;
+	margin-top: 10px;
+	padding: 10px 4px;
+	font-family: inherit;
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.1em;
+	color: #8892b0;
+	background: transparent;
+	border: 2px dashed #3a4258;
+	border-radius: 10px;
+	cursor: pointer;
+	transition: color 0.12s ease, border-color 0.12s ease;
+}
+
+.newContractBtn:hover {
+	color: #ffd700;
+	border-color: #c9a45c;
+}
+
+.newContractForm {
+	margin-top: 10px;
+	padding: 12px;
+	border: 2px solid #c9a45c;
+	border-radius: 10px;
+	background: #161226;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.newContractTitle {
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.14em;
+	color: #ffd700;
+}
+
+.newContractField {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	min-width: 0;
+}
+
+.newContractField span {
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	color: #8892b0;
+}
+
+.newContractField input,
+.newContractField select {
+	font-family: inherit;
+	font-size: 12px;
+	color: #e8e8f0;
+	background: #0d1322;
+	border: 2px solid #3a4258;
+	border-radius: 6px;
+	padding: 6px 8px;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.newContractField input:focus,
+.newContractField select:focus {
+	outline: none;
+	border-color: #4d83c4;
+}
+
+.newContractGrid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 8px;
+}
+
+.newContractGridTriple {
+	grid-template-columns: 1fr 1fr 1fr;
+}
+
+.newContractField input:read-only {
+	opacity: 0.85;
+	cursor: default;
+}
+
+.newContractActions {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 8px;
+}
+
+.newContractHint {
+	margin: 0;
+	font-size: 10px;
+	color: #8892b0;
+	line-height: 1.4;
+}
+
+.newContractHint code {
+	color: #7db4e8;
+}
+
+/* Empty state */
+.projectsEmpty {
+	text-align: center;
+	padding: 20px 12px;
+	border: 2px dashed #3a4258;
+	border-radius: 10px;
+	color: #8892b0;
+	font-size: 12px;
+	line-height: 1.5;
+}
+
+.projectsEmptyEmoji {
+	font-size: 28px;
+	margin-bottom: 8px;
+}
+
+.projectsEmptyHint {
+	margin: 8px 0 0;
+	font-size: 11px;
+}
+
+.projectsEmptyHint code {
+	font-size: 10px;
+	padding: 1px 4px;
+	background: rgba(0, 0, 0, 0.35);
+	color: #e8e8f0;
+	border-radius: 3px;
+}
+
+/* Read-only diagnostics for testing project contract parsing. */
+.projectDebugPanel {
+	margin-top: 10px;
+	border: 2px dashed #3a4258;
+	border-radius: 8px;
+	background: rgba(0, 0, 0, 0.18);
+	color: #aab3c5;
+	font-size: 10px;
+	line-height: 1.45;
+}
+
+.projectDebugSummary {
+	cursor: pointer;
+	padding: 7px 9px;
+	color: #7db4e8;
+	font-weight: 700;
+	letter-spacing: 0.1em;
+	list-style: none;
+}
+
+.projectDebugSummary::-webkit-details-marker {
+	display: none;
+}
+
+.projectDebugSummary::before {
+	content: "▸";
+	display: inline-block;
+	margin-right: 6px;
+	color: #ffd700;
+}
+
+.projectDebugPanel[open] .projectDebugSummary::before {
+	content: "▾";
+}
+
+.projectDebugPanel[open] .projectDebugSummary {
+	border-bottom: 1px solid #3a4258;
+}
+
+.projectDebugGrid {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	gap: 4px 10px;
+	padding: 8px 9px;
+}
+
+.projectDebugGrid span {
+	color: #8892b0;
+}
+
+.projectDebugGrid strong {
+	color: #e8e8f0;
+	text-align: right;
+	font-weight: 700;
+	max-width: 170px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.projectDebugBlock,
+.projectDebugWarn,
+.projectDebugNote {
+	margin: 0 9px 8px;
+	padding: 7px;
+	border: 1px solid #3a4258;
+	border-radius: 6px;
+	background: rgba(13, 16, 32, 0.65);
+}
+
+.projectDebugWarn {
+	border-color: #b1462e;
+	color: #ffb199;
+}
+
+.projectDebugNote {
+	border-color: #8a6d3b;
+}
+
+.projectDebugLabel {
+	margin-bottom: 4px;
+	color: #ffd700;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+}
+
+.projectDebugList {
+	margin: 0;
+	padding-left: 16px;
+}
+
+.projectDebugList li {
+	margin: 2px 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.projectDebugBlock p {
+	margin: 0;
+}

@@ -7,7 +7,6 @@ interface SkillProgressData {
   currentCP: number;
   requiredCP: number;
   totalCP: number;
-  maxLevel: number;
   isUnlocked: boolean;
   isMastered: boolean;
   progressToNext: number; // 0-100
@@ -26,13 +25,6 @@ export const SkillProgressVisual: React.FC<SkillProgressVisualProps> = ({
   size = 'medium',
   onSkillClick
 }) => {
-  const getProgressColor = (progress: number) => {
-    if (progress >= 90) return '#4ade80'; // Green
-    if (progress >= 70) return '#fbbf24'; // Yellow
-    if (progress >= 50) return '#f97316'; // Orange
-    return '#ef4444'; // Red
-  };
-
   const getVisualEffect = () => {
     if (skill.isMastered) return styles.mastered;
     if (skill.progressToNext >= 90) return styles.glowing;
@@ -62,7 +54,7 @@ export const SkillProgressVisual: React.FC<SkillProgressVisualProps> = ({
         <div className={styles.skillInfo}>
           <h4 className={styles.skillName}>{skill.name}</h4>
           <div className={styles.levelInfo}>
-            Level {skill.currentLevel}/{skill.maxLevel}
+            Level {skill.currentLevel}
           </div>
         </div>
         {skill.isMastered && (
@@ -75,11 +67,10 @@ export const SkillProgressVisual: React.FC<SkillProgressVisualProps> = ({
       {/* Progress Bar */}
       <div className={styles.progressContainer}>
         <div className={styles.progressBar}>
-          <div 
+          <div
             className={styles.progressFill}
-            style={{ 
-              width: `${skill.progressToNext}%`,
-              backgroundColor: getProgressColor(skill.progressToNext)
+            style={{
+              width: `${skill.progressToNext}%`
             }}
           />
         </div>

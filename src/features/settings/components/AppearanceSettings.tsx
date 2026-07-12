@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { GamificationPluginSettings } from '../../../core/settings';
 import { theming, getAvailablePalettes, getAccessibilityPalettes } from '../../../shared/utils/theming';
 import { i18n, getAvailableLocales } from '../../../shared/utils/i18n';
+import { applyVisualTheme, getVisualThemePresets } from '../../../shared/utils/visualThemeManager';
+import { emitSettingsUpdated } from '../../../shared/utils/settingsEvents';
+import type { VisualThemePresetId, VisualCeremonyLevel } from '../../../shared/themes/types';
+import { DEFAULT_VISUAL_THEME_SETTINGS } from '../../../shared/themes/types';
 import './AppearanceSettings.css';
 
 interface AppearanceSettingsProps {
@@ -24,6 +28,7 @@ export const AppearanceSettings: React.FC<AppearanceSettingsProps> = ({
     if (settings.internationalization?.locale) {
       i18n.setLocale(settings.internationalization.locale);
     }
+    applyVisualTheme(settings);
   }, [settings]);
 
   const handleThemingChange = (key: string, value: any) => {
@@ -61,6 +66,32 @@ export const AppearanceSettings: React.FC<AppearanceSettingsProps> = ({
   const availablePalettes = getAvailablePalettes();
   const accessibilityPalettes = getAccessibilityPalettes();
   const availableLocales = getAvailableLocales();
+  const visualThemePresets = getVisualThemePresets();
+  const activeVisualPreset = settings.visualTheme?.preset ?? DEFAULT_VISUAL_THEME_SETTINGS.preset;
+
+  const handleVisualThemeChange = (presetId: VisualThemePresetId) => {
+    const preset = visualThemePresets.find((p) => p.id === presetId);
+    if (!preset?.available) return;
+
+    const visualTheme = {
+      ...DEFAULT_VISUAL_THEME_SETTINGS,
+      ...(settings.visualTheme ?? {}),
+      preset: presetId,
+    };
+
+    onSettingsChange({ visualTheme });
+    applyVisualTheme({ ...settings, visualTheme });
+    emitSettingsUpdated();
+  };
+
+  const handleCeremonyLevelChange = (ceremonyLevel: VisualCeremonyLevel) => {
+    const visualTheme = {
+      ...DEFAULT_VISUAL_THEME_SETTINGS,
+      ...(settings.visualTheme ?? {}),
+      ceremonyLevel,
+    };
+    onSettingsChange({ visualTheme });
+  };
 
   return (
     <div className="appearance-settings">
@@ -86,6 +117,126 @@ export const AppearanceSettings: React.FC<AppearanceSettingsProps> = ({
 
       {activeTab === 'theming' && (
         <div className="theming-settings">
+          <div className="settings-section">
+            <h3>Gameplay Visual Theme</h3>
+            <p className="settings-section-hint">
+              Controls the Solo Leveling System look for Player, Quests, Journey, and notices. Dungeon and boss fights always stay pixel. Classic preserves the original plugin appearance everywhere.
+            </p>
+            <div className="palette-grid palette-grid-visual-themes">
+              {visualThemePresets.map((preset) => {
+                const selected = activeVisualPreset === preset.id;
+                const disabled = !preset.available;
+                return (
+                  <div
+                    key={preset.id}
+                    role="button"
+                    tabIndex={disabled ? -1 : 0}
+                    className={`palette-option palette-option-visual palette-option-${preset.id} ${selected ? 'selected' : ''} ${disabled ? 'palette-option-disabled' : ''}`}
+                    onClick={() => !disabled && handleVisualThemeChange(preset.id)}
+                    onKeyDown={(e) => {
+                      if (!disabled && (e.key === 'Enter' || e.key === ' ')) {
+                        e.preventDefault();
+                        handleVisualThemeChange(preset.id);
+                      }
+                    }}
+                    aria-pressed={selected}
+                    aria-disabled={disabled}
+                  >
+                    <div className="palette-option-top">
+                      <div className="palette-preview">
+                        <div
+                          className="color-swatch"
+                          style={{
+                            backgroundColor: preset.tokens['--go-bg'] ?? preset.tokens['--pixel-bg'] ?? '#1b1d2f',
+                          }}
+                        />
+                        <div
+                          className="color-swatch"
+                          style={{
+                            backgroundColor: preset.tokens['--go-accent'] ?? preset.tokens['--pixel-accent'] ?? '#8ecae6',
+                          }}
+                        />
+                        <div
+                          className="color-swatch"
+                          style={{ backgroundColor: preset.tokens['--go-gold'] ?? preset.tokens['--pixel-highlight'] ?? '#ffd166' }}
+                        />
+                        <div
+                          className="color-swatch"
+                          style={{ backgroundColor: preset.tokens['--go-panel'] ?? preset.tokens['--pixel-panel'] ?? '#252742' }}
+                        />
+                      </div>
+                      {selected && <span className="palette-active-badge">✓ Active</span>}
+                    </div>
+                    <div className="palette-info">
+                      <div className="palette-name">
+                        {preset.name}
+                        {disabled ? ' (coming soon)' : ''}
+                      </div>
+                      <div className="palette-description">{preset.description}</div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="visual-theme-preview" aria-label="Theme contract preview">
+              <div className="visual-theme-preview-header">
+                <span className="visual-theme-preview-kicker">Contract preview</span>
+                <strong>{visualThemePresets.find((preset) => preset.id === activeVisualPreset)?.name ?? 'Current theme'}</strong>
+              </div>
+              <div className="visual-theme-preview-panel">
+                <div className="visual-theme-preview-card">
+                  <span className="visual-theme-preview-label">Panel</span>
+                  <span className="visual-theme-preview-title">System Frame</span>
+                  <p>Uses bg, panel, text, muted, border, accent, and gold tokens.</p>
+                </div>
+                <button type="button" className="visual-theme-preview-button">
+                  Sample Button
+                </button>
+                <div className="visual-theme-preview-resource">
+                  <div className="visual-theme-preview-resource-head">
+                    <span>CP</span>
+                    <span>942/2500</span>
+                  </div>
+                  <div className="visual-theme-preview-track visual-theme-preview-track-cp">
+                    <span style={{ width: '38%' }} />
+                  </div>
+                </div>
+                <div className="visual-theme-preview-resource">
+                  <div className="visual-theme-preview-resource-head">
+                    <span>EXP</span>
+                    <span>14358/17000</span>
+                  </div>
+                  <div className="visual-theme-preview-track visual-theme-preview-track-exp">
+                    <span style={{ width: '84%' }} />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="settings-section">
+            <h3>Growth Ceremonies</h3>
+            <p className="settings-section-hint">
+              Level-up and rank-up feedback. Rank promotions always use a ceremony modal when not Off.
+            </p>
+            <div className="theme-mode-options">
+              {(['off', 'minimal', 'full'] as VisualCeremonyLevel[]).map((level) => (
+                <label key={level} className="radio-option">
+                  <input
+                    type="radio"
+                    name="ceremonyLevel"
+                    value={level}
+                    checked={(settings.visualTheme?.ceremonyLevel ?? 'minimal') === level}
+                    onChange={() => handleCeremonyLevelChange(level)}
+                  />
+                  <span>
+                    {level === 'off' ? 'Off' : level === 'minimal' ? 'Minimal (recommended)' : 'Full modals'}
+                  </span>
+                </label>
+              ))}
+            </div>
+          </div>
+
           <div className="settings-section">
             <h3>Theme Mode</h3>
             <div className="theme-mode-options">

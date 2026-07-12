@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
-import { TFile, Notice, WorkspaceLeaf } from 'obsidian';
+import { TFile, WorkspaceLeaf } from 'obsidian';
 import type GamifiedObsidianPlugin from '../../../core/main';
-import { getAllSkills, getAllClasses, getAllStats, SkillMetadata, ClassMetadata, StatMetadata, parseFrontmatterMobile, isMobile } from '../../../shared/utils/skillDiscovery';
-import { SkillProgressVisual } from '../components/SkillProgressVisual';
+import { getAllSkills, getAllClasses, getAllStats, SkillMetadata, ClassMetadata, StatMetadata, parseFrontmatterMobile, isMobile, clearSkillsCache } from '../../../shared/utils/skillDiscovery';
 import { MobileSkillTree } from '../components/MobileSkillTree';
+import { SkillRealmMap } from '../components/SkillRealmMap';
+import { SkillCodexDetail } from '../components/SkillCodexDetail';
+import { skillToProgressView } from '../utils/skillProgressView';
+import { syncClassSkillEdgesOnCanvas } from '../utils/canvasClassSkillSync';
 import styles from './SkillTreeModal.module.css';
+import { pixelNotice } from '../../../shared/utils/noticeUtils';
 const matter = require('gray-matter');
 
 interface CanvasNode {
@@ -43,20 +47,22 @@ interface CanvasData {
     };
 }
 
+export type SkillTreeModalTab = 'overview' | 'mobile' | 'manage' | 'create';
+
 interface SkillTreeModalProps {
     isOpen: boolean;
     onClose: () => void;
     plugin: GamifiedObsidianPlugin;
-    initialTab?: 'overview' | 'progress' | 'mobile' | 'manage' | 'create';
+    initialTab?: SkillTreeModalTab;
 }
 
 export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
     isOpen,
     onClose,
     plugin,
-    initialTab = 'overview'
+    initialTab = 'mobile'
 }) => {
-    const [activeTab, setActiveTab] = useState<'overview' | 'progress' | 'mobile' | 'manage' | 'create'>(initialTab);
+    const [activeTab, setActiveTab] = useState<SkillTreeModalTab>(initialTab);
     const [skills, setSkills] = useState<SkillMetadata[]>([]);
     const [classes, setClasses] = useState<Record<string, SkillMetadata[]>>({});
     const [allClasses, setAllClasses] = useState<ClassMetadata[]>([]);
@@ -66,11 +72,17 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
     const [iconEditSkillPath, setIconEditSkillPath] = useState<string | null>(null);
     const [iconEditValue, setIconEditValue] = useState<string>('');
     
+    const [codexSkill, setCodexSkill] = useState<SkillMetadata | null>(null);
+    
     // Create form states
     const [createType, setCreateType] = useState<'skill' | 'class'>('skill');
     const [formData, setFormData] = useState({
         name: '',
         description: '',
+        /** Class frontmatter — short flavor */
+        tagline: '',
+        /** Skill frontmatter — short flavor */
+        epithet: '',
         class: '',
         stats: [] as string[],
         category: '',
@@ -86,9 +98,16 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
         }
     }, [isOpen]);
 
+    useEffect(() => {
+        if (!isOpen) {
+            setCodexSkill(null);
+        }
+    }, [isOpen]);
+
     const loadSkillData = async () => {
         try {
             setIsLoading(true);
+            clearSkillsCache();
             
             const allSkills = await getAllSkills(plugin.app.vault);
             const allClassesData = await getAllClasses(plugin.app.vault);
@@ -117,6 +136,19 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
 
             // Keep canvas in sync with all existing classes
             await ensureClassesOnCanvas(allClassesData);
+
+            const canvasOpen = plugin.app.workspace.getLeavesOfType('canvas').some((leaf: WorkspaceLeaf) => {
+                const view = leaf.view as { file?: TFile } | undefined;
+                return view?.file?.path === 'SkillTree/SkillTree.canvas';
+            });
+            const edgeSync = await syncClassSkillEdgesOnCanvas(
+                plugin.app.vault,
+                allSkills,
+                () => canvasOpen
+            );
+            if (edgeSync.added > 0) {
+                console.log(`[Gamified] Skill canvas: added ${edgeSync.added} class→skill edge(s)`);
+            }
         } catch (error) {
             console.error('Failed to load skill data:', error);
             showNotice('❌ Failed to load skill data');
@@ -126,7 +158,7 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
     };
 
     const showNotice = (message: string) => {
-        new Notice(message);
+        pixelNotice(message);
     };
 
     /**
@@ -352,11 +384,32 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
             if (file && file instanceof TFile) {
                 const leaf = plugin.app.workspace.getLeaf();
                 await leaf.openFile(file);
+                setCodexSkill(null);
                 onClose();
             }
         } catch (error) {
             console.error('Failed to open skill file:', error);
             showNotice('❌ Failed to open skill file');
+        }
+    };
+
+    const handleClassOpen = async (cls: { name: string; filePath: string }) => {
+        try {
+            if (!cls.filePath) {
+                showNotice(`❌ No file path for class "${cls.name}"`);
+                return;
+            }
+            const file = plugin.app.vault.getAbstractFileByPath(cls.filePath);
+            if (file && file instanceof TFile) {
+                const leaf = plugin.app.workspace.getLeaf();
+                await leaf.openFile(file);
+                onClose();
+            } else {
+                showNotice(`❌ Class note not found: ${cls.filePath}`);
+            }
+        } catch (error) {
+            console.error('Failed to open class file:', error);
+            showNotice('❌ Failed to open class file');
         }
     };
 
@@ -386,6 +439,8 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
             setFormData({
                 name: '',
                 description: '',
+                tagline: '',
+                epithet: '',
                 class: '',
                 stats: [],
                 category: '',
@@ -408,13 +463,17 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
         const skillPath = `SkillTree/Master-Class/Skills/${name}.md`;
         const iconLine = formData.icon ? `icon: "${formData.icon}"\n` : '';
         const iconImageLine = formData.iconImage ? `iconImage: "${formData.iconImage}"\n` : '';
+        const epithet = formData.epithet.trim();
+        const epithetLine = epithet
+            ? `epithet: "${epithet.replace(/"/g, '\\"')}"\n`
+            : '';
         
         const content = `---
 name: ${name}
 class: ${formData.class.trim()}
 stats:
 ${statsArray.map(s => `  - ${s}`).join('\n')}
-${iconLine}${iconImageLine}level: 1
+${iconLine}${iconImageLine}${epithetLine}level: 1
 currentCP: 0
 requiredCP: 100
 totalCP: 0
@@ -423,7 +482,7 @@ Description: ${formData.description}
 
 # ${name}
 
-${formData.description}
+${epithet ? `> *${epithet}*\n\n` : ''}${formData.description}
 
 ## Class Assignment
 This skill belongs to the **${formData.class.trim()}** class.
@@ -454,11 +513,15 @@ This skill can be used in various activities and quests.
                 const classPath = `SkillTree/Master-Class/Class/${name}.md`;
                 const iconLine = formData.icon ? `icon: "${formData.icon}"\n` : '';
                 const iconImageLine = formData.iconImage ? `iconImage: "${formData.iconImage}"\n` : '';
+                const tagline = formData.tagline.trim();
+                const taglineLine = tagline
+                    ? `tagline: "${tagline.replace(/"/g, '\\"')}"\n`
+                    : '';
                 
                 const content = `---
 name: ${name}
 masterClass: Jester
-${iconLine}${iconImageLine}level: 1
+${iconLine}${iconImageLine}${taglineLine}level: 1
 currentCP: 0
 requiredCP: 100
 totalCP: 0
@@ -467,7 +530,7 @@ description: ${formData.description || 'No description provided'}
 
 # ${name}
 
-## Class Overview
+${tagline ? `> *${tagline}*\n\n` : ''}## Class Overview
 This class represents a specialized path within the skill tree.
 
 ## Skills
@@ -490,10 +553,6 @@ This class belongs to the **Jester** master class.
                 // Add to canvas (as a standalone node – you can drag it near Jester)
                 await addClassToCanvas(name);
             };
-
-
-
-
 
     const addSkillToCanvas = async (skillName: string, className: string) => {
         try {
@@ -758,30 +817,24 @@ This class belongs to the **Jester** master class.
 
     return ReactDOM.createPortal(
         <div className={styles.modalOverlay} onClick={(e) => e.target === e.currentTarget && onClose()}>
-            <div className={styles.modalContent}>
+            <div className={styles.modalContent} data-skill-system="true">
                 <div className={styles.modalHeader}>
-                    <h2>🌳 Skill Tree Manager</h2>
-                    <button className={styles.closeButton} onClick={onClose}>✕</button>
+                    <h2 className={styles.modalTitle}>Skill Codex</h2>
+                    <button type="button" className={styles.closeButton} onClick={onClose} aria-label="Close">✕</button>
                 </div>
 
                 <div className={styles.tabNavigation}>
                     <button 
-                        className={`${styles.tab} ${activeTab === 'overview' ? styles.active : ''}`}
-                        onClick={() => setActiveTab('overview')}
-                    >
-                        📊 Canvas View
-                    </button>
-                    <button 
-                        className={`${styles.tab} ${activeTab === 'progress' ? styles.active : ''}`}
-                        onClick={() => setActiveTab('progress')}
-                    >
-                        📈 Progress View
-                    </button>
-                    <button 
                         className={`${styles.tab} ${activeTab === 'mobile' ? styles.active : ''}`}
                         onClick={() => setActiveTab('mobile')}
                     >
-                        📱 Mobile View
+                        ⚔ Realm Map
+                    </button>
+                    <button 
+                        className={`${styles.tab} ${activeTab === 'overview' ? styles.active : ''}`}
+                        onClick={() => setActiveTab('overview')}
+                    >
+                        📊 Canvas
                     </button>
 
                     <button 
@@ -805,7 +858,7 @@ This class belongs to the **Jester** master class.
                         <>
                             {activeTab === 'overview' && (
                                 <div className={styles.overviewTab}>
-                                    <h3>📊 Canvas Operations</h3>
+                                    <h3 className={styles.sectionTitle}>📊 Canvas</h3>
                                     <div className={styles.canvasActions}>
                                         <button 
                                             className={styles.primaryButton}
@@ -816,7 +869,7 @@ This class belongs to the **Jester** master class.
                                     </div>
                                     
                                     <div className={styles.skillOverview}>
-                                        <h4>📈 Skill Tree Overview</h4>
+                                        <h4 className={styles.sectionSubtitle}>Realm map</h4>
                                         <div className={styles.stats}>
                                             <div className={styles.statItem}>
                                                 <span>Total Skills:</span>
@@ -842,7 +895,7 @@ This class belongs to the **Jester** master class.
 
                             {activeTab === 'manage' && (
                                 <div className={styles.manageTab}>
-                                    <h3>⚙️ Manage Existing Skills</h3>
+                                    <h3 className={styles.sectionTitle}>⚙️ Manage paths</h3>
                                     
                                     <div className={styles.classFilter}>
                                         <label>Filter by Class:</label>
@@ -896,6 +949,9 @@ This class belongs to the **Jester** master class.
                                                         )}
                                                     </div>
                                                     <div className={styles.skillActions}>
+                                                        <button type="button" onClick={() => setCodexSkill(skill)}>
+                                                            📖 Codex
+                                                        </button>
                                                         {iconEditSkillPath === skill.filePath ? (
                                                             <div className={styles.skillIconEditor}>
                                                                 <input
@@ -933,7 +989,7 @@ This class belongs to the **Jester** master class.
 
                             {activeTab === 'create' && (
                                 <div className={styles.createTab}>
-                                    <h3>🆕 Create New</h3>
+                                    <h3 className={styles.sectionTitle}>🆕 Forge</h3>
                                     
                                     <div className={styles.createTypeSelector}>
                                         <label>Create Type:</label>
@@ -966,6 +1022,28 @@ This class belongs to the **Jester** master class.
                                                 rows={3}
                                             />
                                         </div>
+
+                                        {createType === 'class' ? (
+                                            <div className={styles.formField}>
+                                                <label>Tagline (optional):</label>
+                                                <input
+                                                    type="text"
+                                                    value={formData.tagline}
+                                                    onChange={(e) => setFormData({ ...formData, tagline: e.target.value })}
+                                                    placeholder="Short line shown in the codex (e.g. Iron path of discipline)"
+                                                />
+                                            </div>
+                                        ) : (
+                                            <div className={styles.formField}>
+                                                <label>Epithet (optional):</label>
+                                                <input
+                                                    type="text"
+                                                    value={formData.epithet}
+                                                    onChange={(e) => setFormData({ ...formData, epithet: e.target.value })}
+                                                    placeholder="One-line flavor for this skill in the codex"
+                                                />
+                                            </div>
+                                        )}
 
                                         {createType === 'class' && (
                                             <>
@@ -1180,68 +1258,66 @@ This class belongs to the **Jester** master class.
                                 </div>
                             )}
 
-                            {activeTab === 'progress' && (
-                                <div className={styles.progressTab}>
-                                    <h3>📈 Skill Progress Visualization</h3>
-                                    <div className={styles.progressGrid}>
-                                        {skills.map(skill => (
-                                            <SkillProgressVisual
-                                                key={skill.filePath}
-                                                skill={{
-                                                    name: skill.name,
-                                                    currentLevel: skill.level || 1,
-                                                    currentCP: skill.cp || 0,
-                                                    requiredCP: (skill.level || 1) * 100,
-                                                    totalCP: skill.cp || 0,
-                                                    maxLevel: 10,
-                                                    isUnlocked: true,
-                                                    isMastered: (skill.level || 1) >= 10,
-                                                    progressToNext: ((skill.cp || 0) % 100) / 100 * 100
-                                                }}
-                                                onSkillClick={(skillName) => {
-                                                    const selectedSkill = skills.find(s => s.name === skillName);
-                                                    if (selectedSkill) {
-                                                        handleSkillEdit(selectedSkill);
-                                                    }
-                                                }}
-                                            />
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
-
                             {activeTab === 'mobile' && (
                                 <div className={styles.mobileTab}>
-                                    <h3>📱 Mobile-Optimized Skill Tree</h3>
-                                    <MobileSkillTree
-                                        skills={skills.map(skill => ({
-                                            name: skill.name,
-                                            currentLevel: skill.level || 1,
-                                            currentCP: skill.cp || 0,
-                                            requiredCP: (skill.level || 1) * 100,
-                                            totalCP: skill.cp || 0,
-                                            maxLevel: 10,
-                                            isUnlocked: true,
-                                            isMastered: (skill.level || 1) >= 10,
-                                            progressToNext: ((skill.cp || 0) % 100) / 100 * 100,
-                                            class: skill.class,
-                                            description: skill.description
+                                    <SkillRealmMap
+                                        vaultClasses={allClasses.map((c) => ({
+                                            name: c.name,
+                                            filePath: c.filePath,
+                                            tagline: c.tagline,
+                                            icon: c.icon,
+                                            level: c.level,
+                                            currentCP: c.currentCP,
+                                            requiredCP: c.requiredCP,
+                                            totalCP: c.totalCP
                                         }))}
+                                        skills={skills.map(skill => skillToProgressView(skill))}
                                         onSkillSelect={(skill) => {
                                             const selectedSkill = skills.find(s => s.name === skill.name);
                                             if (selectedSkill) {
-                                                handleSkillEdit(selectedSkill);
+                                                setCodexSkill(selectedSkill);
                                             }
                                         }}
-                                        onBackToOverview={() => setActiveTab('overview')}
                                     />
+                                    <details className={styles.advancedListToggle}>
+                                        <summary>Classic list view (grid / paths)</summary>
+                                        <MobileSkillTree
+                                            embedded
+                                            vaultClasses={allClasses.map((c) => ({
+                                                name: c.name,
+                                                filePath: c.filePath,
+                                                tagline: c.tagline,
+                                                icon: c.icon,
+                                                level: c.level,
+                                                currentCP: c.currentCP,
+                                                requiredCP: c.requiredCP,
+                                                totalCP: c.totalCP
+                                            }))}
+                                            onClassOpen={handleClassOpen}
+                                            skills={skills.map(skill => skillToProgressView(skill))}
+                                            onSkillSelect={(skill) => {
+                                                const selectedSkill = skills.find(s => s.name === skill.name);
+                                                if (selectedSkill) {
+                                                    setCodexSkill(selectedSkill);
+                                                }
+                                            }}
+                                            onBackToOverview={() => setActiveTab('overview')}
+                                        />
+                                    </details>
                                 </div>
                             )}
-
 
                         </>
                     )}
                 </div>
+                {codexSkill ? (
+                    <SkillCodexDetail
+                        skill={codexSkill}
+                        classMeta={allClasses.find((c) => c.name === codexSkill.class)}
+                        onClose={() => setCodexSkill(null)}
+                        onOpenInVault={handleSkillEdit}
+                    />
+                ) : null}
             </div>
         </div>,
         document.body

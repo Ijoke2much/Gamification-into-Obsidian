@@ -1,5 +1,9 @@
 import { TreeRewardConfig, DEFAULT_TREE_REWARD_CONFIG } from '../features/habits/utils/treeRewardSystem';
 import type { GameItemDefinition } from '../features/inventory/types/EnhancedInventoryTypes';
+import {
+	DEFAULT_VISUAL_THEME_SETTINGS,
+	type VisualThemeSettings,
+} from '../shared/themes/types';
 
 // ============================================================================
 // SETTINGS CATEGORIES FOR CARD VIEW
@@ -85,6 +89,14 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
         settings: ['enableSeasonalShop', 'shopRotationDays', 'enableSpecialEvents', 'dragonFestivalEnabled', 'mysticalMarketEnabled']
       },
       {
+        id: 'game-data-hub',
+        name: 'Game data hub',
+        icon: '🧰',
+        description: 'Create and edit shop items, materials, and crafting recipes in vault markdown files',
+        color: '#673AB7',
+        settings: []
+      },
+      {
         id: 'tree',
         name: 'Tree Rewards',
         icon: '🌳',
@@ -107,7 +119,7 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
         icon: '⚡',
         description: 'Energy system, daily resets, and recovery rates',
         color: '#2196F3',
-        settings: ['enableEnergyHUD', 'dailyResetHour', 'dailyRestoreEnergy', 'dailyRestoreFocus', 'dailyRestoreMotivation', 'dailyRestoreCalm', 'dailyRestoreStressReduce']
+        settings: ['enableEnergyHUD', 'energyHudMode', 'dailyResetHour', 'dailyRestoreEnergy', 'dailyRestoreFocus', 'dailyRestoreMotivation', 'dailyRestoreCalm', 'dailyRestoreStressReduce']
       },
       {
         id: 'performance',
@@ -152,12 +164,28 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
     color: '#795548',
     categories: [
       {
+        id: 'game-modules',
+        name: 'Feature Modules',
+        icon: '🧩',
+        description: 'Enable or hide tabs and major game systems',
+        color: '#7C4DFF',
+        settings: ['gameplayProfile', 'modules']
+      },
+      {
+        id: 'experience-feel',
+        name: 'Experience & Feel',
+        icon: '✨',
+        description: 'Notifications, quest filters, and optional boss battles',
+        color: '#26A69A',
+        settings: ['notificationLevel', 'preferQuickComplete']
+      },
+      {
         id: 'penalties',
         name: 'Penalties & Consequences',
         icon: '⚠️',
         description: 'Failure penalties and debt management',
         color: '#FF5722',
-        settings: ['penaltyLowPct', 'penaltyMediumPct', 'penaltyHighPct', 'dailyDebtCapXP', 'dailyDebtCapCoins', 'pomodoroFailOnlyOnReset']
+        settings: ['gameplayProfile', 'modules', 'penaltyLowPct', 'penaltyMediumPct', 'penaltyHighPct', 'dailyDebtCapXP', 'dailyDebtCapCoins', 'pomodoroFailOnlyOnReset']
       },
       {
         id: 'advanced-config',
@@ -219,7 +247,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
     icon: '⚡',
     description: 'Energy system, daily resets, and recovery rates',
     color: '#2196F3',
-    settings: ['enableEnergyHUD', 'dailyResetHour', 'dailyRestoreEnergy', 'dailyRestoreFocus', 'dailyRestoreMotivation', 'dailyRestoreCalm', 'dailyRestoreStressReduce']
+    settings: ['enableEnergyHUD', 'energyHudMode', 'dailyResetHour', 'dailyRestoreEnergy', 'dailyRestoreFocus', 'dailyRestoreMotivation', 'dailyRestoreCalm', 'dailyRestoreStressReduce']
   },
   {
     id: 'penalties',
@@ -227,7 +255,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
     icon: '⚠️',
     description: 'Failure penalties and debt management',
     color: '#FF5722',
-    settings: ['penaltyLowPct', 'penaltyMediumPct', 'penaltyHighPct', 'dailyDebtCapXP', 'dailyDebtCapCoins', 'pomodoroFailOnlyOnReset']
+    settings: ['gameplayProfile', 'modules', 'penaltyLowPct', 'penaltyMediumPct', 'penaltyHighPct', 'dailyDebtCapXP', 'dailyDebtCapCoins', 'pomodoroFailOnlyOnReset']
   },
   {
     id: 'shop',
@@ -349,6 +377,105 @@ export function validateSettings(settings: GamificationPluginSettings): Settings
 }
 
 // ============================================================================
+// GAMEPLAY PROFILE & MODULE TOGGLES
+// ============================================================================
+
+export type GameplayProfile = 'lite' | 'balanced' | 'hardcore';
+
+/** Phase 4 — how chatty reward/status toasts are */
+export type NotificationLevel = 'normal' | 'quiet' | 'minimal';
+
+export type EnergyHudMode = 'off' | 'simple' | 'focus' | 'full';
+
+export interface GamificationModules {
+  /** Master switch for penalty / debt mechanics */
+  enablePenalties?: boolean;
+  /** Reduce rewards when completing overdue quests */
+  enableOverduePenalties?: boolean;
+  /** Boss battle timeout penalties */
+  enableBossPenalties?: boolean;
+  /** XP/coin debt when marking a quest failed */
+  enableFailureDebt?: boolean;
+  /** Pomodoro attachment time-limit penalties */
+  enablePomodoroPenalties?: boolean;
+  /** Player tab: Shop */
+  enableShopTab?: boolean;
+  /** Player tab: Crafting */
+  enableCraftingTab?: boolean;
+  /** Player tab: Habits / tree */
+  enableHabitsTab?: boolean;
+  /** Player tab: Achievements */
+  enableAchievementsTab?: boolean;
+  /** Player tab: Pomodoro */
+  enablePomodoroTab?: boolean;
+  /** Player tab: Analytics */
+  enableAnalyticsTab?: boolean;
+  /** Boss battle arena & sidebar boss */
+  enableBossBattles?: boolean;
+  /** Energy HUD, costs, and daily energy resets */
+  enableEnergySystem?: boolean;
+  /** Productivity equipment in inventory modal */
+  enableProductivityGear?: boolean;
+}
+
+/** Lite: quests + pomodoro + energy only */
+export const LITE_GAMEPLAY_MODULES: Required<GamificationModules> = {
+  enablePenalties: false,
+  enableOverduePenalties: false,
+  enableBossPenalties: false,
+  enableFailureDebt: false,
+  enablePomodoroPenalties: false,
+  enableShopTab: false,
+  enableCraftingTab: false,
+  enableHabitsTab: false,
+  enableAchievementsTab: false,
+  enablePomodoroTab: true,
+  enableAnalyticsTab: false,
+  enableBossBattles: false,
+  enableEnergySystem: true,
+  enableProductivityGear: false,
+};
+
+/** Balanced default: core loop without shop/crafting/analytics clutter */
+export const BALANCED_GAMEPLAY_MODULES: Required<GamificationModules> = {
+  enablePenalties: false,
+  enableOverduePenalties: false,
+  enableBossPenalties: false,
+  enableFailureDebt: false,
+  enablePomodoroPenalties: false,
+  enableShopTab: false,
+  enableCraftingTab: false,
+  enableHabitsTab: true,
+  enableAchievementsTab: true,
+  enablePomodoroTab: true,
+  enableAnalyticsTab: false,
+  enableBossBattles: true,
+  enableEnergySystem: true,
+  enableProductivityGear: false,
+};
+
+/** Hardcore: all features + penalties */
+export const HARDCORE_GAMEPLAY_MODULES: Required<GamificationModules> = {
+  enablePenalties: true,
+  enableOverduePenalties: true,
+  enableBossPenalties: true,
+  enableFailureDebt: true,
+  enablePomodoroPenalties: true,
+  enableShopTab: true,
+  enableCraftingTab: true,
+  enableHabitsTab: true,
+  enableAchievementsTab: true,
+  enablePomodoroTab: true,
+  enableAnalyticsTab: true,
+  enableBossBattles: true,
+  enableEnergySystem: true,
+  enableProductivityGear: true,
+};
+
+/** @deprecated alias — use BALANCED_GAMEPLAY_MODULES */
+export const DEFAULT_GAMEPLAY_MODULES = BALANCED_GAMEPLAY_MODULES;
+
+// ============================================================================
 // SETTINGS PRESETS
 // ============================================================================
 
@@ -361,10 +488,35 @@ export interface SettingsPreset {
 
 export const SETTINGS_PRESETS: SettingsPreset[] = [
   {
+    name: "Balanced (Recommended)",
+    description: "Quests and rewards without punishment loops. Turn on penalties in settings or use Hardcore when you want a challenge.",
+    icon: "⚖️",
+    settings: {
+      gameplayProfile: 'balanced',
+      modules: { ...BALANCED_GAMEPLAY_MODULES },
+      notificationLevel: 'normal',
+      preferQuickComplete: true,
+      energyHudMode: 'simple',
+      xpPerTask: 10,
+      coinPerTask: 5,
+      penaltyLowPct: 0.10,
+      penaltyMediumPct: 0.20,
+      penaltyHighPct: 0.30,
+      enableSidebarQuestBoard: true,
+      autoRefreshTasks: false,
+      hideCompletedQuests: false,
+    }
+  },
+  {
     name: "Beginner Friendly",
     description: "Gentle settings for new players with lower penalties and higher rewards. Perfect for getting started!",
     icon: "🌟",
     settings: {
+      gameplayProfile: 'lite',
+      modules: { ...LITE_GAMEPLAY_MODULES },
+      notificationLevel: 'quiet',
+      preferQuickComplete: true,
+      energyHudMode: 'simple',
       xpPerTask: 15,
       coinPerTask: 8,
       penaltyLowPct: 0.05,
@@ -391,6 +543,11 @@ export const SETTINGS_PRESETS: SettingsPreset[] = [
     description: "Challenging settings with higher penalties and lower rewards. For experienced players seeking a challenge!",
     icon: "💀",
     settings: {
+      gameplayProfile: 'hardcore',
+      modules: { ...HARDCORE_GAMEPLAY_MODULES },
+      notificationLevel: 'normal',
+      preferQuickComplete: false,
+      energyHudMode: 'full',
       xpPerTask: 5,
       coinPerTask: 2,
       penaltyLowPct: 0.20,
@@ -530,6 +687,18 @@ export interface GamificationPluginSettings {
   defaultQuestFilePath?: string;
   // Optional list of named save locations that appear in the quest modal dropdown
   questSaveLocations?: QuestSaveLocation[];
+  /** How new quests are stored: append to a list file, or one task per note. */
+  questStorageMode?: 'list' | 'per-note';
+  /** Folder for per-note task files when questStorageMode is 'per-note'. */
+  taskNoteFolder?: string;
+  /** Markdown file for project contract headers (POST A NEW CONTRACT). */
+  projectsFilePath?: string;
+  /** Brain-dump file for quick capture (not shown on quest board until promoted). */
+  captureFilePath?: string;
+  /** Preset tag chips in quick capture modal (without # prefix). */
+  captureTags?: string[];
+  /** Remember last selected capture tag between sessions. */
+  captureRememberLastTag?: boolean;
 
   // Custom game item definitions (e.g., weapons and real-world artifacts)
   // These are configuration-level definitions which can be rendered in the
@@ -582,6 +751,17 @@ export interface GamificationPluginSettings {
     };
   };
 
+  // Gameplay profile & penalty modules (Phase 1 — opt-in hardcore)
+  gameplayProfile?: GameplayProfile;
+  modules?: GamificationModules;
+  /** Set after first-run experience picker (Phase 3 onboarding) */
+  gameplayOnboardingComplete?: boolean;
+
+  /** Phase 4 — toast volume: normal | quiet (shorter/deduped) | minimal (errors only) */
+  notificationLevel?: NotificationLevel;
+  /** Phase 4 — allow completing quests without finishing tactical boss UI */
+  preferQuickComplete?: boolean;
+
   // Failure penalty settings
   penaltyLowPct: number;     // 0.10 default
   penaltyMediumPct: number;  // 0.20 default
@@ -592,6 +772,8 @@ export interface GamificationPluginSettings {
 
   // Energy/Focus system settings
   enableEnergyHUD?: boolean;
+  /** HUD complexity preset — hidden stats are not updated by quests or daily reset */
+  energyHudMode?: EnergyHudMode;
   dailyResetHour?: number; // 0-23
   // Daily restore values
   dailyRestoreEnergy?: number;
@@ -675,6 +857,9 @@ export interface GamificationPluginSettings {
     currencyFormat: 'standard' | 'accounting';
   };
 
+  /** Gameplay visual theme preset (Classic = original pixel vault look). */
+  visualTheme?: VisualThemeSettings;
+
   // Theming Settings
   theming?: {
     mode: 'light' | 'dark' | 'auto';
@@ -743,6 +928,12 @@ export const DEFAULT_SETTINGS: GamificationPluginSettings = {
   // Quest file locations
   defaultQuestFilePath: 'GamifiedTasks.md',
   questSaveLocations: [],
+  questStorageMode: 'list',
+  taskNoteFolder: 'Gamified/Tasks',
+  projectsFilePath: 'GamifiedProjects.md',
+  captureFilePath: 'Capture.md',
+  captureTags: ['idea', 'work', 'plugin', 'personal', 'read-later'],
+  captureRememberLastTag: true,
 
   // Timeline & Calendar Default Settings
   timelineViewSettings: {
@@ -768,6 +959,13 @@ export const DEFAULT_SETTINGS: GamificationPluginSettings = {
     workingHoursEnd: 17
   },
 
+  // Gameplay profile defaults (balanced = penalties off until opted in)
+  gameplayProfile: 'balanced',
+  modules: { ...BALANCED_GAMEPLAY_MODULES },
+  gameplayOnboardingComplete: false,
+  notificationLevel: 'normal',
+  preferQuickComplete: true,
+
   // Failure penalty defaults
   penaltyLowPct: 0.10,
   penaltyMediumPct: 0.20,
@@ -778,6 +976,7 @@ export const DEFAULT_SETTINGS: GamificationPluginSettings = {
 
   // Energy/Focus defaults (mirror runtime defaults)
   enableEnergyHUD: true,
+  energyHudMode: 'simple',
   dailyResetHour: 6,
   dailyRestoreEnergy: 30,
   dailyRestoreFocus: 20,
@@ -843,6 +1042,9 @@ export const DEFAULT_SETTINGS: GamificationPluginSettings = {
     currencyFormat: 'standard'
   },
 
+  // Visual theme — Classic preserves the original pixel/RPG look
+  visualTheme: { ...DEFAULT_VISUAL_THEME_SETTINGS },
+
   // Theming Defaults
   theming: {
     mode: 'auto',
@@ -858,7 +1060,7 @@ export const DEFAULT_SETTINGS: GamificationPluginSettings = {
   // Beta / Feature Flags defaults
   betaMode: true,
   featureFlags: {
-    enableAnalyticsTab: true,
+    enableAnalyticsTab: false,
     enableEnergyDebug: false
   }
 }; 

@@ -3,7 +3,8 @@
 
 import type GamifiedObsidianPlugin from "../../../core/main";
 import { ShopItem, ShopItemEffect, getAllShopTemplates, getAllShopItems, writeShopItems } from "./ShopParser";
-import { Notice } from "obsidian";
+;
+import { pixelNotice } from '../../../shared/utils/noticeUtils';
 
 export interface SeasonalConfig {
     season: 'spring' | 'summer' | 'autumn' | 'winter' | 'festival' | 'event';
@@ -456,7 +457,7 @@ export class SeasonalInventoryManager {
         // Update the actual shop file
         await this.updateShopFile();
 
-        new Notice(`🛒 Shop inventory refreshed for ${this.getCurrentSeason()}!`);
+        pixelNotice(`🛒 Shop inventory refreshed for ${this.getCurrentSeason()}!`);
     }
 
     /**
@@ -491,13 +492,13 @@ export class SeasonalInventoryManager {
         await this.generateSeasonalInventory();
         await this.updateShopFile();
 
-        new Notice(`🎉 Special Event: ${eventName} has begun!`);
+        pixelNotice(`🎉 Special Event: ${eventName} has begun!`);
 
         // Remove event after duration
         setTimeout(() => {
             this.seasonalConfigs = this.seasonalConfigs.filter(c => c !== eventConfig);
             this.refreshInventory();
-            new Notice(`🎉 Special Event: ${eventName} has ended.`);
+            pixelNotice(`🎉 Special Event: ${eventName} has ended.`);
         }, duration * 24 * 60 * 60 * 1000);
     }
 

@@ -122,6 +122,41 @@ export const isMobile = typeof navigator !== 'undefined' &&
   (/android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent.toLowerCase()) ||
     window.innerWidth <= 768);
 
+function normVaultPath(path: string): string {
+  return path.replace(/\\/g, '/');
+}
+
+function pathUnderSkillTreeRoot(path: string): boolean {
+  const first = normVaultPath(path).split('/')[0];
+  return first !== undefined && first.toLowerCase() === 'skilltree';
+}
+
+/**
+ * Class notes: SkillTree/.../Class/Note.md (any depth), case-insensitive SkillTree and Class segment.
+ * Excludes anything under .../Skills/... so skill files are never treated as classes.
+ */
+export function isSkillTreeClassNoteFile(file: TFile): boolean {
+  const p = normVaultPath(file.path);
+  if (!p.toLowerCase().endsWith('.md')) return false;
+  if (!pathUnderSkillTreeRoot(p)) return false;
+  if (p.toLowerCase().includes('/skills/')) return false;
+  const parts = p.split('/');
+  const classIdx = parts.findIndex((seg) => seg.toLowerCase() === 'class');
+  if (classIdx < 0) return false;
+  return classIdx === parts.length - 2;
+}
+
+function resolveClassDisplayName(data: Record<string, any>, file: TFile): string {
+  const fromYaml =
+    data.name ??
+    data.Name ??
+    data.title ??
+    data.Title;
+  const trimmed = fromYaml !== undefined && fromYaml !== null ? String(fromYaml).trim() : '';
+  if (trimmed) return trimmed;
+  return file.basename.replace(/\.md$/i, '').trim() || 'Unnamed class';
+}
+
 export interface SkillMetadata {
   name: string;
   class: string;
@@ -130,16 +165,25 @@ export interface SkillMetadata {
   masterClassPath: string;
   stats: { [statName: string]: string }; // stat name -> stat file path
   description?: string;
+  /** Short flavor line (frontmatter: epithet) shown in codex / UI */
+  epithet?: string;
   filePath: string;
 
   // Additional metadata properties for Canvas enhancement
   level?: number;
+  /** CP toward current level milestone (YAML: cp or currentCP) */
   cp?: number;
+  /** CP required for current milestone (YAML: maxCP or requiredCP) */
   maxCP?: number;
+  /** Lifetime CP if tracked separately (YAML: totalCP) */
+  totalCP?: number;
 
   // Icon metadata (for habits, views, etc.)
   icon?: string; // emoji or short text
   iconImage?: string; // vault-relative image / svg path
+
+  /** Optional milestone (YAML: mastered / isMastered) — not tied to a numeric level cap */
+  mastered?: boolean;
 }
 
 export interface ClassMetadata {
@@ -150,6 +194,8 @@ export interface ClassMetadata {
   requiredCP: number;
   totalCP: number;
   description: string;
+  /** Short flavor line (frontmatter: tagline) for class identity in UI */
+  tagline?: string;
   filePath: string;
   icon?: string;
   iconImage?: string;
@@ -222,50 +268,61 @@ export async function getAllStats(vault: Vault): Promise<StatMetadata[]> {
 }
 
 /**
- * Scans the vault for all class files in SkillTree/Master-Class/Class/*.md
- * and returns a list of classes with metadata.
+ * Scans the vault for class files under SkillTree/.../Class/*.md (flexible path;
+ * SkillTree + Class segment are case-insensitive). Names default from frontmatter
+ * (name / title) or the note filename.
  * @param vault Obsidian Vault instance
  * @returns Promise<ClassMetadata[]> Array of class metadata
  */
 export async function getAllClasses(vault: Vault): Promise<ClassMetadata[]> {
   const classes: ClassMetadata[] = [];
+  const seenNamesLower = new Set<string>();
   const allFiles = vault.getAllLoadedFiles();
 
   for (const file of allFiles) {
-    if (file instanceof TFile) {
-      if (
-        file.path.startsWith('SkillTree/Master-Class/Class/') &&
-        file.path.endsWith('.md')
-      ) {
-        try {
-          const content = await vault.read(file);
-          const { data } = isMobile ? parseFrontmatterMobile(content) : matter(content);
+    if (!(file instanceof TFile)) continue;
+    if (!isSkillTreeClassNoteFile(file)) continue;
 
-          if (isMobile) {
-            console.log('📱 [Mobile] Parsing class file:', file.path, 'Data:', data);
-          }
+    try {
+      const content = await vault.read(file);
+      const { data } = isMobile ? parseFrontmatterMobile(content) : matter(content);
 
-          if (data.name) {
-            classes.push({
-              name: data.name,
-              masterClass: data.masterClass || 'Jester',
-              level: data.level || 1,
-              currentCP: data.currentCP || 0,
-              requiredCP: data.requiredCP || 100,
-              totalCP: data.totalCP || 0,
-              description: data.Description || data.description || '',
-              filePath: file.path,
-              icon: data.icon,
-              iconImage: data.iconImage
-            });
-          }
-        } catch (error) {
-          console.error(`Failed to parse class file ${file.path}:`, error);
-        }
+      if (isMobile) {
+        console.log('📱 [Mobile] Parsing class file:', file.path, 'Data:', data);
       }
+
+      const name = resolveClassDisplayName(data, file);
+      const dedupeKey = name.toLowerCase();
+      if (seenNamesLower.has(dedupeKey)) continue;
+      seenNamesLower.add(dedupeKey);
+
+      const rawTag = data.tagline ?? data.Tagline;
+      const taglineStr =
+        rawTag !== undefined && rawTag !== null ? String(rawTag).trim() : '';
+
+      classes.push({
+        name,
+        masterClass:
+          String(data.masterClass ?? data.MasterClass ?? data.master ?? '').trim() ||
+          'Jester',
+        level: data.level || 1,
+        currentCP: data.currentCP || 0,
+        requiredCP: data.requiredCP || 100,
+        totalCP: data.totalCP || 0,
+        description: data.Description || data.description || '',
+        tagline: taglineStr || undefined,
+        filePath: file.path,
+        icon: data.icon,
+        iconImage: data.iconImage
+      });
+    } catch (error) {
+      console.error(`Failed to parse class file ${file.path}:`, error);
     }
   }
 
+  classes.sort((a, b) =>
+    a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
+  );
   return classes;
 }
 
@@ -380,6 +437,39 @@ export async function getAllSkills(vault: Vault): Promise<SkillMetadata[]> {
             if (!statName) continue;
             stats[statName] = `SkillTree/Master-Class/Stats/${statName}.md`;
           }
+          const epithetRaw = data.epithet ?? data.Epithet ?? data.tagline ?? data.Tagline;
+          const epithetStr =
+            epithetRaw !== undefined && epithetRaw !== null
+              ? String(epithetRaw).trim()
+              : '';
+          const cpRaw = data.cp ?? data.currentCP ?? data.CP;
+          const cpNum =
+            typeof cpRaw === 'number' && !Number.isNaN(cpRaw)
+              ? cpRaw
+              : parseInt(String(cpRaw ?? 0), 10) || 0;
+          const reqRaw = data.maxCP ?? data.requiredCP ?? data.RequiredCP;
+          let maxCPNum: number | undefined;
+          if (reqRaw !== undefined && reqRaw !== null && reqRaw !== '') {
+            const n =
+              typeof reqRaw === 'number' && !Number.isNaN(reqRaw)
+                ? reqRaw
+                : parseInt(String(reqRaw), 10);
+            maxCPNum = n > 0 ? n : undefined;
+          }
+          const totalRaw = data.totalCP ?? data.TotalCP;
+          const totalNum =
+            totalRaw !== undefined && totalRaw !== null && totalRaw !== ''
+              ? (typeof totalRaw === 'number' && !Number.isNaN(totalRaw)
+                  ? totalRaw
+                  : parseInt(String(totalRaw), 10)) || cpNum
+              : cpNum;
+
+          const masteredRaw = data.mastered ?? data.isMastered ?? data.Mastered;
+          const mastered =
+            masteredRaw === true ||
+            masteredRaw === 'true' ||
+            String(masteredRaw).toLowerCase() === 'yes';
+
           skills.push({
             name: data.name,
             class: className,
@@ -388,12 +478,15 @@ export async function getAllSkills(vault: Vault): Promise<SkillMetadata[]> {
             masterClassPath,
             stats,
             description: data.Description || data.description,
+            epithet: epithetStr || undefined,
             filePath: file.path,
             level: data.level,
-            cp: data.cp,
-            maxCP: data.maxCP,
+            cp: cpNum,
+            maxCP: maxCPNum,
+            totalCP: totalNum,
             icon: data.icon,
-            iconImage: data.iconImage
+            iconImage: data.iconImage,
+            mastered: mastered || undefined
           });
         }
       }

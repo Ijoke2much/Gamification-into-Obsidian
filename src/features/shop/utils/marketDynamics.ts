@@ -3,7 +3,8 @@
 
 import type GamifiedObsidianPlugin from "../../../core/main";
 import { ShopItem } from "./ShopParser";
-import { Notice } from "obsidian";
+;
+import { pixelNotice } from '../../../shared/utils/noticeUtils';
 
 export interface MarketData {
     itemId: string;
@@ -169,7 +170,7 @@ export class MarketDynamicsEngine {
             }
         }
 
-        new Notice(`📰 Market Event: ${event.description}`, 5000);
+        pixelNotice(`📰 Market Event: ${event.description}`, 5000);
         console.log(`Market event triggered: ${eventName}`);
     }
 

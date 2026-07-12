@@ -12,6 +12,11 @@
     background: linear-gradient(180deg, #87ceeb 0%, #4a90e2 50%, #2e8b57 100%);
     overflow: visible;
     box-sizing: border-box;
+    /* Keep header / status bar clear of notches and Obsidian chrome */
+    padding-top: max(8px, env(safe-area-inset-top, 0px));
+    padding-left: max(0px, env(safe-area-inset-left, 0px));
+    padding-right: max(0px, env(safe-area-inset-right, 0px));
+    padding-bottom: max(0px, env(safe-area-inset-bottom, 0px));
 }
 
 /* Final Blow overlay */
@@ -732,6 +737,98 @@
 .tasksPanel {
     display: flex;
     flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.bossRaidVaultPanel {
+    padding: 10px 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.bossRaidVaultHint {
+    margin: 0;
+    font-size: 11px;
+    line-height: 1.45;
+    color: #cbd5e1;
+    flex-shrink: 0;
+}
+
+.bossRaidAffinity {
+    margin: 0;
+    font-size: 10px;
+    font-weight: 700;
+    color: #67e8f9;
+    letter-spacing: 0.02em;
+    flex-shrink: 0;
+}
+
+.bossRaidProgress {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    border: 2px solid rgba(34, 211, 238, 0.35);
+    background: rgba(5, 8, 16, 0.55);
+    border-radius: 6px;
+    flex-shrink: 0;
+}
+
+.bossRaidProgressLabel {
+    font-size: 10px;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.bossRaidProgressValue {
+    font-size: 14px;
+    font-weight: 800;
+    color: #e0f2fe;
+}
+
+.bossRaidSlotList {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 28vh;
+    overflow-y: auto;
+}
+
+.bossRaidSlot {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border: 1px solid rgba(100, 116, 139, 0.45);
+    background: rgba(13, 16, 32, 0.65);
+    border-radius: 6px;
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+.bossRaidSlotDone {
+    border-color: rgba(34, 211, 238, 0.45);
+    color: #e0f2fe;
+    background: rgba(8, 145, 178, 0.15);
+}
+
+.bossRaidSlotMark {
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+.bossRaidSlotText {
+    line-height: 1.3;
 }
 
 .tasksList {
@@ -744,6 +841,12 @@
     overflow-y: auto;
     overflow-x: visible;
     padding-bottom: 12px;
+}
+
+.bossRaidVaultPanel .tasksList {
+    flex: 1;
+    min-height: 0;
+    max-height: none;
 }
 
 .tasksList::-webkit-scrollbar {
@@ -947,8 +1050,8 @@
 /* CLOSE BUTTON */
 .closeButton {
     position: fixed;
-    top: 80px;
-    right: 20px;
+    top: max(80px, calc(8px + env(safe-area-inset-top, 0px)));
+    right: max(20px, env(safe-area-inset-right, 0px));
     background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
     border: 4px solid #FFD700;
     border-radius: 12px;
@@ -958,7 +1061,7 @@
     font-weight: bold;
     cursor: pointer;
     transition: all 0.3s ease;
-    z-index: 9999;
+    z-index: 10060;
     box-shadow: 0 6px 20px rgba(239, 68, 68, 0.6);
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
     margin: 0;
@@ -1118,11 +1221,26 @@
     left: 0;
     right: 0;
     bottom: 0;
+    z-index: 10000;
     background: linear-gradient(135deg, #1e40af 0%, #7c3aed 50%, #db2777 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    /* Block layout + scroll so tall recap/rewards never clip the Continue button */
+    display: block;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: max(24px, env(safe-area-inset-top, 0px)) 16px max(48px, env(safe-area-inset-bottom, 0px));
+    box-sizing: border-box;
     animation: fadeIn 0.5s ease-in;
+}
+
+/* Override general .tacticalBattlePixel height cap when showing victory */
+.victoryScreen.tacticalBattlePixel {
+    max-height: none;
+    min-height: 100dvh;
+    min-height: 100vh;
+    height: auto;
+    align-items: unset;
+    justify-content: unset;
 }
 
 @keyframes fadeIn {
@@ -1140,12 +1258,29 @@
     border: 4px solid #FFD700;
     border-radius: 20px;
     padding: 40px;
-    max-width: 600px;
+    max-width: min(600px, 100%);
+    width: 100%;
+    margin: 0 auto 24px;
     text-align: center;
     box-shadow: 0 10px 40px rgba(255, 215, 0, 0.5);
     animation: victorySlideUp 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
     position: relative;
     overflow: visible;
+    box-sizing: border-box;
+}
+
+.victoryPreviewTag {
+    display: inline-block;
+    margin-bottom: 12px;
+    padding: 4px 10px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #c4b5fd;
+    border: 2px solid rgba(196, 181, 253, 0.45);
+    border-radius: 6px;
+    background: rgba(124, 58, 237, 0.2);
 }
 
 /* XP section on victory */
@@ -1212,6 +1347,7 @@
     padding: 10px 16px;
     color: #d1fae5;
     box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
+    pointer-events: none;
 }
 
 .levelUpTitle {
@@ -1384,6 +1520,15 @@
     margin-top: 30px;
 }
 
+.victoryFooter {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    margin-top: 24px;
+    padding-top: 12px;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.92) 65%, transparent);
+}
+
 .victoryButton {
     background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     border: 3px solid #FFD700;
@@ -1394,11 +1539,20 @@
     font-weight: bold;
     cursor: pointer;
     transition: all 0.3s ease;
-    margin-top: 30px;
+    margin-top: 0;
     box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+    width: 100%;
+    position: relative;
+    z-index: 3;
 }
 
-.victoryButton:hover {
+.victoryButton:disabled {
+    opacity: 0.72;
+    cursor: wait;
+    transform: none;
+}
+
+.victoryButton:hover:not(:disabled) {
     transform: translateY(-3px);
     box-shadow: 0 8px 20px rgba(16, 185, 129, 0.6);
     background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
@@ -2392,8 +2546,20 @@
 
 .exitActions {
     display: flex;
+    flex-wrap: wrap;
     gap: 10px;
     justify-content: center;
+}
+
+.quickCompleteButton {
+    flex: 1 1 100%;
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    border: 2px solid #a5b4fc;
+    border-radius: 8px;
+    padding: 10px 18px;
+    color: white;
+    font-weight: 800;
+    cursor: pointer;
 }
 
 .exitConfirm {
@@ -2508,22 +2674,19 @@
     cursor: not-allowed;
 }
 
-/* Battle loadout (weapon) picker — top band transparent so status bar stays visible; modal catches clicks */
+/* Battle loadout (weapon) picker — portaled to body; centered with safe padding + scroll */
 .weaponPickerOverlay {
     position: fixed;
     inset: 0;
-    background: linear-gradient(
-        to bottom,
-        transparent 0,
-        transparent 56px,
-        rgba(0, 0, 0, 0.82) 56px,
-        rgba(0, 0, 0, 0.82) 100%
-    );
+    background: rgba(0, 0, 0, 0.82);
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     justify-content: center;
+    align-items: safe center;
+    justify-content: safe center;
     z-index: 10020;
-    padding: 64px 16px 24px;
+    padding: max(12px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px))
+        max(12px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
     overflow: auto;
     pointer-events: none;
     box-sizing: border-box;
@@ -2531,6 +2694,8 @@
 
 .weaponPickerModal {
     pointer-events: auto;
+    display: flex;
+    flex-direction: column;
     /* Sans stack so long names + summaries stay readable (avoids inherited pixel font from .tacticalBattlePixel) */
     font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     font-size: 14px;
@@ -2538,12 +2703,22 @@
     background: linear-gradient(180deg, #0f172a 0%, #111827 100%);
     border: 4px solid #FFD700;
     border-radius: 16px;
-    padding: 22px 20px 20px;
-    max-width: 720px;
+    padding: 16px 16px 14px;
+    max-width: 640px;
     width: 100%;
-    max-height: calc(100vh - 64px);
-    overflow: auto;
+    max-height: min(78vh, calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 32px));
+    max-height: min(78vh, calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 32px));
+    overflow: hidden;
     box-shadow: 0 16px 48px rgba(0, 0, 0, 0.65);
+}
+
+.weaponPickerModalBody {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 4px 4px 0 0;
 }
 
 .weaponPickerTitle {
@@ -2615,35 +2790,15 @@
     hyphens: auto;
 }
 
-/* HTML-style preview: gold strip + detail card (mirrors pixel preview layout) */
+/* Selected weapon detail — single panel (no faux second “button” bar) */
 .weaponPickerPreview {
-    position: relative;
-    margin: 4px 0 14px;
-    min-height: 96px;
-}
-
-.weaponPickerPreviewBar {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 40px;
-    border-radius: 10px;
-    background: linear-gradient(180deg, #ffd700 0%, #d97706 100%);
-    border: 2px solid rgba(255, 255, 255, 0.35);
-    box-shadow: 0 4px 0 #00000055;
-}
-
-.weaponPickerPreviewBody {
-    position: relative;
-    z-index: 1;
-    max-width: 92%;
-    margin: 0 auto 10px 0;
+    margin-top: 12px;
     padding: 12px 14px;
     background: #1e293b;
     border: 2px solid #475569;
+    border-left: 4px solid #f59e0b;
     border-radius: 10px;
-    box-shadow: 4px 4px 0 #000;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
 }
 
 .weaponPickerPreviewTitle {
@@ -2670,9 +2825,10 @@
 }
 
 .weaponPickerConfirm {
+    flex-shrink: 0;
     display: block;
     width: 100%;
-    margin-top: 4px;
+    margin-top: 14px;
     padding: 14px 20px;
     font-size: 16px;
     font-weight: 900;
@@ -2744,8 +2900,14 @@
     -webkit-font-smoothing: none;
     image-rendering: pixelated;
     image-rendering: crisp-edges;
-    overflow: hidden;
+    /* Obsidian leaf chrome often overlaps y=0; safe-area is 0 on desktop — leave room for title row + timers */
+    padding-top: max(36px, env(safe-area-inset-top, 0px));
+    /* Avoid clipping the top status bar; horizontal overflow only */
+    overflow-x: hidden;
+    overflow-y: auto;
     min-height: 0;
+    max-height: 100dvh;
+    max-height: 100vh;
 }
 
 .tacticalBattlePixel .battleStatusBar {
@@ -3368,6 +3530,20 @@
     gap: 6px;
 }
 
+.tacticalBattlePixel .bossRaidVaultPanel {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    padding: 6px 8px 8px;
+    gap: 6px;
+}
+
+.tacticalBattlePixel .bossRaidVaultPanel .tasksList {
+    flex: 1;
+    min-height: 0;
+    max-height: none;
+}
+
 .tacticalBattlePixel .taskButton {
     background: #0d0d12;
     border: 2px solid #444;
@@ -3435,8 +3611,9 @@
 
 .tacticalBattlePixel .closeButton {
     top: auto;
-    bottom: 12px;
-    right: 12px;
+    bottom: max(12px, env(safe-area-inset-bottom, 0px));
+    right: max(12px, env(safe-area-inset-right, 0px));
+    z-index: 10060;
     padding: 10px 14px;
     font-size: 7px;
     font-family: inherit;
@@ -3472,6 +3649,66 @@
     font-family: "Press Start 2P", ui-monospace, "Cascadia Code", "Courier New", monospace;
     font-size: 10px;
     background: #0d1020;
+}
+
+/* Gate raid — raid-only focus meter (not vault energy) */
+.raidFocusBar .raidFocusSegment.filled {
+    background: linear-gradient(180deg, #22d3ee, #0891b2);
+    border-color: #67e8f9;
+}
+
+.raidFocusBar .raidFocusSegment.raidFocusLow.filled {
+    background: linear-gradient(180deg, #f97316, #ea580c);
+    border-color: #fdba74;
+}
+
+.raidFocusPenalty {
+    color: #fbbf24;
+    font-size: 8px;
+}
+
+.raidFocusHint {
+    margin-top: 4px;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 9px;
+    line-height: 1.35;
+    color: #64748b;
+    text-align: center;
+}
+
+.bossStrikeTimer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 6px;
+    padding: 4px 6px;
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: #94a3b8;
+    border: 1px solid #334155;
+    background: rgba(0, 0, 0, 0.35);
+}
+
+.bossStrikeTimerReady {
+    color: #f87171;
+    border-color: #ef4444;
+    animation: bossStrikePulse 1s ease-in-out infinite;
+}
+
+@keyframes bossStrikePulse {
+    0%, 100% { box-shadow: 0 0 0 rgba(239, 68, 68, 0); }
+    50% { box-shadow: 0 0 10px rgba(239, 68, 68, 0.45); }
+}
+
+.tacticalBattlePixel .raidFocusHint {
+    font-size: 6px;
+}
+
+.tacticalBattlePixel .bossStrikeTimer {
+    font-size: 6px;
+    border-width: 2px;
+    border-radius: 0;
 }
 
 /* ==========================

@@ -205,7 +205,7 @@ interface HabitFormData {
                   Avoid this
                 </button>
               </div>
-              <p style={{ fontSize: 11, opacity: 0.8 }}>
+              <p className={styles.helpText}>
                 For avoid habits (like “No eating out today”), mark it completed on days you successfully avoid the behavior.
               </p>
             </div>
@@ -342,7 +342,7 @@ interface HabitFormData {
                 </div>
               )}
 
-              <p style={{ fontSize: 11, opacity: 0.8 }}>
+              <p className={styles.helpText}>
                 <strong>Daily</strong> shows every day. <strong>Weekly</strong> only shows on the days you pick
                 in your habit list and streak views.
               </p>
@@ -422,19 +422,19 @@ interface HabitFormData {
                   const bonusPercent = Math.round((sevenDayMultiplier - 1) * 100);
 
                   return (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <div className={styles.rewardPreviewLines}>
                       <span>
                         <strong>Base completion reward:</strong>{' '}
                         {baseXp} XP, {baseCp} CP, {baseCoins} {currencyName}
                       </span>
-                      <span style={{ color: 'var(--text-accent)' }}>
+                      <span className={styles.rewardPreviewAccent}>
                         <strong>7‑day streak bonus preview:</strong>{' '}
                         {streakXp} XP, {streakCp} CP, {streakCoins} {currencyName} (+{bonusPercent}%)
                       </span>
-                      <span style={{ fontSize: 11, opacity: 0.8 }}>
+                      <p className={styles.rewardPreviewHint}>
                         Long streaks also grow your habit tree, which can drop <strong>materials</strong> and
                         boost XP / CP / {currencyName} for this skill.
-                      </span>
+                      </p>
                     </div>
                   ); 
                 })()}

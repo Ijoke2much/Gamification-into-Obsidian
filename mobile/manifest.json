@@ -1,0 +1,12 @@
+{
+	"id": "Gamification-Mobile",
+	"name": "Gamified Obsidian (Mobile)",
+	"version": "0.1.0",
+	"main": "main.js",
+	"css": "styles.css",
+	"minAppVersion": "1.0.0",
+	"description": "Lightweight mobile companion for the Gamified Obsidian plugin. View player stats, complete quests, and earn rewards on phone or tablet.",
+	"author": "IJoke2much",
+	"authorUrl": "https://github.com/nilesloverso",
+	"isDesktopOnly": false
+}
