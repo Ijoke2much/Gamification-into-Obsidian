@@ -34,7 +34,7 @@
     text-shadow: 2px 2px 0 var(--pixel-border-dark, #0f1120);
 }
 
-.systemShopShell.shopLoading.shopLayout:global(.gami-shop-tab) {
+:global([data-gamification-shell='system']) .shopRoot.shopLoading.shopLayout:global(.gami-shop-tab) {
     color: var(--go-accent, #22c8ff);
     text-shadow: none;
     font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif);
@@ -523,25 +523,28 @@
     box-shadow: var(--go-shadow-soft, var(--pixel-shadow-pressed)) !important;
 }
 
-/* ── System Hunter shell (class applied directly on shop root) ── */
-.systemShopShell:global(.gami-shop-tab) {
-    font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif);
-    color: var(--go-text, #e0f2fe);
+/* ── System Hunter shell (ancestor [data-gamification-shell='system'] on TabView) ── */
+:global([data-gamification-shell='system']) .shopRoot:global(.gami-shop-tab) {
+    font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+    font-size: 12px !important;
+    line-height: 1.5 !important;
+    color: var(--go-text, #e0f2fe) !important;
     background: var(--go-bg, #071527) !important;
-    border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42));
-    border-radius: var(--go-radius, 2px);
-    box-shadow: var(--go-shadow, 0 0 22px rgba(34, 200, 255, 0.24));
-    image-rendering: auto;
+    border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42)) !important;
+    border-radius: var(--go-radius, 2px) !important;
+    box-shadow: var(--go-shadow, 0 0 22px rgba(34, 200, 255, 0.24)) !important;
+    image-rendering: auto !important;
 }
 
-.systemShopShell :global(.gami-shop-header) {
+:global([data-gamification-shell='system']) .shopRoot :global(.gami-shop-header) {
     background: var(--go-panel, rgba(10, 30, 58, 0.9)) !important;
     border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42)) !important;
     border-radius: var(--go-radius, 2px) !important;
     box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16)) !important;
 }
 
-.systemShopShell :global(.gami-shop-header > span:first-child) {
+:global([data-gamification-shell='system']) .shopRoot :global(.gami-shop-header > span:first-child) {
+    font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
     font-size: 0.75rem !important;
     letter-spacing: 0.12em;
     text-transform: uppercase;
@@ -549,7 +552,7 @@
     text-shadow: 0 0 10px color-mix(in srgb, var(--go-accent, #22c8ff) 40%, transparent) !important;
 }
 
-.systemShopShell :global(.gami-shop-header > div) {
+:global([data-gamification-shell='system']) .shopRoot :global(.gami-shop-header > div) {
     background: var(--go-card-soft, rgba(8, 28, 54, 0.72)) !important;
     border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42)) !important;
     color: var(--go-gold, #ffd83d) !important;
@@ -557,14 +560,14 @@
     box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16)) !important;
 }
 
-.systemShopShell:global(.gami-shop-tab) img[alt="Shopkeeper"] {
+:global([data-gamification-shell='system']) .shopRoot:global(.gami-shop-tab) img[alt="Shopkeeper"] {
     border-width: 1px;
     border-color: var(--go-border, rgba(34, 200, 255, 0.42)) !important;
     border-radius: var(--go-radius, 2px) !important;
     box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16)) !important;
 }
 
-.systemShopShell :global(.gami-shop-keeper-btn) {
+:global([data-gamification-shell='system']) .shopRoot :global(.gami-shop-keeper-btn) {
     border-width: 1px;
     border-color: var(--go-border, rgba(34, 200, 255, 0.42)) !important;
     border-radius: var(--go-radius, 2px) !important;
@@ -575,13 +578,13 @@
     box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16)) !important;
 }
 
-.systemShopShell :global(.gami-shop-keeper-btn:hover) {
+:global([data-gamification-shell='system']) .shopRoot :global(.gami-shop-keeper-btn:hover) {
     transform: none;
     border-color: var(--go-accent, #22c8ff) !important;
     color: var(--go-accent, #22c8ff) !important;
 }
 
-.systemShopShell :global(.shop-dialogue-box) {
+:global([data-gamification-shell='system']) .shopRoot :global(.shop-dialogue-box) {
     border-width: 1px;
     border-color: var(--go-border, rgba(34, 200, 255, 0.42)) !important;
     border-radius: var(--go-radius, 2px) !important;
@@ -592,7 +595,7 @@
     box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16)) !important;
 }
 
-.systemShopShell :global(.gami-shop-dialogue-options button) {
+:global([data-gamification-shell='system']) .shopRoot :global(.gami-shop-dialogue-options button) {
     border-width: 1px;
     border-color: var(--go-border, rgba(34, 200, 255, 0.42)) !important;
     border-radius: var(--go-radius, 2px) !important;
@@ -602,12 +605,12 @@
     font-size: 0.7rem !important;
 }
 
-.systemShopShell :global(.gami-shop-dialogue-options button:hover) {
+:global([data-gamification-shell='system']) .shopRoot :global(.gami-shop-dialogue-options button:hover) {
     transform: none;
     border-color: var(--go-accent, #22c8ff) !important;
 }
 
-.systemShopShell :global(.gami-shop-category-tabs button) {
+:global([data-gamification-shell='system']) .shopRoot :global(.gami-shop-category-tabs button) {
     border-width: 1px;
     border-color: var(--go-border, rgba(34, 200, 255, 0.42)) !important;
     border-radius: var(--go-radius, 2px) !important;
@@ -618,13 +621,13 @@
     box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16)) !important;
 }
 
-.systemShopShell :global(.gami-shop-category-tabs button[data-active="true"]) {
+:global([data-gamification-shell='system']) .shopRoot :global(.gami-shop-category-tabs button[data-active="true"]) {
     background: var(--go-card, rgba(18, 55, 96, 0.58)) !important;
     color: var(--go-accent, #22c8ff) !important;
     border-color: var(--go-accent, #22c8ff) !important;
 }
 
-.systemShopShell :global(select.gami-shop-select) {
+:global([data-gamification-shell='system']) .shopRoot :global(select.gami-shop-select) {
     border-width: 1px;
     border-color: var(--go-border, rgba(34, 200, 255, 0.42)) !important;
     border-radius: var(--go-radius, 2px) !important;
@@ -633,7 +636,7 @@
     font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
 }
 
-.systemShopShell :global(.gami-shop-empty-msg) {
+:global([data-gamification-shell='system']) .shopRoot :global(.gami-shop-empty-msg) {
     border-width: 1px;
     border-color: var(--go-border, rgba(34, 200, 255, 0.42)) !important;
     border-radius: var(--go-radius, 2px) !important;
@@ -642,47 +645,47 @@
     font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
 }
 
-.systemShopShell :global(.gami-shop-card) {
+:global([data-gamification-shell='system']) .shopRoot :global(.gami-shop-card) {
     background: var(--go-card, rgba(18, 55, 96, 0.58)) !important;
     border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42)) !important;
     border-radius: var(--go-radius, 2px) !important;
     box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16)) !important;
 }
 
-.systemShopShell :global(.gami-shop-card:hover) {
+:global([data-gamification-shell='system']) .shopRoot :global(.gami-shop-card:hover) {
     border-color: var(--go-border-strong, rgba(34, 200, 255, 0.9)) !important;
     box-shadow: var(--go-shadow, 0 0 22px rgba(34, 200, 255, 0.24)) !important;
 }
 
-.systemShopShell :global(.gami-shop-card-title) {
+:global([data-gamification-shell='system']) .shopRoot :global(.gami-shop-card-title) {
     font-size: 0.72rem !important;
     color: var(--go-text-bright, #f0f9ff) !important;
     font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
 }
 
-.systemShopShell :global(.gami-shop-card-desc) {
+:global([data-gamification-shell='system']) .shopRoot :global(.gami-shop-card-desc) {
     background: color-mix(in srgb, var(--go-card-soft, rgba(8, 28, 54, 0.72)) 80%, transparent) !important;
     border-color: var(--go-border, rgba(34, 200, 255, 0.42)) !important;
 }
 
-.systemShopShell :global(.gami-shop-card-desc > div) {
+:global([data-gamification-shell='system']) .shopRoot :global(.gami-shop-card-desc > div) {
     font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
     font-size: 0.72rem !important;
     color: var(--go-muted, #9ec7df) !important;
 }
 
-.systemShopShell :global(.gami-shop-card-footer) {
+:global([data-gamification-shell='system']) .shopRoot :global(.gami-shop-card-footer) {
     background: var(--go-card-soft, rgba(8, 28, 54, 0.72)) !important;
     border-color: var(--go-border, rgba(34, 200, 255, 0.42)) !important;
 }
 
-.systemShopShell :global(.gami-shop-card-footer > div:first-child),
-.systemShopShell .cardPrice {
+:global([data-gamification-shell='system']) .shopRoot :global(.gami-shop-card-footer > div:first-child),
+:global([data-gamification-shell='system']) .shopRoot .cardPrice {
     color: var(--go-gold, #ffd83d) !important;
     font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
 }
 
-.systemShopShell :global(.gami-shop-card-footer button:first-of-type) {
+:global([data-gamification-shell='system']) .shopRoot :global(.gami-shop-card-footer button:first-of-type) {
     border-width: 1px;
     border-color: var(--go-success, #48f59b) !important;
     border-radius: var(--go-radius, 2px) !important;
@@ -692,25 +695,25 @@
     font-size: 0.7rem !important;
 }
 
-.systemShopShell :global(.gami-shop-card-footer button:first-of-type:hover) {
+:global([data-gamification-shell='system']) .shopRoot :global(.gami-shop-card-footer button:first-of-type:hover) {
     background: color-mix(in srgb, var(--go-success, #48f59b) 35%, var(--go-card-soft, rgba(8, 28, 54, 0.72))) !important;
 }
 
-.systemShopShell :global(.gami-shop-card-category) {
+:global([data-gamification-shell='system']) .shopRoot :global(.gami-shop-card-category) {
     font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
     font-size: 0.6rem !important;
     letter-spacing: 0.1em;
     border-color: var(--go-border, rgba(34, 200, 255, 0.42)) !important;
 }
 
-.systemShopShell :global(.gami-shop-card-new) {
+:global([data-gamification-shell='system']) .shopRoot :global(.gami-shop-card-new) {
     border-width: 1px;
     border-color: var(--go-gold, #ffd83d) !important;
     font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
     font-size: 0.55rem !important;
 }
 
-.systemShopShell.shopLoading:global(.gami-shop-tab) {
+:global([data-gamification-shell='system']) .shopRoot.shopLoading:global(.gami-shop-tab) {
     text-shadow: none;
     color: var(--go-accent, #22c8ff);
     font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif);

@@ -1107,7 +1107,13 @@ ${testResults.join('\n')}`;
                         {/* Mobile-optimized tab content with Suspense and Error Boundaries */}
                         <ErrorBoundary componentName="Shop Tab">
                             <Suspense fallback={<TabLoadingState tabName={currentTab.label} />}>
-                                {selectedTab === "shop" && (<ShopTab plugin={plugin} rebuildShopTab={() => {}} />)}
+                                {selectedTab === "shop" && (
+                                    <ShopTab
+                                        plugin={plugin}
+                                        rebuildShopTab={() => {}}
+                                        visualThemePreset={appliedVisualTheme.preset}
+                                    />
+                                )}
                             </Suspense>
                         </ErrorBoundary>
 

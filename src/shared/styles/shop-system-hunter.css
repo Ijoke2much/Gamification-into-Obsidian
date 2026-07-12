@@ -1,10 +1,11 @@
 /**
  * Shop tab — System Hunter theme (plain global CSS).
  * Targets stable .gami-shop-* class names + theme data attributes on the shop root.
- * Does not rely on CSS modules or ancestor [data-gamification-shell] selectors.
+ * Ancestor selectors match TabView's data-gamification-plugin wrapper.
  */
 
-.gami-shop-tab[data-gamification-visual-theme='system-hunter'],
+[data-gamification-plugin][data-gamification-visual-theme='system-hunter'] .gami-shop-tab,
+html[data-gamification-visual-theme='system-hunter'] .gami-shop-tab,
 .gami-shop-tab[data-gamification-shell='system'][data-pixel-shell='shop'] {
 	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
 	font-size: 12px !important;

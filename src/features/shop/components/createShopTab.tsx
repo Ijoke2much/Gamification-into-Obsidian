@@ -25,10 +25,13 @@ import { currencyDisplay } from "../../../shared/services/currencyDisplayService
 import shopStyles from "./ShopTab.module.css";
 import { getAppliedVisualTheme } from "../../../shared/utils/visualThemeManager";
 import { onSettingsUpdated } from "../../../shared/utils/settingsEvents";
+import type { VisualThemePresetId } from "../../../shared/themes/types";
 
 interface Props {
     plugin: GamifiedObsidianPlugin;
     rebuildShopTab: () => void; // callback to refresh parent
+    /** Passed from TabView so shop chrome tracks the active gameplay visual theme. */
+    visualThemePreset?: VisualThemePresetId;
 }
 
 // Fixed category tabs with icons (transferred from Shop/Artifacts)
@@ -101,7 +104,7 @@ function useTypewriter(text: string, speed = 30) {
     return { displayed, isAnimating, revealAll };
 }
 
-export default function ShopTab({ plugin, rebuildShopTab }: Props) {
+export default function ShopTab({ plugin, rebuildShopTab, visualThemePreset: visualThemePresetProp }: Props) {
     // Ensure currency display service is initialized for consistent labels
     currencyDisplay.initialize(plugin.settings);
     const currencyName = currencyDisplay.getCurrencyName();
@@ -116,11 +119,15 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
     const [sortBy, setSortBy] = useState<string>("Price (Low → High)");
     const [customImagePath, setCustomImagePath] = useState<string | null>(null);
     const [themeRevision, setThemeRevision] = useState(0);
-    const visualThemePreset =
-        plugin.settings.visualTheme?.preset ?? getAppliedVisualTheme().preset;
-    const isSystemTheme = visualThemePreset === "system-hunter";
 
     useEffect(() => onSettingsUpdated(() => setThemeRevision((n) => n + 1)), []);
+
+    const appliedVisualTheme = useMemo(
+        () => getAppliedVisualTheme(),
+        [themeRevision, visualThemePresetProp]
+    );
+    const visualThemePreset = visualThemePresetProp ?? appliedVisualTheme.preset;
+    const isSystemTheme = visualThemePreset === "system-hunter";
 
     const shopShellAttrs = {
         "data-pixel-shell": "shop" as const,
@@ -128,7 +135,9 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
         "data-gamification-visual-theme": visualThemePreset,
     };
 
-    const shopShellClass = isSystemTheme ? shopStyles.systemShopShell : shopStyles.shopRoot;
+    // Pixel chrome is the base; System Hunter overrides come from ancestor
+    // [data-gamification-shell='system'] on TabView (same pattern as Achievements).
+    const shopShellClass = shopStyles.shopRoot;
 
     // Add coins state and fetchCoins function
     const [coins, setCoins] = useState(0);
