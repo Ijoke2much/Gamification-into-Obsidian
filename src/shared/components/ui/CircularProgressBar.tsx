@@ -33,15 +33,15 @@ export const CircularProgressBar: React.FC<CircularProgressBarProps> = ({
         {/* Pixel-style gradient ring */}
         <defs>
           <linearGradient id="pixelGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#00ffe7" />
-            <stop offset="50%" stopColor="#8e44ad" />
-            <stop offset="100%" stopColor="#f39c12" />
+            <stop offset="0%" stopColor="var(--go-progress-fill, #00ffe7)" />
+            <stop offset="50%" stopColor="var(--go-progress-fill-strong, #8e44ad)" />
+            <stop offset="100%" stopColor="var(--go-gold, #f39c12)" />
           </linearGradient>
         </defs>
 
         {/* Background circle */}
         <circle
-          stroke="#2c3e50"
+          stroke="var(--go-progress-track, #2c3e50)"
           fill="transparent"
           strokeWidth={stroke}
           r={normalizedRadius}
