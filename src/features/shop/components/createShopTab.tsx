@@ -116,16 +116,19 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
     const [sortBy, setSortBy] = useState<string>("Price (Low → High)");
     const [customImagePath, setCustomImagePath] = useState<string | null>(null);
     const [themeRevision, setThemeRevision] = useState(0);
-    const visualTheme = useMemo(() => getAppliedVisualTheme(), [themeRevision]);
-    const isSystemTheme = visualTheme.preset === "system-hunter";
+    const visualThemePreset =
+        plugin.settings.visualTheme?.preset ?? getAppliedVisualTheme().preset;
+    const isSystemTheme = visualThemePreset === "system-hunter";
 
     useEffect(() => onSettingsUpdated(() => setThemeRevision((n) => n + 1)), []);
 
     const shopShellAttrs = {
         "data-pixel-shell": "shop" as const,
-        "data-gamification-shell": visualTheme.shell,
-        "data-gamification-visual-theme": visualTheme.preset,
+        "data-gamification-shell": isSystemTheme ? "system" : "pixel",
+        "data-gamification-visual-theme": visualThemePreset,
     };
+
+    const shopShellClass = isSystemTheme ? shopStyles.systemShopShell : shopStyles.shopRoot;
 
     // Add coins state and fetchCoins function
     const [coins, setCoins] = useState(0);
@@ -475,7 +478,7 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
     if (loading) {
         return (
             <p
-                className={`gami-shop-tab ${shopStyles.shopRoot} ${shopStyles.shopLoading} ${isSystemTheme ? shopStyles.systemShopShell : ""}`}
+                className={`gami-shop-tab ${shopStyles.shopLayout} ${shopShellClass} ${shopStyles.shopLoading}`}
                 {...shopShellAttrs}
             >
                 Loading shop...
@@ -485,7 +488,7 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
 
     return (
         <div
-            className={`gami-shop-tab ${shopStyles.shopRoot} ${isSystemTheme ? shopStyles.systemShopShell : ""}`}
+            className={`gami-shop-tab ${shopStyles.shopLayout} ${shopShellClass}`}
             {...shopShellAttrs}
         >
             <div className="gami-shop-header">

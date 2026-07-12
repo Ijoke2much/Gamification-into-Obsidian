@@ -1,13 +1,17 @@
 /* Shop tab — theme-aware shell (global .gami-shop-* in createShopTab.tsx) */
 
-.shopRoot {
+.shopLayout {
     isolation: isolate;
 }
 
-.shopRoot:global(.gami-shop-tab) {
+.shopLayout:global(.gami-shop-tab) {
     max-width: 800px;
     margin: 0 auto;
     padding: 12px;
+    box-sizing: border-box;
+}
+
+.shopRoot:global(.gami-shop-tab) {
     font-family: var(--go-font-ui, "Press Start 2P", "VT323", "Courier New", monospace);
     font-size: 11px;
     line-height: 1.65;
@@ -16,29 +20,144 @@
     border: 2px solid var(--pixel-border-dark, #0f1120);
     border-radius: var(--go-radius, var(--pixel-card-radius)) !important;
     box-shadow: var(--go-shadow, var(--pixel-shadow)), inset 0 0 0 1px var(--go-border, var(--pixel-border-light));
-    box-sizing: border-box;
 }
 
-.shopLoading.shopRoot:global(.gami-shop-tab) {
+.shopLoading.shopLayout:global(.gami-shop-tab) {
     display: block;
     padding: 24px !important;
     text-align: center;
     font-size: 10px;
+}
+
+.shopRoot.shopLoading.shopLayout:global(.gami-shop-tab) {
     color: var(--go-accent, var(--pixel-accent));
     text-shadow: 2px 2px 0 var(--pixel-border-dark, #0f1120);
 }
 
-/* ── Header ── */
-.shopRoot :global(.gami-shop-header) {
+.systemShopShell.shopLoading.shopLayout:global(.gami-shop-tab) {
+    color: var(--go-accent, #22c8ff);
+    text-shadow: none;
+    font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif);
+}
+
+/* ── Shared layout (both themes) ── */
+.shopLayout :global(.gami-shop-header) {
     display: flex;
     align-items: center;
     justify-content: space-between;
     margin-bottom: 12px;
+    padding: 10px 14px !important;
+}
+
+.shopLayout :global(.gami-shop-grid) {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+}
+
+@media (min-width: 500px) {
+    .shopLayout :global(.gami-shop-grid) {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+.shopLayout :global(.gami-shop-card) {
+    min-height: 225px !important;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    position: relative;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.shopLayout :global(.gami-shop-category-tabs button) {
+    padding: 5px 10px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-weight: 500;
+}
+
+.shopLayout :global(.gami-shop-keeper-btn) {
+    padding: 6px 10px !important;
+    cursor: pointer;
+}
+
+.shopLayout :global(.shop-dialogue-box) {
+    margin: 10px 0;
+    padding: 10px;
+    min-height: 48px;
+}
+
+.shopLayout :global(.gami-shop-dialogue-options button) {
+    padding: 6px 16px;
+    cursor: pointer;
+}
+
+.shopLayout :global(select.gami-shop-select) {
+    padding: 4px 8px;
+    font-size: 0.8em;
+}
+
+.shopLayout :global(.gami-shop-card-desc) {
+    min-height: 44px;
+    padding: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.shopLayout :global(.gami-shop-card-footer) {
+    padding: 6px 8px;
+}
+
+.shopLayout :global(.gami-shop-card-footer button:first-of-type) {
+    flex: 1;
+    padding: 6px 8px;
+    font-size: 0.8em;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.shopLayout:global(.gami-shop-tab) img[alt="Shopkeeper"] {
+    max-height: 100px;
+    max-width: 100%;
+    object-fit: contain;
+}
+
+.shopLayout :global(.gami-shop-card-new) {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    z-index: 1;
+    padding: 2px 6px;
+    letter-spacing: 0.05em;
+    font-weight: 800;
+}
+
+.shopLayout :global(.gami-shop-card-category) {
+    color: #fff;
+    font-weight: 600;
+    padding: 4px 8px;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.shopLayout :global(.gami-shop-empty-msg) {
+    padding: 14px 18px;
+    margin: 14px auto;
+    max-width: 400px;
+}
+
+/* ── Header (pixel chrome) ── */
+.shopRoot :global(.gami-shop-header) {
     background: var(--go-panel-strong, var(--pixel-panel-alt)) !important;
     border-radius: var(--go-radius, var(--pixel-card-radius)) !important;
     border: 2px solid var(--pixel-border-dark, #0f1120) !important;
     box-shadow: var(--go-shadow-soft, var(--pixel-shadow)), inset 0 0 0 1px var(--go-border, var(--pixel-border-light)) !important;
-    padding: 10px 14px !important;
 }
 
 .shopHeaderTitle {
@@ -87,9 +206,6 @@
 }
 
 .shopRoot:global(.gami-shop-tab) img[alt="Shopkeeper"] {
-    max-height: 100px;
-    max-width: 100%;
-    object-fit: contain;
     border-radius: var(--go-radius, var(--pixel-card-radius)) !important;
     border: 2px solid var(--pixel-border-dark, #0f1120) !important;
     box-shadow: var(--go-shadow-soft, var(--pixel-shadow)) !important;
@@ -111,8 +227,6 @@
     background: var(--go-card-soft, var(--pixel-panel-alt)) !important;
     color: var(--go-accent, var(--pixel-accent)) !important;
     box-shadow: var(--go-shadow-soft, var(--pixel-shadow)) !important;
-    padding: 6px 10px !important;
-    cursor: pointer;
 }
 
 .shopRoot :global(.gami-shop-keeper-btn:hover) {
@@ -127,9 +241,6 @@
 
 /* ── Dialogue ── */
 .shopRoot :global(.shop-dialogue-box) {
-    margin: 10px 0;
-    padding: 10px;
-    min-height: 48px;
     background: var(--go-card-soft, var(--pixel-panel)) !important;
     border: 2px solid var(--pixel-border-dark, #0f1120) !important;
     border-radius: var(--go-radius, var(--pixel-card-radius)) !important;
@@ -150,7 +261,6 @@
 }
 
 .shopRoot :global(.gami-shop-dialogue-options button) {
-    padding: 6px 16px;
     border-radius: var(--go-radius, var(--pixel-card-radius)) !important;
     border: 2px solid var(--pixel-border-dark, #0f1120) !important;
     background: var(--go-card-soft, var(--pixel-panel-alt)) !important;
@@ -158,7 +268,6 @@
     font-family: var(--go-font-ui, "Press Start 2P", monospace) !important;
     font-size: 8px !important;
     box-shadow: var(--go-shadow-soft, var(--pixel-shadow-pressed)) !important;
-    cursor: pointer;
 }
 
 .shopRoot :global(.gami-shop-dialogue-options button:hover) {
@@ -176,7 +285,6 @@
 }
 
 .shopRoot :global(.gami-shop-category-tabs button) {
-    padding: 5px 10px;
     border-radius: var(--go-radius, var(--pixel-card-radius)) !important;
     border: 2px solid var(--pixel-border-dark, #0f1120) !important;
     background: var(--go-card-soft, var(--pixel-panel-alt)) !important;
@@ -184,11 +292,6 @@
     font-family: var(--go-font-ui, "Press Start 2P", monospace) !important;
     font-size: 7px !important;
     box-shadow: var(--go-shadow-soft, var(--pixel-shadow-pressed)) !important;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    font-weight: 500;
 }
 
 .shopRoot :global(.gami-shop-category-tabs button[data-active="true"]) {
@@ -208,8 +311,6 @@
 }
 
 .shopRoot :global(select.gami-shop-select) {
-    padding: 4px 8px;
-    font-size: 0.8em;
     border-radius: var(--go-radius, var(--pixel-card-radius)) !important;
     border: 2px solid var(--pixel-border-dark, #0f1120) !important;
     background: var(--go-card-soft, var(--pixel-panel-alt)) !important;
@@ -231,9 +332,6 @@
     font-family: var(--go-font-ui, "VT323", "Courier New", monospace) !important;
     font-size: 14px !important;
     box-shadow: var(--go-shadow-soft, var(--pixel-shadow)) !important;
-    padding: 14px 18px;
-    margin: 14px auto;
-    max-width: 400px;
 }
 
 .emptyHint {
@@ -246,31 +344,11 @@
     line-height: 1.4;
 }
 
-/* ── Item grid ── */
-.shopRoot :global(.gami-shop-grid) {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-}
-
-@media (min-width: 500px) {
-    .shopRoot :global(.gami-shop-grid) {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-}
-
 .shopRoot :global(.gami-shop-card) {
     background: var(--go-card, var(--pixel-panel)) !important;
     border-radius: var(--go-radius, var(--pixel-card-radius)) !important;
     border: 2px solid var(--pixel-border-dark, #0f1120) !important;
     box-shadow: var(--go-shadow-soft, var(--pixel-shadow)), inset 0 0 0 1px var(--go-border, var(--pixel-border-light)) !important;
-    min-height: 225px !important;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    position: relative;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .shopRoot :global(.gami-shop-card:hover) {
@@ -279,17 +357,10 @@
 }
 
 .shopRoot :global(.gami-shop-card-new) {
-    position: absolute;
-    top: 6px;
-    right: 6px;
-    z-index: 1;
-    padding: 2px 6px;
-    letter-spacing: 0.05em;
     border-radius: var(--go-radius, var(--pixel-card-radius)) !important;
     border: 2px solid var(--pixel-border-dark, #0f1120) !important;
     font-family: var(--go-font-ui, "Press Start 2P", monospace) !important;
     font-size: 6px !important;
-    font-weight: 800;
     box-shadow: var(--go-shadow-soft, var(--pixel-shadow-pressed)) !important;
     background: linear-gradient(135deg, var(--go-gold, #fbbf24), color-mix(in srgb, var(--go-gold, #f59e0b) 80%, #000));
     color: var(--go-bg, #1f2937);
@@ -298,13 +369,6 @@
 .shopRoot :global(.gami-shop-card-category) {
     --shop-cat-color: var(--go-accent, #64748b);
     background: var(--shop-cat-color) !important;
-    color: #fff;
-    font-size: 0.7em;
-    font-weight: 600;
-    padding: 4px 8px;
-    text-align: center;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
     border-bottom: 2px solid var(--pixel-border-dark, #0f1120) !important;
     font-family: var(--go-font-ui, "Press Start 2P", monospace) !important;
     font-size: 7px !important;
@@ -377,11 +441,6 @@
 }
 
 .shopRoot :global(.gami-shop-card-desc) {
-    min-height: 44px;
-    padding: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     border-top: 2px solid var(--pixel-border-dark, #0f1120) !important;
     border-bottom: 2px solid var(--pixel-border-dark, #0f1120) !important;
     background: var(--go-card-soft, var(--pixel-panel-alt)) !important;
@@ -407,7 +466,6 @@
 .shopRoot :global(.gami-shop-card-footer) {
     background: var(--go-card-soft, var(--pixel-panel-alt)) !important;
     border-top: 2px solid var(--pixel-border-dark, #0f1120) !important;
-    padding: 6px 8px;
 }
 
 .cardPrice {
@@ -432,18 +490,13 @@
 }
 
 .shopRoot :global(.gami-shop-card-footer button:first-of-type) {
-    flex: 1;
-    padding: 6px 8px;
-    font-size: 0.8em;
     border-radius: var(--go-radius, var(--pixel-card-radius)) !important;
     border: 2px solid var(--pixel-border-dark, #0f1120) !important;
     background: var(--go-success, #15803d) !important;
     color: var(--go-text-bright, var(--pixel-text)) !important;
     font-family: var(--go-font-ui, "Press Start 2P", monospace) !important;
     font-size: 8px !important;
-    font-weight: 600;
     box-shadow: var(--go-shadow-soft, var(--pixel-shadow-pressed)) !important;
-    cursor: pointer;
 }
 
 .shopRoot :global(.gami-shop-card-footer button:last-of-type) {
