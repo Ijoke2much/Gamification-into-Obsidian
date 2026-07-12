@@ -893,7 +893,10 @@ const InventoryModalContent: React.FC = () => {
             </div>
 
             {/* Right Panel - Enhanced Item Details */}
-            {console.log('🎯 Rendering details panel check:', { selectedItemData: !!selectedItemData, selectedItem })}
+            {(() => {
+                console.log('🎯 Rendering details panel check:', { selectedItemData: !!selectedItemData, selectedItem });
+                return null;
+            })()}
             {selectedItemData && (
                 <div className={inventoryStyles.itemDetailsPanel}>
                     {/* Enhanced Item Header with Close Button */}

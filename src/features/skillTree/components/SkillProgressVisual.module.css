@@ -1,11 +1,20 @@
 .skillProgress {
-    --sp-panel: var(--pixel-panel-alt, #2e3152);
-    --sp-border: var(--pixel-border-dark, #0f1120);
-    --sp-border-hi: var(--pixel-border-light, #5b61a2);
-    --sp-text: var(--pixel-text, #ecefff);
-    --sp-muted: var(--pixel-muted, #bac2e3);
-    --sp-highlight: var(--pixel-highlight, #ffd166);
-    --sp-shadow: 3px 3px 0 var(--sp-border);
+    --sp-bg: var(--go-bg, var(--pixel-bg, #1b1d2f));
+    --sp-panel: var(--go-card-soft, var(--pixel-panel-alt, #2e3152));
+    --sp-panel-strong: var(--go-panel, var(--pixel-panel, #252742));
+    --sp-border: var(--go-border, var(--pixel-border-dark, #0f1120));
+    --sp-border-hi: var(--go-border-strong, var(--pixel-border-light, #5b61a2));
+    --sp-text: var(--go-text, var(--pixel-text, #ecefff));
+    --sp-text-bright: var(--go-text-bright, var(--pixel-text, #ffffff));
+    --sp-muted: var(--go-muted, var(--pixel-muted, #bac2e3));
+    --sp-highlight: var(--go-gold, var(--pixel-highlight, #ffd166));
+    --sp-accent: var(--go-accent, var(--pixel-accent, #8ecae6));
+    --sp-success: var(--go-success, var(--pixel-ok, #4ade80));
+    --sp-progress-track: var(--go-progress-track, var(--pixel-bg, #1b1d2f));
+    --sp-progress-fill: var(--go-cp-progress-fill, var(--go-progress-fill, #22c55e));
+    --sp-progress-fill-strong: var(--go-cp-progress-fill-strong, var(--go-progress-fill-strong, #16a34a));
+    --sp-progress-glow: var(--go-cp-progress-glow, var(--go-progress-glow, rgba(34, 197, 94, 0.35)));
+    --sp-shadow: var(--go-shadow-soft, 3px 3px 0 var(--sp-border));
 
     background: var(--sp-panel);
     border: 2px solid var(--sp-border);
@@ -17,7 +26,7 @@
     overflow: hidden;
     cursor: pointer;
     box-shadow: var(--sp-shadow), inset 0 0 0 1px var(--sp-border-hi);
-    font-family: "VT323", "Courier New", monospace;
+    font-family: var(--go-font-body, "VT323", "Courier New", monospace);
     color: var(--sp-text);
     image-rendering: pixelated;
 }
@@ -139,7 +148,7 @@
     align-items: center;
     justify-content: center;
     border: 2px solid var(--sp-border);
-    background: var(--pixel-bg, #1b1d2f);
+    background: var(--sp-bg);
     box-shadow: 2px 2px 0 var(--sp-border), inset 0 0 0 1px rgba(255, 255, 255, 0.15);
 }
 
@@ -150,7 +159,7 @@
 
 .skillName {
     margin: 0 0 4px 0;
-    font-family: "Press Start 2P", "VT323", monospace;
+    font-family: var(--go-font-display, "Press Start 2P", "VT323", monospace);
     font-size: 0.52rem;
     line-height: 1.55;
     color: var(--sp-text);
@@ -171,7 +180,7 @@
 .masteryBadge {
     background: var(--sp-highlight);
     color: var(--sp-border);
-    font-family: "Press Start 2P", "VT323", monospace;
+    font-family: var(--go-font-display, "Press Start 2P", "VT323", monospace);
     font-size: 0.35rem;
     line-height: 1.45;
     padding: 6px 8px;
@@ -191,7 +200,7 @@
 .progressBar {
     width: 100%;
     height: 10px;
-    background: var(--pixel-bg, #1b1d2f);
+    background: var(--sp-progress-track);
     border-radius: 0;
     overflow: hidden;
     margin-bottom: 6px;
@@ -206,12 +215,14 @@
     position: relative;
     background: repeating-linear-gradient(
         -45deg,
-        #22c55e,
-        #22c55e 4px,
-        #16a34a 4px,
-        #16a34a 8px
+        var(--sp-progress-fill),
+        var(--sp-progress-fill) 4px,
+        var(--sp-progress-fill-strong) 4px,
+        var(--sp-progress-fill-strong) 8px
     );
-    box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.18);
+    box-shadow:
+        inset 0 2px 0 rgba(255, 255, 255, 0.18),
+        0 0 8px var(--sp-progress-glow);
 }
 
 .progressFill::after {
@@ -259,13 +270,13 @@
 
 .statValue {
     font-weight: 700;
-    font-family: "Press Start 2P", "VT323", monospace;
+    font-family: var(--go-font-display, "Press Start 2P", "VT323", monospace);
     font-size: 0.42rem;
     color: var(--sp-highlight);
 }
 
 .nextLevelPreview {
-    background: var(--pixel-bg, #1b1d2f);
+    background: var(--sp-bg);
     border: 2px solid var(--sp-border);
     border-radius: 0;
     padding: 10px;
@@ -278,8 +289,8 @@
 }
 
 .bonusText {
-    color: var(--pixel-ok, #4ade80);
-    font-family: "Press Start 2P", "VT323", monospace;
+    color: var(--sp-success);
+    font-family: var(--go-font-display, "Press Start 2P", "VT323", monospace);
     font-size: 0.38rem;
     line-height: 1.45;
     font-weight: 700;
@@ -300,13 +311,13 @@
 }
 
 .glowing {
-    box-shadow: 0 0 0 2px var(--pixel-accent, #8ecae6), var(--sp-shadow),
+    box-shadow: 0 0 0 2px var(--sp-accent), var(--sp-shadow),
         inset 0 0 0 1px var(--sp-border-hi);
     animation: glow 2s ease-in-out infinite alternate;
 }
 
 .mastered {
-    background: var(--pixel-panel, #252742);
+    background: var(--sp-panel-strong);
     border-color: var(--sp-highlight);
     box-shadow: var(--sp-shadow), inset 0 0 0 1px var(--sp-highlight);
 }
@@ -340,11 +351,11 @@
 
 @keyframes glow {
     0% {
-        box-shadow: 0 0 0 1px var(--pixel-accent, #8ecae6), var(--sp-shadow),
+        box-shadow: 0 0 0 1px var(--sp-accent), var(--sp-shadow),
             inset 0 0 0 1px var(--sp-border-hi);
     }
     100% {
-        box-shadow: 0 0 0 3px rgba(142, 202, 230, 0.35), var(--sp-shadow),
+        box-shadow: 0 0 0 3px var(--go-accent-soft, rgba(142, 202, 230, 0.35)), var(--sp-shadow),
             inset 0 0 0 1px var(--sp-border-hi);
     }
 }
