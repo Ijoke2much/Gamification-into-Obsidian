@@ -1240,3 +1240,103 @@
 .container.pixelSidebarQuestShell .timelinePlanner::-webkit-scrollbar-track {
   border-radius: 0;
 }
+
+/* System Hunter shell — sidebar quest view */
+:global([data-gamification-shell='system']) .container.pixelSidebarQuestShell {
+  font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif);
+  color: var(--go-text, #e0f2fe);
+  background: var(--go-bg, #071527);
+  border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42));
+  border-radius: var(--go-radius, 2px);
+  box-shadow: var(--go-shadow, 0 0 22px rgba(34, 200, 255, 0.24));
+}
+
+:global([data-gamification-shell='system']) .container.pixelSidebarQuestShell .panelTitle {
+  font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif);
+  font-size: 0.8rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--go-accent, #22c8ff);
+  text-shadow: 0 0 10px color-mix(in srgb, var(--go-accent, #22c8ff) 40%, transparent);
+}
+
+:global([data-gamification-shell='system']) .container.pixelSidebarQuestShell .linkButton,
+:global([data-gamification-shell='system']) .container.pixelSidebarQuestShell .addButton,
+:global([data-gamification-shell='system']) .container.pixelSidebarQuestShell .captureButton,
+:global([data-gamification-shell='system']) .container.pixelSidebarQuestShell .calendarCollapseBtn,
+:global([data-gamification-shell='system']) .container.pixelSidebarQuestShell .timelineNowBtn,
+:global([data-gamification-shell='system']) .container.pixelSidebarQuestShell .timelineEmptyAdd,
+:global([data-gamification-shell='system']) .container.pixelSidebarQuestShell .filterSelect {
+  border-radius: var(--go-radius, 2px);
+  border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42));
+  background: var(--go-card-soft, rgba(8, 28, 54, 0.72));
+  color: var(--go-text, #e0f2fe);
+  font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif);
+  box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16));
+}
+
+:global([data-gamification-shell='system']) .container.pixelSidebarQuestShell .addButton {
+  color: var(--go-accent, #22c8ff);
+}
+
+:global([data-gamification-shell='system']) .container.pixelSidebarQuestShell .addButton:hover,
+:global([data-gamification-shell='system']) .container.pixelSidebarQuestShell .captureButton:hover {
+  transform: none;
+  border-color: var(--go-border-strong, rgba(34, 200, 255, 0.9));
+  box-shadow: var(--go-shadow, 0 0 22px rgba(34, 200, 255, 0.24));
+}
+
+:global([data-gamification-shell='system']) .container.pixelSidebarQuestShell .section {
+  border-radius: var(--go-radius, 2px);
+  border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42));
+  background: var(--go-panel, rgba(10, 30, 58, 0.9));
+  box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16));
+}
+
+:global([data-gamification-shell='system']) .container.pixelSidebarQuestShell .sectionTitle {
+  font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif);
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+  color: var(--go-accent, #22c8ff);
+  text-shadow: none;
+}
+
+:global([data-gamification-shell='system']) .container.pixelSidebarQuestShell .timelineTrack {
+  border-radius: var(--go-radius, 2px);
+  border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42));
+}
+
+:global([data-gamification-shell='system']) .container.pixelSidebarQuestShell .timelineQuestBlock {
+  border-radius: var(--go-radius, 2px) !important;
+  border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42)) !important;
+  box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16));
+}
+
+:global([data-gamification-shell='system']) .container.pixelSidebarQuestShell .timelineQuestTitle {
+  font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif);
+  font-size: 0.72rem !important;
+  text-shadow: none;
+}
+
+:global([data-gamification-shell='system']) .container.pixelSidebarQuestShell .timelineQuestTime {
+  font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif);
+  font-size: 0.65rem !important;
+}
+
+:global([data-gamification-shell='system']) .container.pixelSidebarQuestShell .inboxItem {
+  border-radius: var(--go-radius, 2px);
+  border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42));
+  background: var(--go-card-soft, rgba(8, 28, 54, 0.72));
+}
+
+:global([data-gamification-shell='system']) .container.pixelSidebarQuestShell .inboxItemTitle {
+  font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif);
+  font-size: 0.75rem;
+  color: var(--go-text-bright, #f0f9ff);
+}
+
+:global([data-gamification-shell='system']) .container.pixelSidebarQuestShell .viewModeBtnActive {
+  background: var(--go-card, rgba(18, 55, 96, 0.58));
+  border-color: var(--go-accent, #22c8ff);
+  color: var(--go-accent, #22c8ff);
+}

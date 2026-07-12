@@ -322,3 +322,85 @@
 :global([data-pixel-shell="quests"]) .adhdButton.primary {
     animation: none;
 }
+
+/* System Hunter shell */
+:global([data-gamification-shell='system']) .adhdWrapper.perfect {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--go-success, #48f59b) 55%, transparent);
+}
+
+:global([data-gamification-shell='system']) .adhdWrapper.good {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--go-success, #48f59b) 40%, transparent);
+}
+
+:global([data-gamification-shell='system']) .adhdWrapper.challenging {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--go-warning, #ffd83d) 45%, transparent);
+}
+
+:global([data-gamification-shell='system']) .adhdWrapper.insufficient {
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--go-danger, #ff6b6b) 50%, transparent);
+    filter: none;
+}
+
+:global([data-gamification-shell='system']) .energyBadge,
+:global([data-gamification-shell='system']) .energyMatch {
+    border-radius: var(--go-radius, 2px);
+    border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42));
+    background: var(--go-panel-strong, rgba(8, 24, 46, 0.96));
+    backdrop-filter: none;
+    font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif);
+    font-size: 0.6rem !important;
+    box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16));
+}
+
+:global([data-gamification-shell='system']) .energyBadge {
+    color: var(--go-gold, #ffd83d);
+    border-color: color-mix(in srgb, var(--go-gold, #ffd83d) 45%, transparent);
+}
+
+:global([data-gamification-shell='system']) .energyMatch.perfect {
+    border-color: color-mix(in srgb, var(--go-success, #48f59b) 55%, transparent);
+    color: var(--go-success, #48f59b);
+    animation: none;
+}
+
+:global([data-gamification-shell='system']) .energyMatch.good {
+    border-color: color-mix(in srgb, var(--go-success, #48f59b) 45%, transparent);
+    color: var(--go-success, #48f59b);
+}
+
+:global([data-gamification-shell='system']) .energyMatch.challenging {
+    border-color: color-mix(in srgb, var(--go-warning, #ffd83d) 50%, transparent);
+    color: var(--go-warning, #ffd83d);
+}
+
+:global([data-gamification-shell='system']) .energyMatch.insufficient {
+    border-color: color-mix(in srgb, var(--go-danger, #ff6b6b) 50%, transparent);
+    color: var(--go-danger, #ff6b6b);
+}
+
+:global([data-gamification-shell='system']) .clickableEnergyBadge:hover {
+    transform: none;
+    border-color: var(--go-accent, #22c8ff);
+    box-shadow: var(--go-shadow, 0 0 22px rgba(34, 200, 255, 0.24)) !important;
+}
+
+:global([data-gamification-shell='system']) .adhdButton {
+    border-radius: var(--go-radius, 2px);
+    border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42));
+    font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif);
+    font-size: 0.6rem !important;
+    backdrop-filter: none;
+    box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16));
+}
+
+:global([data-gamification-shell='system']) .adhdButton:hover {
+    transform: none;
+    border-color: var(--go-border-strong, rgba(34, 200, 255, 0.9));
+    box-shadow: var(--go-shadow, 0 0 22px rgba(34, 200, 255, 0.24));
+}
+
+:global([data-gamification-shell='system']) .adhdButton.primary {
+    animation: none;
+    border-color: color-mix(in srgb, var(--go-success, #48f59b) 55%, transparent);
+    color: var(--go-success, #48f59b);
+}

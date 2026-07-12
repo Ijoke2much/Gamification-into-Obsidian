@@ -131,6 +131,7 @@ class VisualThemeManager {
 		ensure('--pixel-bg', 'var(--go-bg)');
 		ensure('--pixel-panel', 'var(--go-panel)');
 		ensure('--pixel-panel-alt', 'var(--go-panel-strong)');
+		ensure('--pixel-border-dark', tokens['--go-bg'] ?? '#0f1120');
 		ensure('--pixel-border-light', 'var(--go-border)');
 		ensure('--pixel-accent', 'var(--go-accent)');
 		ensure('--pixel-highlight', 'var(--go-gold)');

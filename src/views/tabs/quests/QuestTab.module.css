@@ -452,29 +452,16 @@
    ======================================== */
 
 .questTabContainer.pixelQuestShell {
-    --pixel-bg: #1b1d2f;
-    --pixel-panel: #252742;
-    --pixel-panel-alt: #2e3152;
-    --pixel-border-dark: #0f1120;
-    --pixel-border-light: #5b61a2;
-    --pixel-accent: #8ecae6;
-    --pixel-highlight: #ffd166;
-    --pixel-text: #ecefff;
-    --pixel-muted: #bac2e3;
-    --pixel-shadow: 3px 3px 0 var(--pixel-border-dark);
-    --pixel-shadow-pressed: 1px 1px 0 var(--pixel-border-dark);
-    --pixel-card-radius: 0;
-
     position: relative;
     padding: 10px;
-    font-family: "Press Start 2P", "VT323", "Courier New", monospace;
+    font-family: var(--go-font-ui, "Press Start 2P", "VT323", "Courier New", monospace);
     font-size: 11px;
     line-height: 1.65;
-    color: var(--pixel-text);
-    background: var(--pixel-bg);
-    border: 2px solid var(--pixel-border-dark);
-    border-radius: var(--pixel-card-radius);
-    box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light);
+    color: var(--go-text, var(--pixel-text));
+    background: var(--go-bg, var(--pixel-bg));
+    border: 2px solid var(--pixel-border-dark, #0f1120);
+    border-radius: var(--go-radius, var(--pixel-card-radius));
+    box-shadow: var(--go-shadow, var(--pixel-shadow)), inset 0 0 0 1px var(--go-border, var(--pixel-border-light));
     box-sizing: border-box;
 }
 
@@ -653,4 +640,85 @@
     .questTabContainer.pixelQuestShell .actionButton {
         font-size: 7px !important;
     }
+}
+
+/* System Hunter shell — quest tab inherits theme tokens from visualThemeManager */
+:global([data-gamification-shell='system']) .questTabContainer.pixelQuestShell {
+    font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif);
+    color: var(--go-text, #e0f2fe);
+    background: var(--go-bg, #071527);
+    border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42));
+    border-radius: var(--go-radius, 2px);
+    box-shadow: var(--go-shadow, 0 0 22px rgba(34, 200, 255, 0.24));
+}
+
+:global([data-gamification-shell='system']) .questTabContainer.pixelQuestShell .actionButton {
+    border-radius: var(--go-radius, 2px) !important;
+    border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42)) !important;
+    background: var(--go-card-soft, rgba(8, 28, 54, 0.72)) !important;
+    color: var(--go-text, #e0f2fe) !important;
+    font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+    font-size: 0.65rem !important;
+    letter-spacing: 0.04em;
+    box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16)) !important;
+}
+
+:global([data-gamification-shell='system']) .questTabContainer.pixelQuestShell .actionButton:hover {
+    transform: none;
+    border-color: var(--go-border-strong, rgba(34, 200, 255, 0.9)) !important;
+    box-shadow: var(--go-shadow, 0 0 22px rgba(34, 200, 255, 0.24)) !important;
+}
+
+:global([data-gamification-shell='system']) .questTabContainer.pixelQuestShell .filterButton.active {
+    background: var(--go-card, rgba(18, 55, 96, 0.58)) !important;
+    border-color: var(--go-accent, #22c8ff) !important;
+    color: var(--go-accent, #22c8ff) !important;
+    box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16)), inset 0 0 0 1px var(--go-accent, #22c8ff) !important;
+}
+
+:global([data-gamification-shell='system']) .questTabContainer.pixelQuestShell .templateButton {
+    color: var(--go-accent, #22c8ff) !important;
+}
+
+:global([data-gamification-shell='system']) .questTabContainer.pixelQuestShell .advancedButton {
+    color: var(--go-gold, #ffd83d) !important;
+}
+
+:global([data-gamification-shell='system']) .questTabContainer.pixelQuestShell .bossButton {
+    color: var(--go-danger, #ff6b6b) !important;
+}
+
+:global([data-gamification-shell='system']) .questTabContainer.pixelQuestShell .exportButton {
+    color: var(--go-success, #48f59b) !important;
+}
+
+:global([data-gamification-shell='system']) .questTabContainer.pixelQuestShell .quickFilterResultsTitle {
+    font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif);
+    font-size: 0.7rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--go-accent, #22c8ff);
+    text-shadow: 0 0 10px color-mix(in srgb, var(--go-accent, #22c8ff) 40%, transparent);
+}
+
+:global([data-gamification-shell='system']) .questTabContainer.pixelQuestShell .quickFilterResultsHeader,
+:global([data-gamification-shell='system']) .questTabContainer.pixelQuestShell .bulkToolbar,
+:global([data-gamification-shell='system']) .questTabContainer.pixelQuestShell .advancedSearchBanner {
+    background: var(--go-panel, rgba(10, 30, 58, 0.9));
+    border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42));
+    border-radius: var(--go-radius, 2px);
+    box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16));
+}
+
+:global([data-gamification-shell='system']) .questTabContainer.pixelQuestShell :global([data-quest-search="true"]) input,
+:global([data-gamification-shell='system']) .questTabContainer.pixelQuestShell :global([data-quest-sort-trigger="true"]) button,
+:global([data-gamification-shell='system']) .questTabContainer.pixelQuestShell :global([data-quest-filters="true"]),
+:global([data-gamification-shell='system']) .questTabContainer.pixelQuestShell .paginationButton,
+:global([data-gamification-shell='system']) .questTabContainer.pixelQuestShell .quickFilterClearButton {
+    border-radius: var(--go-radius, 2px) !important;
+    border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42)) !important;
+    background: var(--go-card-soft, rgba(8, 28, 54, 0.72)) !important;
+    color: var(--go-text, #e0f2fe) !important;
+    font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+    box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16)) !important;
 }

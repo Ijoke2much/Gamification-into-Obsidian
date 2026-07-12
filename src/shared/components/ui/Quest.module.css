@@ -6,10 +6,10 @@
 }
 
 .questSection {
-    border-radius: 10px;
+    border-radius: var(--go-radius, 10px);
     overflow: hidden;
     transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--go-shadow-soft, 0 2px 8px rgba(0, 0, 0, 0.1));
     backdrop-filter: blur(10px);
 }
 
@@ -20,18 +20,18 @@
 
 /* Enhanced Quest Card Styles */
 .questCardContainer {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
-    border-radius: 8px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: linear-gradient(135deg, color-mix(in srgb, var(--go-card, #252742) 88%, transparent), color-mix(in srgb, var(--go-card-soft, #2e3152) 72%, transparent));
+    border-radius: var(--go-radius, 8px);
+    border: 1px solid var(--go-border, rgba(255, 255, 255, 0.1));
     backdrop-filter: blur(10px);
     transition: all 0.3s ease;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--go-shadow-soft, 0 2px 8px rgba(0, 0, 0, 0.1));
 }
 
 .questCardContainer:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: var(--go-shadow, 0 4px 16px rgba(0, 0, 0, 0.2));
+    border-color: var(--go-border-strong, rgba(255, 255, 255, 0.2));
 }
 
 /* Quest Section Headers */
@@ -44,16 +44,18 @@
 /* Enhanced Quest Tab Styling */
 .questTab {
     padding: 16px;
-    background: linear-gradient(135deg, rgba(13, 13, 13, 0.95) 0%, rgba(25, 25, 35, 0.95) 100%);
-    border-radius: 12px;
+    background: var(--go-screen-bg, linear-gradient(135deg, rgba(13, 13, 13, 0.95) 0%, rgba(25, 25, 35, 0.95) 100%));
+    border-radius: var(--go-radius, 12px);
     min-height: 100vh;
+    color: var(--go-text, #ecefff);
+    font-family: var(--go-font-ui, inherit);
 }
 
 /* Quest Board Header Enhancement */
 .questBoardHeader {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3) !important;
-    border: 1px solid rgba(102, 126, 234, 0.4) !important;
+    background: linear-gradient(135deg, var(--go-accent, #667eea) 0%, color-mix(in srgb, var(--go-accent, #667eea) 55%, #764ba2) 100%) !important;
+    box-shadow: var(--go-shadow, 0 4px 16px color-mix(in srgb, var(--go-accent, #667eea) 30%, transparent)) !important;
+    border: 1px solid var(--go-border, rgba(102, 126, 234, 0.4)) !important;
 }
 
 /* Subtle animations for quest cards */
@@ -76,7 +78,7 @@
 /* Improved scrollbar for quest sections */
 .questSections {
     scrollbar-width: thin;
-    scrollbar-color: rgba(102, 126, 234, 0.5) transparent;
+    scrollbar-color: color-mix(in srgb, var(--go-accent, #667eea) 50%, transparent) transparent;
 }
 
 .questSections::-webkit-scrollbar {
@@ -88,10 +90,10 @@
 }
 
 .questSections::-webkit-scrollbar-thumb {
-    background: rgba(102, 126, 234, 0.5);
+    background: color-mix(in srgb, var(--go-accent, #667eea) 50%, transparent);
     border-radius: 3px;
 }
 
 .questSections::-webkit-scrollbar-thumb:hover {
-    background: rgba(102, 126, 234, 0.7);
+    background: color-mix(in srgb, var(--go-accent, #667eea) 70%, transparent);
 }

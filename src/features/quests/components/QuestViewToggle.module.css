@@ -127,3 +127,46 @@
     font-family: "Press Start 2P", monospace;
     font-size: 6px;
 }
+
+/* System Hunter shell */
+:global([data-gamification-shell='system']) .viewToggle {
+    background: var(--go-panel, rgba(10, 30, 58, 0.9));
+    border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42));
+    border-radius: var(--go-radius, 2px);
+    box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16));
+    backdrop-filter: none;
+}
+
+:global([data-gamification-shell='system']) .viewButton {
+    border-radius: var(--go-radius, 2px);
+    font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif);
+    font-size: 0.72rem;
+    color: var(--go-muted, #9ec7df);
+}
+
+:global([data-gamification-shell='system']) .viewButton:hover {
+    background: var(--go-card-soft, rgba(8, 28, 54, 0.72));
+    transform: none;
+    color: var(--go-text, #e0f2fe);
+}
+
+:global([data-gamification-shell='system']) .viewButton.active {
+    background: var(--go-card, rgba(18, 55, 96, 0.58));
+    color: var(--go-accent, #22c8ff);
+    border: 1px solid var(--go-border-strong, rgba(34, 200, 255, 0.9));
+    box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16));
+}
+
+:global([data-gamification-shell='system']) .viewButton[data-view="energy"].active {
+    background: color-mix(in srgb, var(--go-success, #48f59b) 22%, transparent);
+    color: var(--go-success, #48f59b);
+    border-color: color-mix(in srgb, var(--go-success, #48f59b) 55%, transparent);
+}
+
+:global([data-gamification-shell='system']) .viewBadge {
+    border-radius: var(--go-radius, 2px);
+    border: 1px solid var(--go-danger, #ff6b6b);
+    background: color-mix(in srgb, var(--go-danger, #ff6b6b) 25%, transparent);
+    font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif);
+    font-size: 0.55rem;
+}

@@ -6,18 +6,19 @@
 
 .header {
     min-height: 60px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 8px;
+    background: linear-gradient(135deg, var(--go-accent, #667eea) 0%, color-mix(in srgb, var(--go-accent, #667eea) 55%, #764ba2) 100%);
+    border-radius: var(--go-radius, 8px);
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 12px 16px;
-    color: #fff;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    color: var(--go-text-bright, #fff);
+    box-shadow: var(--go-shadow-soft, 0 2px 8px rgba(0, 0, 0, 0.1));
     width: 100%;
     box-sizing: border-box;
     flex-wrap: wrap;
     gap: 8px;
+    font-family: var(--go-font-ui, inherit);
 }
 
 .titleSection {
@@ -29,6 +30,7 @@
     font-size: 18px;
     font-weight: 700;
     margin: 0;
+    color: var(--go-text-bright, #fff);
 }
 
 .subtitle {
@@ -36,6 +38,7 @@
     opacity: 0.8;
     font-style: italic;
     margin: 0;
+    color: var(--go-muted, inherit);
 }
 
 .buttonContainer {
@@ -227,4 +230,51 @@
 :global([data-pixel-shell="quests"]) .headerButton:hover {
     transform: translate(1px, 1px);
     box-shadow: 1px 1px 0 var(--pixel-border-dark, #0f1120);
+}
+
+/* System Hunter shell */
+:global([data-gamification-shell='system']) .header {
+    background: var(--go-panel, rgba(10, 30, 58, 0.9));
+    border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42));
+    border-radius: var(--go-radius, 2px);
+    box-shadow: var(--go-shadow, 0 0 22px rgba(34, 200, 255, 0.24));
+    backdrop-filter: none;
+}
+
+:global([data-gamification-shell='system']) .title {
+    font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif);
+    font-size: 0.85rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--go-accent, #22c8ff);
+    text-shadow: 0 0 12px color-mix(in srgb, var(--go-accent, #22c8ff) 45%, transparent);
+}
+
+:global([data-gamification-shell='system']) .subtitle {
+    font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif);
+    font-size: 0.75rem;
+    color: var(--go-muted, #9ec7df);
+    font-style: normal;
+}
+
+:global([data-gamification-shell='system']) .addQuestButton,
+:global([data-gamification-shell='system']) .headerButton {
+    border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42));
+    border-radius: var(--go-radius, 2px);
+    background: var(--go-card-soft, rgba(8, 28, 54, 0.72));
+    color: var(--go-text, #e0f2fe);
+    font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif);
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16));
+    backdrop-filter: none;
+}
+
+:global([data-gamification-shell='system']) .addQuestButton:hover,
+:global([data-gamification-shell='system']) .headerButton:hover {
+    transform: none;
+    border-color: var(--go-border-strong, rgba(34, 200, 255, 0.9));
+    background: var(--go-card, rgba(18, 55, 96, 0.58));
+    box-shadow: var(--go-shadow, 0 0 22px rgba(34, 200, 255, 0.24));
 }

@@ -1027,3 +1027,86 @@
     border: 2px solid var(--pixel-border-dark, #0f1120) !important;
     backdrop-filter: none !important;
 }
+
+/* System Hunter shell */
+:global([data-gamification-shell='system']) .questCard {
+    border-radius: var(--go-radius, 2px);
+    border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42));
+    background: var(--go-card, rgba(18, 55, 96, 0.58));
+    box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16));
+    backdrop-filter: none;
+    color: var(--go-text, #e0f2fe);
+}
+
+:global([data-gamification-shell='system']) .questCard:hover {
+    transform: none;
+    border-color: var(--go-border-strong, rgba(34, 200, 255, 0.9));
+    box-shadow: var(--go-shadow, 0 0 22px rgba(34, 200, 255, 0.24));
+}
+
+:global([data-gamification-shell='system']) .questCard.completed {
+    border-color: color-mix(in srgb, var(--go-success, #48f59b) 55%, transparent);
+    box-shadow: 0 0 16px color-mix(in srgb, var(--go-success, #48f59b) 25%, transparent);
+    background: color-mix(in srgb, var(--go-success, #48f59b) 10%, var(--go-card, rgba(18, 55, 96, 0.58)));
+}
+
+:global([data-gamification-shell='system']) .questCard.selected {
+    border-color: var(--go-accent, #22c8ff);
+    box-shadow: var(--go-shadow, 0 0 22px rgba(34, 200, 255, 0.24));
+    background: color-mix(in srgb, var(--go-accent, #22c8ff) 12%, var(--go-card, rgba(18, 55, 96, 0.58)));
+}
+
+:global([data-gamification-shell='system']) .questCard.favorite {
+    border-color: color-mix(in srgb, var(--go-gold, #ffd83d) 60%, transparent);
+    box-shadow: 0 0 16px color-mix(in srgb, var(--go-gold, #ffd83d) 22%, transparent);
+}
+
+:global([data-gamification-shell='system']) .questTitle {
+    font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif);
+    font-size: 0.82rem;
+    letter-spacing: 0.04em;
+    color: var(--go-text-bright, #f0f9ff);
+    text-shadow: none;
+}
+
+:global([data-gamification-shell='system']) .questCategory,
+:global([data-gamification-shell='system']) .skillTag,
+:global([data-gamification-shell='system']) .difficultyTag,
+:global([data-gamification-shell='system']) .priorityTag,
+:global([data-gamification-shell='system']) .metaBadge {
+    border-radius: var(--go-radius, 2px);
+    border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42));
+    font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif);
+    font-size: 0.6rem !important;
+    letter-spacing: 0.06em;
+}
+
+:global([data-gamification-shell='system']) .questAvatar {
+    border-radius: var(--go-radius, 2px);
+    border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42));
+    box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16));
+    backdrop-filter: none;
+}
+
+:global([data-gamification-shell='system']) .menuButton,
+:global([data-gamification-shell='system']) .actionButton {
+    border-radius: var(--go-radius, 2px);
+    border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42));
+    font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif);
+    font-size: 0.6rem !important;
+    box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16));
+}
+
+:global([data-gamification-shell='system']) .dropdownMenu {
+    border-radius: var(--go-radius, 2px);
+    border: 1px solid var(--go-border-strong, rgba(34, 200, 255, 0.9));
+    box-shadow: var(--go-shadow, 0 0 22px rgba(34, 200, 255, 0.24));
+    background: var(--go-panel-strong, rgba(8, 24, 46, 0.96));
+}
+
+:global([data-gamification-shell='system']) .rankBadge {
+    border-radius: var(--go-radius, 2px);
+    border: 1px solid var(--go-gold, #ffd83d);
+    backdrop-filter: none;
+    color: var(--go-gold, #ffd83d);
+}
