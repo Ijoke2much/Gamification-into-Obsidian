@@ -23,6 +23,8 @@ import { addOrIncrementInventoryItem } from "../../inventory/utils/updateInvento
 import { readPlayerData, writePlayerData } from "src/features/player/utils/playerDataUtils";
 import { currencyDisplay } from "../../../shared/services/currencyDisplayService";
 import shopStyles from "./ShopTab.module.css";
+import { getAppliedVisualTheme } from "../../../shared/utils/visualThemeManager";
+import { onSettingsUpdated } from "../../../shared/utils/settingsEvents";
 
 interface Props {
     plugin: GamifiedObsidianPlugin;
@@ -113,6 +115,17 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
     const [rarityFilter, setRarityFilter] = useState<string>("All");
     const [sortBy, setSortBy] = useState<string>("Price (Low → High)");
     const [customImagePath, setCustomImagePath] = useState<string | null>(null);
+    const [themeRevision, setThemeRevision] = useState(0);
+    const visualTheme = useMemo(() => getAppliedVisualTheme(), [themeRevision]);
+    const isSystemTheme = visualTheme.preset === "system-hunter";
+
+    useEffect(() => onSettingsUpdated(() => setThemeRevision((n) => n + 1)), []);
+
+    const shopShellAttrs = {
+        "data-pixel-shell": "shop" as const,
+        "data-gamification-shell": visualTheme.shell,
+        "data-gamification-visual-theme": visualTheme.preset,
+    };
 
     // Add coins state and fetchCoins function
     const [coins, setCoins] = useState(0);
@@ -461,7 +474,10 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
 
     if (loading) {
         return (
-            <p className={`gami-shop-tab ${shopStyles.shopRoot} ${shopStyles.shopLoading}`} data-pixel-shell="shop">
+            <p
+                className={`gami-shop-tab ${shopStyles.shopRoot} ${shopStyles.shopLoading} ${isSystemTheme ? shopStyles.systemShopShell : ""}`}
+                {...shopShellAttrs}
+            >
                 Loading shop...
             </p>
         );
@@ -469,8 +485,8 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
 
     return (
         <div
-            className={`gami-shop-tab ${shopStyles.shopRoot}`}
-            data-pixel-shell="shop"
+            className={`gami-shop-tab ${shopStyles.shopRoot} ${isSystemTheme ? shopStyles.systemShopShell : ""}`}
+            {...shopShellAttrs}
         >
             <div className="gami-shop-header">
                 <span className={shopStyles.shopHeaderTitle}>🛒 Shop</span>
