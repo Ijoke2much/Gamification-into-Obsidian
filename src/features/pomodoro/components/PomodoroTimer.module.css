@@ -3502,30 +3502,18 @@ Break Activities CSS
    ======================================== */
 
 .pomodoroContainer.pixelPomodoroShell {
-    --pixel-bg: #1b1d2f;
-    --pixel-panel: #252742;
-    --pixel-panel-alt: #2e3152;
-    --pixel-border-dark: #0f1120;
-    --pixel-border-light: #5b61a2;
-    --pixel-accent: #8ecae6;
-    --pixel-highlight: #ffd166;
-    --pixel-text: #ecefff;
-    --pixel-muted: #bac2e3;
-    --pixel-shadow: 3px 3px 0 var(--pixel-border-dark);
-    --pixel-shadow-pressed: 1px 1px 0 var(--pixel-border-dark);
-    --pixel-card-radius: 0;
-    --pixel-ring-work: #5ce1e6;
-    --pixel-ring-break: #7ed957;
-    --pixel-ring-track: #2f3558;
+    --pixel-ring-work: var(--go-accent, #22c8ff);
+    --pixel-ring-break: var(--go-success, #48f59b);
+    --pixel-ring-track: var(--go-progress-track, rgba(4, 15, 30, 0.82));
 
-    font-family: "Press Start 2P", "VT323", "Courier New", monospace;
+    font-family: var(--go-font-ui, "Press Start 2P", "VT323", "Courier New", monospace);
     font-size: 11px;
     line-height: 1.65;
-    color: var(--pixel-text);
-    background: var(--pixel-bg);
-    border: 2px solid var(--pixel-border-dark);
-    border-radius: var(--pixel-card-radius);
-    box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light);
+    color: var(--go-text, var(--pixel-text));
+    background: var(--go-bg, var(--pixel-bg));
+    border: 2px solid var(--pixel-border-dark, #0f1120);
+    border-radius: var(--go-radius, var(--pixel-card-radius));
+    box-shadow: var(--go-shadow, var(--pixel-shadow)), inset 0 0 0 1px var(--go-border, var(--pixel-border-light));
 }
 
 .pomodoroContainer.pixelPomodoroShell .statsPanel {
@@ -3961,9 +3949,60 @@ Break Activities CSS
 }
 
 .pomodoroContainer.pixelPomodoroShell .circularProgressText {
-    border-radius: var(--pixel-card-radius);
-    background: var(--pixel-panel);
-    border: 2px solid var(--pixel-border-dark);
-    text-shadow: 1px 1px 0 var(--pixel-border-dark);
-    box-shadow: inset 1px 1px 0 var(--pixel-border-light);
+    border-radius: var(--go-radius, var(--pixel-card-radius));
+    background: var(--go-panel, var(--pixel-panel));
+    border: 2px solid var(--pixel-border-dark, #0f1120);
+    text-shadow: 1px 1px 0 var(--pixel-border-dark, #0f1120);
+    box-shadow: inset 1px 1px 0 var(--go-border, var(--pixel-border-light));
+}
+
+/* System Hunter shell */
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .timerTitle,
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .sessionTypesSection h3,
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .questAttachmentSection h3 {
+    font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+    font-size: 0.75rem !important;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--go-accent, #22c8ff) !important;
+    text-shadow: none !important;
+}
+
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .timeCircle,
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .totalXP,
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .counterNumber,
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .streakNumber {
+    text-shadow: none !important;
+    color: var(--go-gold, #ffd83d);
+}
+
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .timerCard,
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .xpDisplay,
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .sessionCounters,
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .sessionTypeCard,
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .energySection {
+    border-width: 1px !important;
+    border-color: var(--go-border, rgba(34, 200, 255, 0.42)) !important;
+    border-radius: var(--go-radius, 2px) !important;
+    box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16)) !important;
+}
+
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .sessionTypeCard.active {
+    border-color: var(--go-accent, #22c8ff) !important;
+    box-shadow: var(--go-shadow, 0 0 22px rgba(34, 200, 255, 0.24)) !important;
+}
+
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .controls button:hover,
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .sessionTypeCard:hover {
+    transform: none !important;
+}
+
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .btnStart {
+    background: var(--go-card-soft, rgba(8, 28, 54, 0.72));
+    color: var(--go-accent, #22c8ff);
+}
+
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .btnPause {
+    background: color-mix(in srgb, var(--go-gold, #ffd83d) 22%, transparent);
+    color: var(--go-gold, #ffd83d);
 }

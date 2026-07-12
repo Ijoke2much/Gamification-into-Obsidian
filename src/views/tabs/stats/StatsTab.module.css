@@ -1,42 +1,34 @@
-/* Full-page Stats tab — pixel shell (matches Player column tokens) */
+/* Full-page Stats tab — theme-aware shell */
 .statsTabRoot {
-    --pixel-bg: #1b1d2f;
-    --pixel-panel: #252742;
-    --pixel-border-dark: #0f1120;
-    --pixel-border-light: #5b61a2;
-    --pixel-accent: #8ecae6;
-    --pixel-highlight: #ffd166;
-    --pixel-text: #ecefff;
-    --pixel-shadow: 3px 3px 0 var(--pixel-border-dark);
-
-    background: var(--pixel-bg);
-    border: 2px solid var(--pixel-border-dark);
-    border-radius: 0;
+    background: var(--go-bg, var(--pixel-bg));
+    border: 2px solid var(--pixel-border-dark, #0f1120);
+    border-radius: var(--go-radius, 0);
     padding: 24px 16px 20px 16px;
     min-height: 400px;
-    color: var(--pixel-text);
-    box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light);
+    color: var(--go-text, var(--pixel-text));
+    box-shadow: var(--go-shadow, var(--pixel-shadow)), inset 0 0 0 1px var(--go-border, var(--pixel-border-light));
     max-width: 480px;
     margin: 24px auto 0 auto;
     transition: box-shadow 0.08s ease, transform 0.08s ease;
     image-rendering: pixelated;
+    font-family: var(--go-font-ui, "Press Start 2P", "VT323", monospace);
 }
 
 .statsTabRoot:hover {
     transform: translate(-1px, -1px);
-    box-shadow: 4px 4px 0 var(--pixel-border-dark), inset 0 0 0 1px var(--pixel-border-light);
+    box-shadow: 4px 4px 0 var(--pixel-border-dark, #0f1120), inset 0 0 0 1px var(--go-border, var(--pixel-border-light));
 }
 
 .header {
-    font-family: "Press Start 2P", "VT323", monospace;
+    font-family: var(--go-font-ui, "Press Start 2P", "VT323", monospace);
     font-size: 0.85rem;
     line-height: 1.6;
     font-weight: 800;
     margin: 0 0 20px 0;
     text-align: center;
     letter-spacing: 0.06em;
-    color: var(--pixel-accent);
-    text-shadow: 2px 2px 0 var(--pixel-border-dark);
+    color: var(--go-accent, var(--pixel-accent));
+    text-shadow: 2px 2px 0 var(--pixel-border-dark, #0f1120);
 }
 
 .statsContent {
@@ -76,4 +68,28 @@
 .statsTabRootCompact .statsContent,
 .statsTabRoot .statsContent {
     justify-content: stretch;
+}
+
+/* System Hunter shell */
+:global([data-gamification-shell='system']) .statsTabRoot {
+    image-rendering: auto;
+    border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42));
+    border-radius: var(--go-radius, 2px);
+    box-shadow: var(--go-shadow, 0 0 22px rgba(34, 200, 255, 0.24));
+    background: var(--go-bg, #071527);
+    color: var(--go-text, #e0f2fe);
+}
+
+:global([data-gamification-shell='system']) .statsTabRoot:hover {
+    transform: none;
+    box-shadow: var(--go-shadow, 0 0 22px rgba(34, 200, 255, 0.24));
+}
+
+:global([data-gamification-shell='system']) .statsTabRoot .header {
+    font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif);
+    font-size: 0.8rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--go-accent, #22c8ff);
+    text-shadow: 0 0 10px color-mix(in srgb, var(--go-accent, #22c8ff) 40%, transparent);
 }

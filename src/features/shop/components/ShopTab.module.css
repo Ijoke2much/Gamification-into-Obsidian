@@ -1,30 +1,18 @@
 /* Pixel / RPG shell for Shop tab (global .gami-shop-* in createShopTab.tsx) */
 
 .pixelShopShell {
-    --pixel-bg: #1b1d2f;
-    --pixel-panel: #252742;
-    --pixel-panel-alt: #2e3152;
-    --pixel-border-dark: #0f1120;
-    --pixel-border-light: #5b61a2;
-    --pixel-accent: #8ecae6;
-    --pixel-highlight: #ffd166;
-    --pixel-text: #ecefff;
-    --pixel-muted: #bac2e3;
-    --pixel-shadow: 3px 3px 0 var(--pixel-border-dark);
-    --pixel-shadow-pressed: 1px 1px 0 var(--pixel-border-dark);
-    --pixel-card-radius: 0;
     isolation: isolate;
 }
 
 .pixelShopShell:global(.gami-shop-tab) {
-    font-family: "Press Start 2P", "VT323", "Courier New", monospace;
+    font-family: var(--go-font-ui, "Press Start 2P", "VT323", "Courier New", monospace);
     font-size: 11px;
     line-height: 1.65;
-    color: var(--pixel-text);
-    background: var(--pixel-bg) !important;
-    border: 2px solid var(--pixel-border-dark);
-    border-radius: var(--pixel-card-radius) !important;
-    box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light);
+    color: var(--go-text, var(--pixel-text));
+    background: var(--go-bg, var(--pixel-bg)) !important;
+    border: 2px solid var(--pixel-border-dark, #0f1120);
+    border-radius: var(--go-radius, var(--pixel-card-radius)) !important;
+    box-shadow: var(--go-shadow, var(--pixel-shadow)), inset 0 0 0 1px var(--go-border, var(--pixel-border-light));
     box-sizing: border-box;
 }
 

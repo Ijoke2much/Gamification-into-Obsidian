@@ -1329,18 +1329,6 @@
    ======================================== */
 
 .pixelCraftingShell {
-    --pixel-bg: #1b1d2f;
-    --pixel-panel: #252742;
-    --pixel-panel-alt: #2e3152;
-    --pixel-border-dark: #0f1120;
-    --pixel-border-light: #5b61a2;
-    --pixel-accent: #8ecae6;
-    --pixel-highlight: #ffd166;
-    --pixel-text: #ecefff;
-    --pixel-muted: #bac2e3;
-    --pixel-shadow: 3px 3px 0 var(--pixel-border-dark);
-    --pixel-shadow-pressed: 1px 1px 0 var(--pixel-border-dark);
-    --pixel-card-radius: 0;
     isolation: isolate;
 }
 
@@ -1348,13 +1336,13 @@
     padding: 12px;
     max-width: 640px;
     margin: 0 auto;
-    color: var(--pixel-text);
-    font-family: "Press Start 2P", "VT323", "Courier New", monospace;
+    color: var(--go-text, var(--pixel-text));
+    font-family: var(--go-font-ui, "Press Start 2P", "VT323", "Courier New", monospace);
     font-size: 11px;
     line-height: 1.6;
-    background: var(--pixel-bg) !important;
-    border: 2px solid var(--pixel-border-dark);
-    box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light);
+    background: var(--go-bg, var(--pixel-bg)) !important;
+    border: 2px solid var(--pixel-border-dark, #0f1120);
+    box-shadow: var(--go-shadow, var(--pixel-shadow)), inset 0 0 0 1px var(--go-border, var(--pixel-border-light));
     box-sizing: border-box;
 }
 
@@ -1446,5 +1434,35 @@
 
 .craftingContainer.pixelCraftingShell .progressBar,
 .craftingContainer.pixelCraftingShell .progressFill {
-    border-radius: var(--pixel-card-radius) !important;
+    border-radius: var(--go-radius, var(--pixel-card-radius)) !important;
+}
+
+/* System Hunter shell */
+:global([data-gamification-shell='system']) .craftingContainer.pixelCraftingShell > h2,
+:global([data-gamification-shell='system']) .craftingContainer.pixelCraftingShell .craftingHeader {
+    font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+    font-size: 0.8rem !important;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--go-accent, #22c8ff) !important;
+    text-shadow: none !important;
+}
+
+:global([data-gamification-shell='system']) .craftingContainer.pixelCraftingShell .activeTab {
+    background: var(--go-card, rgba(18, 55, 96, 0.58)) !important;
+    color: var(--go-accent, #22c8ff) !important;
+    border-color: var(--go-accent, #22c8ff) !important;
+}
+
+:global([data-gamification-shell='system']) .craftingContainer.pixelCraftingShell .tabNavigation,
+:global([data-gamification-shell='system']) .craftingContainer.pixelCraftingShell .section,
+:global([data-gamification-shell='system']) .craftingContainer.pixelCraftingShell .materialCard,
+:global([data-gamification-shell='system']) .craftingContainer.pixelCraftingShell .recipeCard,
+:global([data-gamification-shell='system']) .craftingContainer.pixelCraftingShell .sessionCard,
+:global([data-gamification-shell='system']) .craftingContainer.pixelCraftingShell .skillCard,
+:global([data-gamification-shell='system']) .craftingContainer.pixelCraftingShell .stationCard {
+    border-width: 1px !important;
+    border-color: var(--go-border, rgba(34, 200, 255, 0.42)) !important;
+    border-radius: var(--go-radius, 2px) !important;
+    box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16)) !important;
 }

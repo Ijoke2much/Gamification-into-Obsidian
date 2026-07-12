@@ -1238,7 +1238,7 @@ export const PomodoroTab: React.FC<PomodoroTabProps> = React.memo(({
 
   // Memoize the entire JSX to prevent unnecessary re-renders
   const memoizedJSX = useMemo(() => (
-    <div className={`${styles.pomodoroContainer} ${styles.pixelPomodoroShell}`}>
+    <div className={`${styles.pomodoroContainer} ${styles.pixelPomodoroShell}`} data-pixel-shell="pomodoro">
       {/* Statistics Panel */}
       <div className={styles.statsPanel}>
         {/* XP Display */}

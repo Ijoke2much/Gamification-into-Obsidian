@@ -653,90 +653,25 @@ export default function AchievementsTab({
 	return (
 		<div
 			ref={shellRef}
-			className={achStyles.pixelAchievementsShell}
+			className={`${achStyles.pixelAchievementsShell} ${achStyles.shellRoot}`}
 			data-pixel-shell="achievements"
-			style={{
-				padding: "16px",
-				maxHeight: "80vh",
-				overflowY: "auto",
-				color: "#fff",
-				background: "linear-gradient(135deg, #0f0f23, #1a1a2e)",
-				width: "100%",
-				boxSizing: "border-box",
-			}}
 		>
 			{/* Compact Header with Progress Overview */}
-			<div
-				style={{
-					background: "linear-gradient(135deg, #1a1a2e, #16213e)",
-					borderRadius: "12px",
-					padding: "16px",
-					marginBottom: "16px",
-					textAlign: "center",
-					border: "1px solid rgba(255,255,255,0.1)",
-					boxShadow: "0 4px 16px rgba(0,0,0,0.3)",
-				}}
-			>
-				<h2 style={{ 
-					margin: "0 0 12px 0", 
-					fontSize: "18px",
-					fontWeight: "700",
-					background: "linear-gradient(135deg, #FFD700, #FFA500)",
-					WebkitBackgroundClip: "text",
-					WebkitTextFillColor: "transparent",
-					textShadow: "0 2px 4px rgba(0,0,0,0.3)",
-				}}>
+			<div className={achStyles.progressHero}>
+				<h2 className={achStyles.progressHeroTitle}>
 					🏆 Trophy Gallery
 				</h2>
-				<div style={{ 
-					fontSize: "14px", 
-					marginBottom: "8px",
-					fontWeight: "600",
-				}}>
-					<span style={{ color: "#4CAF50" }}>{completedCount}</span> /{" "}
-					<span style={{ color: "#fff" }}>{totalCount}</span>
+				<div className={achStyles.progressHeroCount}>
+					<span className={achStyles.progressHeroCountDone}>{completedCount}</span> /{" "}
+					<span>{totalCount}</span>
 				</div>
-				<div
-					style={{
-						background: "rgba(255,255,255,0.1)",
-						borderRadius: "8px",
-						height: "8px",
-						overflow: "hidden",
-						marginBottom: "8px",
-						border: "1px solid rgba(255,255,255,0.2)",
-					}}
-				>
+				<div className={achStyles.progressHeroTrack}>
 					<div
-						style={{
-							background: "linear-gradient(90deg, #4CAF50, #66BB6A, #81C784)",
-							height: "100%",
-							width: `${(completedCount / totalCount) * 100}%`,
-							borderRadius: "8px",
-							transition: "width 0.8s cubic-bezier(0.4, 0, 0.2, 1)",
-							position: "relative",
-						}}
-					>
-						{/* Progress bar shine effect */}
-						<div
-							style={{
-								position: "absolute",
-								top: 0,
-								left: 0,
-								right: 0,
-								bottom: 0,
-								background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)",
-								animation: "shimmer 3s infinite",
-							}}
-						/>
-					</div>
+						className={achStyles.progressHeroFill}
+						style={{ width: `${(completedCount / totalCount) * 100}%` }}
+					/>
 				</div>
-				<div
-					style={{
-						fontSize: "12px",
-						color: "#aaa",
-						fontWeight: "500",
-					}}
-				>
+				<div className={achStyles.progressHeroPct}>
 					{Math.round((completedCount / totalCount) * 100)}% Complete
 				</div>
 			</div>

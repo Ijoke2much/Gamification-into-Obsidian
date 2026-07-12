@@ -1,29 +1,83 @@
 /* Pixel / RPG shell for Achievements tab */
 
 .pixelAchievementsShell {
-    --pixel-bg: #1b1d2f;
-    --pixel-panel: #252742;
-    --pixel-panel-alt: #2e3152;
-    --pixel-border-dark: #0f1120;
-    --pixel-border-light: #5b61a2;
-    --pixel-accent: #8ecae6;
-    --pixel-highlight: #ffd166;
-    --pixel-text: #ecefff;
-    --pixel-muted: #bac2e3;
-    --pixel-shadow: 3px 3px 0 var(--pixel-border-dark);
-    --pixel-shadow-pressed: 1px 1px 0 var(--pixel-border-dark);
-    --pixel-card-radius: 0;
     isolation: isolate;
 }
 
-.pixelAchievementsShell {
-    background: var(--pixel-bg) !important;
-    color: var(--pixel-text) !important;
-    font-family: "Press Start 2P", "VT323", "Courier New", monospace;
+.shellRoot {
+    padding: 16px;
+    max-height: 80vh;
+    overflow-y: auto;
+    width: 100%;
+    box-sizing: border-box;
+    background: var(--go-bg, var(--pixel-bg)) !important;
+    color: var(--go-text, var(--pixel-text)) !important;
+    font-family: var(--go-font-ui, "Press Start 2P", "VT323", "Courier New", monospace);
     font-size: 11px;
     line-height: 1.6;
-    border: 2px solid var(--pixel-border-dark);
-    box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light);
+    border: 2px solid var(--pixel-border-dark, #0f1120);
+    box-shadow: var(--go-shadow, var(--pixel-shadow)), inset 0 0 0 1px var(--go-border, var(--pixel-border-light));
+}
+
+.progressHero {
+    background: linear-gradient(180deg, var(--go-panel-strong, var(--pixel-panel-alt)), var(--go-panel, var(--pixel-panel)));
+    border-radius: var(--go-radius, var(--pixel-card-radius));
+    padding: 16px;
+    margin-bottom: 16px;
+    text-align: center;
+    border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42));
+    box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16));
+}
+
+.progressHeroTitle {
+    margin: 0 0 12px;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--go-gold, var(--pixel-highlight));
+    font-family: var(--go-font-ui, "Press Start 2P", "VT323", monospace);
+}
+
+.progressHeroCount {
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--go-text, var(--pixel-text));
+}
+
+.progressHeroCountDone {
+    color: var(--go-success, #48f59b);
+}
+
+.progressHeroTrack {
+    background: var(--go-card-soft, rgba(8, 28, 54, 0.72));
+    border-radius: var(--go-radius, 8px);
+    height: 8px;
+    overflow: hidden;
+    margin-bottom: 8px;
+    border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42));
+}
+
+.progressHeroFill {
+    background: linear-gradient(90deg, var(--go-success, #48f59b), color-mix(in srgb, var(--go-success, #48f59b) 75%, #fff));
+    height: 100%;
+    border-radius: var(--go-radius, 8px);
+    transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.progressHeroPct {
+    font-size: 0.75rem;
+    color: var(--go-muted, var(--pixel-muted));
+    font-weight: 500;
+}
+
+.pixelAchievementsShell {
+    background: var(--go-bg, var(--pixel-bg)) !important;
+    color: var(--go-text, var(--pixel-text)) !important;
+    font-family: var(--go-font-ui, "Press Start 2P", "VT323", "Courier New", monospace);
+    font-size: 11px;
+    line-height: 1.6;
+    border: 2px solid var(--pixel-border-dark, #0f1120);
+    box-shadow: var(--go-shadow, var(--pixel-shadow)), inset 0 0 0 1px var(--go-border, var(--pixel-border-light));
     box-sizing: border-box;
 }
 
@@ -303,10 +357,44 @@
 .emptyGallery {
     text-align: center;
     padding: 24px 16px;
-    border: 2px dashed var(--pixel-border-light);
-    color: var(--pixel-muted);
-    font-family: "VT323", monospace;
+    border: 2px dashed var(--go-border, var(--pixel-border-light));
+    color: var(--go-muted, var(--pixel-muted));
+    font-family: var(--go-font-ui, "VT323", "Courier New", monospace);
     font-size: 16px;
     margin-bottom: 14px;
 }
 
+/* System Hunter shell */
+:global([data-gamification-shell='system']) .shellRoot,
+:global([data-gamification-shell='system']) .pixelAchievementsShell {
+    border-width: 1px;
+    border-color: var(--go-border, rgba(34, 200, 255, 0.42));
+    border-radius: var(--go-radius, 2px);
+    box-shadow: var(--go-shadow, 0 0 22px rgba(34, 200, 255, 0.24));
+}
+
+:global([data-gamification-shell='system']) .galleryHeroTitle,
+:global([data-gamification-shell='system']) .sectionLabel,
+:global([data-gamification-shell='system']) .progressHeroTitle {
+    font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+    text-shadow: none !important;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--go-accent, #22c8ff) !important;
+}
+
+:global([data-gamification-shell='system']) .galleryHero,
+:global([data-gamification-shell='system']) .showcaseBadge,
+:global([data-gamification-shell='system']) .recentBadge,
+:global([data-gamification-shell='system']) .detailPanel,
+:global([data-gamification-shell='system']) .progressHero {
+    border-width: 1px !important;
+    border-color: var(--go-border, rgba(34, 200, 255, 0.42)) !important;
+    border-radius: var(--go-radius, 2px) !important;
+    box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16)) !important;
+}
+
+:global([data-gamification-shell='system']) .showcaseBadge:hover,
+:global([data-gamification-shell='system']) .recentBadge:hover {
+    transform: none;
+}

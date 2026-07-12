@@ -103,7 +103,10 @@ export const StatsTabView: React.FC<{
     variant === 'modal' ? styles.statsTabRootCompact : styles.statsTabRoot;
 
   return (
-    <div className={shell}>
+    <div
+      className={shell}
+      {...(variant === 'modal' ? {} : { 'data-pixel-shell': 'stats' })}
+    >
       <h2 className={styles.header}>Stats</h2>
       <div className={styles.statsContent}>
         <PlayerStats
