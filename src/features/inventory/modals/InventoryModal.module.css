@@ -44,22 +44,23 @@
   border: 1px solid var(--inv-border) !important;
 }
 
-/* Pixel variant — align with plugin pixel / notice tokens */
+/* Pixel variant — theme tokens from visualThemeManager */
 :global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) {
-  --inv-bg: #1b1d2f;
-  --inv-panel: #252742;
-  --inv-border: #5b61a2;
-  --inv-border-dark: #0f1120;
-  --inv-accent: #8ecae6;
-  --inv-accent-strong: #6ecff6;
-  --inv-text: #ecefff;
-  --inv-muted: #bac2e3;
-  --inv-highlight: #ffd166;
-  --inv-radius: 0;
-  --inv-shadow: 4px 4px 0 #0f1120, inset 0 0 0 1px #5b61a2;
+  --inv-bg: var(--go-bg, #1b1d2f);
+  --inv-panel: var(--go-panel, #252742);
+  --inv-panel-alt: var(--go-panel-strong, #2e3152);
+  --inv-border: var(--go-border, #5b61a2);
+  --inv-border-dark: var(--pixel-border-dark, #0f1120);
+  --inv-accent: var(--go-accent, #8ecae6);
+  --inv-accent-strong: var(--go-accent, #6ecff6);
+  --inv-text: var(--go-text, #ecefff);
+  --inv-muted: var(--go-muted, #bac2e3);
+  --inv-highlight: var(--go-gold, #ffd166);
+  --inv-radius: var(--go-radius, 0);
+  --inv-shadow: var(--go-shadow, 4px 4px 0 #0f1120), inset 0 0 0 1px var(--go-border, #5b61a2);
 
-  font-family: "Press Start 2P", "VT323", monospace;
-  border-radius: 0 !important;
+  font-family: var(--go-font-ui, "Press Start 2P", "VT323", monospace);
+  border-radius: var(--inv-radius) !important;
   border: 2px solid var(--inv-border-dark) !important;
   box-shadow: var(--inv-shadow) !important;
   background: var(--inv-bg) !important;

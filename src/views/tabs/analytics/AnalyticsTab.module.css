@@ -1068,3 +1068,154 @@
     border-radius: 0;
     box-shadow: none;
 }
+
+/* ========================================
+   PIXEL / SYSTEM SHELL
+   ======================================== */
+
+.pixelAnalyticsShell {
+    isolation: isolate;
+}
+
+.root.pixelAnalyticsShell {
+    font-family: var(--go-font-ui, "Press Start 2P", "VT323", "Courier New", monospace);
+    font-size: 11px;
+    line-height: 1.65;
+    color: var(--go-text, var(--pixel-text, var(--text-normal)));
+    background: var(--go-bg, var(--pixel-bg, var(--background-primary)));
+    border: 2px solid var(--pixel-border-dark, #0f1120);
+    border-radius: var(--go-radius, var(--pixel-card-radius, 0));
+    box-shadow: var(--go-shadow, var(--pixel-shadow, none)), inset 0 0 0 1px var(--go-border, var(--pixel-border-light, transparent));
+    box-sizing: border-box;
+}
+
+.root.pixelAnalyticsShell .title {
+    font-family: var(--go-font-ui, "Press Start 2P", "VT323", monospace);
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+    color: var(--go-accent, var(--pixel-accent, var(--text-normal)));
+    text-shadow: 2px 2px 0 var(--pixel-border-dark, transparent);
+}
+
+.root.pixelAnalyticsShell .sectionHeader,
+.root.pixelAnalyticsShell .cardHeader {
+    font-family: var(--go-font-ui, "Press Start 2P", monospace);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--go-accent, var(--pixel-accent, var(--text-muted)));
+}
+
+.root.pixelAnalyticsShell .tabButton {
+    border-radius: var(--go-radius, var(--pixel-card-radius, 6px));
+    border: 2px solid var(--pixel-border-dark, var(--background-modifier-border));
+    background: var(--go-card-soft, var(--pixel-panel-alt, var(--background-secondary)));
+    color: var(--go-muted, var(--pixel-muted, var(--text-muted)));
+    font-family: var(--go-font-ui, "Press Start 2P", monospace);
+    font-size: 0.6rem;
+    box-shadow: var(--go-shadow-soft, var(--pixel-shadow-pressed, none));
+}
+
+.root.pixelAnalyticsShell .activeTab {
+    background: var(--go-card, var(--pixel-panel, var(--background-primary)));
+    color: var(--go-accent, var(--pixel-accent, var(--text-normal)));
+    border-color: var(--go-accent, var(--pixel-accent, var(--interactive-accent)));
+    box-shadow: var(--go-shadow-soft, var(--pixel-shadow, none));
+}
+
+.root.pixelAnalyticsShell .card,
+.root.pixelAnalyticsShell .metricCard,
+.root.pixelAnalyticsShell .bossCard,
+.root.pixelAnalyticsShell .craftingCard,
+.root.pixelAnalyticsShell .achievementCard,
+.root.pixelAnalyticsShell .skillCard,
+.root.pixelAnalyticsShell .categoryCard,
+.root.pixelAnalyticsShell .itemCard,
+.root.pixelAnalyticsShell .rewardItem {
+    border-radius: var(--go-radius, var(--pixel-card-radius, 8px));
+    border: 2px solid var(--pixel-border-dark, var(--background-modifier-border));
+    background: var(--go-panel, var(--pixel-panel, var(--background-secondary)));
+    box-shadow: var(--go-shadow-soft, var(--pixel-shadow-pressed, none));
+}
+
+.root.pixelAnalyticsShell .exportBtn,
+.root.pixelAnalyticsShell .navBtn,
+.root.pixelAnalyticsShell .createMetricsBtn {
+    border-radius: var(--go-radius, var(--pixel-card-radius, 4px));
+    border: 2px solid var(--pixel-border-dark, var(--background-modifier-border));
+    background: var(--go-card-soft, var(--pixel-panel-alt, var(--background-secondary)));
+    color: var(--go-text, var(--pixel-text, var(--text-normal)));
+    font-family: var(--go-font-ui, "Press Start 2P", monospace);
+    font-size: 0.55rem;
+}
+
+.root.pixelAnalyticsShell .bigNumber,
+.root.pixelAnalyticsShell .metricVal {
+    color: var(--go-gold, var(--pixel-highlight, var(--text-accent)));
+    text-shadow: 1px 1px 0 var(--pixel-border-dark, transparent);
+}
+
+/* System Hunter shell */
+:global([data-gamification-shell='system']) .root.pixelAnalyticsShell {
+    font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif);
+    color: var(--go-text, #e0f2fe);
+    background: var(--go-bg, #071527);
+    border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42));
+    border-radius: var(--go-radius, 2px);
+    box-shadow: var(--go-shadow, 0 0 22px rgba(34, 200, 255, 0.24));
+    image-rendering: auto;
+}
+
+:global([data-gamification-shell='system']) .root.pixelAnalyticsShell .title {
+    font-size: 0.85rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--go-accent, #22c8ff);
+    text-shadow: 0 0 10px color-mix(in srgb, var(--go-accent, #22c8ff) 40%, transparent);
+}
+
+:global([data-gamification-shell='system']) .root.pixelAnalyticsShell .sectionHeader,
+:global([data-gamification-shell='system']) .root.pixelAnalyticsShell .cardHeader {
+    font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif);
+    font-size: 0.65rem;
+    color: var(--go-accent, #22c8ff);
+    text-shadow: none;
+}
+
+:global([data-gamification-shell='system']) .root.pixelAnalyticsShell .tabButton {
+    border-width: 1px;
+    border-color: var(--go-border, rgba(34, 200, 255, 0.42));
+    border-radius: var(--go-radius, 2px);
+    background: var(--go-card-soft, rgba(8, 28, 54, 0.72));
+    color: var(--go-muted, #9ec7df);
+    font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif);
+    font-size: 0.7rem;
+    box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16));
+}
+
+:global([data-gamification-shell='system']) .root.pixelAnalyticsShell .tabButton:hover {
+    transform: none;
+}
+
+:global([data-gamification-shell='system']) .root.pixelAnalyticsShell .activeTab {
+    background: var(--go-card, rgba(18, 55, 96, 0.58));
+    color: var(--go-accent, #22c8ff);
+    border-color: var(--go-accent, #22c8ff);
+}
+
+:global([data-gamification-shell='system']) .root.pixelAnalyticsShell .card,
+:global([data-gamification-shell='system']) .root.pixelAnalyticsShell .metricCard,
+:global([data-gamification-shell='system']) .root.pixelAnalyticsShell .bossCard,
+:global([data-gamification-shell='system']) .root.pixelAnalyticsShell .gaugeRow {
+    border-width: 1px;
+    border-color: var(--go-border, rgba(34, 200, 255, 0.42));
+    border-radius: var(--go-radius, 2px);
+    background: var(--go-panel, rgba(10, 30, 58, 0.9));
+    box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16));
+}
+
+:global([data-gamification-shell='system']) .root.pixelAnalyticsShell .bigNumber,
+:global([data-gamification-shell='system']) .root.pixelAnalyticsShell .metricVal {
+    color: var(--go-gold, #ffd83d);
+    text-shadow: none;
+}

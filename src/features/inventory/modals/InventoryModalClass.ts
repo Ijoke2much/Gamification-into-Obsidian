@@ -132,6 +132,7 @@ export class InventoryModalClass extends Modal {
 
 		// Mark this modal for targeted CSS without using :has()
 		this.modalEl.classList.add("gamify-inventory-modal", "gamify-inventory-modal--pixel");
+		this.modalEl.setAttribute("data-pixel-shell", "inventory");
 
 		this.root = createRoot(this.contentEl);
 		this.root.render(
@@ -145,6 +146,7 @@ export class InventoryModalClass extends Modal {
 	onClose() {
 		// Remove marker class
 		this.modalEl.classList.remove("gamify-inventory-modal", "gamify-inventory-modal--pixel");
+		this.modalEl.removeAttribute("data-pixel-shell");
 		if (this.root) {
 			this.root.unmount();
 			this.root = null;

@@ -1,6 +1,7 @@
 import "../shared/styles/gamified-notices.css";
 import "../shared/styles/system-hunter-shell.css";
 import "../shared/styles/tab-system-shell.css";
+import "../shared/styles/modal-system-shell.css";
 import "../shared/styles/pixel-enclave.css";
 import { Plugin, App, PluginSettingTab, Setting, Modal } from "obsidian";
 import React from 'react';

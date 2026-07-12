@@ -561,25 +561,14 @@
 }
 
 .pixelModalPanel {
-    --pixel-bg: #1b1d2f;
-    --pixel-panel: #252742;
-    --pixel-panel-alt: #2e3152;
-    --pixel-border-dark: #0f1120;
-    --pixel-border-light: #5b61a2;
-    --pixel-accent: #8ecae6;
-    --pixel-highlight: #ffd166;
-    --pixel-text: #ecefff;
-    --pixel-muted: #bac2e3;
-    --pixel-shadow: 4px 4px 0 var(--pixel-border-dark);
-    --pixel-radius: 0;
-    font-family: "Press Start 2P", "VT323", "Courier New", monospace;
+    font-family: var(--go-font-ui, "Press Start 2P", "VT323", "Courier New", monospace);
     font-size: 11px;
     line-height: 1.65;
-    color: var(--pixel-text);
-    background: var(--pixel-bg) !important;
-    border: 2px solid var(--pixel-border-dark) !important;
-    border-radius: var(--pixel-radius) !important;
-    box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light) !important;
+    color: var(--go-text, var(--pixel-text));
+    background: var(--go-bg, var(--pixel-bg)) !important;
+    border: 2px solid var(--pixel-border-dark, #0f1120) !important;
+    border-radius: var(--go-radius, var(--pixel-radius)) !important;
+    box-shadow: var(--go-shadow, var(--pixel-shadow)), inset 0 0 0 1px var(--go-border, var(--pixel-border-light)) !important;
 }
 
 .pixelModalPanel .modalHeader,
@@ -688,4 +677,38 @@
 
 .pixelModalPanel .modalBody::-webkit-scrollbar-thumb {
     border-radius: 0 !important;
+}
+
+/* System Hunter shell */
+:global([data-gamification-shell='system']) .pixelModalPanel .headerTitle,
+:global([data-gamification-shell='system']) .pixelModalPanel .questTitle,
+:global([data-gamification-shell='system']) .pixelModalPanel .bannerTitle {
+    font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+    font-size: 0.8rem !important;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--go-accent, #22c8ff) !important;
+    text-shadow: none !important;
+}
+
+:global([data-gamification-shell='system']) .pixelModalPanel .modalHeader,
+:global([data-gamification-shell='system']) .pixelModalPanel .modalFooter,
+:global([data-gamification-shell='system']) .pixelModalPanel .subtaskItem,
+:global([data-gamification-shell='system']) .pixelModalPanel .badge,
+:global([data-gamification-shell='system']) .pixelModalPanel .actionButton {
+    border-width: 1px !important;
+    border-color: var(--go-border, rgba(34, 200, 255, 0.42)) !important;
+    border-radius: var(--go-radius, 2px) !important;
+    box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16)) !important;
+}
+
+:global([data-gamification-shell='system']) .pixelModalPanel .sectionTitle {
+    color: var(--go-accent, #22c8ff) !important;
+    text-shadow: none !important;
+}
+
+:global([data-gamification-shell='system']) .pixelModalPanel .infoValue,
+:global([data-gamification-shell='system']) .pixelModalPanel .description {
+    font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+    font-size: 0.8rem !important;
 }

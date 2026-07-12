@@ -32,6 +32,39 @@ const TIER_CHIP_CLASS: Record<BadgeTier, string> = {
 	legendary: achStyles.tierChipLegendary,
 };
 
+const TIER_ACTIVE_COLOR: Record<BadgeTier, string> = {
+	bronze: "#CD7F32",
+	silver: "#C0C0C0",
+	gold: "#FFD700",
+	legendary: "#9F7AEA",
+};
+
+const TIER_LOCKED_COLOR: Record<BadgeTier, string> = {
+	bronze: "#8B4513",
+	silver: "#696969",
+	gold: "#B8860B",
+	legendary: "#6B46C1",
+};
+
+const CATEGORY_CLASS: Record<AchievementCategory, string> = {
+	quest: achStyles.catQuest,
+	progress: achStyles.catProgress,
+	collection: achStyles.catCollection,
+	special: achStyles.catSpecial,
+	pomodoro: achStyles.catPomodoro,
+	energy: achStyles.catEnergy,
+	habits: achStyles.catHabits,
+	crafting: achStyles.catCrafting,
+	boss: achStyles.catBoss,
+};
+
+function tierVars(tier: BadgeTier, status: string): React.CSSProperties {
+	return {
+		"--ach-tier":
+			status === "completed" ? TIER_ACTIVE_COLOR[tier] : TIER_LOCKED_COLOR[tier],
+	} as React.CSSProperties;
+}
+
 const ALL_CATEGORIES: AchievementCategory[] = [
 	"quest",
 	"progress",
@@ -164,43 +197,18 @@ export default function AchievementsTab({
 		return groups;
 	}, {} as Record<AchievementCategory, { achievement: Achievement; playerData: PlayerAchievement }[]>);
 
-	// Get tier colors and styling with enhanced visual effects
-	const getTierStyle = (tier: BadgeTier, status: string) => {
-		const tierColors = {
-			bronze: status === "completed" ? "#CD7F32" : "#8B4513",
-			silver: status === "completed" ? "#C0C0C0" : "#696969",
-			gold: status === "completed" ? "#FFD700" : "#B8860B",
-			legendary: status === "completed" ? "#9F7AEA" : "#6B46C1",
-		};
-
-		const isCompleted = status === "completed";
-
-		return {
-			borderColor: tierColors[tier],
-			boxShadow: isCompleted
-				? `0 0 10px ${tierColors[tier]}40`
-				: "0 1px 4px rgba(0,0,0,0.2)",
-			background: isCompleted
-				? `linear-gradient(135deg, ${tierColors[tier]}20, ${tierColors[tier]}10, rgba(255,255,255,0.03))`
-				: "linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02))",
-			transform: "scale(1)",
-			transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-			border: isCompleted ? `1px solid ${tierColors[tier]}` : "1px solid rgba(255,255,255,0.08)",
-		};
-	};
-
-	// Get category display info with enhanced styling
+	// Get category display info
 	const getCategoryInfo = (category: AchievementCategory) => {
 		const categoryInfo = {
-			quest: { name: "Quest", icon: "🎯", color: "#4CAF50" },
-			progress: { name: "Progress", icon: "📈", color: "#2196F3" },
-			collection: { name: "Collection", icon: "💰", color: "#FF9800" },
-			special: { name: "Special", icon: "⭐", color: "#9C27B0" },
-			pomodoro: { name: "Focus", icon: "🍅", color: "#FF5722" },
-			energy: { name: "Energy", icon: "⚡", color: "#FFD700" },
-			habits: { name: "Habits", icon: "🌱", color: "#4CAF50" },
-			crafting: { name: "Crafting", icon: "🔨", color: "#795548" },
-			boss: { name: "Boss", icon: "⚔️", color: "#F44336" },
+			quest: { name: "Quest", icon: "🎯" },
+			progress: { name: "Progress", icon: "📈" },
+			collection: { name: "Collection", icon: "💰" },
+			special: { name: "Special", icon: "⭐" },
+			pomodoro: { name: "Focus", icon: "🍅" },
+			energy: { name: "Energy", icon: "⚡" },
+			habits: { name: "Habits", icon: "🌱" },
+			crafting: { name: "Crafting", icon: "🔨" },
+			boss: { name: "Boss", icon: "⚔️" },
 		};
 		return categoryInfo[category];
 	};
@@ -220,7 +228,20 @@ export default function AchievementsTab({
 		const isInProgress = playerData.status === "in_progress";
 		const isHighlighted = recentlyUnlocked.includes(achievement.id);
 
-		const cardClassName = isHighlighted ? achStyles.highlightPulse : undefined;
+		const cardClassName = [
+			achStyles.achCard,
+			isCompleted ? achStyles.achCardCompleted : undefined,
+			viewMode === "grid" ? achStyles.achCardGrid : achStyles.achCardList,
+			isHighlighted ? achStyles.highlightPulse : undefined,
+		]
+			.filter(Boolean)
+			.join(" ");
+
+		const titleClassName = [
+			achStyles.achCardTitle,
+			viewMode === "grid" ? achStyles.achCardTitleGrid : achStyles.achCardTitleList,
+			isCompleted ? achStyles.achCardTitleCompleted : achStyles.achCardTitleMuted,
+		].join(" ");
 
 		// Grid view (compact card)
 		if (viewMode === "grid") {
@@ -230,21 +251,7 @@ export default function AchievementsTab({
 					data-achievement-id={achievement.id}
 					data-achievement-view="grid"
 					className={cardClassName}
-					style={{
-						...getTierStyle(achievement.tier, playerData.status),
-						borderRadius: "8px",
-						padding: "8px",
-						position: "relative",
-						overflow: "hidden",
-						cursor: "pointer",
-						fontSize: "10px",
-						display: "flex",
-						flexDirection: "column",
-						alignItems: "center",
-						textAlign: "center",
-						minHeight: "120px",
-						justifyContent: "center",
-					}}
+					style={tierVars(achievement.tier, playerData.status)}
 					onClick={() => openDetail(achievement, playerData)}
 					onKeyDown={(e) => {
 						if (e.key === "Enter" || e.key === " ") {
@@ -254,104 +261,39 @@ export default function AchievementsTab({
 					}}
 					role="button"
 					tabIndex={0}
-					onMouseEnter={(e) => {
-						if (isCompleted) {
-							e.currentTarget.style.transform = "scale(1.05)";
-						}
-					}}
-					onMouseLeave={(e) => {
-						if (isCompleted) {
-							e.currentTarget.style.transform = "scale(1)";
-						}
-					}}
 				>
-					{/* Grid view content - compact */}
-					<span 
-						style={{ 
-							fontSize: "24px", 
-							marginBottom: "4px",
-							filter: isLocked ? "grayscale(100%)" : "none",
-							transition: "all 0.3s ease",
-						}}
+					<span
+						className={`${achStyles.achCardIcon} ${achStyles.achCardIconGrid} ${
+							isLocked ? achStyles.achCardIconLocked : ""
+						}`}
 					>
 						{achievement.icon}
 					</span>
-					
-					<div
-						style={{
-							fontSize: "10px",
-							fontWeight: "600",
-							color: isCompleted ? "#fff" : "#ccc",
-							textShadow: isCompleted ? "0 1px 2px rgba(0,0,0,0.3)" : "none",
-							marginBottom: "2px",
-							lineHeight: "1.2",
-							maxHeight: "24px",
-							overflow: "hidden",
-						}}
-						title={achievement.title}
-					>
+
+					<div className={titleClassName} title={achievement.title}>
 						{achievement.title}
 					</div>
-					
+
 					<div
-						style={{
-							display: "inline-block",
-							padding: "1px 4px",
-							borderRadius: "4px",
-							background: getTierStyle(achievement.tier, "completed").borderColor,
-							color: "#fff",
-							fontSize: "8px",
-							fontWeight: "600",
-							textTransform: "uppercase",
-							letterSpacing: "0.2px",
-							marginBottom: "4px",
-						}}
+						className={`${achStyles.achCardTier} ${achStyles.achCardTierGrid}`}
+						style={{ "--ach-tier": TIER_ACTIVE_COLOR[achievement.tier] } as React.CSSProperties}
 					>
 						{achievement.tier}
 					</div>
 
-					{/* Completion indicator */}
 					{isCompleted && (
-						<div
-							style={{
-								background: "linear-gradient(135deg, #4CAF50, #66BB6A)",
-								borderRadius: "50%",
-								width: "12px",
-								height: "12px",
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "center",
-								fontSize: "8px",
-								boxShadow: "0 2px 6px rgba(76, 175, 80, 0.4)",
-								animation: "pulse 2s infinite",
-								marginTop: "auto",
-							}}
-						>
+						<div className={`${achStyles.achCardCheck} ${achStyles.achCardCheckGrid}`}>
 							✓
 						</div>
 					)}
 
-					{/* Compact Progress Bar for grid */}
 					{!isLocked && !isCompleted && (
 						<div
-							style={{
-								background: "rgba(255,255,255,0.1)",
-								borderRadius: "3px",
-								height: "3px",
-								width: "100%",
-								marginTop: "4px",
-								overflow: "hidden",
-								position: "relative",
-							}}
+							className={`${achStyles.achCardProgressTrack} ${achStyles.achCardProgressTrackGrid}`}
 						>
 							<div
-								style={{
-									background: `linear-gradient(90deg, #2196F3, #42A5F5)`,
-									height: "100%",
-									width: `${playerData.progress}%`,
-									borderRadius: "3px",
-									transition: "width 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
-								}}
+								className={achStyles.achCardProgressFill}
+								style={{ width: `${playerData.progress}%` }}
 							/>
 						</div>
 					)}
@@ -366,16 +308,7 @@ export default function AchievementsTab({
 				data-achievement-id={achievement.id}
 				data-achievement-view="list"
 				className={cardClassName}
-				style={{
-					...getTierStyle(achievement.tier, playerData.status),
-					borderRadius: "8px",
-					padding: "12px",
-					margin: "6px 0",
-					position: "relative",
-					overflow: "hidden",
-					cursor: "pointer",
-					fontSize: "12px",
-				}}
+				style={tierVars(achievement.tier, playerData.status)}
 				onClick={() => openDetail(achievement, playerData)}
 				onKeyDown={(e) => {
 					if (e.key === "Enter" || e.key === " ") {
@@ -385,240 +318,90 @@ export default function AchievementsTab({
 				}}
 				role="button"
 				tabIndex={0}
-				onMouseEnter={(e) => {
-					if (isCompleted) {
-						e.currentTarget.style.transform = "scale(1.02) translateY(-1px)";
-					}
-				}}
-				onMouseLeave={(e) => {
-					if (isCompleted) {
-						e.currentTarget.style.transform = "scale(1.01)";
-					}
-				}}
 			>
-				{/* Compact Achievement Header */}
-				<div style={{ display: "flex", alignItems: "center", marginBottom: "8px" }}>
-					<span 
-						style={{ 
-							fontSize: "20px", 
-							marginRight: "8px",
-							filter: isLocked ? "grayscale(100%)" : "none",
-							transition: "all 0.3s ease",
-						}}
+				<div className={achStyles.achCardHeader}>
+					<span
+						className={`${achStyles.achCardIcon} ${achStyles.achCardIconList} ${
+							isLocked ? achStyles.achCardIconLocked : ""
+						}`}
 					>
 						{achievement.icon}
 					</span>
-					<div style={{ flex: 1, minWidth: 0 }}>
-						<div
-							style={{
-								margin: "0 0 4px 0",
-								fontSize: "13px",
-								fontWeight: "600",
-								color: isCompleted ? "#fff" : "#ccc",
-								textShadow: isCompleted ? "0 1px 2px rgba(0,0,0,0.3)" : "none",
-								whiteSpace: "nowrap",
-								overflow: "hidden",
-								textOverflow: "ellipsis",
-							}}
-							title={achievement.title}
-						>
+					<div className={achStyles.achCardHeaderBody}>
+						<div className={titleClassName} title={achievement.title}>
 							{achievement.title}
 						</div>
 						<div
-							style={{
-								display: "inline-block",
-								padding: "2px 6px",
-								borderRadius: "8px",
-								background: getTierStyle(achievement.tier, "completed").borderColor,
-								color: "#fff",
-								fontSize: "9px",
-								fontWeight: "600",
-								textTransform: "uppercase",
-								letterSpacing: "0.3px",
-							}}
+							className={`${achStyles.achCardTier} ${achStyles.achCardTierList}`}
+							style={{ "--ach-tier": TIER_ACTIVE_COLOR[achievement.tier] } as React.CSSProperties}
 						>
 							{achievement.tier}
 						</div>
 					</div>
-					{/* Completion indicator */}
 					{isCompleted && (
-						<div
-							style={{
-								background: "linear-gradient(135deg, #4CAF50, #66BB6A)",
-								borderRadius: "50%",
-								width: "16px",
-								height: "16px",
-								display: "flex",
-								alignItems: "center",
-								justifyContent: "center",
-								fontSize: "10px",
-								boxShadow: "0 2px 6px rgba(76, 175, 80, 0.4)",
-								animation: "pulse 2s infinite",
-								flexShrink: 0,
-							}}
-						>
+						<div className={`${achStyles.achCardCheck} ${achStyles.achCardCheckList}`}>
 							✓
 						</div>
 					)}
 				</div>
 
-				{/* Compact description */}
 				<p
-					style={{
-						margin: "0 0 8px 0",
-						fontSize: "11px",
-						color: "#aaa",
-						lineHeight: "1.3",
-						fontStyle: isLocked && achievement.hidden ? "italic" : "normal",
-						display: "-webkit-box",
-						WebkitLineClamp: 2,
-						WebkitBoxOrient: "vertical",
-						overflow: "hidden",
-					}}
+					className={`${achStyles.achCardDesc} ${
+						isLocked && achievement.hidden ? achStyles.achCardDescHidden : ""
+					}`}
 				>
-					{isLocked && achievement.hidden
-						? "???"
-						: achievement.description}
+					{isLocked && achievement.hidden ? "???" : achievement.description}
 				</p>
 
-				{/* Compact Progress Bar */}
 				{!isLocked && (
 					<div
-						style={{
-							background: "rgba(255,255,255,0.1)",
-							borderRadius: "6px",
-							height: "6px",
-							marginBottom: "8px",
-							overflow: "hidden",
-							position: "relative",
-						}}
+						className={`${achStyles.achCardProgressTrack} ${achStyles.achCardProgressTrackList}`}
 					>
 						<div
-							style={{
-								background: isCompleted
-									? `linear-gradient(90deg, #4CAF50, #66BB6A)`
-									: `linear-gradient(90deg, #2196F3, #42A5F5)`,
-								height: "100%",
-								width: `${playerData.progress}%`,
-								borderRadius: "6px",
-								transition: "width 0.6s cubic-bezier(0.4, 0, 0.2, 1)",
-								position: "relative",
-							}}
+							className={`${achStyles.achCardProgressFill} ${
+								isCompleted ? achStyles.achCardProgressFillDone : ""
+							}`}
+							style={{ width: `${playerData.progress}%` }}
 						>
-							{/* Progress bar shine effect */}
-							{isInProgress && (
-								<div
-									style={{
-										position: "absolute",
-										top: 0,
-										left: 0,
-										right: 0,
-										bottom: 0,
-										background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)",
-										animation: "shimmer 2s infinite",
-									}}
-								/>
-							)}
+							{isInProgress && <div className={achStyles.achCardProgressShine} />}
 						</div>
 					</div>
 				)}
 
-				{/* Compact Progress Text */}
-				<div
-					style={{
-						fontSize: "10px",
-						color: "#888",
-						display: "flex",
-						justifyContent: "space-between",
-						alignItems: "center",
-						marginBottom: "8px",
-					}}
-				>
+				<div className={achStyles.achCardMeta}>
 					{!isLocked && (
-						<span style={{ fontWeight: "500" }}>
+						<span className={achStyles.achCardMetaValue}>
 							{Math.round(playerData.progress)}%
 							{playerData.currentValue !== undefined && (
-								<span style={{ color: "#aaa", marginLeft: "4px" }}>
+								<span className={achStyles.achCardMetaSub}>
 									({playerData.currentValue}/{achievement.criteria.target})
 								</span>
 							)}
 						</span>
 					)}
 					{isCompleted && playerData.unlockedDate && (
-						<span style={{ 
-							color: "#4CAF50", 
-							fontSize: "9px",
-							fontWeight: "600",
-							background: "rgba(76, 175, 80, 0.1)",
-							padding: "2px 6px",
-							borderRadius: "6px",
-						}}>
+						<span className={achStyles.achCardUnlocked}>
 							🏆 {new Date(playerData.unlockedDate).toLocaleDateString()}
 						</span>
 					)}
 				</div>
 
-				{/* Compact Rewards Preview */}
 				{(isCompleted || !isLocked) && achievement.rewards && (
-					<div
-						style={{
-							marginTop: "8px",
-							padding: "8px",
-							background: "rgba(255,255,255,0.06)",
-							borderRadius: "6px",
-							border: "1px solid rgba(255,255,255,0.08)",
-						}}
-					>
-						<div style={{ 
-							color: "#ccc", 
-							marginBottom: "6px",
-							fontSize: "10px",
-							fontWeight: "600",
-							textTransform: "uppercase",
-							letterSpacing: "0.3px",
-						}}>
-							🎁 Rewards
-						</div>
-						<div
-							style={{
-								display: "flex",
-								gap: "6px",
-								flexWrap: "wrap",
-							}}
-						>
+					<div className={achStyles.achCardRewards}>
+						<div className={achStyles.achCardRewardsLabel}>🎁 Rewards</div>
+						<div className={achStyles.achCardRewardsRow}>
 							{achievement.rewards.xp && (
-								<span style={{ 
-									color: "#66BB6A",
-									background: "rgba(102, 187, 106, 0.1)",
-									padding: "2px 6px",
-									borderRadius: "4px",
-									fontSize: "9px",
-									fontWeight: "500",
-								}}>
+								<span className={achStyles.achRewardXp}>
 									⚡ +{achievement.rewards.xp} XP
 								</span>
 							)}
 							{achievement.rewards.coins && (
-								<span style={{ 
-									color: "#FFD54F",
-									background: "rgba(255, 213, 79, 0.1)",
-									padding: "2px 6px",
-									borderRadius: "4px",
-									fontSize: "9px",
-									fontWeight: "500",
-								}}>
+								<span className={achStyles.achRewardCoins}>
 									🪙 +{achievement.rewards.coins}
 								</span>
 							)}
 							{achievement.rewards.title && (
-								<span style={{ 
-									color: "#BA68C8",
-									background: "rgba(186, 104, 200, 0.1)",
-									padding: "2px 6px",
-									borderRadius: "4px",
-									fontSize: "9px",
-									fontWeight: "500",
-								}}>
+								<span className={achStyles.achRewardTitle}>
 									👑 "{achievement.rewards.title}"
 								</span>
 							)}
@@ -626,23 +409,11 @@ export default function AchievementsTab({
 					</div>
 				)}
 
-				{/* Hidden achievement hint */}
 				{achievement.hidden && isLocked && (
-					<div style={{
-						position: "absolute",
-						bottom: "8px",
-						right: "8px",
-						background: "rgba(255,255,255,0.1)",
-						borderRadius: "50%",
-						width: "16px",
-						height: "16px",
-						display: "flex",
-						alignItems: "center",
-						justifyContent: "center",
-						fontSize: "9px",
-						color: "#666",
-						cursor: "help",
-					}} title="This is a hidden achievement. Keep playing to discover it!">
+					<div
+						className={achStyles.achHiddenHint}
+						title="This is a hidden achievement. Keep playing to discover it!"
+					>
 						❓
 					</div>
 				)}
@@ -751,73 +522,24 @@ export default function AchievementsTab({
 			)}
 
 			{/* Compact Filter Controls */}
-			<div
-				style={{
-					background: "rgba(255,255,255,0.06)",
-					borderRadius: "10px",
-					padding: "12px",
-					marginBottom: "16px",
-					border: "1px solid rgba(255,255,255,0.08)",
-				}}
-			>
-				{/* Compact Search Bar */}
-				<div style={{ marginBottom: "12px" }}>
-					<input
-						type="text"
-						placeholder="🔍 Search..."
-						value={searchTerm}
-						onChange={(e) => setSearchTerm(e.target.value)}
-						style={{
-							width: "100%",
-							padding: "8px 12px",
-							borderRadius: "8px",
-							border: "1px solid rgba(255,255,255,0.2)",
-							background: "rgba(255,255,255,0.1)",
-							color: "#fff",
-							fontSize: "12px",
-							outline: "none",
-							boxSizing: "border-box",
-						}}
-					/>
-				</div>
+			<div className={achStyles.filterPanel}>
+				<input
+					type="text"
+					placeholder="🔍 Search..."
+					value={searchTerm}
+					onChange={(e) => setSearchTerm(e.target.value)}
+					className={achStyles.filterSearch}
+				/>
 
-				{/* Compact Category and View Controls */}
-				<div style={{ marginBottom: "12px" }}>
-					<label
-						style={{
-							fontSize: "11px",
-							color: "#ccc",
-							marginBottom: "6px",
-							display: "block",
-							fontWeight: "600",
-						}}
-					>
-						Category:
-					</label>
-					<div
-						style={{
-							display: "flex",
-							gap: "4px",
-							flexWrap: "wrap",
-							marginBottom: "8px",
-						}}
-					>
+				<div className={achStyles.filterSection}>
+					<label className={achStyles.filterLabel}>Category:</label>
+					<div className={achStyles.filterChipRow}>
 						<button
+							type="button"
 							onClick={() => setSelectedCategory("all")}
-							style={{
-								padding: "4px 8px",
-								borderRadius: "12px",
-								border: "none",
-								background:
-									selectedCategory === "all"
-										? "#2196F3"
-										: "rgba(255,255,255,0.1)",
-								color: "#fff",
-								fontSize: "10px",
-								cursor: "pointer",
-								fontWeight: "600",
-								transition: "all 0.2s ease",
-							}}
+							className={`${achStyles.filterChip} ${
+								selectedCategory === "all" ? achStyles.filterChipAllActive : ""
+							}`}
 						>
 							All
 						</button>
@@ -826,23 +548,11 @@ export default function AchievementsTab({
 							return (
 								<button
 									key={category}
-									onClick={() =>
-										setSelectedCategory(category)
-									}
-									style={{
-										padding: "4px 8px",
-										borderRadius: "12px",
-										border: "none",
-										background:
-											selectedCategory === category
-												? info.color
-												: "rgba(255,255,255,0.1)",
-										color: "#fff",
-										fontSize: "10px",
-										cursor: "pointer",
-										fontWeight: "600",
-										transition: "all 0.2s ease",
-									}}
+									type="button"
+									onClick={() => setSelectedCategory(category)}
+									className={`${achStyles.filterChip} ${CATEGORY_CLASS[category]} ${
+										selectedCategory === category ? achStyles.filterChipActive : ""
+									}`}
 								>
 									{info.icon}
 								</button>
@@ -850,76 +560,36 @@ export default function AchievementsTab({
 						})}
 					</div>
 
-					{/* Compact View Mode Toggle */}
-					<div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
+					<div className={achStyles.viewToggleRow}>
 						<button
+							type="button"
 							onClick={() => setViewMode("list")}
-							style={{
-								padding: "8px 12px",
-								borderRadius: "6px",
-								border: "none",
-								background: viewMode === "list" ? "#4CAF50" : "rgba(255,255,255,0.1)",
-								color: "#fff",
-								fontSize: "10px",
-								cursor: "pointer",
-								transition: "all 0.2s ease",
-								minHeight: "32px",
-								minWidth: "60px",
-								touchAction: "manipulation",
-								WebkitTapHighlightColor: "transparent",
-							}}
+							className={`${achStyles.viewToggleBtn} ${
+								viewMode === "list" ? achStyles.viewToggleBtnActive : ""
+							}`}
 						>
 							📋 List
 						</button>
 						<button
+							type="button"
 							onClick={() => setViewMode("grid")}
-							style={{
-								padding: "8px 12px",
-								borderRadius: "6px",
-								border: "none",
-								background: viewMode === "grid" ? "#4CAF50" : "rgba(255,255,255,0.1)",
-								color: "#fff",
-								fontSize: "10px",
-								cursor: "pointer",
-								transition: "all 0.2s ease",
-								minHeight: "32px",
-								minWidth: "60px",
-								touchAction: "manipulation",
-								WebkitTapHighlightColor: "transparent",
-							}}
+							className={`${achStyles.viewToggleBtn} ${
+								viewMode === "grid" ? achStyles.viewToggleBtnActive : ""
+							}`}
 						>
 							📱 Grid
 						</button>
 					</div>
 				</div>
 
-				{/* Compact Sorting */}
-				<div style={{ marginBottom: "12px" }}>
-					<label
-						style={{
-							fontSize: "11px",
-							color: "#ccc",
-							marginBottom: "4px",
-							display: "block",
-							fontWeight: "600",
-						}}
-					>
-						Sort:
-					</label>
+				<div className={achStyles.filterSection}>
+					<label className={achStyles.filterLabel}>Sort:</label>
 					<select
 						value={sortBy}
-						onChange={(e) => setSortBy(e.target.value as "progress" | "tier" | "name" | "date")}
-						style={{
-							padding: "4px 8px",
-							borderRadius: "6px",
-							border: "1px solid rgba(255,255,255,0.2)",
-							background: "rgba(255,255,255,0.1)",
-							color: "#fff",
-							fontSize: "10px",
-							outline: "none",
-							width: "100%",
-							boxSizing: "border-box",
-						}}
+						onChange={(e) =>
+							setSortBy(e.target.value as "progress" | "tier" | "name" | "date")
+						}
+						className={achStyles.sortSelect}
 					>
 						<option value="progress">Progress</option>
 						<option value="tier">Tier</option>
@@ -928,86 +598,41 @@ export default function AchievementsTab({
 					</select>
 				</div>
 
-				{/* Status Filters - Mobile-Friendly Toggle Buttons */}
-				<div style={{ 
-					display: "flex", 
-					flexDirection: "column",
-					gap: "8px", 
-					marginBottom: "16px"
-				}}>
+				<div className={achStyles.statusFilterCol}>
 					<button
+						type="button"
 						onClick={() => setShowCompleted(!showCompleted)}
-						style={{
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "flex-start",
-							gap: "8px",
-							cursor: "pointer",
-							padding: "12px 16px",
-							borderRadius: "8px",
-							background: showCompleted ? "#4CAF50" : "rgba(255,255,255,0.1)",
-							border: "none",
-							color: showCompleted ? "#fff" : "#aaa",
-							fontSize: "12px",
-							fontWeight: "600",
-							transition: "all 0.2s ease",
-							minHeight: "44px",
-							width: "100%",
-							touchAction: "manipulation",
-							WebkitTapHighlightColor: "transparent",
-						}}
+						className={`${achStyles.statusFilterBtn} ${
+							showCompleted
+								? `${achStyles.statusFilterBtnActive} ${achStyles.statusCompletedActive}`
+								: ""
+						}`}
 					>
-						<span style={{ fontSize: "16px" }}>✅</span>
+						<span className={achStyles.statusFilterIcon}>✅</span>
 						<span>Show Completed</span>
 					</button>
 					<button
+						type="button"
 						onClick={() => setShowInProgress(!showInProgress)}
-						style={{
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "flex-start",
-							gap: "8px",
-							cursor: "pointer",
-							padding: "12px 16px",
-							borderRadius: "8px",
-							background: showInProgress ? "#2196F3" : "rgba(255,255,255,0.1)",
-							border: "none",
-							color: showInProgress ? "#fff" : "#aaa",
-							fontSize: "12px",
-							fontWeight: "600",
-							transition: "all 0.2s ease",
-							minHeight: "44px",
-							width: "100%",
-							touchAction: "manipulation",
-							WebkitTapHighlightColor: "transparent",
-						}}
+						className={`${achStyles.statusFilterBtn} ${
+							showInProgress
+								? `${achStyles.statusFilterBtnActive} ${achStyles.statusProgressActive}`
+								: ""
+						}`}
 					>
-						<span style={{ fontSize: "16px" }}>🔄</span>
+						<span className={achStyles.statusFilterIcon}>🔄</span>
 						<span>Show In Progress</span>
 					</button>
 					<button
+						type="button"
 						onClick={() => setShowLocked(!showLocked)}
-						style={{
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "flex-start",
-							gap: "8px",
-							cursor: "pointer",
-							padding: "12px 16px",
-							borderRadius: "8px",
-							background: showLocked ? "#666" : "rgba(255,255,255,0.1)",
-							border: "none",
-							color: showLocked ? "#fff" : "#aaa",
-							fontSize: "12px",
-							fontWeight: "600",
-							transition: "all 0.2s ease",
-							minHeight: "44px",
-							width: "100%",
-							touchAction: "manipulation",
-							WebkitTapHighlightColor: "transparent",
-						}}
+						className={`${achStyles.statusFilterBtn} ${
+							showLocked
+								? `${achStyles.statusFilterBtnActive} ${achStyles.statusLockedActive}`
+								: ""
+						}`}
 					>
-						<span style={{ fontSize: "16px" }}>🔒</span>
+						<span className={achStyles.statusFilterIcon}>🔒</span>
 						<span>Show Locked</span>
 					</button>
 				</div>
@@ -1021,32 +646,13 @@ export default function AchievementsTab({
 					);
 
 					return (
-						<div key={category} style={{ marginBottom: "20px" }}>
-							<h3
-								style={{
-									color: categoryInfo.color,
-									fontSize: "14px",
-									marginBottom: "8px",
-									display: "flex",
-									alignItems: "center",
-									gap: "6px",
-									fontWeight: "700",
-									textShadow: "0 1px 2px rgba(0,0,0,0.3)",
-								}}
-							>
-								<span style={{ fontSize: "16px" }}>{categoryInfo.icon}</span>
+						<div key={category} className={`${achStyles.categorySection} ${CATEGORY_CLASS[category as AchievementCategory]}`}>
+							<h3 className={achStyles.categoryHeading}>
+								<span className={achStyles.categoryHeadingIcon}>
+									{categoryInfo.icon}
+								</span>
 								{categoryInfo.name}
-								<span
-									style={{
-										fontSize: "10px",
-										color: "#666",
-										background: "rgba(255,255,255,0.1)",
-										padding: "2px 6px",
-										borderRadius: "10px",
-										fontWeight: "600",
-										marginLeft: "auto",
-									}}
-								>
+								<span className={achStyles.categoryCount}>
 									{
 										achievements.filter(
 											(a) =>
@@ -1058,12 +664,13 @@ export default function AchievementsTab({
 								</span>
 							</h3>
 
-							{/* Conditional view based on viewMode */}
-							<div style={{
-								display: viewMode === "grid" ? "grid" : "block",
-								gridTemplateColumns: viewMode === "grid" ? "repeat(auto-fit, minmax(120px, 1fr))" : undefined,
-								gap: viewMode === "grid" ? "8px" : "4px",
-							}}>
+							<div
+								className={
+									viewMode === "grid"
+										? achStyles.achievementGrid
+										: achStyles.achievementList
+								}
+							>
 								{achievements.map(({ achievement, playerData }) => (
 									<AchievementCard
 										key={achievement.id}
@@ -1078,75 +685,24 @@ export default function AchievementsTab({
 				}
 			)}
 
-			{/* Compact Empty State */}
 			{filteredAchievements.length === 0 && (
-				<div
-					style={{
-						textAlign: "center",
-						padding: "40px 20px",
-						color: "#666",
-						fontSize: "14px",
-						background: "rgba(255,255,255,0.05)",
-						borderRadius: "12px",
-						border: "1px solid rgba(255,255,255,0.1)",
-					}}
-				>
-					<div style={{ fontSize: "32px", marginBottom: "12px" }}>🔍</div>
-					<h3 style={{ margin: "0 0 8px 0", color: "#ccc", fontSize: "14px" }}>No achievements found</h3>
-					<p style={{ margin: 0, color: "#888", fontSize: "12px" }}>
-						Try adjusting your filters.
-					</p>
+				<div className={achStyles.emptyState}>
+					<div className={achStyles.emptyStateIcon}>🔍</div>
+					<h3>No achievements found</h3>
+					<p>Try adjusting your filters.</p>
 				</div>
 			)}
 
-			{/* Compact Refresh Button */}
 			{onRefresh && (
 				<button
+					type="button"
 					onClick={onRefresh}
-					style={{
-						position: "fixed",
-						bottom: "16px",
-						right: "16px",
-						background: "linear-gradient(135deg, #2196F3, #42A5F5)",
-						border: "none",
-						borderRadius: "50%",
-						width: "48px",
-						height: "48px",
-						color: "#fff",
-						fontSize: "20px",
-						cursor: "pointer",
-						boxShadow: "0 4px 16px rgba(33, 150, 243, 0.4)",
-						transition: "all 0.3s ease",
-						zIndex: 1000,
-					}}
-					onMouseEnter={(e) => {
-						e.currentTarget.style.transform = "scale(1.1)";
-						e.currentTarget.style.boxShadow = "0 8px 24px rgba(33, 150, 243, 0.6)";
-					}}
-					onMouseLeave={(e) => {
-						e.currentTarget.style.transform = "scale(1)";
-						e.currentTarget.style.boxShadow = "0 4px 16px rgba(33, 150, 243, 0.4)";
-					}}
+					className={achStyles.refreshBtn}
 					title="Refresh achievements"
 				>
 					🔄
 				</button>
 			)}
-
-			{/* CSS Animations */}
-			<style>
-				{`
-					@keyframes pulse {
-						0%, 100% { transform: scale(1); }
-						50% { transform: scale(1.05); }
-					}
-					
-					@keyframes shimmer {
-						0% { transform: translateX(-100%); }
-						100% { transform: translateX(100%); }
-					}
-				`}
-			</style>
 
 			{detailEntry &&
 				ReactDOM.createPortal(
@@ -1184,29 +740,25 @@ export default function AchievementsTab({
 								)}
 							</div>
 							{detailEntry.playerData.status !== "locked" && (
-								<div style={{ marginBottom: 12 }}>
-									<div
-										style={{
-											background: "rgba(255,255,255,0.1)",
-											borderRadius: 6,
-											height: 8,
-											overflow: "hidden",
-										}}
-									>
+								<div className={achStyles.detailProgressWrap}>
+									<div className={achStyles.detailProgressTrack}>
 										<div
-											style={{
-												background: detailEntry.playerData.status === "completed"
-													? "linear-gradient(90deg, #4CAF50, #66BB6A)"
-													: "linear-gradient(90deg, #2196F3, #42A5F5)",
-												height: "100%",
-												width: `${detailEntry.playerData.progress}%`,
-											}}
+											className={`${achStyles.detailProgressFill} ${
+												detailEntry.playerData.status === "completed"
+													? achStyles.detailProgressFillDone
+													: ""
+											}`}
+											style={{ width: `${detailEntry.playerData.progress}%` }}
 										/>
 									</div>
-									<div style={{ fontSize: 12, color: "#aaa", marginTop: 4 }}>
+									<div className={achStyles.detailProgressMeta}>
 										{Math.round(detailEntry.playerData.progress)}%
 										{detailEntry.playerData.currentValue !== undefined && (
-											<> ({detailEntry.playerData.currentValue}/{detailEntry.achievement.criteria.target})</>
+											<>
+												{" "}
+												({detailEntry.playerData.currentValue}/
+												{detailEntry.achievement.criteria.target})
+											</>
 										)}
 									</div>
 								</div>

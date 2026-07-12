@@ -2140,7 +2140,7 @@ export const AnalyticsTab: React.FC<Props> = ({ plugin }) => {
   );
 
   return (
-    <div className={styles.root} {...swipeHandlers}>
+    <div className={`${styles.root} ${styles.pixelAnalyticsShell}`} data-pixel-shell="analytics" {...swipeHandlers}>
       <div className={styles.header}>
         <div className={styles.title}>Analytics Dashboard</div>
         <div className={styles.headerControls}>

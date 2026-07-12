@@ -1,0 +1,76 @@
+/**
+ * System Hunter shell — inventory and quest modal roots.
+ * Child surfaces use module CSS; roots use data-pixel-shell attributes.
+ */
+
+/* ── Inventory modal ── */
+[data-gamification-shell='system'][data-pixel-shell='inventory'],
+[data-gamification-shell='system'] .gamify-inventory-modal.gamify-inventory-modal--pixel {
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+	border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42)) !important;
+	border-radius: var(--go-radius, 2px) !important;
+	box-shadow: var(--go-shadow, 0 0 22px rgba(34, 200, 255, 0.24)) !important;
+	background: var(--go-bg, #071527) !important;
+}
+
+[data-gamification-shell='system'] .gamify-inventory-modal.gamify-inventory-modal--pixel .modal-title,
+[data-gamification-shell='system'] .gamify-inventory-modal.gamify-inventory-modal--pixel .modal-title-bar {
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+	font-size: 0.75rem !important;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: var(--go-accent, #22c8ff) !important;
+	background: var(--go-panel, rgba(10, 30, 58, 0.9)) !important;
+	border-bottom: 1px solid var(--go-border, rgba(34, 200, 255, 0.42)) !important;
+	box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16)) !important;
+}
+
+[data-gamification-shell='system'] .gamify-inventory-modal.gamify-inventory-modal--pixel .gamify-close-btn {
+	border-width: 1px !important;
+	border-color: var(--go-border, rgba(34, 200, 255, 0.42)) !important;
+	border-radius: var(--go-radius, 2px) !important;
+	background: var(--go-card-soft, rgba(8, 28, 54, 0.72)) !important;
+	color: var(--go-text, #e0f2fe) !important;
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+	box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16)) !important;
+}
+
+/* ── Quest modal roots ── */
+[data-gamification-shell='system'][data-pixel-shell='quest-detail'],
+[data-gamification-shell='system'][data-pixel-shell='quest-form'] {
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+	color: var(--go-text, #e0f2fe);
+	background: var(--go-bg, #071527) !important;
+	border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42)) !important;
+	border-radius: var(--go-radius, 2px) !important;
+	box-shadow: var(--go-shadow, 0 0 22px rgba(34, 200, 255, 0.24)) !important;
+}
+
+[data-gamification-shell='system'][data-pixel-shell='quest-detail'] :is(h1, h2, h3, h4),
+[data-gamification-shell='system'][data-pixel-shell='quest-form'] :is(h1, h2, h3, h4) {
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+	letter-spacing: 0.1em;
+	text-transform: uppercase;
+	color: var(--go-accent, #22c8ff) !important;
+	text-shadow: none !important;
+}
+
+[data-gamification-shell='system'][data-pixel-shell='quest-detail'] button,
+[data-gamification-shell='system'][data-pixel-shell='quest-form'] button,
+[data-gamification-shell='system'][data-pixel-shell='quest-detail'] input,
+[data-gamification-shell='system'][data-pixel-shell='quest-form'] input,
+[data-gamification-shell='system'][data-pixel-shell='quest-detail'] select,
+[data-gamification-shell='system'][data-pixel-shell='quest-form'] select,
+[data-gamification-shell='system'][data-pixel-shell='quest-detail'] textarea,
+[data-gamification-shell='system'][data-pixel-shell='quest-form'] textarea {
+	border-width: 1px !important;
+	border-color: var(--go-border, rgba(34, 200, 255, 0.42)) !important;
+	border-radius: var(--go-radius, 2px) !important;
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+	box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16)) !important;
+}
+
+[data-gamification-shell='system'][data-pixel-shell='quest-detail'] button:hover,
+[data-gamification-shell='system'][data-pixel-shell='quest-form'] button:hover {
+	transform: none !important;
+}
