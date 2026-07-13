@@ -34,7 +34,6 @@
     text-shadow: 2px 2px 0 var(--pixel-border-dark, #0f1120);
 }
 
-.systemShopShell.shopLoading.shopLayout:global(.gami-shop-tab),
 .systemShopShell.shopLoading.shopLayout:global(.gami-shop-tab) {
     color: var(--go-accent, #22c8ff);
     text-shadow: none;

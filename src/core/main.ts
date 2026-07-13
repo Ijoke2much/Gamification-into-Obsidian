@@ -1106,6 +1106,9 @@ export default class GamifiedObsidianPlugin extends Plugin {
 			// Load plugin settings
 			await this.loadSettings();
 
+			// Preload shop UI so CSS modules inject before the Shop tab is opened.
+			void import("../features/shop/components/createShopTab");
+
 			// Set the vault on the player store
 			playerStore.setVault(this.app.vault);
 

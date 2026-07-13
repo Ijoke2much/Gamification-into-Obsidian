@@ -47,7 +47,7 @@ import { currencyDisplay } from "../../shared/services/currencyDisplayService";
 import { MobileErrorBoundary } from "../../shared/components/MobileErrorBoundary";
 
 // Enhanced lazy loading with performance optimization
-const ShopTab = React.lazy(() => import("src/features/shop/components/createShopTab"));
+import ShopTab from "src/features/shop/components/createShopTab";
 const QuestTab = React.lazy(() =>
 	import("../sidebar/SidebarQuestView").then((m) => ({ default: m.SidebarQuestViewComponent }))
 );
@@ -1106,15 +1106,13 @@ ${testResults.join('\n')}`;
 
                         {/* Mobile-optimized tab content with Suspense and Error Boundaries */}
                         <ErrorBoundary componentName="Shop Tab">
-                            <Suspense fallback={<TabLoadingState tabName={currentTab.label} />}>
-                                {selectedTab === "shop" && (
-                                    <ShopTab
-                                        plugin={plugin}
-                                        rebuildShopTab={() => {}}
-                                        visualThemePreset={appliedVisualTheme.preset}
-                                    />
-                                )}
-                            </Suspense>
+                            {selectedTab === "shop" && (
+                                <ShopTab
+                                    plugin={plugin}
+                                    rebuildShopTab={() => {}}
+                                    visualThemePreset={appliedVisualTheme.preset}
+                                />
+                            )}
                         </ErrorBoundary>
 
                         <ErrorBoundary componentName="Quest Tab">

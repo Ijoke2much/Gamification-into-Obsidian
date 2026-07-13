@@ -126,7 +126,20 @@ export default function ShopTab({ plugin, rebuildShopTab, visualThemePreset: vis
         () => getAppliedVisualTheme(),
         [themeRevision, visualThemePresetProp]
     );
-    const visualThemePreset = visualThemePresetProp ?? appliedVisualTheme.preset;
+
+    const htmlVisualTheme =
+        typeof document !== "undefined"
+            ? (document.documentElement.getAttribute("data-gamification-visual-theme") as VisualThemePresetId | null)
+            : null;
+
+    const visualThemePreset: VisualThemePresetId =
+        visualThemePresetProp === "system-hunter" ||
+        appliedVisualTheme.preset === "system-hunter" ||
+        htmlVisualTheme === "system-hunter" ||
+        plugin.settings.visualTheme?.preset === "system-hunter"
+            ? "system-hunter"
+            : (visualThemePresetProp ?? appliedVisualTheme.preset ?? "classic");
+
     const isSystemTheme = visualThemePreset === "system-hunter";
 
     const shopShellAttrs = {
