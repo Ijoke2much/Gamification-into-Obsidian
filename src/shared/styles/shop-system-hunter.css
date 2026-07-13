@@ -19,6 +19,18 @@ html[data-gamification-visual-theme='system-hunter'] .gami-shop-tab,
 	-webkit-font-smoothing: antialiased !important;
 }
 
+/* Inner shop content inside SystemFrame — frame/scaffold provide the chrome */
+html[data-gamification-visual-theme='system-hunter'] .gami-shop-tab[data-shop-system-inner],
+[data-gamification-plugin][data-gamification-visual-theme='system-hunter'] .gami-shop-tab[data-shop-system-inner],
+.gami-shop-tab.gami-shop-system[data-shop-system-inner] {
+	background: transparent !important;
+	border: none !important;
+	box-shadow: none !important;
+	padding: 0 !important;
+	margin: 0 !important;
+	max-width: none !important;
+}
+
 html[data-gamification-visual-theme='system-hunter'] .gami-shop-tab .gami-shop-header,
 [data-gamification-plugin][data-gamification-visual-theme='system-hunter'] .gami-shop-tab .gami-shop-header,
 .gami-shop-tab.gami-shop-system .gami-shop-header {

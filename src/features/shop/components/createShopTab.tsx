@@ -26,6 +26,7 @@ import shopStyles from "./ShopTab.module.css";
 import { getAppliedVisualTheme } from "../../../shared/utils/visualThemeManager";
 import { onSettingsUpdated } from "../../../shared/utils/settingsEvents";
 import type { VisualThemePresetId } from "../../../shared/themes/types";
+import { SystemFrame, SystemHeader, SystemScaffold } from "../../../shared/components/ui/system";
 
 interface Props {
     plugin: GamifiedObsidianPlugin;
@@ -148,9 +149,33 @@ export default function ShopTab({ plugin, rebuildShopTab, visualThemePreset: vis
         "data-gamification-visual-theme": visualThemePreset,
     };
 
-    // Direct shell class (Player tab pattern) — mutually exclusive with shopRoot.
-    const shopShellClass = isSystemTheme ? shopStyles.systemShopShell : shopStyles.shopRoot;
-    const shopSystemClass = isSystemTheme ? "gami-shop-system" : "";
+    const shopInnerClass = isSystemTheme
+        ? `gami-shop-tab gami-shop-system ${shopStyles.shopLayout} ${shopStyles.systemShopShell} ${shopStyles.systemShopInner}`
+        : `gami-shop-tab ${shopStyles.shopLayout} ${shopStyles.shopRoot}`;
+
+    const renderShopShell = (children: React.ReactNode, extraClass = "") => {
+        const inner = (
+            <div
+                className={[shopInnerClass, extraClass].filter(Boolean).join(" ")}
+                {...shopShellAttrs}
+                {...(isSystemTheme ? { "data-shop-system-inner": "" as const } : {})}
+            >
+                {children}
+            </div>
+        );
+
+        if (!isSystemTheme) {
+            return inner;
+        }
+
+        return (
+            <SystemScaffold className={shopStyles.shopSystemRoot}>
+                <SystemFrame className={shopStyles.shopSystemFrame}>
+                    {inner}
+                </SystemFrame>
+            </SystemScaffold>
+        );
+    };
 
     // Add coins state and fetchCoins function
     const [coins, setCoins] = useState(0);
@@ -498,28 +523,31 @@ export default function ShopTab({ plugin, rebuildShopTab, visualThemePreset: vis
     }, [items, categoryFilter, rarityFilter, sortBy]);
 
     if (loading) {
-        return (
-            <p
-                className={`gami-shop-tab ${shopSystemClass} ${shopStyles.shopLayout} ${shopShellClass} ${shopStyles.shopLoading}`}
-                {...shopShellAttrs}
-            >
-                Loading shop...
-            </p>
-        );
+        return renderShopShell("Loading shop...", shopStyles.shopLoading);
     }
 
-    return (
-        <div
-            className={`gami-shop-tab ${shopSystemClass} ${shopStyles.shopLayout} ${shopShellClass}`}
-            {...shopShellAttrs}
-        >
-            <div className="gami-shop-header">
-                <span className={shopStyles.shopHeaderTitle}>🛒 Shop</span>
-                <div className={shopStyles.shopCurrencyBadge}>
-                    <span>{currencySymbol}</span>
-                    <span>{coins.toLocaleString()}</span>
+    return renderShopShell(
+        <>
+            {isSystemTheme ? (
+                <>
+                    <SystemHeader icon="🛒" label="MERCHANT" title="Shop" />
+                    <div className={shopStyles.shopSystemCurrencyRow}>
+                        <span className={shopStyles.shopSystemCurrencyLabel}>Balance</span>
+                        <span className={shopStyles.shopSystemCurrencyValue}>
+                            <span aria-hidden="true">{currencySymbol}</span>
+                            <span>{coins.toLocaleString()}</span>
+                        </span>
+                    </div>
+                </>
+            ) : (
+                <div className="gami-shop-header">
+                    <span className={shopStyles.shopHeaderTitle}>🛒 Shop</span>
+                    <div className={shopStyles.shopCurrencyBadge}>
+                        <span>{currencySymbol}</span>
+                        <span>{coins.toLocaleString()}</span>
+                    </div>
                 </div>
-            </div>
+            )}
 
             <div className={shopStyles.shopkeeperSection}>
                 {imgError ? (
@@ -683,7 +711,7 @@ export default function ShopTab({ plugin, rebuildShopTab, visualThemePreset: vis
                     })}
                 </div>
             )}
-        </div>
+        </>
     );
 }
 

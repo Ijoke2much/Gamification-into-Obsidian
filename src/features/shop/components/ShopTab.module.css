@@ -721,3 +721,60 @@
     color: var(--go-accent, #22c8ff);
     font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif);
 }
+
+/* ── System UI kit wrapper (Solo Leveling scaffold + frame) ── */
+.shopSystemRoot {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    border-radius: var(--go-radius, 2px);
+    overflow: hidden;
+}
+
+.shopSystemFrame {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+}
+
+.systemShopInner:global(.gami-shop-tab) {
+    max-width: none !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    image-rendering: auto !important;
+}
+
+.shopSystemCurrencyRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 0 0 14px;
+    padding: 8px 12px;
+    border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42));
+    border-radius: var(--go-radius, 2px);
+    background: var(--go-card-soft, rgba(8, 28, 54, 0.72));
+    box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16));
+}
+
+.shopSystemCurrencyLabel {
+    font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif);
+    font-size: 0.65rem;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--go-muted, #9ec7df);
+}
+
+.shopSystemCurrencyValue {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif);
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: var(--go-gold, #ffd83d);
+}
