@@ -135,9 +135,9 @@ export default function ShopTab({ plugin, rebuildShopTab, visualThemePreset: vis
         "data-gamification-visual-theme": visualThemePreset,
     };
 
-    // Pixel chrome is the base; System Hunter overrides come from ancestor
-    // [data-gamification-shell='system'] on TabView (same pattern as Achievements).
-    const shopShellClass = shopStyles.shopRoot;
+    // Direct shell class (Player tab pattern) — mutually exclusive with shopRoot.
+    const shopShellClass = isSystemTheme ? shopStyles.systemShopShell : shopStyles.shopRoot;
+    const shopSystemClass = isSystemTheme ? "gami-shop-system" : "";
 
     // Add coins state and fetchCoins function
     const [coins, setCoins] = useState(0);
@@ -487,7 +487,7 @@ export default function ShopTab({ plugin, rebuildShopTab, visualThemePreset: vis
     if (loading) {
         return (
             <p
-                className={`gami-shop-tab ${shopStyles.shopLayout} ${shopShellClass} ${shopStyles.shopLoading}`}
+                className={`gami-shop-tab ${shopSystemClass} ${shopStyles.shopLayout} ${shopShellClass} ${shopStyles.shopLoading}`}
                 {...shopShellAttrs}
             >
                 Loading shop...
@@ -497,7 +497,7 @@ export default function ShopTab({ plugin, rebuildShopTab, visualThemePreset: vis
 
     return (
         <div
-            className={`gami-shop-tab ${shopStyles.shopLayout} ${shopShellClass}`}
+            className={`gami-shop-tab ${shopSystemClass} ${shopStyles.shopLayout} ${shopShellClass}`}
             {...shopShellAttrs}
         >
             <div className="gami-shop-header">
