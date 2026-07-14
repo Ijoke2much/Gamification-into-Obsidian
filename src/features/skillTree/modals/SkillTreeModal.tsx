@@ -3,11 +3,12 @@ import ReactDOM from 'react-dom';
 import { TFile, WorkspaceLeaf } from 'obsidian';
 import type GamifiedObsidianPlugin from '../../../core/main';
 import { getAllSkills, getAllClasses, getAllStats, SkillMetadata, ClassMetadata, StatMetadata, parseFrontmatterMobile, isMobile, clearSkillsCache } from '../../../shared/utils/skillDiscovery';
-import { MobileSkillTree } from '../components/MobileSkillTree';
 import { SkillRealmMap } from '../components/SkillRealmMap';
 import { SkillCodexDetail } from '../components/SkillCodexDetail';
 import { skillToProgressView } from '../utils/skillProgressView';
 import { syncClassSkillEdgesOnCanvas } from '../utils/canvasClassSkillSync';
+import { readPlayerData } from '../../../features/player/utils/playerDataUtils';
+import { useMasterClassProgress } from '../../../features/player/hooks/useMasterClassProgress';
 import styles from './SkillTreeModal.module.css';
 import { pixelNotice } from '../../../shared/utils/noticeUtils';
 const matter = require('gray-matter');
@@ -73,6 +74,10 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
     const [iconEditValue, setIconEditValue] = useState<string>('');
     
     const [codexSkill, setCodexSkill] = useState<SkillMetadata | null>(null);
+    const [playerMasterClass, setPlayerMasterClass] = useState('');
+    
+    const { classIcon: masterClassIcon, progress: masterClassProgress } =
+        useMasterClassProgress(plugin, playerMasterClass || undefined);
     
     // Create form states
     const [createType, setCreateType] = useState<'skill' | 'class'>('skill');
@@ -112,6 +117,8 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
             const allSkills = await getAllSkills(plugin.app.vault);
             const allClassesData = await getAllClasses(plugin.app.vault);
             const allStatsData = await getAllStats(plugin.app.vault);
+            const playerData = await readPlayerData(plugin.app.vault);
+            setPlayerMasterClass(playerData?.masterClass ?? '');
             
             // No need to filter - getAllSkills already returns only skills
             setSkills(allSkills);
@@ -390,26 +397,6 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
         } catch (error) {
             console.error('Failed to open skill file:', error);
             showNotice('❌ Failed to open skill file');
-        }
-    };
-
-    const handleClassOpen = async (cls: { name: string; filePath: string }) => {
-        try {
-            if (!cls.filePath) {
-                showNotice(`❌ No file path for class "${cls.name}"`);
-                return;
-            }
-            const file = plugin.app.vault.getAbstractFileByPath(cls.filePath);
-            if (file && file instanceof TFile) {
-                const leaf = plugin.app.workspace.getLeaf();
-                await leaf.openFile(file);
-                onClose();
-            } else {
-                showNotice(`❌ Class note not found: ${cls.filePath}`);
-            }
-        } catch (error) {
-            console.error('Failed to open class file:', error);
-            showNotice('❌ Failed to open class file');
         }
     };
 
@@ -1261,6 +1248,17 @@ This class belongs to the **Jester** master class.
                             {activeTab === 'mobile' && (
                                 <div className={styles.mobileTab}>
                                     <SkillRealmMap
+                                        masterClass={
+                                            playerMasterClass
+                                                ? {
+                                                      name: playerMasterClass,
+                                                      icon: masterClassIcon ?? undefined,
+                                                      level: masterClassProgress?.level,
+                                                      currentCP: masterClassProgress?.currentCP,
+                                                      requiredCP: masterClassProgress?.requiredCP,
+                                                  }
+                                                : null
+                                        }
                                         vaultClasses={allClasses.map((c) => ({
                                             name: c.name,
                                             filePath: c.filePath,
@@ -1269,7 +1267,8 @@ This class belongs to the **Jester** master class.
                                             level: c.level,
                                             currentCP: c.currentCP,
                                             requiredCP: c.requiredCP,
-                                            totalCP: c.totalCP
+                                            totalCP: c.totalCP,
+                                            masterClass: c.masterClass,
                                         }))}
                                         skills={skills.map(skill => skillToProgressView(skill))}
                                         onSkillSelect={(skill) => {
@@ -1279,31 +1278,6 @@ This class belongs to the **Jester** master class.
                                             }
                                         }}
                                     />
-                                    <details className={styles.advancedListToggle}>
-                                        <summary>Classic list view (grid / paths)</summary>
-                                        <MobileSkillTree
-                                            embedded
-                                            vaultClasses={allClasses.map((c) => ({
-                                                name: c.name,
-                                                filePath: c.filePath,
-                                                tagline: c.tagline,
-                                                icon: c.icon,
-                                                level: c.level,
-                                                currentCP: c.currentCP,
-                                                requiredCP: c.requiredCP,
-                                                totalCP: c.totalCP
-                                            }))}
-                                            onClassOpen={handleClassOpen}
-                                            skills={skills.map(skill => skillToProgressView(skill))}
-                                            onSkillSelect={(skill) => {
-                                                const selectedSkill = skills.find(s => s.name === skill.name);
-                                                if (selectedSkill) {
-                                                    setCodexSkill(selectedSkill);
-                                                }
-                                            }}
-                                            onBackToOverview={() => setActiveTab('overview')}
-                                        />
-                                    </details>
                                 </div>
                             )}
 

@@ -9,6 +9,10 @@ function normClass(c: string | undefined): string {
 	return (c ?? '').trim();
 }
 
+function normKey(c: string | undefined): string {
+	return normClass(c).toLowerCase();
+}
+
 export interface VaultClassBrief {
 	name: string;
 	filePath: string;
@@ -18,6 +22,15 @@ export interface VaultClassBrief {
 	currentCP?: number;
 	requiredCP?: number;
 	totalCP?: number;
+	masterClass?: string;
+}
+
+export interface MasterClassBrief {
+	name: string;
+	icon?: string;
+	level?: number;
+	currentCP?: number;
+	requiredCP?: number;
 }
 
 export interface SkillRealmSkill {
@@ -36,6 +49,7 @@ export interface SkillRealmSkill {
 interface SkillRealmMapProps {
 	skills: SkillRealmSkill[];
 	vaultClasses?: VaultClassBrief[];
+	masterClass?: MasterClassBrief | null;
 	onSkillSelect?: (skill: SkillRealmSkill) => void;
 	onClassOpen?: (cls: VaultClassBrief) => void;
 }
@@ -43,7 +57,7 @@ interface SkillRealmMapProps {
 function defaultClassIcon(name: string): string {
 	const n = name.toLowerCase();
 	if (n.includes('physical') || n.includes('body')) return '💪';
-	if (n.includes('mental') || n.includes('mind')) return '🧠';
+	if (n.includes('mental') || n.includes('mind') || n.includes('cognitive')) return '🧠';
 	if (n.includes('creative') || n.includes('art')) return '🎨';
 	if (n.includes('social')) return '🤝';
 	return '⚔️';
@@ -60,38 +74,58 @@ function skillNodeEmoji(skill: SkillRealmSkill): string {
 export const SkillRealmMap: React.FC<SkillRealmMapProps> = ({
 	skills,
 	vaultClasses = [],
+	masterClass,
 	onSkillSelect,
 }) => {
 	const [searchQuery, setSearchQuery] = useState('');
 	const [activeClass, setActiveClass] = useState<string | null>(null);
 	const [selectedSkill, setSelectedSkill] = useState<SkillRealmSkill | null>(null);
 
+	const masterKey = masterClass?.name ? normKey(masterClass.name) : '';
+
+	const classMasterMap = useMemo(() => {
+		const map = new Map<string, string>();
+		for (const v of vaultClasses) {
+			const n = normClass(v.name);
+			if (!n) continue;
+			map.set(normKey(n), normClass(v.masterClass));
+		}
+		return map;
+	}, [vaultClasses]);
+
+	const belongsToMaster = (className: string): boolean => {
+		if (!masterKey) return true;
+		const mc = classMasterMap.get(normKey(className));
+		if (!mc) return true;
+		return normKey(mc) === masterKey;
+	};
+
 	const classBrowserItems = useMemo((): VaultClassBrief[] => {
 		const map = new Map<string, VaultClassBrief>();
 		for (const v of vaultClasses) {
 			const n = normClass(v.name);
-			if (!n) continue;
-			map.set(n.toLowerCase(), { ...v, name: n });
+			if (!n || !belongsToMaster(n)) continue;
+			map.set(normKey(n), { ...v, name: n });
 		}
 		for (const s of skills) {
 			const n = normClass(s.class);
-			if (!n) continue;
-			const key = n.toLowerCase();
+			if (!n || !belongsToMaster(n)) continue;
+			const key = normKey(n);
 			if (!map.has(key)) {
-				map.set(key, { name: n, filePath: '' });
+				map.set(key, { name: n, filePath: '', masterClass: classMasterMap.get(key) });
 			}
 		}
 		return Array.from(map.values()).sort((a, b) =>
 			a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
 		);
-	}, [vaultClasses, skills]);
+	}, [vaultClasses, skills, classMasterMap, masterKey]);
 
 	const hubGrouped = useMemo(() => {
 		const q = searchQuery.toLowerCase().trim();
 		const groups: Record<string, SkillRealmSkill[]> = {};
 		for (const s of skills) {
 			const c = normClass(s.class);
-			if (!c) continue;
+			if (!c || !belongsToMaster(c)) continue;
 			if (q && !s.name.toLowerCase().includes(q) && !c.toLowerCase().includes(q)) {
 				continue;
 			}
@@ -102,7 +136,7 @@ export const SkillRealmMap: React.FC<SkillRealmMapProps> = ({
 			groups[k].sort((a, b) => a.name.localeCompare(b.name));
 		}
 		return groups;
-	}, [skills, searchQuery]);
+	}, [skills, searchQuery, masterKey, classMasterMap]);
 
 	const classNames = useMemo(
 		() => Object.keys(hubGrouped).sort(),
@@ -157,6 +191,16 @@ export const SkillRealmMap: React.FC<SkillRealmMapProps> = ({
 		(c) => c.name === activeClass
 	);
 
+	const masterPct =
+		masterClass?.requiredCP && masterClass.requiredCP > 0
+			? Math.round(
+					Math.min(
+						100,
+						((masterClass.currentCP ?? 0) / masterClass.requiredCP) * 100
+					)
+				)
+			: 0;
+
 	return (
 		<SystemScaffold className={styles.realmRoot} data-system-ui="skill-realm">
 			<SystemHeader
@@ -175,31 +219,65 @@ export const SkillRealmMap: React.FC<SkillRealmMapProps> = ({
 				/>
 			</div>
 
+			{masterClass?.name ? (
+				<div className={styles.masterHub}>
+					<div className={styles.masterCard}>
+						<span className={styles.masterIcon} aria-hidden="true">
+							{(masterClass.icon || '').trim() || '🛡'}
+						</span>
+						<div className={styles.masterMeta}>
+							<p className={styles.masterKicker}>Master class</p>
+							<p className={styles.masterName}>{masterClass.name}</p>
+							<p className={styles.masterSub}>
+								Master Lv {masterClass.level ?? 1} ·{' '}
+								{masterClass.currentCP ?? 0}/{masterClass.requiredCP ?? '—'} CP
+							</p>
+						</div>
+					</div>
+					{masterClass.requiredCP ? (
+						<div className={styles.masterExpTrack} aria-hidden="true">
+							<div
+								className={styles.masterExpFill}
+								style={{ width: `${masterPct}%` }}
+							/>
+						</div>
+					) : null}
+					<div className={styles.masterConnector} aria-hidden="true">
+						<span className={styles.masterConnectorStem} />
+						<span className={styles.masterConnectorBar} />
+					</div>
+				</div>
+			) : null}
+
 			{classNames.length === 0 ? (
 				<div className={styles.emptyState}>
-					No skills found. Create skills under Manage / Create, or clear search.
+					No skills found for this master class. Create skills under Manage / Create, or
+					clear search.
 				</div>
 			) : (
 				<>
 					<div className={styles.classTabs} role="tablist" aria-label="Skill classes">
-						{classNames.map((c) => {
+						{classBrowserItems.map((cls) => {
+							const c = cls.name;
 							const icon =
 								(activeClassMeta?.name === c ? activeClassMeta.icon : undefined) ||
-								classBrowserItems.find((x) => x.name === c)?.icon ||
+								cls.icon ||
 								defaultClassIcon(c);
+							const count = hubGrouped[c]?.length ?? 0;
+							const isActive = activeClass === c;
 							return (
 								<button
 									key={c}
 									type="button"
 									role="tab"
-									aria-selected={activeClass === c}
-									className={`${styles.classTab} ${activeClass === c ? styles.classTabActive : ''}`}
+									aria-selected={isActive}
+									className={`${styles.classTab} ${isActive ? styles.classTabActive : ''}`}
 									onClick={() => setActiveClass(c)}
 								>
 									<span className={styles.classTabIcon}>{icon.trim() || '⚔️'}</span>
 									<span className={styles.classTabLabel}>{c}</span>
 									<span className={styles.classTabCount}>
-										{hubGrouped[c]?.length ?? 0}
+										{count} skill{count === 1 ? '' : 's'}
 									</span>
 								</button>
 							);
@@ -223,6 +301,15 @@ export const SkillRealmMap: React.FC<SkillRealmMapProps> = ({
 									<p className={styles.classBannerSub}>
 										{pathMeta.progressed}/{pathMeta.total} skills active ·{' '}
 										{pathMeta.cp}/{pathMeta.required} CP
+										{masterClass?.name ? (
+											<>
+												{' '}
+												· under{' '}
+												<span className={styles.classBannerMaster}>
+													{masterClass.name}
+												</span>
+											</>
+										) : null}
 									</p>
 								</div>
 							</div>
