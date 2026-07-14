@@ -8,6 +8,7 @@ import {
 } from '../../features/quests/utils/taskParser';
 import { TFile } from 'obsidian';
 import { awardQuestRewards, emitQuestCompletionFeedback, undoBossFileQuestCompletion, undoJourneyQuestCompletion } from '../../shared/utils/questCompletionPipeline';
+import { buildCompletionKey, markCompletionRewarded } from '../../features/quests/utils/completionLedger';
 import { pixelNotice } from '../../shared/utils/noticeUtils';
 import {
 	isPerNoteMode,
@@ -278,6 +279,11 @@ export const useQuestManagement = (plugin: GamifiedObsidianPlugin) => {
             );
 
             if (questLineIndex !== -1) {
+                const lineNumber = quest.lineNumber ?? questLineIndex + 1;
+                await markCompletionRewarded(
+                    plugin.app,
+                    buildCompletionKey(quest.filePath, lineNumber)
+                );
                 lines[questLineIndex] = appendCompletedDate(
                     lines[questLineIndex].replace('- [ ]', '- [x]')
                 );

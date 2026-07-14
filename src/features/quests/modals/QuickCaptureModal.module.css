@@ -45,6 +45,25 @@
 	border-color: var(--interactive-accent);
 }
 
+.descriptionInput {
+	width: 100%;
+	box-sizing: border-box;
+	padding: 0.55rem 0.75rem;
+	border-radius: 8px;
+	border: 1px solid var(--background-modifier-border);
+	background: var(--background-secondary);
+	color: var(--text-normal);
+	font-size: 0.85rem;
+	resize: vertical;
+	min-height: 2.5rem;
+	font-family: inherit;
+}
+
+.descriptionInput:focus {
+	outline: none;
+	border-color: var(--interactive-accent);
+}
+
 .sectionTitle {
 	font-size: 0.85rem;
 	font-weight: 600;

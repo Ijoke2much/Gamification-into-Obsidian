@@ -594,6 +594,7 @@ export default class GamifiedObsidianPlugin extends Plugin {
 		setNotificationLevel(this.settings.notificationLevel ?? 'normal');
 		applyVisualTheme(this.settings);
 		emitSettingsUpdated();
+		void this.completionTracker?.refreshWatchList();
 	}
 
 	private async applyModuleRuntimeChanges(

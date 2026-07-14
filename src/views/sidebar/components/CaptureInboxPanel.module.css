@@ -67,7 +67,7 @@
 
 .row {
 	display: flex;
-	align-items: center;
+	align-items: flex-start;
 	gap: 6px;
 	padding: 6px 8px;
 	border-radius: 8px;
@@ -75,14 +75,30 @@
 	background: rgba(255, 255, 255, 0.03);
 }
 
-.rowTitle {
+.rowMain {
 	flex: 1;
 	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.rowTitle {
 	font-size: 12px;
 	font-weight: 600;
 	white-space: nowrap;
 	overflow: hidden;
 	text-overflow: ellipsis;
+}
+
+.rowDescription {
+	font-size: 10px;
+	color: var(--text-muted);
+	line-height: 1.35;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
 }
 
 .categoryBadge {

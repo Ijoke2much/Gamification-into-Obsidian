@@ -1777,6 +1777,141 @@ const FileSettingsSection: React.FC<{
           />
           Remember last capture tag between sessions
         </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={settings.captureIncludeDescription !== false}
+            onChange={(e) => onSettingChange('captureIncludeDescription', e.target.checked)}
+          />
+          Show optional description field in brain dump
+        </label>
+        <label>
+          Capture description format:
+          <select
+            value={settings.captureDescriptionFormat || 'thought'}
+            onChange={(e) =>
+              onSettingChange(
+                'captureDescriptionFormat',
+                e.target.value as 'thought' | 'dataview' | 'both'
+              )
+            }
+          >
+            <option value="thought">💭 thought line (plugin default)</option>
+            <option value="dataview">[description:: …] inline (Task Genius)</option>
+            <option value="both">Both formats</option>
+          </select>
+        </label>
+      </div>
+      <h4>External task sync</h4>
+      <p className={styles.helperText}>
+        Award XP when tasks are checked off in TaskForge, TaskNotes, or other apps that sync to
+        your vault. Tasks need <code>#gamified-task</code> or TaskNotes <code>status: done</code>{' '}
+        with gamified metadata.
+      </p>
+      <div className={styles.settingGroup}>
+        <label>
+          <input
+            type="checkbox"
+            checked={settings.externalCompletionSync !== false}
+            onChange={(e) => onSettingChange('externalCompletionSync', e.target.checked)}
+          />
+          Sync completions from vault file changes
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={settings.externalCompletionSummary !== false}
+            onChange={(e) => onSettingChange('externalCompletionSummary', e.target.checked)}
+          />
+          Show summary modal when completions are detected
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={settings.taskNotesCompatibility !== false}
+            onChange={(e) => onSettingChange('taskNotesCompatibility', e.target.checked)}
+          />
+          TaskNotes compatibility (detect <code>status: done</code> in frontmatter)
+        </label>
+        <label>
+          TaskNotes folder (optional):
+          <input
+            type="text"
+            value={settings.taskNotesFolder || ''}
+            onChange={(e) => onSettingChange('taskNotesFolder', e.target.value)}
+            placeholder={
+              (settings.questStorageMode || 'list') === 'per-note'
+                ? settings.taskNoteFolder || 'Gamified/Tasks'
+                : 'e.g. TaskNotes'
+            }
+          />
+        </label>
+        <label>
+          Extra watch paths (comma-separated files or folders):
+          <input
+            type="text"
+            value={(settings.externalWatchPaths || []).join(', ')}
+            onChange={(e) => {
+              const paths = e.target.value
+                .split(',')
+                .map((p) => p.trim())
+                .filter(Boolean);
+              onSettingChange('externalWatchPaths', paths);
+            }}
+            placeholder="TaskForge/Tasks.md, Notes/Tasks"
+          />
+        </label>
+      </div>
+      <h4>Focus check-ins</h4>
+      <p className={styles.helperText}>
+        While Obsidian is open, a <strong>Check in</strong> button appears after your chosen interval.
+        Click it to reflect on what you did — entries save to your check-in log.
+      </p>
+      <div className={styles.settingGroup}>
+        <label>
+          <input
+            type="checkbox"
+            checked={settings.enableFocusCheckIns !== false}
+            onChange={(e) => onSettingChange('enableFocusCheckIns', e.target.checked)}
+          />
+          Enable focus check-ins
+        </label>
+        <label>
+          Check-in interval:
+          <select
+            value={String(settings.focusCheckInIntervalMinutes ?? 120)}
+            onChange={(e) =>
+              onSettingChange('focusCheckInIntervalMinutes', parseInt(e.target.value, 10))
+            }
+          >
+            <option value="60">Every 1 hour</option>
+            <option value="90">Every 1.5 hours</option>
+            <option value="120">Every 2 hours</option>
+            <option value="180">Every 3 hours</option>
+            <option value="240">Every 4 hours</option>
+          </select>
+        </label>
+        <label>
+          Check-in log file:
+          <input
+            type="text"
+            value={settings.focusCheckInLogPath || 'CheckIns.md'}
+            onChange={(e) => onSettingChange('focusCheckInLogPath', e.target.value || 'CheckIns.md')}
+            placeholder="CheckIns.md"
+          />
+        </label>
+        <label>
+          Snooze duration (minutes):
+          <input
+            type="number"
+            min={5}
+            max={120}
+            value={settings.focusCheckInSnoozeMinutes ?? 30}
+            onChange={(e) =>
+              onSettingChange('focusCheckInSnoozeMinutes', Math.max(5, parseInt(e.target.value, 10) || 30))
+            }
+          />
+        </label>
       </div>
       <p className={styles.helperText}>
         Contract headers from the Projects tab are appended to the projects file. Task steps link via{' '}

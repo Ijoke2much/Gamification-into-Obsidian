@@ -27,6 +27,44 @@
     background: #222;
 }
 
+.debugRow {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.checkInButton {
+    margin-bottom: 8px;
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.35), rgba(59, 130, 246, 0.45));
+    color: #e0f2fe;
+    border-radius: 6px;
+    padding: 6px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    border: 1px solid rgba(125, 211, 252, 0.55);
+    cursor: pointer;
+    transition: filter 0.15s, box-shadow 0.15s;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    animation: checkInPulse 2s ease-in-out infinite;
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
+}
+
+.checkInButton:hover {
+    filter: brightness(1.12);
+    box-shadow: 0 0 16px rgba(56, 189, 248, 0.4);
+}
+
+@keyframes checkInPulse {
+    0%, 100% { box-shadow: 0 0 8px rgba(56, 189, 248, 0.2); }
+    50% { box-shadow: 0 0 18px rgba(56, 189, 248, 0.45); }
+}
+
 /* Mobile-specific button optimizations */
 @media (pointer: coarse) {
     .reloadButton {

@@ -9,6 +9,7 @@ import {
 	undoJourneyQuestCompletion,
 	type QuestRewardSettings,
 } from '../../../shared/utils/questCompletionPipeline';
+import { buildCompletionKey, markCompletionRewarded } from './completionLedger';
 
 export type QuestPersistAction = 'complete' | 'turn_in' | 'abandon';
 
@@ -86,6 +87,8 @@ export async function persistQuestCompletion(
 	}
 
 	lines[index] = appendCompletedDate(lines[index].replace('- [ ]', '- [x]'));
+	const lineNumber = quest.lineNumber ?? index + 1;
+	await markCompletionRewarded(app, buildCompletionKey(path, lineNumber));
 	await app.vault.modify(file, lines.join('\n'));
 
 	if (!awardRewards) {

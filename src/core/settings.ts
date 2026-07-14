@@ -699,6 +699,30 @@ export interface GamificationPluginSettings {
   captureTags?: string[];
   /** Remember last selected capture tag between sessions. */
   captureRememberLastTag?: boolean;
+  /** Show optional description field in brain dump modal. */
+  captureIncludeDescription?: boolean;
+  /** How capture descriptions are written to markdown. */
+  captureDescriptionFormat?: 'thought' | 'dataview' | 'both';
+
+  /** Award XP/CP/currency when tasks are checked off outside the plugin UI. */
+  externalCompletionSync?: boolean;
+  /** Show a batch summary when external completions are detected. */
+  externalCompletionSummary?: boolean;
+  /** Detect TaskNotes-style frontmatter (status: done) for completions. */
+  taskNotesCompatibility?: boolean;
+  /** Folder scanned for TaskNotes completions (defaults to task note folder). */
+  taskNotesFolder?: string;
+  /** Extra vault paths (files or folders) to watch for quest completions. */
+  externalWatchPaths?: string[];
+
+  /** Periodic focus check-in prompts while Obsidian is open. */
+  enableFocusCheckIns?: boolean;
+  /** Minutes between check-in button appearances. */
+  focusCheckInIntervalMinutes?: number;
+  /** Markdown file for check-in log entries. */
+  focusCheckInLogPath?: string;
+  /** Minutes to snooze when user clicks Snooze. */
+  focusCheckInSnoozeMinutes?: number;
 
   // Custom game item definitions (e.g., weapons and real-world artifacts)
   // These are configuration-level definitions which can be rendered in the
@@ -934,6 +958,17 @@ export const DEFAULT_SETTINGS: GamificationPluginSettings = {
   captureFilePath: 'Capture.md',
   captureTags: ['idea', 'work', 'plugin', 'personal', 'read-later'],
   captureRememberLastTag: true,
+  captureIncludeDescription: true,
+  captureDescriptionFormat: 'thought',
+  externalCompletionSync: true,
+  externalCompletionSummary: true,
+  taskNotesCompatibility: true,
+  taskNotesFolder: '',
+  externalWatchPaths: [],
+  enableFocusCheckIns: true,
+  focusCheckInIntervalMinutes: 120,
+  focusCheckInLogPath: 'CheckIns.md',
+  focusCheckInSnoozeMinutes: 30,
 
   // Timeline & Calendar Default Settings
   timelineViewSettings: {

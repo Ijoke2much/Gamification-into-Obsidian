@@ -13,6 +13,7 @@ export class QuickCaptureModal extends Modal {
 	private settings: GamificationPluginSettings;
 	private selectedTag: string | undefined;
 	private inputEl: HTMLInputElement | null = null;
+	private descriptionEl: HTMLTextAreaElement | null = null;
 	private tagButtons: HTMLButtonElement[] = [];
 
 	constructor(app: App, settings: GamificationPluginSettings) {
@@ -47,6 +48,21 @@ export class QuickCaptureModal extends Modal {
 				'aria-label': 'Capture text',
 			},
 		});
+
+		if (this.settings.captureIncludeDescription !== false) {
+			wrapper.createEl('label', {
+				cls: styles.sectionTitle,
+				text: 'Description (optional)',
+			});
+			this.descriptionEl = wrapper.createEl('textarea', {
+				cls: styles.descriptionInput,
+				attr: {
+					placeholder: 'Extra context, links, or notes…',
+					rows: '2',
+					'aria-label': 'Capture description',
+				},
+			});
+		}
 
 		const tagSection = wrapper.createDiv();
 		tagSection.createEl('h3', { text: 'Tag (optional)', cls: styles.sectionTitle });
@@ -110,7 +126,14 @@ export class QuickCaptureModal extends Modal {
 
 	private async saveCurrentInput(): Promise<boolean> {
 		const text = this.inputEl?.value ?? '';
-		const saved = await appendCaptureLine(this.app, this.settings, text, this.selectedTag);
+		const description = this.descriptionEl?.value ?? '';
+		const saved = await appendCaptureLine(
+			this.app,
+			this.settings,
+			text,
+			this.selectedTag,
+			description
+		);
 		if (!saved) return false;
 
 		if (this.settings.captureRememberLastTag !== false) {
@@ -121,15 +144,22 @@ export class QuickCaptureModal extends Modal {
 		return true;
 	}
 
+	private clearInputs() {
+		if (this.inputEl) {
+			this.inputEl.value = '';
+			this.inputEl.focus();
+		}
+		if (this.descriptionEl) {
+			this.descriptionEl.value = '';
+		}
+	}
+
 	private async handleContinue() {
 		const text = (this.inputEl?.value ?? '').trim();
 		if (!text) return;
 
 		await this.saveCurrentInput();
-		if (this.inputEl) {
-			this.inputEl.value = '';
-			this.inputEl.focus();
-		}
+		this.clearInputs();
 	}
 
 	private async handleDone(closeAfterSave: boolean) {
@@ -145,6 +175,7 @@ export class QuickCaptureModal extends Modal {
 	onClose() {
 		this.contentEl.empty();
 		this.inputEl = null;
+		this.descriptionEl = null;
 		this.tagButtons = [];
 	}
 }

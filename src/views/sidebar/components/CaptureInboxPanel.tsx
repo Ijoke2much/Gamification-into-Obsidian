@@ -110,8 +110,15 @@ export const CaptureInboxPanel: React.FC<CaptureInboxPanelProps> = ({
 								const category = getCategoryLabel(quest);
 								return (
 									<div key={quest.id} className={styles.row}>
-										<div className={styles.rowTitle} title={quest.title}>
-											{quest.title}
+										<div className={styles.rowMain}>
+											<div className={styles.rowTitle} title={quest.title}>
+												{quest.title}
+											</div>
+											{quest.description && (
+												<div className={styles.rowDescription} title={String(quest.description)}>
+													💭 {String(quest.description)}
+												</div>
+											)}
 										</div>
 										{category && (
 											<span className={styles.categoryBadge}>{category}</span>

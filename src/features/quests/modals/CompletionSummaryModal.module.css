@@ -1,0 +1,79 @@
+.wrapper {
+	max-width: 480px;
+	margin: auto;
+	padding: 1.25rem 1.5rem 1.5rem;
+	background: var(--background-primary);
+	border-radius: 12px;
+	border: 1px solid var(--background-modifier-border);
+	box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+}
+
+.title {
+	margin: 0 0 0.35rem;
+	font-size: 1.1rem;
+	text-align: center;
+}
+
+.subtitle {
+	margin: 0 0 1rem;
+	text-align: center;
+	color: var(--text-muted);
+	font-size: 0.85rem;
+}
+
+.list {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	max-height: 280px;
+	overflow-y: auto;
+	margin-bottom: 1rem;
+}
+
+.row {
+	padding: 0.55rem 0.65rem;
+	border-radius: 8px;
+	background: var(--background-secondary);
+	border: 1px solid var(--background-modifier-border);
+}
+
+.rowTitle {
+	font-weight: 600;
+	font-size: 0.9rem;
+	margin-bottom: 0.15rem;
+}
+
+.rowRewards {
+	font-size: 0.8rem;
+	color: var(--text-accent, var(--interactive-accent));
+}
+
+.totals {
+	text-align: center;
+	font-weight: 600;
+	font-size: 0.9rem;
+	padding: 0.65rem;
+	border-radius: 8px;
+	background: rgba(59, 130, 246, 0.12);
+	border: 1px solid rgba(59, 130, 246, 0.25);
+	margin-bottom: 1rem;
+}
+
+.btnRow {
+	display: flex;
+	justify-content: center;
+}
+
+.primaryBtn {
+	padding: 0.5rem 1.25rem;
+	border-radius: 8px;
+	border: none;
+	background: var(--interactive-accent);
+	color: var(--text-on-accent);
+	cursor: pointer;
+	font-weight: 600;
+}
+
+.primaryBtn:hover {
+	filter: brightness(1.08);
+}

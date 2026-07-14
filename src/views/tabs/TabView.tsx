@@ -21,6 +21,13 @@ import { AchievementUnlockHost } from "../../features/achievements/components/Ac
 import { onAchievementGalleryOpen } from "../../shared/utils/achievementGalleryEvents";
 
 import { pixelNotice } from '../../shared/utils/noticeUtils';
+import { simulateDebugQuestRewards } from '../../features/quests/utils/debugQuestSimulator';
+import { openFocusCheckInModal } from '../../features/focus/modals/FocusCheckInModal';
+import {
+	debugSimulateCheckInDue,
+	isFocusCheckInDue,
+	subscribeFocusCheckInChanges,
+} from '../../features/focus/utils/focusCheckInService';
 import {
     getResolvedGameplayConfig,
     isEnergySystemEnabled,
@@ -197,6 +204,8 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
     const tabRibbonRef = useRef<HTMLDivElement>(null);
     const [showStats, setShowStats] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [debugRunning, setDebugRunning] = useState(false);
+    const [checkInDue, setCheckInDue] = useState(false);
     const [visible, setVisible] = useState(!document.hidden);
     const [pinned] = useState<string[]>(() => {
         try { return JSON.parse(localStorage.getItem('gamification-pinned-tabs') || '[]'); } catch { return []; }
@@ -257,6 +266,33 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
     useEffect(() => {
         return onSettingsUpdated(() => setSettingsRevision((v) => v + 1));
     }, []);
+
+    const refreshCheckInDue = useCallback(async () => {
+        if (plugin.settings.enableFocusCheckIns === false) {
+            setCheckInDue(false);
+            return;
+        }
+        const due = await isFocusCheckInDue(plugin.app, plugin.settings);
+        setCheckInDue(due);
+    }, [plugin.app, plugin.settings]);
+
+    useEffect(() => {
+        void refreshCheckInDue();
+        const unsub = subscribeFocusCheckInChanges(() => {
+            void refreshCheckInDue();
+        });
+        const interval = window.setInterval(() => {
+            if (visible) void refreshCheckInDue();
+        }, 30_000);
+        return () => {
+            unsub();
+            window.clearInterval(interval);
+        };
+    }, [refreshCheckInDue, visible, settingsRevision]);
+
+    const handleOpenCheckIn = useCallback(() => {
+        openFocusCheckInModal(plugin.app, plugin.settings);
+    }, [plugin.app, plugin.settings]);
 
     const gameplayConfig = useMemo(
         () => getResolvedGameplayConfig(plugin.app),
@@ -607,6 +643,18 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
             <GlobalNotificationSystem />
             <CeremonyHost />
             <AchievementUnlockHost />
+
+            <div className={styles.debugRow}>
+            {checkInDue && plugin.settings.enableFocusCheckIns !== false && (
+                <button
+                    type="button"
+                    onClick={handleOpenCheckIn}
+                    className={styles.checkInButton}
+                    aria-label="Open focus check-in"
+                >
+                    {isMobile ? '⏱️ Check in' : '⏱️ Check in'}
+                </button>
+            )}
             
             {/* Debug reload button - hidden on mobile in production */}
             {(!isMobile || process.env.NODE_ENV === 'development') && (
@@ -663,6 +711,42 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
                     {isMobile ? '🧪' : 'Test Notice'}
                 </button>
             )}
+            {(!isMobile || process.env.NODE_ENV === 'development') && (
+                <button
+                    disabled={debugRunning}
+                    onClick={() => {
+                        if (debugRunning) return;
+                        setDebugRunning(true);
+                        void simulateDebugQuestRewards(plugin.app)
+                            .catch((err) => {
+                                console.error('Debug quest simulation failed:', err);
+                                pixelNotice('❌ Debug simulation failed', 3000);
+                            })
+                            .finally(() => setDebugRunning(false));
+                    }}
+                    className={`${styles.reloadButton} ${mobileClasses.button}`}
+                    style={{ marginLeft: isMobile ? "8px" : "10px", opacity: debugRunning ? 0.6 : 1 }}
+                    aria-label="Simulate debug quest rewards"
+                >
+                    {debugRunning ? 'Simulating…' : isMobile ? '🎮' : 'Debug Quests'}
+                </button>
+            )}
+            {(!isMobile || process.env.NODE_ENV === 'development') && (
+                <button
+                    onClick={() => {
+                        void debugSimulateCheckInDue(plugin.app).catch((err) => {
+                            console.error('Debug check-in simulation failed:', err);
+                            pixelNotice('❌ Could not simulate check-in', 3000);
+                        });
+                    }}
+                    className={`${styles.reloadButton} ${mobileClasses.button}`}
+                    style={{ marginLeft: isMobile ? "8px" : "10px" }}
+                    aria-label="Simulate check-in button due"
+                >
+                    {isMobile ? '⏱️' : 'Debug Check-In'}
+                </button>
+            )}
+            </div>
             {saving && (
                 <span style={{ marginLeft: 8, color: 'var(--text-muted)' }}>Saving…</span>
             )}
