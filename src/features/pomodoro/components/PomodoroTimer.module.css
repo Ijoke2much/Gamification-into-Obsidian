@@ -3502,27 +3502,15 @@ Break Activities CSS
    ======================================== */
 
 .pomodoroContainer.pixelPomodoroShell {
-    --pixel-bg: #1b1d2f;
-    --pixel-panel: #252742;
-    --pixel-panel-alt: #2e3152;
-    --pixel-border-dark: #0f1120;
-    --pixel-border-light: #5b61a2;
-    --pixel-accent: #8ecae6;
-    --pixel-highlight: #ffd166;
-    --pixel-text: #ecefff;
-    --pixel-muted: #bac2e3;
-    --pixel-shadow: 3px 3px 0 var(--pixel-border-dark);
-    --pixel-shadow-pressed: 1px 1px 0 var(--pixel-border-dark);
-    --pixel-card-radius: 0;
     --pixel-ring-work: #5ce1e6;
     --pixel-ring-break: #7ed957;
     --pixel-ring-track: #2f3558;
 
-    font-family: "Press Start 2P", "VT323", "Courier New", monospace;
+    font-family: var(--go-font-ui, "Press Start 2P", "VT323", "Courier New", monospace);
     font-size: 11px;
     line-height: 1.65;
-    color: var(--pixel-text);
-    background: var(--pixel-bg);
+    color: var(--go-text, var(--pixel-text));
+    background: var(--go-bg, var(--pixel-bg));
     border: 2px solid var(--pixel-border-dark);
     border-radius: var(--pixel-card-radius);
     box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light);
@@ -3597,16 +3585,16 @@ Break Activities CSS
 }
 
 .pomodoroContainer.pixelPomodoroShell .timerTitle {
-    font-family: "Press Start 2P", "VT323", monospace;
+    font-family: var(--go-font-ui, "Press Start 2P", "VT323", monospace);
     font-size: 10px;
     color: var(--pixel-accent);
     text-shadow: 2px 2px 0 var(--pixel-border-dark);
 }
 
 .pomodoroContainer.pixelPomodoroShell .timeCircle {
-    font-family: "Press Start 2P", "VT323", monospace;
+    font-family: var(--go-font-ui, "Press Start 2P", "VT323", monospace);
     font-size: 2rem;
-    color: var(--pixel-text);
+    color: var(--go-text, var(--pixel-text));
     text-shadow: 2px 2px 0 var(--pixel-border-dark);
 }
 
@@ -3633,7 +3621,7 @@ Break Activities CSS
 }
 
 .pomodoroContainer.pixelPomodoroShell .controls button {
-    font-family: "Press Start 2P", "VT323", monospace;
+    font-family: var(--go-font-ui, "Press Start 2P", "VT323", monospace);
     font-size: 9px;
     border-radius: var(--pixel-card-radius);
     border: 2px solid var(--pixel-border-dark);
@@ -3663,13 +3651,13 @@ Break Activities CSS
 
 .pomodoroContainer.pixelPomodoroShell .btnReset {
     background: var(--pixel-panel-alt);
-    color: var(--pixel-text);
+    color: var(--go-text, var(--pixel-text));
     border-color: var(--pixel-border-light);
 }
 
 .pomodoroContainer.pixelPomodoroShell .btnSkip {
     background: #9b7edc;
-    color: var(--pixel-text);
+    color: var(--go-text, var(--pixel-text));
 }
 
 .pomodoroContainer.pixelPomodoroShell .energySection {
@@ -3695,7 +3683,7 @@ Break Activities CSS
 .pomodoroContainer.pixelPomodoroShell .energyText {
     font-family: "VT323", "Courier New", monospace;
     font-size: 14px;
-    color: var(--pixel-text);
+    color: var(--go-text, var(--pixel-text));
     text-shadow: 1px 1px 0 var(--pixel-border-dark);
 }
 
@@ -3712,7 +3700,7 @@ Break Activities CSS
     border: 2px solid var(--pixel-border-dark);
     border-radius: var(--pixel-card-radius);
     box-shadow: var(--pixel-shadow);
-    font-family: "Press Start 2P", "VT323", monospace;
+    font-family: var(--go-font-ui, "Press Start 2P", "VT323", monospace);
     font-size: 8px;
 }
 
@@ -3729,14 +3717,14 @@ Break Activities CSS
 
 .pomodoroContainer.pixelPomodoroShell .hyperfocusActive {
     background: #c94c4c !important;
-    color: var(--pixel-text) !important;
+    color: var(--go-text, var(--pixel-text)) !important;
     animation: none;
     box-shadow: var(--pixel-shadow) !important;
 }
 
 .pomodoroContainer.pixelPomodoroShell .sessionTypesSection h3,
 .pomodoroContainer.pixelPomodoroShell .questAttachmentSection h3 {
-    font-family: "Press Start 2P", "VT323", monospace;
+    font-family: var(--go-font-ui, "Press Start 2P", "VT323", monospace);
     font-size: 10px;
     color: var(--pixel-accent);
     text-shadow: 2px 2px 0 var(--pixel-border-dark);
@@ -3776,14 +3764,14 @@ Break Activities CSS
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: "Press Start 2P", monospace;
+    font-family: var(--go-font-ui, "Press Start 2P", monospace);
     font-size: 8px;
 }
 
 .pomodoroContainer.pixelPomodoroShell .sessionTypeTitle {
-    font-family: "Press Start 2P", "VT323", monospace;
+    font-family: var(--go-font-ui, "Press Start 2P", "VT323", monospace);
     font-size: 9px;
-    color: var(--pixel-text);
+    color: var(--go-text, var(--pixel-text));
 }
 
 .pomodoroContainer.pixelPomodoroShell .sessionTypeDuration,
@@ -3808,7 +3796,7 @@ Break Activities CSS
     border: 2px solid var(--pixel-border-dark) !important;
     border-radius: var(--pixel-card-radius) !important;
     box-shadow: var(--pixel-shadow) !important;
-    font-family: "Press Start 2P", "VT323", monospace;
+    font-family: var(--go-font-ui, "Press Start 2P", "VT323", monospace);
     font-size: 9px;
 }
 
@@ -3848,9 +3836,9 @@ Break Activities CSS
 }
 
 .pomodoroContainer.pixelPomodoroShell .questTitleEnhanced {
-    font-family: "Press Start 2P", "VT323", monospace;
+    font-family: var(--go-font-ui, "Press Start 2P", "VT323", monospace);
     font-size: 11px;
-    color: var(--pixel-text);
+    color: var(--go-text, var(--pixel-text));
     text-shadow: 2px 2px 0 var(--pixel-border-dark);
 }
 
@@ -3858,7 +3846,7 @@ Break Activities CSS
     border-radius: var(--pixel-card-radius);
     border: 2px solid var(--pixel-border-dark);
     box-shadow: var(--pixel-shadow-pressed);
-    font-family: "Press Start 2P", monospace;
+    font-family: var(--go-font-ui, "Press Start 2P", monospace);
     font-size: 7px;
 }
 
@@ -3900,7 +3888,7 @@ Break Activities CSS
 .pomodoroContainer.pixelPomodoroShell .skillTag {
     border-radius: var(--pixel-card-radius);
     border: 2px solid var(--pixel-border-dark);
-    font-family: "Press Start 2P", monospace;
+    font-family: var(--go-font-ui, "Press Start 2P", monospace);
     font-size: 7px;
 }
 
@@ -3912,7 +3900,7 @@ Break Activities CSS
     border-radius: var(--pixel-card-radius);
     border: 2px solid var(--pixel-border-dark);
     box-shadow: var(--pixel-shadow);
-    font-family: "Press Start 2P", monospace;
+    font-family: var(--go-font-ui, "Press Start 2P", monospace);
     font-size: 8px;
 }
 
@@ -3934,7 +3922,7 @@ Break Activities CSS
     border-radius: var(--pixel-card-radius);
     border: 2px solid var(--pixel-border-dark);
     box-shadow: var(--pixel-shadow);
-    font-family: "Press Start 2P", monospace;
+    font-family: var(--go-font-ui, "Press Start 2P", monospace);
     font-size: 8px;
 }
 
@@ -3966,4 +3954,340 @@ Break Activities CSS
     border: 2px solid var(--pixel-border-dark);
     text-shadow: 1px 1px 0 var(--pixel-border-dark);
     box-shadow: inset 1px 1px 0 var(--pixel-border-light);
+}
+
+/* System Hunter shell */
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .timerTitle,
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .sessionTypesSection h3,
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .questAttachmentSection h3 {
+    font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+    font-size: 0.75rem !important;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--go-accent, #22c8ff) !important;
+    text-shadow: none !important;
+}
+
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .timeCircle,
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .totalXP,
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .counterNumber,
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .streakNumber {
+    text-shadow: none !important;
+    color: var(--go-gold, #ffd83d);
+}
+
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .timerCard,
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .xpDisplay,
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .sessionCounters,
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .sessionTypeCard,
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .energySection {
+    border-width: 1px !important;
+    border-color: var(--go-border, rgba(34, 200, 255, 0.42)) !important;
+    border-radius: var(--go-radius, 2px) !important;
+    box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16)) !important;
+}
+
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .sessionTypeCard.active {
+    border-color: var(--go-accent, #22c8ff) !important;
+    box-shadow: var(--go-shadow, 0 0 22px rgba(34, 200, 255, 0.24)) !important;
+}
+
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .controls button:hover,
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .sessionTypeCard:hover {
+    transform: none !important;
+}
+
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .btnStart {
+    background: var(--go-card-soft, rgba(8, 28, 54, 0.72));
+    color: var(--go-accent, #22c8ff);
+}
+
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .btnPause {
+    background: color-mix(in srgb, var(--go-gold, #ffd83d) 22%, transparent);
+    color: var(--go-gold, #ffd83d);
+}
+
+/* ========================================
+   CLAY SHELL (Pomodoro tab)
+   ChatGPT claymorphism — molded cards + soft ring
+   ======================================== */
+
+.pomodoroContainer.clayPomodoroShell {
+    --clay-ring-work: #4fcfc6;
+    --clay-ring-break: #63d86d;
+    --clay-ring-track: #dcd6cf;
+
+    font-family: var(--go-font-ui, "Nunito", "Segoe UI", "Avenir Next", system-ui, sans-serif);
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--clay-text, #2e2e2e);
+    background: var(--go-screen-bg, linear-gradient(180deg, #d7ece7, #c9e3de));
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    border-radius: var(--clay-radius-large, 34px);
+    box-shadow: var(--clay-shadow);
+    padding: 16px;
+}
+
+.pomodoroContainer.clayPomodoroShell .statsPanel {
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+.pomodoroContainer.clayPomodoroShell .xpDisplay,
+.pomodoroContainer.clayPomodoroShell .sessionCounters,
+.pomodoroContainer.clayPomodoroShell .streakDisplay,
+.pomodoroContainer.clayPomodoroShell .timerCard,
+.pomodoroContainer.clayPomodoroShell .energySection,
+.pomodoroContainer.clayPomodoroShell .sessionTypeCard,
+.pomodoroContainer.clayPomodoroShell .questAttachmentSection {
+    background: var(--clay-gradient, linear-gradient(145deg, #f6f2ec, #efe8df));
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    border-radius: var(--clay-radius, 22px);
+    box-shadow: var(--clay-shadow);
+    backdrop-filter: none;
+    text-shadow: none;
+}
+
+.pomodoroContainer.clayPomodoroShell .currentSessionXP {
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--clay-accent-deep, #2ba8a3);
+    background: #f3eee8;
+    border: none;
+    border-radius: 18px;
+    box-shadow: var(--clay-recessed);
+}
+
+.pomodoroContainer.clayPomodoroShell .totalXP,
+.pomodoroContainer.clayPomodoroShell .counterNumber,
+.pomodoroContainer.clayPomodoroShell .streakNumber {
+    font-family: inherit;
+    color: var(--clay-accent-deep, #2ba8a3);
+    text-shadow: none;
+}
+
+.pomodoroContainer.clayPomodoroShell .dailyProgress,
+.pomodoroContainer.clayPomodoroShell .progressLabel,
+.pomodoroContainer.clayPomodoroShell .counterLabel,
+.pomodoroContainer.clayPomodoroShell .streakLabel,
+.pomodoroContainer.clayPomodoroShell .longestStreak {
+    color: var(--clay-text-light, #676767);
+    font-family: inherit;
+    font-size: 13px;
+}
+
+.pomodoroContainer.clayPomodoroShell .timerTitle,
+.pomodoroContainer.clayPomodoroShell .sessionTypesSection h3,
+.pomodoroContainer.clayPomodoroShell .questAttachmentSection h3 {
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    color: var(--clay-text, #2e2e2e);
+    text-shadow: none;
+    text-transform: none;
+}
+
+.pomodoroContainer.clayPomodoroShell .timeCircle {
+    font-family: inherit;
+    font-size: 2.4rem;
+    font-weight: 800;
+    color: var(--clay-accent-deep, #2ba8a3);
+    text-shadow: none;
+}
+
+/* Analytic donut ring — thick matte clay tube (gradient via SVG defs) */
+.timerCardClay {
+    overflow: visible;
+    padding: 1.25rem 1rem 1.5rem;
+}
+
+.pomodoroContainer.clayPomodoroShell .timerCard {
+    overflow: visible;
+}
+
+.circleWrapperClay {
+    width: 236px;
+    height: 236px;
+    overflow: visible;
+    margin: 0.5rem auto 1rem;
+}
+
+.circleWrapperClay .progressRing {
+    width: 236px;
+    height: 236px;
+    overflow: visible;
+}
+
+/* Compact mode must not shrink clay ring into a clip box */
+.pomodoroContainer.clayPomodoroShell.compact .circleWrapperClay,
+.pomodoroContainer.clayPomodoroShell[data-compact="true"] .circleWrapperClay {
+    width: 210px !important;
+    height: 210px !important;
+}
+
+.pomodoroContainer.clayPomodoroShell.compact .circleWrapperClay .progressRing,
+.pomodoroContainer.clayPomodoroShell[data-compact="true"] .circleWrapperClay .progressRing {
+    width: 210px !important;
+    height: 210px !important;
+}
+
+.pomodoroContainer.clayPomodoroShell .progressRing .ringBackground,
+.timerCardClay .ringBackground {
+    stroke: #c5c2ce !important;
+    stroke-linecap: round;
+    filter: none;
+    opacity: 1;
+}
+
+/* Keep SVG analytic gradient — never override stroke with a flat clay accent */
+.pomodoroContainer.clayPomodoroShell .timerCard[data-phase="work"] .ringProgress,
+.pomodoroContainer.clayPomodoroShell .timerCard[data-phase="break"] .ringProgress,
+.timerCardClay .ringProgress {
+    stroke-linecap: round;
+}
+
+.timerCardClay .ringProgressDepth {
+    stroke-linecap: round;
+    pointer-events: none;
+}
+
+.timerOverlayClay {
+    width: 118px;
+    height: 118px;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #f7f4ef, #efe8df);
+    box-shadow:
+        6px 8px 16px rgba(59, 130, 246, 0.12),
+        -4px -4px 12px rgba(255, 255, 255, 0.72),
+        inset 3px 3px 6px rgba(255, 255, 255, 0.5),
+        inset -3px -3px 8px rgba(139, 92, 246, 0.1);
+}
+
+.timerOverlayClay .timeCircle {
+    font-size: 2.15rem;
+    font-weight: 800;
+    color: #2e2a3f;
+}
+
+.pomodoroContainer.clayPomodoroShell .timerCardClay .timeCircle,
+.pomodoroContainer.clayPomodoroShell .timerOverlayClay .timeCircle {
+    color: #2e2a3f !important;
+}
+
+.pomodoroContainer.clayPomodoroShell .circularProgressText {
+    border-radius: 50%;
+    background: var(--clay-gradient, linear-gradient(145deg, #f6f2ec, #efe8df));
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    box-shadow: var(--clay-shadow);
+    text-shadow: none;
+    color: var(--clay-accent-deep, #2ba8a3);
+    font-weight: 800;
+}
+
+.pomodoroContainer.clayPomodoroShell .controls {
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.pomodoroContainer.clayPomodoroShell .controls button {
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    border: none;
+    border-radius: 18px;
+    padding: 12px 18px;
+    background: var(--clay-button-gradient, linear-gradient(180deg, #f7f4ef, #ece3da));
+    color: var(--clay-text, #2e2e2e);
+    box-shadow: var(--clay-shadow);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.pomodoroContainer.clayPomodoroShell .controls button:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--clay-shadow-hover);
+}
+
+.pomodoroContainer.clayPomodoroShell .controls button:active {
+    transform: translateY(2px);
+    box-shadow: var(--clay-shadow-pressed);
+}
+
+.pomodoroContainer.clayPomodoroShell .btnStart {
+    background: var(--clay-accent-gradient, linear-gradient(180deg, #6ad7d4, #53c6c2));
+    color: #fff;
+}
+
+.pomodoroContainer.clayPomodoroShell .btnPause {
+    background: linear-gradient(90deg, #ffd36a, #ffb84c, #ff9738);
+    color: #2e2e2e;
+}
+
+.pomodoroContainer.clayPomodoroShell .btnReset {
+    background: var(--clay-button-gradient, linear-gradient(180deg, #f7f4ef, #ece3da));
+    color: var(--clay-text, #2e2e2e);
+}
+
+.pomodoroContainer.clayPomodoroShell .btnSkip {
+    background: linear-gradient(90deg, #d9b8ff, #b98dff, #9a72ff);
+    color: #fff;
+}
+
+.pomodoroContainer.clayPomodoroShell .sessionTypeCard {
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.pomodoroContainer.clayPomodoroShell .sessionTypeCard:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--clay-shadow-hover);
+}
+
+.pomodoroContainer.clayPomodoroShell .sessionTypeCard.active {
+    background: var(--clay-accent-gradient, linear-gradient(180deg, #6ad7d4, #53c6c2));
+    color: #fff;
+    box-shadow: var(--clay-shadow-pressed);
+}
+
+.pomodoroContainer.clayPomodoroShell .energyBattery {
+    border-radius: 999px;
+    border: none;
+    background: linear-gradient(to bottom, #ece8e2, #dcd6cf);
+    box-shadow:
+        inset 0 2px 4px rgba(255, 255, 255, 0.85),
+        inset 0 -2px 5px rgba(0, 0, 0, 0.08);
+}
+
+.pomodoroContainer.clayPomodoroShell .energyLevel {
+    border-radius: 999px;
+    background: linear-gradient(90deg, #72e5db, #4fcfc6, #2fafa7);
+    box-shadow:
+        inset 0 1px 2px rgba(255, 255, 255, 0.5),
+        0 0 8px rgba(79, 207, 198, 0.25);
+}
+
+.pomodoroContainer.clayPomodoroShell .energyText,
+.pomodoroContainer.clayPomodoroShell .energyType,
+.pomodoroContainer.clayPomodoroShell .hyperfocusLevel {
+    font-family: inherit;
+    color: var(--clay-text-light, #676767);
+    text-shadow: none;
+}
+
+.pomodoroContainer.clayPomodoroShell .hyperfocusBtn {
+    background: var(--clay-button-gradient, linear-gradient(180deg, #f7f4ef, #ece3da));
+    color: var(--clay-accent-deep, #2ba8a3);
+    border: none;
+    border-radius: 18px;
+    box-shadow: var(--clay-shadow);
+}
+
+.pomodoroContainer.clayPomodoroShell .hyperfocusBtn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: var(--clay-shadow-hover);
+}
+
+.pomodoroContainer.clayPomodoroShell .hyperfocusActive {
+    background: var(--clay-accent-gradient, linear-gradient(180deg, #6ad7d4, #53c6c2));
+    color: #fff;
 }

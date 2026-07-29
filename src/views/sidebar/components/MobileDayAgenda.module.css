@@ -1,0 +1,506 @@
+/* Mobile day agenda — theme tokens + Obsidian-button overrides */
+
+.agenda {
+	--agenda-cyan: var(--go-accent, #22c8ff);
+	--agenda-rail: color-mix(in srgb, var(--go-accent, #22c8ff) 55%, transparent);
+	--agenda-muted: var(--go-muted, rgba(168, 188, 220, 0.78));
+	--agenda-card: var(--go-panel-strong, #0c1a2e);
+	--agenda-card-border: var(--go-border, rgba(90, 130, 180, 0.35));
+	--agenda-text: var(--go-text-bright, #f4f8ff);
+	--agenda-meta: var(--go-muted, rgba(176, 196, 224, 0.88));
+	--agenda-surface: var(--go-bg, #071222);
+
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+	width: 100%;
+	min-height: min(64dvh, 560px);
+	max-height: min(76dvh, 700px);
+	overflow-y: auto;
+	overflow-x: hidden;
+	margin: 0;
+	padding: 4px 0 24px;
+	box-sizing: border-box;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: thin;
+	scrollbar-color: color-mix(in srgb, var(--agenda-cyan) 40%, transparent) transparent;
+	isolation: isolate;
+	position: relative;
+	z-index: 0;
+	font-family: var(--go-font-ui, "Segoe UI", system-ui, sans-serif);
+	color: var(--agenda-text);
+	background: transparent;
+}
+
+.agenda::-webkit-scrollbar {
+	width: 4px;
+}
+
+.agenda::-webkit-scrollbar-thumb {
+	background: color-mix(in srgb, var(--agenda-cyan) 40%, transparent);
+	border-radius: 999px;
+}
+
+.empty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+	min-height: 220px;
+	padding: 24px 12px;
+	color: var(--agenda-muted);
+	font-size: 14px;
+	font-weight: 650;
+	text-align: center;
+}
+
+.emptyHint {
+	margin: 0;
+	max-width: 280px;
+	font-size: 12px;
+	font-weight: 500;
+	line-height: 1.4;
+	color: var(--agenda-muted);
+}
+
+.emptyAdd {
+	appearance: none !important;
+	-webkit-appearance: none !important;
+	border: 1px dashed color-mix(in srgb, var(--agenda-cyan) 55%, transparent) !important;
+	background: var(--go-card-soft, #0a1c34) !important;
+	color: var(--agenda-text) !important;
+	border-radius: 10px !important;
+	padding: 12px 16px !important;
+	font-size: 13px !important;
+	font-weight: 700 !important;
+	box-shadow: none !important;
+	cursor: pointer;
+	touch-action: manipulation;
+	margin-top: 4px;
+}
+
+.emptyAdd:active {
+	background: var(--go-accent-soft, rgba(34, 200, 255, 0.14)) !important;
+}
+
+.row {
+	display: grid;
+	grid-template-columns: 36px 22px minmax(0, 1fr);
+	column-gap: 8px;
+	align-items: stretch;
+	position: relative;
+	z-index: 1;
+	width: 100%;
+	box-sizing: border-box;
+	background: transparent;
+}
+
+.questRow {
+	margin-bottom: 12px;
+}
+
+.gapRow {
+	margin-bottom: 8px;
+	min-height: 44px;
+}
+
+.timeCol {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	justify-content: flex-start;
+	padding-top: 16px;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.01em;
+	color: var(--agenda-muted);
+	font-variant-numeric: tabular-nums;
+	line-height: 1.2;
+}
+
+.timeColNow {
+	color: var(--agenda-cyan);
+	font-weight: 800;
+	text-shadow: 0 0 10px color-mix(in srgb, var(--agenda-cyan) 40%, transparent);
+	padding-top: 0;
+}
+
+.railCol {
+	position: relative;
+	display: flex;
+	justify-content: center;
+	align-items: flex-start;
+	padding-top: 12px;
+	overflow: visible;
+}
+
+.railLine {
+	position: absolute;
+	top: 0;
+	bottom: -12px;
+	left: 50%;
+	width: 2px;
+	transform: translateX(-50%);
+	background: linear-gradient(
+		180deg,
+		color-mix(in srgb, var(--agenda-cyan) 20%, transparent),
+		var(--agenda-rail) 18%,
+		var(--agenda-rail) 82%,
+		color-mix(in srgb, var(--agenda-cyan) 18%, transparent)
+	);
+	pointer-events: none;
+	z-index: 0;
+}
+
+.railLineEnd {
+	bottom: 50%;
+}
+
+.railLineDashed {
+	background: repeating-linear-gradient(
+		180deg,
+		color-mix(in srgb, var(--agenda-cyan) 45%, transparent) 0 3px,
+		transparent 3px 8px
+	);
+	opacity: 0.7;
+	bottom: -8px;
+}
+
+.railIcon {
+	position: relative;
+	z-index: 2;
+	width: 26px;
+	height: 26px;
+	border-radius: 999px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 11px;
+	font-weight: 800;
+	color: var(--agenda-text);
+	border: 1.5px solid var(--agenda-accent, var(--agenda-cyan));
+	background: var(--agenda-icon-bg, color-mix(in srgb, var(--agenda-cyan) 28%, #071222));
+	box-shadow: 0 0 0 3px var(--agenda-surface);
+	flex-shrink: 0;
+}
+
+.railDot {
+	position: relative;
+	z-index: 2;
+	width: 10px;
+	height: 10px;
+	margin-top: 2px;
+	border-radius: 999px;
+	background: var(--agenda-cyan);
+	box-shadow:
+		0 0 0 3px var(--agenda-surface),
+		0 0 10px color-mix(in srgb, var(--agenda-cyan) 65%, transparent);
+	flex-shrink: 0;
+}
+
+.body {
+	min-width: 0;
+	padding: 0;
+	position: relative;
+	z-index: 2;
+}
+
+.nowBody {
+	min-width: 0;
+	padding: 4px 0;
+	position: relative;
+	z-index: 2;
+}
+
+.cardShell {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 34px 38px;
+	align-items: center;
+	gap: 6px;
+	width: 100%;
+	padding: 12px 10px 12px 12px;
+	border-radius: 12px;
+	background: var(--agenda-card) !important;
+	border: 1px solid var(--agenda-card-border) !important;
+	border-left: 4px solid var(--agenda-accent, var(--agenda-cyan)) !important;
+	box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+	overflow: hidden;
+	isolation: isolate;
+	position: relative;
+	z-index: 2;
+	box-sizing: border-box;
+}
+
+/* Div tap target — avoids Obsidian default <button> chrome */
+.card {
+	display: block;
+	width: 100%;
+	min-width: 0;
+	margin: 0;
+	padding: 0;
+	border: none;
+	background: transparent !important;
+	box-shadow: none !important;
+	cursor: pointer;
+	touch-action: manipulation;
+	color: inherit;
+	text-align: left;
+	-webkit-tap-highlight-color: transparent;
+	font: inherit;
+}
+
+.cardMain {
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+}
+
+.title {
+	font-size: 15px;
+	font-weight: 750;
+	line-height: 1.25;
+	color: var(--agenda-text) !important;
+	letter-spacing: -0.01em;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	text-shadow: none !important;
+	background: transparent !important;
+}
+
+.meta {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px 8px;
+	font-size: 12px;
+	font-weight: 550;
+	color: var(--agenda-meta) !important;
+	font-variant-numeric: tabular-nums;
+	background: transparent !important;
+}
+
+.energyChip {
+	display: inline-flex;
+	align-items: center;
+	gap: 3px;
+	padding: 2px 7px;
+	border-radius: 999px;
+	font-size: 11px;
+	font-weight: 700;
+	color: rgba(255, 210, 160, 0.95);
+	background: #3a2314 !important;
+	border: 1px solid rgba(255, 170, 100, 0.35);
+}
+
+.modeChip {
+	display: inline-flex;
+	align-items: center;
+	padding: 2px 7px;
+	border-radius: 999px;
+	font-size: 10px;
+	font-weight: 750;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: rgba(180, 210, 255, 0.92);
+	background: rgba(40, 70, 110, 0.55) !important;
+	border: 1px solid rgba(100, 150, 220, 0.35);
+}
+
+.cardShellFlexible {
+	border-style: dashed !important;
+	opacity: 0.96;
+}
+
+.questRowFlexible .railIcon {
+	opacity: 0.75;
+}
+
+.checkBtn {
+	appearance: none !important;
+	-webkit-appearance: none !important;
+	width: 34px !important;
+	height: 34px !important;
+	min-width: 34px !important;
+	min-height: 34px !important;
+	max-width: 34px !important;
+	padding: 0 !important;
+	margin: 0 !important;
+	border-radius: 999px !important;
+	border: 2px solid color-mix(in srgb, var(--agenda-cyan) 60%, transparent) !important;
+	background: var(--agenda-surface) !important;
+	color: transparent !important;
+	box-shadow: none !important;
+	display: inline-flex !important;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	flex-shrink: 0;
+	touch-action: manipulation;
+	line-height: 1 !important;
+}
+
+.checkBtn:active {
+	border-color: var(--agenda-cyan) !important;
+	background: var(--go-accent-soft, rgba(34, 200, 255, 0.18)) !important;
+	color: var(--agenda-cyan) !important;
+}
+
+.checkBtn::after {
+	content: "✓";
+	font-size: 14px;
+	font-weight: 800;
+	opacity: 0;
+}
+
+.checkBtn:active::after {
+	opacity: 1;
+}
+
+.menuBtn {
+	appearance: none !important;
+	-webkit-appearance: none !important;
+	width: 32px !important;
+	height: 32px !important;
+	min-width: 32px !important;
+	min-height: 32px !important;
+	padding: 0 !important;
+	margin: 0 !important;
+	border-radius: 10px !important;
+	border: 1px solid color-mix(in srgb, var(--agenda-cyan) 35%, transparent) !important;
+	background: color-mix(in srgb, var(--agenda-surface) 80%, transparent) !important;
+	color: var(--agenda-meta) !important;
+	box-shadow: none !important;
+	display: inline-flex !important;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	flex-shrink: 0;
+	font-size: 16px !important;
+	font-weight: 700 !important;
+	line-height: 1 !important;
+	touch-action: manipulation;
+}
+
+.menuBtn:hover,
+.menuBtn:focus-visible {
+	color: var(--agenda-text) !important;
+	border-color: color-mix(in srgb, var(--agenda-cyan) 65%, transparent) !important;
+	background: var(--go-accent-soft, rgba(34, 200, 255, 0.14)) !important;
+}
+
+.gapBody {
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px 10px;
+	padding: 6px 0;
+	min-height: 36px;
+}
+
+.gapLabel {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--agenda-muted);
+	background: transparent !important;
+}
+
+.gapAdd {
+	appearance: none !important;
+	-webkit-appearance: none !important;
+	display: inline-flex !important;
+	align-items: center;
+	gap: 6px;
+	padding: 8px 12px !important;
+	border-radius: 10px !important;
+	border: 1px dashed color-mix(in srgb, var(--agenda-cyan) 50%, transparent) !important;
+	background: var(--go-card-soft, #0a1c34) !important;
+	color: var(--agenda-text) !important;
+	font-size: 12px !important;
+	font-weight: 700 !important;
+	box-shadow: none !important;
+	cursor: pointer;
+	touch-action: manipulation;
+	line-height: 1.2 !important;
+}
+
+.gapAdd:active {
+	background: var(--go-accent-soft, rgba(34, 200, 255, 0.14)) !important;
+	border-color: var(--agenda-cyan) !important;
+}
+
+.nowRow {
+	display: grid;
+	grid-template-columns: 36px 22px minmax(0, 1fr);
+	column-gap: 8px;
+	align-items: center;
+	min-height: 28px;
+	margin: 4px 0 10px;
+	position: relative;
+	z-index: 3;
+	width: 100%;
+}
+
+.nowLine {
+	height: 2px;
+	border-radius: 999px;
+	background: linear-gradient(
+		90deg,
+		var(--agenda-cyan),
+		color-mix(in srgb, var(--agenda-cyan) 35%, transparent) 70%,
+		transparent
+	);
+	box-shadow: 0 0 10px color-mix(in srgb, var(--agenda-cyan) 45%, transparent);
+	position: relative;
+}
+
+.nowTag {
+	position: absolute;
+	right: 0;
+	top: 50%;
+	transform: translateY(-50%);
+	font-size: 9px;
+	font-weight: 800;
+	letter-spacing: 0.08em;
+	color: var(--agenda-cyan);
+	text-transform: uppercase;
+	background: var(--agenda-surface);
+	padding: 2px 6px;
+	border-radius: 999px;
+	border: 1px solid color-mix(in srgb, var(--agenda-cyan) 50%, transparent);
+}
+
+.themeViolet {
+	--agenda-accent: #a78bfa;
+	--agenda-icon-bg: #3b2178;
+}
+
+.themeBlue {
+	--agenda-accent: #60a5fa;
+	--agenda-icon-bg: #1e3a8a;
+}
+
+.themePink {
+	--agenda-accent: #f472b6;
+	--agenda-icon-bg: #831843;
+}
+
+.themeAmber {
+	--agenda-accent: #fbbf24;
+	--agenda-icon-bg: #78350f;
+}
+
+.themeGreen {
+	--agenda-accent: #4ade80;
+	--agenda-icon-bg: #14532d;
+}
+
+.themeRed {
+	--agenda-accent: #f87171;
+	--agenda-icon-bg: #7f1d1d;
+}

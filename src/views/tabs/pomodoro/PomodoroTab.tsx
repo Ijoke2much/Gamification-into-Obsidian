@@ -21,6 +21,8 @@ import { EnergyCalculationService, TaskEnergyProfile } from '../../../features/e
 import { EnergyManagementSystem } from '../../../features/energy/utils/energyManagementSystem';
 import { notificationService } from '../../../shared/services/notificationService';
 import { currencyDisplay } from '../../../shared/services/currencyDisplayService';
+import { getAppliedVisualTheme } from '../../../shared/utils/visualThemeManager';
+import { onSettingsUpdated } from '../../../shared/utils/settingsEvents';
 
 // Enhanced notification type
 interface EnhancedNotification {
@@ -111,6 +113,13 @@ export const PomodoroTab: React.FC<PomodoroTabProps> = React.memo(({
   const [pomodoroStats, setPomodoroStats] = useState<PomodoroStats>(() => PomodoroStatsManager.loadStats());
   const [notifications, setNotifications] = useState<EnhancedNotification[]>([]);
   const timerSectionRef = useRef<HTMLDivElement>(null);
+  const [themeRevision, setThemeRevision] = useState(0);
+  const clayUi = useMemo(
+    () => getAppliedVisualTheme().preset === 'clay',
+    [themeRevision]
+  );
+
+  useEffect(() => onSettingsUpdated(() => setThemeRevision((n) => n + 1)), []);
 
   // Quest suggestion modal state
   const [showQuestSuggestions, setShowQuestSuggestions] = useState(false);
@@ -1238,7 +1247,11 @@ export const PomodoroTab: React.FC<PomodoroTabProps> = React.memo(({
 
   // Memoize the entire JSX to prevent unnecessary re-renders
   const memoizedJSX = useMemo(() => (
-    <div className={`${styles.pomodoroContainer} ${styles.pixelPomodoroShell}`}>
+    <div
+      className={`${styles.pomodoroContainer} ${clayUi ? styles.clayPomodoroShell : styles.pixelPomodoroShell}`}
+      data-pixel-shell={clayUi ? undefined : 'pomodoro'}
+      data-clay-shell={clayUi ? 'pomodoro' : undefined}
+    >
       {/* Statistics Panel */}
       <div className={styles.statsPanel}>
         {/* XP Display */}
@@ -1297,6 +1310,7 @@ export const PomodoroTab: React.FC<PomodoroTabProps> = React.memo(({
           }}
           mode={timerMode}
           autoStart={shouldAutoStart}
+          clayUi={clayUi}
         />
       </div>
 
@@ -1619,6 +1633,7 @@ export const PomodoroTab: React.FC<PomodoroTabProps> = React.memo(({
     plugin,
     handleQuestSuggestionSelect,
     getCurrentSessionDuration,
+    clayUi,
   ]);
 
   return memoizedJSX;

@@ -26,6 +26,8 @@ interface PomodoroTimerProps {
   onSubtaskClick?: (index: number) => void;
   mode?: 'classic' | 'extended' | 'short' | 'custom' | 'deepWork' | 'quickFocus';
   autoStart?: boolean;
+  /** Clay theme — analytic donut ring with matte claymorphism */
+  clayUi?: boolean;
 }
 
 // Timer mode presets
@@ -37,6 +39,15 @@ const TIMER_MODES = {
 
 type ModeKey = keyof typeof TIMER_MODES;
 
+const RING_R = 54;
+const RING_CIRC = 2 * Math.PI * RING_R; // 339.292…
+/** Clay: roomy viewBox so thick stroke + soft shadow never clip */
+const CLAY_VB = 140;
+const CLAY_C = CLAY_VB / 2; // 70
+const CLAY_R = 50;
+const CLAY_STROKE = 14;
+const CLAY_CIRC = 2 * Math.PI * CLAY_R;
+
 export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
   duration,
   onComplete,
@@ -44,7 +55,19 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
   onAbort,
   mode = 'custom',
   autoStart = false,
+  clayUi = false,
 }) => {
+  const claySvgIdRef = useRef(`clayRing-${Math.random().toString(36).slice(2, 9)}`);
+  const clayGradId = `clayAnalyticRing-${claySvgIdRef.current}`;
+  const clayBreakGradId = `clayAnalyticBreak-${claySvgIdRef.current}`;
+  const clayDepthId = `clayRingDepth-${claySvgIdRef.current}`;
+
+  const ringR = clayUi ? CLAY_R : RING_R;
+  const ringCirc = clayUi ? CLAY_CIRC : RING_CIRC;
+  const ringStroke = clayUi ? CLAY_STROKE : 8;
+  const ringCx = clayUi ? CLAY_C : 60;
+  const ringCy = clayUi ? CLAY_C : 60;
+
   const [isBreak, setIsBreak] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(duration);
   const [isRunning, setIsRunning] = useState(false);
@@ -183,41 +206,141 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
       const customBreakDuration = 5 * 60;
       totalDuration = isBreak ? customBreakDuration : duration;
     }
-    return (1 - secondsLeft / totalDuration) * 339.292;
+    return (1 - secondsLeft / totalDuration) * ringCirc;
   };
 
+  const dashOffset = progress();
+
   return (
-    <div className={styles.timerCard} data-phase={isBreak ? "break" : "work"}>
+    <div
+      className={`${styles.timerCard} ${clayUi ? styles.timerCardClay : ''}`}
+      data-phase={isBreak ? "break" : "work"}
+    >
       {/* Phase Title */}
       <div className={styles.timerTitle}>
         {isBreak ? "🌿 Break Time" : "⚡ Work Time"}
       </div>
 
       {/* Timer Circle Progress */}
-      <div className={styles.circleWrapper}>
-        <svg className={styles.progressRing} viewBox="0 0 120 120">
+      <div className={`${styles.circleWrapper} ${clayUi ? styles.circleWrapperClay : ''}`}>
+        <svg
+          className={styles.progressRing}
+          viewBox={clayUi ? `0 0 ${CLAY_VB} ${CLAY_VB}` : "0 0 120 120"}
+          overflow="visible"
+        >
+          {clayUi && (
+            <defs>
+              {/*
+                Analytic palette: cyan → blue → purple → magenta → orange.
+                Defined top→bottom in SVG space because .progressRing is CSS-rotated -90deg,
+                which maps that axis to left→right on screen (matching the reference donut).
+              */}
+              <linearGradient
+                id={clayGradId}
+                gradientUnits="userSpaceOnUse"
+                x1={ringCx}
+                y1={ringCy - ringR}
+                x2={ringCx}
+                y2={ringCy + ringR}
+              >
+                <stop offset="0%" stopColor="#00D4FF" />
+                <stop offset="22%" stopColor="#3B82F6" />
+                <stop offset="48%" stopColor="#8B5CF6" />
+                <stop offset="72%" stopColor="#D946EF" />
+                <stop offset="100%" stopColor="#F97316" />
+              </linearGradient>
+              <linearGradient
+                id={clayBreakGradId}
+                gradientUnits="userSpaceOnUse"
+                x1={ringCx}
+                y1={ringCy - ringR}
+                x2={ringCx}
+                y2={ringCy + ringR}
+              >
+                <stop offset="0%" stopColor="#34D399" />
+                <stop offset="55%" stopColor="#10B981" />
+                <stop offset="100%" stopColor="#059669" />
+              </linearGradient>
+              <filter
+                id={clayDepthId}
+                x="-30%"
+                y="-30%"
+                width="160%"
+                height="160%"
+              >
+                <feDropShadow
+                  dx="0"
+                  dy="2"
+                  stdDeviation="2.2"
+                  floodColor="rgba(59, 130, 246, 0.22)"
+                />
+                <feDropShadow
+                  dx="0"
+                  dy="1"
+                  stdDeviation="1"
+                  floodColor="rgba(139, 92, 246, 0.18)"
+                />
+              </filter>
+            </defs>
+          )}
+          {/* Soft recess under the track */}
+          {clayUi && (
+            <circle
+              stroke="rgba(46, 42, 63, 0.08)"
+              strokeWidth={ringStroke + 6}
+              fill="transparent"
+              r={ringR}
+              cx={ringCx}
+              cy={ringCy}
+            />
+          )}
           <circle
             className={styles.ringBackground}
-            stroke="#e0e0e0"
-            strokeWidth="8"
+            stroke={clayUi ? "#C5C2CE" : "#e0e0e0"}
+            strokeWidth={ringStroke}
             fill="transparent"
-            r="54"
-            cx="60"
-            cy="60"
+            r={ringR}
+            cx={ringCx}
+            cy={ringCy}
+            strokeLinecap={clayUi ? "round" : undefined}
           />
+          {clayUi && (
+            <circle
+              className={styles.ringProgressDepth}
+              stroke="rgba(46, 42, 63, 0.16)"
+              strokeWidth={ringStroke}
+              fill="transparent"
+              r={ringR}
+              cx={ringCx + 0.9}
+              cy={ringCy + 1.2}
+              strokeLinecap="round"
+              strokeDasharray={ringCirc}
+              strokeDashoffset={dashOffset}
+            />
+          )}
           <circle
             className={styles.ringProgress}
-            stroke={isBreak ? "#81C784" : "#4fc3f7"}
-            strokeWidth="8"
+            stroke={
+              clayUi
+                ? isBreak
+                  ? `url(#${clayBreakGradId})`
+                  : `url(#${clayGradId})`
+                : isBreak
+                  ? "#81C784"
+                  : "#4fc3f7"
+            }
+            strokeWidth={ringStroke}
             fill="transparent"
-            r="54"
-            cx="60"
-            cy="60"
-            strokeDasharray={339.292}
-            strokeDashoffset={progress()}
+            r={ringR}
+            cx={ringCx}
+            cy={ringCy}
+            strokeLinecap="round"
+            strokeDasharray={ringCirc}
+            strokeDashoffset={dashOffset}
+            filter={clayUi ? `url(#${clayDepthId})` : undefined}
           />
         </svg>
-        <div className={styles.timerOverlay}>
+        <div className={`${styles.timerOverlay} ${clayUi ? styles.timerOverlayClay : ''}`}>
           <div className={styles.timeCircle}>{formatTime(secondsLeft)}</div>
         </div>
       </div>

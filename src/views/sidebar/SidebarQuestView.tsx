@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { App, TFile, ItemView, WorkspaceLeaf } from 'obsidian';
 import { createRoot, Root } from "react-dom/client";
 import type { Quest } from "../../features/quests/utils/taskParser";
@@ -20,11 +21,13 @@ import { readPlayerData } from "../../features/player/utils/playerDataUtils";
 import { EnergyCalculationService } from "../../features/quests/services/energyCalculationService";
 import { QuestCalendarView } from "../../features/quests/components/QuestCalendarView";
 import { emitQuestCompletionFeedback, type QuestRewardResult } from "../../shared/utils/questCompletionPipeline";
+import { tryClaimQuestDailyClearBonus } from "../../shared/utils/dailyClearBonus";
 import { CeremonyHost } from "../../shared/components/ui/CeremonyHost";
 import {
 	loadAllQuests,
 	registerQuestVaultWatchers,
 } from "../../features/quests/utils/questNoteService";
+import { launchPomodoroForQuest } from "../../features/pomodoro/utils/launchPomodoroForQuest";
 import styles from "./SidebarQuestView.module.css";
 import { pixelNotice } from '../../shared/utils/noticeUtils';
 import { onSettingsUpdated } from '../../shared/utils/settingsEvents';
@@ -57,6 +60,12 @@ import {
 import { QuestJourneyPanel } from './components/QuestJourneyPanel';
 import { QuestDungeonPanel } from './components/QuestDungeonPanel';
 import { CaptureInboxPanel } from './components/CaptureInboxPanel';
+import { MobileQuestDayPicker } from './components/MobileQuestDayPicker';
+import {
+	MobileDayAgenda,
+	type MobileDayAgendaHandle,
+} from './components/MobileDayAgenda';
+import { TodayRunStrip } from './components/TodayRunStrip';
 import { openQuickCaptureModal } from '../../features/quests/modals/QuickCaptureModal';
 import {
 	getCaptureTagPresets,
@@ -66,6 +75,19 @@ import {
 	removeCaptureLine,
 	shouldReloadCapturesOnFileChange,
 } from '../../features/quests/utils/captureService';
+import { openFocusCheckInModal } from '../../features/focus/modals/FocusCheckInModal';
+import {
+	isFocusCheckInDue,
+	subscribeFocusCheckInChanges,
+} from '../../features/focus/utils/focusCheckInService';
+import {
+	getLocalDateString,
+	isCompletedToday,
+	isHabitScheduledOnLocalDate,
+	loadHabitsFromFile,
+} from '../../features/habits/utils/habitsUtils';
+import { useMobileOptimizations } from '../../shared/hooks/useMobileOptimizations';
+import { isLikelyMobileDevice } from '../../shared/utils/deviceDetect';
 
 export const SIDEBAR_QUEST_VIEW_TYPE = "sidebar-quest-view";
 
@@ -141,10 +163,22 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 	const [captureTagFilter, setCaptureTagFilter] = useState('all');
 	const [captureShowAll, setCaptureShowAll] = useState(false);
 	const [promotingCapture, setPromotingCapture] = useState<Quest | null>(null);
+	const [createDueISO, setCreateDueISO] = useState<string | undefined>(undefined);
 	const [currentTime, setCurrentTime] = useState(() => new Date());
-	const plannerScrollRef = useRef<HTMLDivElement | null>(null);
+	const mobileAgendaRef = useRef<MobileDayAgendaHandle | null>(null);
 	const [dayScheduleOpen, setDayScheduleOpen] = useState(false);
+	const [mobileTimelineMenuId, setMobileTimelineMenuId] = useState<string | null>(null);
 	const dayScheduleShellRef = useRef<HTMLDivElement | null>(null);
+	const { isMobile } = useMobileOptimizations();
+	const [checkInDue, setCheckInDue] = useState(false);
+	const [habitDueTotal, setHabitDueTotal] = useState<number | null>(null);
+	const [habitRemaining, setHabitRemaining] = useState<number | null>(null);
+	const [questsReady, setQuestsReady] = useState(false);
+	/** Mobile day plan starts open so the agenda is visible without an extra tap. */
+	const [dayPlanExpanded, setDayPlanExpanded] = useState(true);
+	/** Mobile ADHD filters — desktop ignores these. */
+	const [todayOnly, setTodayOnly] = useState(() => isLikelyMobileDevice());
+	const [fitEnergy, setFitEnergy] = useState(false);
 
 	const loadCapturesList = async () => {
 		try {
@@ -160,8 +194,10 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 			const merged = await loadAllQuests(app, plugin.settings);
 			setAllQuests(merged);
 			setQuests(merged.filter((q) => !q.completed));
+			setQuestsReady(true);
 		} catch (error) {
 			console.error("Error loading sidebar quests:", error);
+			setQuestsReady(true);
 		}
 	};
 
@@ -178,13 +214,28 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 	};
 
 	useEffect(() => {
-		loadQuests();
-		loadCapturesList();
-		loadEnergy();
+		let cancelled = false;
+		const boot = async () => {
+			await loadQuests();
+			if (cancelled) return;
 
-		void getAllSkills(app.vault)
-			.then(setContractSkills)
-			.catch((error) => console.error('Failed to load skills for contract form:', error));
+			// Energy is cheap and needed for filters; load next.
+			await loadEnergy();
+			if (cancelled) return;
+
+			if (isMobile) {
+				// Defer capture inbox — not needed for Today's Run first paint
+				window.setTimeout(() => {
+					if (!cancelled) void loadCapturesList();
+				}, 500);
+			} else {
+				void loadCapturesList();
+				void getAllSkills(app.vault)
+					.then(setContractSkills)
+					.catch((error) => console.error('Failed to load skills for contract form:', error));
+			}
+		};
+		void boot();
 
 		const cleanupWatchers = registerQuestVaultWatchers(
 			app.vault,
@@ -203,13 +254,30 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 		document.addEventListener("player-data-updated", onPlayerUpdated);
 
 		return () => {
+			cancelled = true;
 			cleanupWatchers();
 			app.vault.off('modify', onCaptureVaultChange as never);
 			app.vault.off('create', onCaptureVaultChange as never);
 			app.vault.off('delete', onCaptureVaultChange as never);
 			document.removeEventListener("player-data-updated", onPlayerUpdated);
 		};
-	}, [app, plugin.app.vault, plugin.settings]);
+	}, [app, plugin.app.vault, plugin.settings, isMobile]);
+
+	// Desktop loads skills on boot; mobile only when Projects or quest modal needs them
+	useEffect(() => {
+		if (!isMobile) return;
+		if (hubSection !== 'projects' && !isQuestModalOpen) return;
+		if (contractSkills.length > 0) return;
+		let cancelled = false;
+		void getAllSkills(app.vault)
+			.then((skills) => {
+				if (!cancelled) setContractSkills(skills);
+			})
+			.catch((error) => console.error('Failed to load skills for contract form:', error));
+		return () => {
+			cancelled = true;
+		};
+	}, [isMobile, hubSection, isQuestModalOpen, app.vault, contractSkills.length]);
 
 	useEffect(() => {
 		try {
@@ -309,9 +377,40 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 			if (tagFilter !== "all" && !(quest.tags || []).includes(tagFilter)) return false;
 			if (priorityFilter !== "all" && (quest.priority || "none").toLowerCase() !== priorityFilter) return false;
 			if (difficultyFilter !== "all" && (quest.difficulty || "none").toLowerCase() !== difficultyFilter) return false;
+			// Mobile-only ADHD filters (desktop never applies these).
+			// Keep unscheduled visible — that's the brain-dump → timeblock pile.
+			if (isMobile && todayOnly) {
+				const group = classifyInboxGroup(quest, {
+					todayISO: toISODate(currentTime),
+					now: currentTime,
+				});
+				if (
+					group !== "now" &&
+					group !== "today" &&
+					group !== "overdue" &&
+					group !== "unscheduled"
+				) {
+					return false;
+				}
+			}
+			if (isMobile && fitEnergy) {
+				const cost = quest.energyCost ?? 10;
+				if (cost > currentEnergy) return false;
+			}
 			return true;
 		});
-	}, [taskQuests, projectFilter, tagFilter, priorityFilter, difficultyFilter]);
+	}, [
+		taskQuests,
+		projectFilter,
+		tagFilter,
+		priorityFilter,
+		difficultyFilter,
+		isMobile,
+		todayOnly,
+		fitEnergy,
+		currentEnergy,
+		currentTime,
+	]);
 
 	const selectedDateISO = toISODate(selectedDate);
 	const todayISO = toISODate(currentTime);
@@ -326,6 +425,7 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 	});
 
 	const timedTimelineBlocks = useMemo(() => {
+		if (isMobile && !dayPlanExpanded) return [];
 		return filteredQuests
 			.filter((quest) => isSameDate(quest.due, selectedDateISO) && hasTime(quest.due))
 			.map((quest) => {
@@ -335,9 +435,10 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 				return { quest, start, end, duration, mode: "scheduled" as const };
 			})
 			.sort((a, b) => a.start.getTime() - b.start.getTime());
-	}, [filteredQuests, selectedDateISO]);
+	}, [filteredQuests, selectedDateISO, isMobile, dayPlanExpanded]);
 
 	const flexibleTimelineBlocks = useMemo(() => {
+		if (isMobile && !dayPlanExpanded) return [];
 		const sameDayFloating = filteredQuests.filter((quest) => {
 			if (timedTimelineBlocks.some((block) => block.quest.id === quest.id)) return false;
 			if (isSameDate(quest.due, selectedDateISO) && !hasTime(quest.due)) return true;
@@ -346,19 +447,13 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 			return false;
 		});
 		return placeFlexibleBlocks(sameDayFloating, selectedDate, 9, "floating");
-	}, [filteredQuests, selectedDate, selectedDateISO, timedTimelineBlocks, todayISO]);
+	}, [filteredQuests, selectedDate, selectedDateISO, timedTimelineBlocks, todayISO, isMobile, dayPlanExpanded]);
 
 	const timelineBlocks = useMemo(() => {
 		return [...timedTimelineBlocks, ...flexibleTimelineBlocks].sort(
 			(a, b) => a.start.getTime() - b.start.getTime()
 		);
 	}, [timedTimelineBlocks, flexibleTimelineBlocks]);
-
-	const plannerHours = useMemo(() => {
-		const hours: number[] = [];
-		for (let h = plannerStartHour; h <= plannerEndHour; h++) hours.push(h);
-		return hours;
-	}, [plannerStartHour, plannerEndHour]);
 
 	const plannerBlocks = useMemo<PlannerBlock[]>(() => {
 		const plannerStart = plannerStartHour * 60;
@@ -488,32 +583,14 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 			}));
 	}, [timelineBlocks, plannerStartHour, plannerEndHour, timelineColorMode]);
 
-	const nowMarkerPercent = useMemo(() => {
-		if (selectedDateISO !== todayISO) return null;
-		const startMinutes = plannerStartHour * 60;
-		const endMinutes = plannerEndHour * 60;
-		const currentMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
-		if (currentMinutes < startMinutes || currentMinutes > endMinutes) return null;
-		// Keep marker line inside track bounds (avoid appearing below last hour line).
-		const safeMinutes = Math.min(currentMinutes, endMinutes - 1);
-		return ((safeMinutes - startMinutes) / (endMinutes - startMinutes)) * 100;
-	}, [selectedDateISO, todayISO, currentTime, plannerStartHour, plannerEndHour]);
-
 	useEffect(() => {
 		if (selectedDateISO !== todayISO) return;
-		const plannerEl = plannerScrollRef.current;
-		if (!plannerEl) return;
-
-		const startMinutes = plannerStartHour * 60;
-		const endMinutes = plannerEndHour * 60;
-		const currentMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
-		const clamped = Math.max(startMinutes, Math.min(endMinutes, currentMinutes));
-		const ratio = (clamped - startMinutes) / (endMinutes - startMinutes);
-		const viewport = plannerEl.clientHeight;
-		const content = plannerEl.scrollHeight;
-		const targetTop = ratio * content - viewport * 0.35;
-		plannerEl.scrollTop = Math.max(0, Math.min(targetTop, content - viewport));
-	}, [selectedDateISO, todayISO, plannerStartHour, plannerEndHour, currentTime]);
+		// Defer so the agenda has painted the Now marker.
+		const id = window.setTimeout(() => {
+			mobileAgendaRef.current?.scrollToNow("auto");
+		}, 50);
+		return () => window.clearTimeout(id);
+	}, [selectedDateISO, todayISO, plannerStartHour, plannerEndHour]);
 
 	const inboxByGroup = useMemo(() => {
 		const groups: Record<InboxGroupId, Quest[]> = {
@@ -535,14 +612,130 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 		return groups;
 	}, [filteredQuests, todayISO, now]);
 
+	const todayRunQuests = useMemo(
+		() => [...inboxByGroup.now, ...inboxByGroup.today],
+		[inboxByGroup.now, inboxByGroup.today]
+	);
+
+	const nextUpQuest = useMemo(() => {
+		const timed = todayRunQuests
+			.filter((q) => q.due && hasTime(q.due))
+			.sort(
+				(a, b) =>
+					new Date(a.due!).getTime() - new Date(b.due!).getTime()
+			);
+		return timed[0] ?? inboxByGroup.now[0] ?? inboxByGroup.today[0] ?? null;
+	}, [todayRunQuests, inboxByGroup.now, inboxByGroup.today]);
+
+	const todayDateLabel = useMemo(
+		() =>
+			currentTime.toLocaleDateString(undefined, {
+				weekday: 'short',
+				month: 'short',
+				day: 'numeric',
+			}),
+		[currentTime]
+	);
+
+	useEffect(() => {
+		if (!isMobile) {
+			setHabitDueTotal(null);
+			setHabitRemaining(null);
+			return;
+		}
+		let cancelled = false;
+		const refreshHabits = async () => {
+			try {
+				const habits = await loadHabitsFromFile(app.vault);
+				const today = getLocalDateString();
+				const due = habits.filter(
+					(h) => !h.archived && isHabitScheduledOnLocalDate(h, today)
+				);
+				if (cancelled) return;
+				setHabitDueTotal(due.length);
+				setHabitRemaining(due.filter((h) => !isCompletedToday(h)).length);
+			} catch {
+				if (!cancelled) {
+					setHabitDueTotal(null);
+					setHabitRemaining(null);
+				}
+			}
+		};
+		// Defer habit scan until after first quest paint
+		const startId = window.setTimeout(() => void refreshHabits(), 350);
+		const interval = window.setInterval(() => void refreshHabits(), 90_000);
+		return () => {
+			cancelled = true;
+			window.clearTimeout(startId);
+			window.clearInterval(interval);
+		};
+	}, [app.vault, isMobile]);
+
+	useEffect(() => {
+		if (!isMobile) {
+			setCheckInDue(false);
+			return;
+		}
+		if (plugin.settings.enableFocusCheckIns === false) {
+			setCheckInDue(false);
+			return;
+		}
+		let cancelled = false;
+		const refresh = async () => {
+			const due = await isFocusCheckInDue(app, plugin.settings);
+			if (!cancelled) setCheckInDue(due);
+		};
+		const startId = window.setTimeout(() => void refresh(), 400);
+		const unsub = subscribeFocusCheckInChanges(() => {
+			void refresh();
+		});
+		const interval = window.setInterval(() => void refresh(), 60_000);
+		return () => {
+			cancelled = true;
+			window.clearTimeout(startId);
+			unsub();
+			window.clearInterval(interval);
+		};
+	}, [app, plugin.settings, isMobile]);
+
 	const openCreate = () => {
 		setEditingQuest(null);
 		setPromotingCapture(null);
+		setCreateDueISO(undefined);
+		setIsQuestModalOpen(true);
+	};
+
+	const openCreateForDate = (date: Date) => {
+		const y = date.getFullYear();
+		const m = `${date.getMonth() + 1}`.padStart(2, "0");
+		const d = `${date.getDate()}`.padStart(2, "0");
+		setEditingQuest(null);
+		setPromotingCapture(null);
+		setCreateDueISO(`${y}-${m}-${d}`);
+		setIsQuestModalOpen(true);
+	};
+
+	const openCreateAtMinutes = (minutesFromMidnight: number) => {
+		const clamped = Math.max(0, Math.min(23 * 60 + 59, Math.floor(minutesFromMidnight)));
+		const hh = String(Math.floor(clamped / 60)).padStart(2, "0");
+		const mm = String(clamped % 60).padStart(2, "0");
+		const y = selectedDate.getFullYear();
+		const mo = `${selectedDate.getMonth() + 1}`.padStart(2, "0");
+		const d = `${selectedDate.getDate()}`.padStart(2, "0");
+		setEditingQuest(null);
+		setPromotingCapture(null);
+		setCreateDueISO(`${y}-${mo}-${d}T${hh}:${mm}`);
 		setIsQuestModalOpen(true);
 	};
 
 	const handleQuickCapture = () => {
 		openQuickCaptureModal(app, plugin.settings);
+		// Refresh capture list after modal may have written — don't block open
+		window.setTimeout(() => {
+			void loadCapturesList().then(() => {
+				if (isMobile) setCaptureCollapsed(false);
+			});
+		}, 900);
 	};
 
 	const handleAddCaptureToTodayInbox = async (quest: Quest) => {
@@ -824,6 +1017,7 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 		setIsQuestModalOpen(false);
 		setEditingQuest(null);
 		setPromotingCapture(null);
+		setCreateDueISO(undefined);
 	};
 
 	const handleQuestModalSubmit = async () => {
@@ -838,6 +1032,7 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 		setIsQuestModalOpen(false);
 		setEditingQuest(null);
 		setPromotingCapture(null);
+		setCreateDueISO(undefined);
 		loadQuests();
 	};
 
@@ -875,6 +1070,7 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 			await loadQuests();
 			if (result.changed) {
 				emitQuestCompletionNotices(result, plugin.settings);
+				await claimQuestClearIfDone(quest.id);
 			} else if (result.failureReason) {
 				pixelNotice(describeQuestPersistFailure(result.failureReason, quest, 'complete'), 4000);
 			}
@@ -976,11 +1172,12 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 		}
 	};
 
-	const handleTimelineKeyDown = (event: React.KeyboardEvent<HTMLDivElement>, quest: Quest) => {
-		if (event.key === "Enter" || event.key === " ") {
-			event.preventDefault();
-			openDetails(quest);
-		}
+	const claimQuestClearIfDone = async (completedQuestId?: string) => {
+		const remaining = todayRunQuests.filter((q) => q.id !== completedQuestId);
+		await tryClaimQuestDailyClearBonus({
+			todayInboxCleared: todayRunQuests.length > 0 && remaining.length === 0,
+			day: todayISO,
+		});
 	};
 
 	const handleTimelineComplete = async (quest: Quest) => {
@@ -990,6 +1187,7 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 			await loadQuests();
 			if (result.changed) {
 				emitQuestCompletionNotices(result, plugin.settings);
+				await claimQuestClearIfDone(resolved.id);
 			} else if (result.failureReason) {
 				pixelNotice(describeQuestPersistFailure(result.failureReason, resolved, 'complete'), 4000);
 			}
@@ -1002,11 +1200,14 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 	const handleTimelineMoveByDays = async (quest: Quest, daysToMove: number) => {
 		try {
 			const baseIso = quest.due?.split("T")[0] || selectedDateISO;
+			const timePart = quest.due && hasTime(quest.due) ? quest.due.split("T")[1]?.slice(0, 5) : null;
 			const targetDate = new Date(`${baseIso}T00:00:00`);
 			if (Number.isNaN(targetDate.getTime())) return;
 			targetDate.setDate(targetDate.getDate() + daysToMove);
-			const targetIso = toISODate(targetDate);
-			await persistQuestDateMove(app, quest, targetIso, todayISO);
+			const targetIso = timePart
+				? `${toISODate(targetDate)}T${timePart}`
+				: toISODate(targetDate);
+			await persistQuestDueDateTime(app, quest, targetIso, todayISO);
 			await loadQuests();
 			const label = targetDate.toLocaleDateString([], { month: "short", day: "numeric" });
 			pixelNotice(`Moved "${getQuestDisplayTitle(quest)}" to ${label}`, 2500);
@@ -1016,55 +1217,116 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 		}
 	};
 
+	const handleTimelineSnoozeMinutes = async (quest: Quest, minutes: number) => {
+		try {
+			const base =
+				quest.due && hasTime(quest.due) ? new Date(quest.due) : new Date();
+			if (Number.isNaN(base.getTime())) return;
+			base.setMinutes(base.getMinutes() + minutes);
+			const hh = String(base.getHours()).padStart(2, "0");
+			const mm = String(base.getMinutes()).padStart(2, "0");
+			const dueIso = `${toISODate(base)}T${hh}:${mm}`;
+			await persistQuestDueDateTime(app, quest, dueIso, todayISO);
+			await loadQuests();
+			pixelNotice(`Snoozed +${minutes}m → ${hh}:${mm}`, 2200);
+		} catch (error) {
+			console.error("Failed to snooze quest from timeline:", error);
+			pixelNotice("Could not snooze quest. Please try again.", 3500);
+		}
+	};
+
+	const handleStartFocus = (quest: Quest) => {
+		launchPomodoroForQuest(plugin, quest, { mountDelayMs: isMobile ? 650 : 500 });
+		pixelNotice(`⏱ Focus: ${getQuestDisplayTitle(quest)}`, 2000);
+	};
+
 	const scrollTimelineToNow = (behavior: ScrollBehavior = "smooth") => {
-		const plannerEl = plannerScrollRef.current;
-		if (!plannerEl) return;
-		const currentMinutes = currentTime.getHours() * 60 + currentTime.getMinutes();
-		scrollPlannerToMinute({
-			plannerEl,
-			currentMinutes,
-			startHour: plannerStartHour,
-			endHour: plannerEndHour,
-			behavior,
-		});
+		mobileAgendaRef.current?.scrollToNow(behavior);
 	};
 
 	const handleJumpToNow = () => {
+		if (isMobile && !dayPlanExpanded) {
+			setDayPlanExpanded(true);
+		}
 		if (selectedDateISO !== todayISO) {
 			const today = new Date();
 			today.setHours(0, 0, 0, 0);
 			setSelectedDate(today);
-			window.setTimeout(() => scrollTimelineToNow("smooth"), 0);
+			window.setTimeout(() => scrollTimelineToNow("smooth"), 80);
 			return;
 		}
-		scrollTimelineToNow("smooth");
+		window.setTimeout(() => scrollTimelineToNow("smooth"), isMobile ? 80 : 0);
 	};
 
 	return (
 		<>
-			<CeremonyHost />
+			{/* Lite on mobile so Quests can still show level-up without heavy rank UI */}
+			<CeremonyHost lite={isMobile} />
 		<div
-			className={`${styles.container} ${styles.pixelSidebarQuestShell}`}
+			className={`${styles.container} ${styles.pixelSidebarQuestShell}${isMobile ? ` ${styles.mobileTodayRun}` : ''}`}
 			data-gamification-theme-root
 			data-gamification-visual-theme={appliedVisualTheme.preset}
 			data-gamification-shell={appliedVisualTheme.shell}
+			data-gamification-mobile={isMobile ? 'true' : 'false'}
 			data-pixel-shell="quests"
 		>
 			<div className={styles.panelHeader}>
 				<h2 className={styles.panelTitle}>Quests</h2>
 			</div>
 
-			<QuestHubNav active={hubSection} onChange={setHubSection} pixelShell />
-
+			<QuestHubNav
+				active={hubSection}
+				onChange={setHubSection}
+				pixelShell={appliedVisualTheme.preset !== 'system-hunter'}
+			/>
 			{hubSection === 'tasks' && (
 				<>
+			{isMobile && (
+				<TodayRunStrip
+					dateLabel={todayDateLabel}
+					questCount={todayRunQuests.length}
+					habitRemaining={habitRemaining}
+					habitDueTotal={habitDueTotal}
+					nextUp={nextUpQuest}
+					checkInDue={checkInDue && plugin.settings.enableFocusCheckIns !== false}
+					onOpenCheckIn={() => openFocusCheckInModal(app, plugin.settings)}
+					onOpenNextUp={openDetails}
+					onJumpToNow={handleJumpToNow}
+					onFocusNextUp={nextUpQuest ? () => handleStartFocus(nextUpQuest) : undefined}
+				/>
+			)}
+			{isMobile && (
+				<div className={styles.mobileFilterRow} role="group" aria-label="Today filters">
+					<button
+						type="button"
+						className={`${styles.mobileFilterChip} ${todayOnly ? styles.mobileFilterChipActive : ''}`}
+						onClick={() => setTodayOnly((v) => !v)}
+						aria-pressed={todayOnly}
+						title="Focus Now / Today / Overdue — To schedule always stays visible"
+					>
+						[ TODAY ]
+					</button>
+					<button
+						type="button"
+						className={`${styles.mobileFilterChip} ${fitEnergy ? styles.mobileFilterChipActive : ''}`}
+						onClick={() => setFitEnergy((v) => !v)}
+						aria-pressed={fitEnergy}
+						title={`Show quests costing ≤ ${currentEnergy} energy`}
+					>
+						[ ⚡ ENERGY ≤ {currentEnergy} ]
+					</button>
+				</div>
+			)}
+			{!questsReady && isMobile && (
+				<div className={styles.mobileQuestsLoading}>Loading today's quests…</div>
+			)}
 			<div className={styles.actionColumn}>
 				<button
 					type="button"
 					className={styles.addButton}
 					onClick={openCreate}
 				>
-					+ Add Quest
+					{isMobile ? '[ + ADD QUEST ]' : '+ Add Quest'}
 				</button>
 				<button
 					type="button"
@@ -1072,7 +1334,7 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 					onClick={handleQuickCapture}
 					title="Brain dump — saves to Capture.md"
 				>
-					🧠 Brain Dump
+					{isMobile ? '[ BRAIN DUMP ]' : '🧠 Brain Dump'}
 				</button>
 				{projectFilter && (
 					<span className={hubStyles.projectFilterChip}>
@@ -1103,8 +1365,30 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 				onOpenCaptureFile={handleOpenCaptureFile}
 				showAll={captureShowAll}
 				onToggleShowAll={() => setCaptureShowAll((prev) => !prev)}
+				lite={isMobile}
 			/>
 
+			{isMobile && (
+				<MobileQuestDayPicker
+					quests={filteredQuests}
+					selectedDate={selectedDate}
+					onSelectDate={(date) => {
+						setSelectedDate(date);
+						setDayPlanExpanded(true);
+						setMobileTimelineMenuId(null);
+					}}
+					onQuestSelect={openDetails}
+					onQuestComplete={(quest) => void handleQuestComplete(quest)}
+					onAddQuest={openCreateForDate}
+					onUseDayPlan={(date) => {
+						setSelectedDate(date);
+						setDayPlanExpanded(true);
+						window.setTimeout(() => scrollTimelineToNow("smooth"), 80);
+					}}
+				/>
+			)}
+
+			{!isMobile && (
 			<section className={`${styles.section} ${styles.calendarSection}`}>
 				<div className={styles.calendarSectionHeader}>
 					<div className={styles.sectionTitle}>Calendar</div>
@@ -1138,12 +1422,32 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 					</div>
 				)}
 			</section>
+			)}
 
-			<section className={styles.section}>
+			<section className={`${styles.section}${dayPlanExpanded || !isMobile ? ` ${isMobile ? styles.dayPlanSectionMobile : styles.dayPlanSectionDesktop}` : ''}`}>
 				<div className={styles.timelineDayShell} ref={dayScheduleShellRef}>
 					<div className={styles.timelineHeader}>
-						<span>Day</span>
+						<span>Day plan</span>
 						<div className={styles.timelineHeaderActions}>
+							{isMobile && (
+								<button
+									type="button"
+									className={`${styles.timelineNowBtn} ${dayPlanExpanded ? styles.timelineHeaderIconActive : ''}`}
+									onClick={() => {
+										setDayPlanExpanded((open) => {
+											const next = !open;
+											if (next) {
+												setCaptureCollapsed(true);
+												window.setTimeout(() => scrollTimelineToNow("smooth"), 80);
+											}
+											return next;
+										});
+									}}
+									aria-expanded={dayPlanExpanded}
+								>
+									{dayPlanExpanded ? 'Hide plan' : 'Show plan'}
+								</button>
+							)}
 							<button
 								type="button"
 								className={styles.timelineNowBtn}
@@ -1152,6 +1456,7 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 							>
 								Now
 							</button>
+							{!isMobile && (
 							<button
 								type="button"
 								className={`${styles.timelineHeaderIcon} ${dayScheduleOpen ? styles.timelineHeaderIconActive : ""}`}
@@ -1162,9 +1467,10 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 							>
 								☷
 							</button>
+							)}
 						</div>
 					</div>
-					{dayScheduleOpen && (
+					{!isMobile && dayScheduleOpen && (
 						<div
 							id="sidebar-day-schedule-list"
 							className={styles.daySchedulePanel}
@@ -1213,125 +1519,38 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 						</div>
 					)}
 				</div>
-				<div className={styles.timelinePlanner} ref={plannerScrollRef}>
-					<div className={styles.timelineHourColumn}>
-						{plannerHours.map((hour) => (
-							<div key={`hour-${hour}`} className={styles.timelineHourLabel}>
-								{toHourTickFromNumber(hour)}
-							</div>
-						))}
-					</div>
-					<div className={styles.timelineTrack}>
-						{plannerHours.map((hour) => (
-							<div key={`line-${hour}`} className={styles.timelineHourLine} />
-						))}
-						{nowMarkerPercent !== null && (
-							<div
-								className={styles.timelineNowMarker}
-								style={{ top: `${nowMarkerPercent}%` }}
-								aria-hidden="true"
-							>
-								<span className={styles.timelineNowMarkerLabel}>Now</span>
-								<span className={styles.timelineNowMarkerLine} />
-							</div>
-						)}
-						{plannerBlocks.length === 0 && (
-							<div className={styles.timelineEmpty}>
-								<div className={styles.timelineEmptyContent}>
-									<span>No quests scheduled for this day</span>
-									<button type="button" className={styles.timelineEmptyAdd} onClick={openCreate}>
-										+ Add Quest
-									</button>
-								</div>
-							</div>
-						)}
-						{plannerBlocks.map((block, idx) => (
-							<div
-								key={`planner-${block.quest.id}-${idx}`}
-								role="button"
-								tabIndex={0}
-								className={[
-									styles.timelineQuestBlock,
-									block.mode === "suggested" ? styles.timelineQuestBlockSuggested : "",
-									block.mode === "floating" ? styles.timelineQuestBlockFloating : "",
-									(block.clusterSize || 1) >= 3 ? styles.timelineQuestBlockDense : "",
-									block.isTightCluster ? styles.timelineQuestBlockTight : "",
-									(block.overlapCount || 0) >= 2 && block.isTightCluster
-										? styles.timelineQuestBlockWithOverlapBadge
-										: "",
-									getTimelineThemeClass(block.themeKey, styles),
-								].filter(Boolean).join(" ")}
-								onClick={() => openDetails(block.quest)}
-								onKeyDown={(e) => handleTimelineKeyDown(e, block.quest)}
-								title={block.title}
-								style={{
-									top: `${block.topPercent}%`,
-									height: `${block.heightPercent}%`,
-									left: `${block.leftPercent ?? 0}%`,
-									width: `${block.widthPercent ?? 100}%`,
-								}}
-							>
-								{(block.overlapCount || 0) >= 2 && block.isTightCluster && (
-									<div className={styles.timelineOverlapBadge}>
-										+{block.overlapCount} overlapping
-									</div>
-								)}
-								<div className={styles.timelineQuestActions}>
-									<button
-										type="button"
-										className={styles.timelineActionBtn}
-										title="Open details"
-										onClick={(e) => {
-											e.stopPropagation();
-											openDetails(block.quest);
-										}}
-									>
-										⋯
-									</button>
-									{block.heightPercent >= 10 && (
-										<>
-											<button
-												type="button"
-												className={styles.timelineActionBtn}
-												title="Move one day later"
-												onClick={(e) => {
-													e.stopPropagation();
-													void handleTimelineMoveByDays(block.quest, 1);
-												}}
-											>
-												+1d
-											</button>
-											<button
-												type="button"
-												className={styles.timelineActionBtn}
-												title="Mark complete"
-												onClick={(e) => {
-													e.stopPropagation();
-													void handleTimelineComplete(block.quest);
-												}}
-											>
-												✓
-											</button>
-										</>
-									)}
-								</div>
-								<div className={styles.timelineQuestTitle}>{block.title}</div>
-								<div className={styles.timelineQuestTime}>{block.time}</div>
-							</div>
-						))}
-					</div>
-				</div>
-				{plannerBlocks.length > 0 && (
-					<div className={styles.timelineFreeSummary}>
-						Free time:{" "}
-						{formatDurationForBlocks(plannerBlocks, plannerStartHour, plannerEndHour)} available in this
-						window
-					</div>
+				{(!isMobile || dayPlanExpanded) ? (
+				<>
+					<MobileDayAgenda
+						ref={mobileAgendaRef}
+						blocks={plannerBlocks}
+						currentTime={currentTime}
+						isToday={selectedDateISO === todayISO}
+						plannerStartHour={plannerStartHour}
+						plannerEndHour={plannerEndHour}
+						onOpenQuest={openDetails}
+						onCompleteQuest={(quest) => void handleTimelineComplete(quest)}
+						onOpenActions={(quest) => setMobileTimelineMenuId(quest.id)}
+						onAddAtMinutes={openCreateAtMinutes}
+					/>
+				</>
+				) : (
+					<button
+						type="button"
+						className={styles.dayPlanCollapsedHint}
+						onClick={() => {
+							setDayPlanExpanded(true);
+							window.setTimeout(() => scrollTimelineToNow("smooth"), 80);
+						}}
+					>
+						Tap Show plan for today's time blocks
+					</button>
 				)}
 			</section>
 
 			<section className={styles.section}>
 				<div className={styles.sectionTitle}>Inbox</div>
+				{!isMobile && (
 				<div className={styles.filterRow}>
 					<select value={tagFilter} onChange={(e) => setTagFilter(e.target.value)} className={styles.filterSelect}>
 						<option value="all">All tags</option>
@@ -1355,6 +1574,7 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 						<option value="epic">Epic</option>
 					</select>
 				</div>
+				)}
 
 				<InboxGroup
 					groupId="now"
@@ -1364,13 +1584,13 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 					onQuestClick={openDetails}
 					collapsed={collapsedGroups.now}
 					onToggleCollapse={toggleGroupCollapse}
-					onDragStart={handleDragStart}
-					onDragEnd={handleDragEnd}
-					onDragOver={(groupId) => {
+					onDragStart={isMobile ? undefined : handleDragStart}
+					onDragEnd={isMobile ? undefined : handleDragEnd}
+					onDragOver={isMobile ? undefined : (groupId) => {
 						if (canDropToGroup(groupId)) setActiveDropZone(groupId);
 					}}
-					onDrop={handleDropToGroup}
-					isDropActive={activeDropZone === "now" && canDropToGroup("now")}
+					onDrop={isMobile ? undefined : handleDropToGroup}
+					isDropActive={!isMobile && activeDropZone === "now" && canDropToGroup("now")}
 				/>
 				<InboxGroup
 					groupId="today"
@@ -1380,29 +1600,30 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 					onQuestClick={openDetails}
 					collapsed={collapsedGroups.today}
 					onToggleCollapse={toggleGroupCollapse}
-					onDragStart={handleDragStart}
-					onDragEnd={handleDragEnd}
-					onDragOver={(groupId) => {
+					onDragStart={isMobile ? undefined : handleDragStart}
+					onDragEnd={isMobile ? undefined : handleDragEnd}
+					onDragOver={isMobile ? undefined : (groupId) => {
 						if (canDropToGroup(groupId)) setActiveDropZone(groupId);
 					}}
-					onDrop={handleDropToGroup}
-					isDropActive={activeDropZone === "today" && canDropToGroup("today")}
+					onDrop={isMobile ? undefined : handleDropToGroup}
+					isDropActive={!isMobile && activeDropZone === "today" && canDropToGroup("today")}
 				/>
+				{/* Always show on mobile — brain dumps land here until timed */}
 				<InboxGroup
 					groupId="unscheduled"
-					title="Unscheduled"
+					title={isMobile ? "To schedule" : "Unscheduled"}
 					quests={inboxByGroup.unscheduled}
 					currentEnergy={currentEnergy}
 					onQuestClick={openDetails}
 					collapsed={collapsedGroups.unscheduled}
 					onToggleCollapse={toggleGroupCollapse}
-					onDragStart={handleDragStart}
-					onDragEnd={handleDragEnd}
-					onDragOver={(groupId) => {
+					onDragStart={isMobile ? undefined : handleDragStart}
+					onDragEnd={isMobile ? undefined : handleDragEnd}
+					onDragOver={isMobile ? undefined : (groupId) => {
 						if (canDropToGroup(groupId)) setActiveDropZone(groupId);
 					}}
-					onDrop={handleDropToGroup}
-					isDropActive={activeDropZone === "unscheduled" && canDropToGroup("unscheduled")}
+					onDrop={isMobile ? undefined : handleDropToGroup}
+					isDropActive={!isMobile && activeDropZone === "unscheduled" && canDropToGroup("unscheduled")}
 				/>
 				<InboxGroup
 					groupId="overdue"
@@ -1412,12 +1633,13 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 					onQuestClick={openDetails}
 					collapsed={collapsedGroups.overdue}
 					onToggleCollapse={toggleGroupCollapse}
-					onDragStart={handleDragStart}
-					onDragEnd={handleDragEnd}
-					onDragOver={() => setActiveDropZone(null)}
-					onDrop={handleDropToGroup}
+					onDragStart={isMobile ? undefined : handleDragStart}
+					onDragEnd={isMobile ? undefined : handleDragEnd}
+					onDragOver={isMobile ? undefined : () => setActiveDropZone(null)}
+					onDrop={isMobile ? undefined : handleDropToGroup}
 					isDropActive={false}
 				/>
+				{!isMobile && (
 				<InboxGroup
 					groupId="abandon"
 					title="Abandon"
@@ -1434,6 +1656,7 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 					onDrop={handleDropToGroup}
 					isDropActive={activeDropZone === "abandon" && canDropToGroup("abandon")}
 				/>
+				)}
 			</section>
 				</>
 			)}
@@ -1477,9 +1700,123 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 					onSubmit={handleQuestModalSubmit}
 					openContracts={openContractOptions}
 					defaultContract={defaultContractTitle}
-					prefill={promotingCapture ? { title: promotingCapture.title } : undefined}
+					prefill={
+						promotingCapture
+							? { title: promotingCapture.title }
+							: createDueISO
+								? { dueISO: createDueISO }
+								: undefined
+					}
 				/>
 			)}
+
+			{mobileTimelineMenuId &&
+				createPortal(
+					(() => {
+						const menuQuest =
+							filteredQuests.find((q) => q.id === mobileTimelineMenuId) ??
+							allQuests.find((q) => q.id === mobileTimelineMenuId) ??
+							plannerBlocks.find((b) => b.quest.id === mobileTimelineMenuId)?.quest ??
+							null;
+						if (!menuQuest) return null;
+						const title = getQuestDisplayTitle(menuQuest);
+						return (
+							<div
+								className={styles.timelineActionSheetBackdrop}
+								role="presentation"
+								onClick={() => setMobileTimelineMenuId(null)}
+							>
+								<div
+									className={styles.timelineActionSheet}
+									role="dialog"
+									aria-modal="true"
+									aria-label={`Actions for ${title}`}
+									onClick={(e) => e.stopPropagation()}
+								>
+									<div className={styles.timelineActionSheetHeader}>
+										<div>
+											<span className={styles.timelineActionSheetEyebrow}>
+												System: Actions
+											</span>
+											<p className={styles.timelineActionSheetTitle}>{title}</p>
+										</div>
+										<button
+											type="button"
+											className={styles.timelineActionSheetClose}
+											aria-label="Close actions"
+											onClick={() => setMobileTimelineMenuId(null)}
+										>
+											✕
+										</button>
+									</div>
+									<div className={styles.timelineActionSheetBody}>
+										<button
+											type="button"
+											className={styles.timelineActionSheetBtn}
+											onClick={() => {
+												setMobileTimelineMenuId(null);
+												openDetails(menuQuest);
+											}}
+										>
+											Details
+										</button>
+										<button
+											type="button"
+											className={styles.timelineActionSheetBtn}
+											onClick={() => {
+												setMobileTimelineMenuId(null);
+												void handleTimelineSnoozeMinutes(menuQuest, 15);
+											}}
+										>
+											+15m snooze
+										</button>
+										<button
+											type="button"
+											className={styles.timelineActionSheetBtn}
+											onClick={() => {
+												setMobileTimelineMenuId(null);
+												void handleTimelineSnoozeMinutes(menuQuest, 60);
+											}}
+										>
+											+1h snooze
+										</button>
+										<button
+											type="button"
+											className={styles.timelineActionSheetBtn}
+											onClick={() => {
+												setMobileTimelineMenuId(null);
+												void handleTimelineMoveByDays(menuQuest, 1);
+											}}
+										>
+											+1 day
+										</button>
+										<button
+											type="button"
+											className={styles.timelineActionSheetBtn}
+											onClick={() => {
+												setMobileTimelineMenuId(null);
+												handleStartFocus(menuQuest);
+											}}
+										>
+											Start focus
+										</button>
+										<button
+											type="button"
+											className={`${styles.timelineActionSheetBtn} ${styles.timelineActionSheetBtnPrimary}`}
+											onClick={() => {
+												setMobileTimelineMenuId(null);
+												void handleTimelineComplete(menuQuest);
+											}}
+										>
+											Complete ✓
+										</button>
+									</div>
+								</div>
+							</div>
+						);
+					})(),
+					document.body
+				)}
 
 			<QuestDetailModal
 				isOpen={detailOpen}
@@ -1505,11 +1842,11 @@ interface InboxGroupProps {
 	onQuestClick: (quest: Quest) => void;
 	collapsed: boolean;
 	onToggleCollapse: (groupId: InboxGroupId) => void;
-	onDragStart: (quest: Quest, sourceGroup: InboxGroupId) => void;
-	onDragEnd: () => void;
-	onDragOver: (groupId: InboxGroupId) => void;
-	onDrop: (groupId: InboxGroupId) => void;
-	isDropActive: boolean;
+	onDragStart?: (quest: Quest, sourceGroup: InboxGroupId) => void;
+	onDragEnd?: () => void;
+	onDragOver?: (groupId: InboxGroupId) => void;
+	onDrop?: (groupId: InboxGroupId) => void;
+	isDropActive?: boolean;
 }
 
 const InboxGroup: React.FC<InboxGroupProps> = ({
@@ -1524,7 +1861,7 @@ const InboxGroup: React.FC<InboxGroupProps> = ({
 	onDragEnd,
 	onDragOver,
 	onDrop,
-	isDropActive,
+	isDropActive = false,
 }) => (
 	<div className={styles.inboxGroup}>
 		<button
@@ -1532,10 +1869,12 @@ const InboxGroup: React.FC<InboxGroupProps> = ({
 			className={`${styles.inboxGroupTitle} ${styles.inboxGroupHeaderButton}`}
 			onClick={() => onToggleCollapse(groupId)}
 			onDragOver={(e) => {
+				if (!onDragOver) return;
 				e.preventDefault();
 				onDragOver(groupId);
 			}}
 			onDrop={(e) => {
+				if (!onDrop) return;
 				e.preventDefault();
 				onDrop(groupId);
 			}}
@@ -1554,10 +1893,12 @@ const InboxGroup: React.FC<InboxGroupProps> = ({
 			<div
 				className={`${styles.inboxList} ${isDropActive ? styles.inboxDropActive : ""}`}
 				onDragOver={(e) => {
+					if (!onDragOver) return;
 					e.preventDefault();
 					onDragOver(groupId);
 				}}
 				onDrop={(e) => {
+					if (!onDrop) return;
 					e.preventDefault();
 					onDrop(groupId);
 				}}
@@ -1578,15 +1919,19 @@ const InboxGroup: React.FC<InboxGroupProps> = ({
 							className={`${styles.inboxItem} ${isFocusRow ? styles.inboxItemFocus : ""}`}
 							onClick={() => onQuestClick(quest)}
 							title={titleText}
-							draggable
-							onDragStart={(e) => {
-								e.dataTransfer.setData("text/plain", quest.id || titleText);
-								onDragStart(quest, groupId);
-							}}
+							draggable={Boolean(onDragStart)}
+							onDragStart={
+								onDragStart
+									? (e) => {
+											e.dataTransfer.setData("text/plain", quest.id || titleText);
+											onDragStart(quest, groupId);
+									  }
+									: undefined
+							}
 							onDragEnd={onDragEnd}
 						>
 							<div className={styles.inboxItemLeft}>
-								<span className={styles.dragHandle}>⋮⋮</span>
+								{onDragStart ? <span className={styles.dragHandle}>⋮⋮</span> : null}
 								<span className={styles.inboxCheck}>☐</span>
 								<span className={styles.inboxItemTitle}>{titleText}</span>
 							</div>
@@ -1766,68 +2111,6 @@ function clampHour(hour: number): number {
 	return Math.max(0, Math.min(23, Math.floor(hour)));
 }
 
-function scrollPlannerToMinute(args: {
-	plannerEl: HTMLDivElement;
-	currentMinutes: number;
-	startHour: number;
-	endHour: number;
-	behavior: ScrollBehavior;
-}) {
-	const startMinutes = args.startHour * 60;
-	const endMinutes = args.endHour * 60;
-	const clamped = Math.max(startMinutes, Math.min(endMinutes, args.currentMinutes));
-	const ratio = (clamped - startMinutes) / (endMinutes - startMinutes);
-	const viewport = args.plannerEl.clientHeight;
-	const content = args.plannerEl.scrollHeight;
-	const targetTop = ratio * content - viewport * 0.35;
-	args.plannerEl.scrollTo({
-		top: Math.max(0, Math.min(targetTop, content - viewport)),
-		behavior: args.behavior,
-	});
-}
-
-function toHourTick(date: Date): string {
-	return date.toLocaleTimeString([], { hour: "numeric", hour12: true });
-}
-
-function formatDuration(start: Date, end: Date): string {
-	const totalMinutes = Math.max(0, Math.round((end.getTime() - start.getTime()) / 60000));
-	const hours = Math.floor(totalMinutes / 60);
-	const minutes = totalMinutes % 60;
-	if (hours > 0 && minutes > 0) return `${hours}h ${minutes}m`;
-	if (hours > 0) return `${hours}h`;
-	return `${minutes}m`;
-}
-
-function toHourTickFromNumber(hour: number): string {
-	const d = new Date();
-	d.setHours(hour, 0, 0, 0);
-	return d.toLocaleTimeString([], { hour: "numeric", hour12: true });
-}
-
-function formatDurationForBlocks(
-	blocks: Array<{ start: Date; end: Date }>,
-	startHour: number,
-	endHour: number
-): string {
-	const plannerStart = startHour * 60;
-	const plannerEnd = endHour * 60;
-	const totalMinutes = plannerEnd - plannerStart;
-
-	let occupied = 0;
-	for (const block of blocks) {
-		const start = Math.max(plannerStart, block.start.getHours() * 60 + block.start.getMinutes());
-		const end = Math.min(plannerEnd, block.end.getHours() * 60 + block.end.getMinutes());
-		occupied += Math.max(0, end - start);
-	}
-	const free = Math.max(0, totalMinutes - occupied);
-	const h = Math.floor(free / 60);
-	const m = free % 60;
-	if (h > 0 && m > 0) return `${h}h ${m}m`;
-	if (h > 0) return `${h}h`;
-	return `${m}m`;
-}
-
 function getQuestDisplayTitle(quest: Quest): string {
 	const candidate = sanitizeQuestTitle(quest.title);
 	if (candidate) return candidate;
@@ -1916,28 +2199,6 @@ function resolveTimelineTheme(
 	return fallback[fallbackIndex % fallback.length];
 }
 
-function getTimelineThemeClass(
-	theme: TimelineThemeKey,
-	moduleStyles: Record<string, string>
-): string {
-	switch (theme) {
-		case "violet":
-			return moduleStyles.timelineThemeViolet;
-		case "blue":
-			return moduleStyles.timelineThemeBlue;
-		case "pink":
-			return moduleStyles.timelineThemePink;
-		case "amber":
-			return moduleStyles.timelineThemeAmber;
-		case "green":
-			return moduleStyles.timelineThemeGreen;
-		case "red":
-			return moduleStyles.timelineThemeRed;
-		default:
-			return moduleStyles.timelineThemeBlue;
-	}
-}
-
 function hashString(value: string): number {
 	let hash = 0;
 	for (let i = 0; i < value.length; i++) {
@@ -1985,7 +2246,10 @@ function loadCollapsedGroups(): Record<InboxGroupId, boolean> {
 
 function loadCalendarCollapsed(): boolean {
 	try {
-		return localStorage.getItem(CALENDAR_COLLAPSE_KEY) === "1";
+		const raw = localStorage.getItem(CALENDAR_COLLAPSE_KEY);
+		// First visit: collapse calendar on mobile so Today's Run + timeline come first
+		if (raw === null) return isLikelyMobileDevice();
+		return raw === "1";
 	} catch {
 		return false;
 	}
@@ -1993,7 +2257,10 @@ function loadCalendarCollapsed(): boolean {
 
 function loadCaptureCollapsed(): boolean {
 	try {
-		return localStorage.getItem(CAPTURE_COLLAPSE_KEY) === "1";
+		const raw = localStorage.getItem(CAPTURE_COLLAPSE_KEY);
+		// First visit: collapse capture on mobile so Today's Run stays above the fold
+		if (raw === null) return isLikelyMobileDevice();
+		return raw === "1";
 	} catch {
 		return false;
 	}
@@ -2068,13 +2335,23 @@ async function persistQuestDateMove(
 	targetDateISO: string,
 	todayISO: string
 ): Promise<void> {
+	await persistQuestDueDateTime(app, quest, targetDateISO, todayISO);
+}
+
+/** Persist due date and optional time (YYYY-MM-DD or YYYY-MM-DDTHH:mm). */
+async function persistQuestDueDateTime(
+	app: App,
+	quest: Quest,
+	dueISO: string,
+	todayISO: string
+): Promise<void> {
 	const file = app.vault.getAbstractFileByPath(quest.filePath || "GamifiedTasks.md");
 	if (!(file instanceof TFile)) return;
 	const content = await app.vault.read(file);
 	const lines = content.split("\n");
 	const index = findQuestLineIndex(lines, quest);
 	if (index === -1) return;
-	lines[index] = applyDateMoveToLine(lines[index], targetDateISO, todayISO);
+	lines[index] = applyDueDateTimeToLine(lines[index], dueISO, todayISO);
 	await app.vault.modify(file, lines.join("\n"));
 }
 
@@ -2149,8 +2426,13 @@ function applyGroupMoveToLine(line: string, targetGroup: InboxGroupId, todayISO:
 }
 
 function applyDateMoveToLine(line: string, targetDateISO: string, todayISO: string): string {
+	return applyDueDateTimeToLine(line, targetDateISO, todayISO);
+}
+
+function applyDueDateTimeToLine(line: string, dueISO: string, todayISO: string): string {
 	let updated = line;
 	const nowIso = new Date().toISOString();
+	const datePart = dueISO.split("T")[0];
 	updated = updated
 		.replace(/\s#status\/[^\s]+/g, "")
 		.replace(/\s#today\/[^\s]+/g, "")
@@ -2162,8 +2444,8 @@ function applyDateMoveToLine(line: string, targetDateISO: string, todayISO: stri
 		updated = `${updated} //`;
 	}
 	updated = upsertMetaField(updated, "modified", nowIso);
-	updated = upsertMetaField(updated, "due", targetDateISO);
-	const isToday = targetDateISO === todayISO;
+	updated = upsertMetaField(updated, "due", dueISO);
+	const isToday = datePart === todayISO;
 	updated = upsertMetaField(updated, "today", isToday ? "true" : "false");
 	updated += isToday ? " #today/true #status/active" : " #today/false #status/active";
 	return updated.replace(/\s{2,}/g, " ").trim();
