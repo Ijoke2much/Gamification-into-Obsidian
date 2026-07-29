@@ -1,0 +1,222 @@
+/**
+ * Shop tab — System Hunter / Solo Leveling (authoritative global CSS).
+ * Uses html[data-gamification-visual-theme] so styling applies whenever the
+ * gameplay theme is active, regardless of shop component state or CSS modules.
+ */
+
+html[data-gamification-visual-theme='system-hunter'] .gami-shop-tab,
+[data-gamification-plugin][data-gamification-visual-theme='system-hunter'] .gami-shop-tab,
+.gami-shop-tab.gami-shop-system {
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+	font-size: 12px !important;
+	line-height: 1.5 !important;
+	color: var(--go-text, #e0f2fe) !important;
+	background: var(--go-bg, #071527) !important;
+	border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42)) !important;
+	border-radius: var(--go-radius, 2px) !important;
+	box-shadow: var(--go-shadow, 0 0 22px rgba(34, 200, 255, 0.24)) !important;
+	image-rendering: auto !important;
+	-webkit-font-smoothing: antialiased !important;
+}
+
+/* Inner shop content inside SystemFrame — frame/scaffold provide the chrome */
+html[data-gamification-visual-theme='system-hunter'] .gami-shop-tab[data-shop-system-inner],
+[data-gamification-plugin][data-gamification-visual-theme='system-hunter'] .gami-shop-tab[data-shop-system-inner],
+.gami-shop-tab.gami-shop-system[data-shop-system-inner] {
+	background: transparent !important;
+	border: none !important;
+	box-shadow: none !important;
+	padding: 0 !important;
+	margin: 0 !important;
+	max-width: none !important;
+}
+
+html[data-gamification-visual-theme='system-hunter'] .gami-shop-tab .gami-shop-header,
+[data-gamification-plugin][data-gamification-visual-theme='system-hunter'] .gami-shop-tab .gami-shop-header,
+.gami-shop-tab.gami-shop-system .gami-shop-header {
+	display: flex !important;
+	align-items: center !important;
+	justify-content: space-between !important;
+	background: var(--go-panel, rgba(10, 30, 58, 0.9)) !important;
+	border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42)) !important;
+	border-radius: var(--go-radius, 2px) !important;
+	box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16)) !important;
+	padding: 10px 14px !important;
+	margin-bottom: 12px !important;
+}
+
+html[data-gamification-visual-theme='system-hunter'] .gami-shop-tab .gami-shop-header > span:first-child,
+[data-gamification-plugin][data-gamification-visual-theme='system-hunter'] .gami-shop-tab .gami-shop-header > span:first-child,
+.gami-shop-tab.gami-shop-system .gami-shop-header > span:first-child {
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+	font-size: 0.75rem !important;
+	font-weight: 700 !important;
+	letter-spacing: 0.12em !important;
+	text-transform: uppercase !important;
+	color: var(--go-accent, #22c8ff) !important;
+	text-shadow: 0 0 10px color-mix(in srgb, var(--go-accent, #22c8ff) 40%, transparent) !important;
+}
+
+html[data-gamification-visual-theme='system-hunter'] .gami-shop-tab .gami-shop-header > div,
+[data-gamification-plugin][data-gamification-visual-theme='system-hunter'] .gami-shop-tab .gami-shop-header > div,
+.gami-shop-tab.gami-shop-system .gami-shop-header > div {
+	background: var(--go-card-soft, rgba(8, 28, 54, 0.72)) !important;
+	border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42)) !important;
+	border-radius: var(--go-radius, 2px) !important;
+	color: var(--go-gold, #ffd83d) !important;
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+	font-size: 0.9rem !important;
+	box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16)) !important;
+}
+
+html[data-gamification-visual-theme='system-hunter'] .gami-shop-tab img[alt='Shopkeeper'],
+[data-gamification-plugin][data-gamification-visual-theme='system-hunter'] .gami-shop-tab img[alt='Shopkeeper'],
+.gami-shop-tab.gami-shop-system img[alt='Shopkeeper'] {
+	border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42)) !important;
+	border-radius: var(--go-radius, 2px) !important;
+	box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16)) !important;
+}
+
+html[data-gamification-visual-theme='system-hunter'] .gami-shop-tab .gami-shop-keeper-btn,
+html[data-gamification-visual-theme='system-hunter'] .gami-shop-tab .gami-shop-dialogue-options button,
+html[data-gamification-visual-theme='system-hunter'] .gami-shop-tab .gami-shop-category-tabs button,
+html[data-gamification-visual-theme='system-hunter'] .gami-shop-tab .shop-dialogue-box,
+html[data-gamification-visual-theme='system-hunter'] .gami-shop-tab select.gami-shop-select,
+[data-gamification-plugin][data-gamification-visual-theme='system-hunter'] .gami-shop-tab .gami-shop-keeper-btn,
+[data-gamification-plugin][data-gamification-visual-theme='system-hunter'] .gami-shop-tab .gami-shop-dialogue-options button,
+[data-gamification-plugin][data-gamification-visual-theme='system-hunter'] .gami-shop-tab .gami-shop-category-tabs button,
+[data-gamification-plugin][data-gamification-visual-theme='system-hunter'] .gami-shop-tab .shop-dialogue-box,
+[data-gamification-plugin][data-gamification-visual-theme='system-hunter'] .gami-shop-tab select.gami-shop-select,
+.gami-shop-tab.gami-shop-system .gami-shop-keeper-btn,
+.gami-shop-tab.gami-shop-system .gami-shop-dialogue-options button,
+.gami-shop-tab.gami-shop-system .gami-shop-category-tabs button,
+.gami-shop-tab.gami-shop-system .shop-dialogue-box,
+.gami-shop-tab.gami-shop-system select.gami-shop-select {
+	border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42)) !important;
+	border-radius: var(--go-radius, 2px) !important;
+	background: var(--go-card-soft, rgba(8, 28, 54, 0.72)) !important;
+	color: var(--go-text, #e0f2fe) !important;
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+	font-size: 0.7rem !important;
+	box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16)) !important;
+	text-shadow: none !important;
+}
+
+html[data-gamification-visual-theme='system-hunter'] .gami-shop-tab .gami-shop-keeper-btn:hover,
+[data-gamification-plugin][data-gamification-visual-theme='system-hunter'] .gami-shop-tab .gami-shop-keeper-btn:hover,
+.gami-shop-tab.gami-shop-system .gami-shop-keeper-btn:hover {
+	transform: none !important;
+	border-color: var(--go-accent, #22c8ff) !important;
+	color: var(--go-accent, #22c8ff) !important;
+	box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16)) !important;
+}
+
+html[data-gamification-visual-theme='system-hunter'] .gami-shop-tab .shop-dialogue-box,
+[data-gamification-plugin][data-gamification-visual-theme='system-hunter'] .gami-shop-tab .shop-dialogue-box,
+.gami-shop-tab.gami-shop-system .shop-dialogue-box {
+	font-size: 0.85rem !important;
+}
+
+html[data-gamification-visual-theme='system-hunter'] .gami-shop-tab .gami-shop-category-tabs button[data-active='true'],
+[data-gamification-plugin][data-gamification-visual-theme='system-hunter'] .gami-shop-tab .gami-shop-category-tabs button[data-active='true'],
+.gami-shop-tab.gami-shop-system .gami-shop-category-tabs button[data-active='true'] {
+	background: var(--go-card, rgba(18, 55, 96, 0.58)) !important;
+	color: var(--go-accent, #22c8ff) !important;
+	border-color: var(--go-accent, #22c8ff) !important;
+}
+
+html[data-gamification-visual-theme='system-hunter'] .gami-shop-tab .gami-shop-card,
+[data-gamification-plugin][data-gamification-visual-theme='system-hunter'] .gami-shop-tab .gami-shop-card,
+.gami-shop-tab.gami-shop-system .gami-shop-card {
+	background: var(--go-card, rgba(18, 55, 96, 0.58)) !important;
+	border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42)) !important;
+	border-radius: var(--go-radius, 2px) !important;
+	box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16)) !important;
+}
+
+html[data-gamification-visual-theme='system-hunter'] .gami-shop-tab .gami-shop-card:hover,
+[data-gamification-plugin][data-gamification-visual-theme='system-hunter'] .gami-shop-tab .gami-shop-card:hover,
+.gami-shop-tab.gami-shop-system .gami-shop-card:hover {
+	border-color: var(--go-border-strong, rgba(34, 200, 255, 0.9)) !important;
+	box-shadow: var(--go-shadow, 0 0 22px rgba(34, 200, 255, 0.24)) !important;
+	transform: none !important;
+}
+
+html[data-gamification-visual-theme='system-hunter'] .gami-shop-tab .gami-shop-card-title,
+[data-gamification-plugin][data-gamification-visual-theme='system-hunter'] .gami-shop-tab .gami-shop-card-title,
+.gami-shop-tab.gami-shop-system .gami-shop-card-title {
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+	font-size: 0.72rem !important;
+	color: var(--go-text-bright, #f0f9ff) !important;
+	text-shadow: none !important;
+}
+
+html[data-gamification-visual-theme='system-hunter'] .gami-shop-tab .gami-shop-card-desc,
+[data-gamification-plugin][data-gamification-visual-theme='system-hunter'] .gami-shop-tab .gami-shop-card-desc,
+.gami-shop-tab.gami-shop-system .gami-shop-card-desc {
+	background: color-mix(in srgb, var(--go-card-soft, rgba(8, 28, 54, 0.72)) 80%, transparent) !important;
+	border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42)) !important;
+	border-radius: var(--go-radius, 2px) !important;
+}
+
+html[data-gamification-visual-theme='system-hunter'] .gami-shop-tab .gami-shop-card-desc > div,
+[data-gamification-plugin][data-gamification-visual-theme='system-hunter'] .gami-shop-tab .gami-shop-card-desc > div,
+.gami-shop-tab.gami-shop-system .gami-shop-card-desc > div {
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+	font-size: 0.72rem !important;
+	color: var(--go-muted, #9ec7df) !important;
+}
+
+html[data-gamification-visual-theme='system-hunter'] .gami-shop-tab .gami-shop-card-footer,
+[data-gamification-plugin][data-gamification-visual-theme='system-hunter'] .gami-shop-tab .gami-shop-card-footer,
+.gami-shop-tab.gami-shop-system .gami-shop-card-footer {
+	background: var(--go-card-soft, rgba(8, 28, 54, 0.72)) !important;
+	border-top: 1px solid var(--go-border, rgba(34, 200, 255, 0.42)) !important;
+}
+
+html[data-gamification-visual-theme='system-hunter'] .gami-shop-tab .gami-shop-card-footer > div:first-child,
+[data-gamification-plugin][data-gamification-visual-theme='system-hunter'] .gami-shop-tab .gami-shop-card-footer > div:first-child,
+.gami-shop-tab.gami-shop-system .gami-shop-card-footer > div:first-child {
+	color: var(--go-gold, #ffd83d) !important;
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+}
+
+html[data-gamification-visual-theme='system-hunter'] .gami-shop-tab .gami-shop-card-footer button,
+[data-gamification-plugin][data-gamification-visual-theme='system-hunter'] .gami-shop-tab .gami-shop-card-footer button,
+.gami-shop-tab.gami-shop-system .gami-shop-card-footer button {
+	border: 1px solid var(--go-success, #48f59b) !important;
+	border-radius: var(--go-radius, 2px) !important;
+	background: color-mix(in srgb, var(--go-success, #48f59b) 22%, var(--go-card-soft, rgba(8, 28, 54, 0.72))) !important;
+	color: var(--go-success, #48f59b) !important;
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+	font-size: 0.7rem !important;
+	box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16)) !important;
+	text-shadow: none !important;
+	transform: none !important;
+}
+
+html[data-gamification-visual-theme='system-hunter'] .gami-shop-tab .gami-shop-card-category,
+[data-gamification-plugin][data-gamification-visual-theme='system-hunter'] .gami-shop-tab .gami-shop-card-category,
+.gami-shop-tab.gami-shop-system .gami-shop-card-category {
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+	font-size: 0.6rem !important;
+	letter-spacing: 0.1em !important;
+	border-bottom: 1px solid var(--go-border, rgba(34, 200, 255, 0.42)) !important;
+}
+
+html[data-gamification-visual-theme='system-hunter'] .gami-shop-tab .gami-shop-card-new,
+[data-gamification-plugin][data-gamification-visual-theme='system-hunter'] .gami-shop-tab .gami-shop-card-new,
+.gami-shop-tab.gami-shop-system .gami-shop-card-new {
+	border: 1px solid var(--go-gold, #ffd83d) !important;
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+}
+
+html[data-gamification-visual-theme='system-hunter'] .gami-shop-tab .gami-shop-empty-msg,
+[data-gamification-plugin][data-gamification-visual-theme='system-hunter'] .gami-shop-tab .gami-shop-empty-msg,
+.gami-shop-tab.gami-shop-system .gami-shop-empty-msg {
+	border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42)) !important;
+	border-radius: var(--go-radius, 2px) !important;
+	background: var(--go-card-soft, rgba(8, 28, 54, 0.72)) !important;
+	color: var(--go-gold, #ffd83d) !important;
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+}

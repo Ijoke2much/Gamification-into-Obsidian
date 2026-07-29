@@ -1,0 +1,102 @@
+/**
+ * System Hunter shell — tab surfaces that use data-pixel-shell.
+ * Removes pixel-only behaviors (slab shadow, Press Start type, press transforms)
+ * while keeping per-tab layout in module CSS.
+ */
+
+[data-gamification-shell='system'][data-pixel-shell] {
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif);
+	color: var(--go-text, #e0f2fe);
+	background: var(--go-bg, #071527) !important;
+	border-color: var(--go-border, rgba(34, 200, 255, 0.42));
+	border-radius: var(--go-radius, 2px);
+	box-shadow: var(--go-shadow, 0 0 22px rgba(34, 200, 255, 0.24));
+	image-rendering: auto;
+}
+
+[data-gamification-shell='system'][data-pixel-shell] :is(h1, h2, h3, h4, h5, h6) {
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+	text-shadow: none !important;
+}
+
+[data-gamification-shell='system'][data-pixel-shell] button,
+[data-gamification-shell='system'][data-pixel-shell] input,
+[data-gamification-shell='system'][data-pixel-shell] select,
+[data-gamification-shell='system'][data-pixel-shell] textarea {
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+	border-radius: var(--go-radius, 2px) !important;
+}
+
+[data-gamification-shell='system'][data-pixel-shell] button {
+	border-width: 1px !important;
+	box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16)) !important;
+}
+
+[data-gamification-shell='system'][data-pixel-shell] button:hover {
+	transform: none !important;
+}
+
+/* ── Shop (global .gami-shop-* classes) ── */
+[data-gamification-shell='system'][data-pixel-shell='shop'] :global(.gami-shop-header) {
+	background: var(--go-panel, rgba(10, 30, 58, 0.9)) !important;
+	border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42)) !important;
+	border-radius: var(--go-radius, 2px) !important;
+	box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16)) !important;
+}
+
+[data-gamification-shell='system'][data-pixel-shell='shop'] :global(.gami-shop-header > span:first-child) {
+	font-size: 0.75rem !important;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: var(--go-accent, #22c8ff) !important;
+	text-shadow: none !important;
+}
+
+[data-gamification-shell='system'][data-pixel-shell='shop'] :global(.gami-shop-header > div) {
+	background: var(--go-card-soft, rgba(8, 28, 54, 0.72)) !important;
+	border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42)) !important;
+	color: var(--go-gold, #ffd83d) !important;
+	font-size: 0.9rem !important;
+	box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16)) !important;
+}
+
+[data-gamification-shell='system'][data-pixel-shell='shop'] :global(.gami-shop-card) {
+	background: var(--go-card, rgba(18, 55, 96, 0.58)) !important;
+	border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42)) !important;
+	border-radius: var(--go-radius, 2px) !important;
+	box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16)) !important;
+}
+
+[data-gamification-shell='system'][data-pixel-shell='shop'] :global(.gami-shop-card:hover) {
+	border-color: var(--go-border-strong, rgba(34, 200, 255, 0.9)) !important;
+	box-shadow: var(--go-shadow, 0 0 22px rgba(34, 200, 255, 0.24)) !important;
+}
+
+[data-gamification-shell='system'][data-pixel-shell='shop'] :global(.gami-shop-category-tabs button[data-active='true']) {
+	background: var(--go-card, rgba(18, 55, 96, 0.58)) !important;
+	color: var(--go-accent, #22c8ff) !important;
+	border-color: var(--go-accent, #22c8ff) !important;
+}
+
+[data-gamification-shell='system'][data-pixel-shell='shop'] :global(.gami-shop-keeper-btn),
+[data-gamification-shell='system'][data-pixel-shell='shop'] :global(.gami-shop-dialogue-options button),
+[data-gamification-shell='system'][data-pixel-shell='shop'] :global(.gami-shop-category-tabs button) {
+	background: var(--go-card-soft, rgba(8, 28, 54, 0.72)) !important;
+	color: var(--go-text, #e0f2fe) !important;
+}
+
+[data-gamification-shell='system'][data-pixel-shell='shop'] :global(.gami-shop-card-title) {
+	font-size: 0.72rem !important;
+	color: var(--go-text-bright, #f0f9ff) !important;
+}
+
+[data-gamification-shell='system'][data-pixel-shell='shop'] :global(.gami-shop-card-footer > div:first-child) {
+	color: var(--go-gold, #ffd83d) !important;
+}
+
+/* ── Achievements ── */
+[data-gamification-shell='system'][data-pixel-shell='achievements'] [data-achievement-card] {
+	border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42)) !important;
+	border-radius: var(--go-radius, 2px) !important;
+	box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16)) !important;
+}
