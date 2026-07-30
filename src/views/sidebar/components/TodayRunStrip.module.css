@@ -1,0 +1,363 @@
+.strip {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	padding: 14px;
+	margin: 0 0 4px;
+	border-radius: 12px;
+	border: 1px solid rgba(34, 200, 255, 0.38);
+	background: linear-gradient(
+		160deg,
+		rgba(8, 28, 54, 0.94),
+		rgba(4, 14, 28, 0.9)
+	);
+	box-shadow: 0 0 20px rgba(34, 200, 255, 0.08);
+	box-sizing: border-box;
+	width: 100%;
+}
+
+.topRow {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 10px 12px;
+	width: 100%;
+}
+
+.dateBlock {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	min-width: 0;
+}
+
+.eyebrow {
+	font-size: 11px;
+	font-weight: 800;
+	letter-spacing: 0.16em;
+	text-transform: uppercase;
+	color: #22c8ff;
+}
+
+.dateLabel {
+	font-size: 17px;
+	font-weight: 700;
+	color: #f0f7ff;
+	line-height: 1.25;
+}
+
+.nowBtn {
+	flex-shrink: 0;
+	min-height: 32px;
+	padding: 5px 12px;
+	border-radius: 8px;
+	border: 1px solid rgba(125, 211, 252, 0.45);
+	background: rgba(56, 189, 248, 0.16);
+	color: #e0f2fe;
+	font-size: 12px;
+	font-weight: 700;
+	cursor: pointer;
+	box-shadow: none;
+}
+
+.nowBtn:hover {
+	background: rgba(56, 189, 248, 0.28);
+}
+
+.nowBtn:active {
+	opacity: 0.85;
+}
+
+/* Narrow default: compact side-by-side when space allows */
+.hudGrid {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: stretch;
+	justify-content: flex-start;
+	gap: 14px;
+	width: 100%;
+}
+
+.hudLeft {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	flex: 1 1 180px;
+	min-width: 0;
+	max-width: 100%;
+}
+
+.hudRight {
+	flex: 1 1 200px;
+	min-width: min(100%, 200px);
+	max-width: 100%;
+	display: flex;
+}
+
+.energyBlock {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	width: 100%;
+	max-width: 100%;
+}
+
+.energyLabel {
+	font-size: 13px;
+	font-weight: 650;
+	color: rgba(220, 235, 255, 0.92);
+	letter-spacing: 0.02em;
+	white-space: nowrap;
+}
+
+.energyLabel strong {
+	color: #f8fbff;
+	font-weight: 800;
+}
+
+.batteryWrap {
+	width: 100%;
+	max-width: 220px;
+	flex: 0 0 auto;
+	line-height: 0;
+}
+
+.batteryWrap :global(.battery),
+.batteryWrap > * {
+	width: 100% !important;
+	max-width: 100% !important;
+	min-width: 0 !important;
+}
+
+.countChip {
+	display: inline-flex;
+	align-items: center;
+	align-self: flex-start;
+	min-height: 28px;
+	padding: 4px 12px;
+	border-radius: 999px;
+	border: 1px solid rgba(34, 200, 255, 0.32);
+	background: rgba(8, 22, 42, 0.72);
+	color: rgba(210, 228, 250, 0.92);
+	font-size: 12px;
+	font-weight: 650;
+}
+
+.nextUpCard {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	width: 100%;
+	padding: 10px 12px;
+	border-radius: 10px;
+	border: 1px solid rgba(34, 200, 255, 0.5);
+	background: transparent;
+	box-shadow: 0 0 12px rgba(34, 200, 255, 0.1);
+	box-sizing: border-box;
+}
+
+.nextUpWell {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	gap: 4px;
+	width: 100%;
+	margin: 0;
+	padding: 6px 4px;
+	border: none;
+	border-radius: 0;
+	background: transparent;
+	box-shadow: none;
+	color: #ffffff;
+	cursor: pointer;
+	text-align: left;
+	font: inherit;
+	line-height: 1.3;
+	box-sizing: border-box;
+	appearance: none;
+	-webkit-appearance: none;
+}
+
+button.nextUpWell,
+button.nextUpWell:hover,
+button.nextUpWell:focus,
+button.nextUpWell:active {
+	background: transparent !important;
+	border: none !important;
+	box-shadow: none !important;
+	color: #ffffff;
+}
+
+.nextUpWell:hover .nextUpTitle {
+	color: #ffffff;
+	text-decoration: underline;
+	text-underline-offset: 3px;
+	text-decoration-color: rgba(34, 200, 255, 0.55);
+}
+
+.nextUpLabel {
+	display: block;
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: none;
+	color: rgba(168, 188, 220, 0.78);
+}
+
+.nextUpTitle {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	gap: 6px;
+	min-width: 0;
+	font-size: 14px;
+	font-weight: 750;
+	line-height: 1.3;
+	color: #ffffff;
+	word-break: break-word;
+}
+
+.nextUpTime {
+	flex-shrink: 0;
+	font-size: 12px;
+	font-weight: 700;
+	color: #22c8ff;
+}
+
+.focusBtn {
+	width: 100%;
+	min-height: 34px;
+	margin: 0;
+	padding: 8px 10px;
+	border: 1px solid #22c8ff;
+	border-radius: 8px;
+	background: transparent;
+	color: #22c8ff;
+	font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+	font-size: 0.7rem;
+	font-weight: 800;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	box-shadow: 0 0 10px rgba(34, 200, 255, 0.22);
+	cursor: pointer;
+	appearance: none;
+	-webkit-appearance: none;
+	box-sizing: border-box;
+}
+
+button.focusBtn,
+button.focusBtn:focus {
+	background: transparent;
+	border: 1px solid #22c8ff;
+	color: #22c8ff;
+	box-shadow: 0 0 10px rgba(34, 200, 255, 0.22);
+}
+
+.focusBtn:hover,
+button.focusBtn:hover,
+.focusBtn:active,
+button.focusBtn:active {
+	background: rgba(34, 200, 255, 0.12);
+	color: #e8f7ff;
+	border-color: #67e8f9;
+}
+
+.clearState {
+	font-size: 13px;
+	font-weight: 600;
+	color: rgba(168, 188, 220, 0.82);
+	line-height: 1.35;
+}
+
+.widenTip {
+	margin: 0;
+	padding: 0;
+	font-size: 11px;
+	font-weight: 550;
+	line-height: 1.35;
+	color: rgba(168, 188, 220, 0.72);
+	letter-spacing: 0.01em;
+}
+
+.stripDesktop {
+	padding: 14px 16px;
+	margin-bottom: 8px;
+	gap: 12px;
+}
+
+.stripDesktop .dateLabel {
+	font-size: 18px;
+}
+
+/*
+ * Wide mission board: fill the strip.
+ * Left grows (battery fills column); next-up is a solid right column.
+ */
+:global([data-quests-density='wide']) .hudGrid,
+.stripDesktop .hudGrid {
+	display: grid;
+	grid-template-columns: minmax(0, 1.25fr) minmax(260px, 0.9fr);
+	gap: 16px 20px;
+	align-items: stretch;
+	width: 100%;
+}
+
+:global([data-quests-density='wide']) .hudLeft,
+.stripDesktop .hudLeft {
+	flex: unset;
+	width: 100%;
+	min-width: 0;
+}
+
+:global([data-quests-density='wide']) .hudRight,
+.stripDesktop .hudRight {
+	flex: unset;
+	width: 100%;
+	min-width: 0;
+	max-width: none;
+}
+
+:global([data-quests-density='wide']) .batteryWrap,
+.stripDesktop .batteryWrap {
+	width: 100%;
+	max-width: min(100%, 420px);
+}
+
+:global([data-quests-density='wide']) .batteryWrap :global(.battery),
+:global([data-quests-density='wide']) .batteryWrap > *,
+.stripDesktop .batteryWrap :global(.battery),
+.stripDesktop .batteryWrap > * {
+	width: 100% !important;
+	max-width: 100% !important;
+	min-width: 0 !important;
+}
+
+:global([data-quests-density='wide']) .nextUpCard,
+.stripDesktop .nextUpCard {
+	height: 100%;
+	justify-content: center;
+	padding: 12px 14px;
+}
+
+@media (max-width: 419px) {
+	.hudRight {
+		flex: 1 1 100%;
+		width: 100%;
+		max-width: 100%;
+	}
+
+	.stripDesktop .hudGrid {
+		display: flex;
+		flex-direction: column;
+	}
+}
+
+:global([data-pixel-shell='quests']) .strip,
+:global([data-pixel-shell='quests']) .nextUpCard,
+:global([data-pixel-shell='quests']) .nextUpWell,
+:global([data-pixel-shell='quests']) .nowBtn,
+:global([data-pixel-shell='quests']) .focusBtn,
+:global([data-pixel-shell='quests']) .countChip {
+	border-radius: 0;
+}

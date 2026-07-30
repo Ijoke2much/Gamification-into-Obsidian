@@ -19,7 +19,6 @@ import { QuestDetailModal } from "../../features/quests/modals/QuestDetailModal"
 import { QuestModal } from "../../features/quests/modals/QuestModal";
 import { readPlayerData } from "../../features/player/utils/playerDataUtils";
 import { EnergyCalculationService } from "../../features/quests/services/energyCalculationService";
-import { QuestCalendarView } from "../../features/quests/components/QuestCalendarView";
 import { emitQuestCompletionFeedback, type QuestRewardResult } from "../../shared/utils/questCompletionPipeline";
 import { tryClaimQuestDailyClearBonus } from "../../shared/utils/dailyClearBonus";
 import { CeremonyHost } from "../../shared/components/ui/CeremonyHost";
@@ -66,6 +65,7 @@ import {
 	type MobileDayAgendaHandle,
 } from './components/MobileDayAgenda';
 import { TodayRunStrip } from './components/TodayRunStrip';
+import { MissionSectionTitle } from './components/MissionSectionTitle';
 import { openQuickCaptureModal } from '../../features/quests/modals/QuickCaptureModal';
 import {
 	getCaptureTagPresets,
@@ -75,17 +75,6 @@ import {
 	removeCaptureLine,
 	shouldReloadCapturesOnFileChange,
 } from '../../features/quests/utils/captureService';
-import { openFocusCheckInModal } from '../../features/focus/modals/FocusCheckInModal';
-import {
-	isFocusCheckInDue,
-	subscribeFocusCheckInChanges,
-} from '../../features/focus/utils/focusCheckInService';
-import {
-	getLocalDateString,
-	isCompletedToday,
-	isHabitScheduledOnLocalDate,
-	loadHabitsFromFile,
-} from '../../features/habits/utils/habitsUtils';
 import { useMobileOptimizations } from '../../shared/hooks/useMobileOptimizations';
 import { isLikelyMobileDevice } from '../../shared/utils/deviceDetect';
 
@@ -166,19 +155,39 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 	const [createDueISO, setCreateDueISO] = useState<string | undefined>(undefined);
 	const [currentTime, setCurrentTime] = useState(() => new Date());
 	const mobileAgendaRef = useRef<MobileDayAgendaHandle | null>(null);
+	const boardRootRef = useRef<HTMLDivElement | null>(null);
+	const [questsDensity, setQuestsDensity] = useState<'narrow' | 'wide'>('narrow');
 	const [dayScheduleOpen, setDayScheduleOpen] = useState(false);
 	const [mobileTimelineMenuId, setMobileTimelineMenuId] = useState<string | null>(null);
 	const dayScheduleShellRef = useRef<HTMLDivElement | null>(null);
 	const { isMobile } = useMobileOptimizations();
-	const [checkInDue, setCheckInDue] = useState(false);
-	const [habitDueTotal, setHabitDueTotal] = useState<number | null>(null);
-	const [habitRemaining, setHabitRemaining] = useState<number | null>(null);
 	const [questsReady, setQuestsReady] = useState(false);
 	/** Mobile day plan starts open so the agenda is visible without an extra tap. */
 	const [dayPlanExpanded, setDayPlanExpanded] = useState(true);
 	/** Mobile ADHD filters — desktop ignores these. */
 	const [todayOnly, setTodayOnly] = useState(() => isLikelyMobileDevice());
 	const [fitEnergy, setFitEnergy] = useState(false);
+
+	/** ≥700px → Day Plan | Inbox split + wide HUD layout */
+	const WIDE_BOARD_MIN_PX = 700;
+
+	useEffect(() => {
+		const el = boardRootRef.current;
+		if (!el || typeof ResizeObserver === 'undefined' || isMobile) {
+			setQuestsDensity('narrow');
+			return;
+		}
+		const apply = (width: number) => {
+			setQuestsDensity(width >= WIDE_BOARD_MIN_PX ? 'wide' : 'narrow');
+		};
+		apply(el.getBoundingClientRect().width);
+		const ro = new ResizeObserver((entries) => {
+			const w = entries[0]?.contentRect?.width;
+			if (typeof w === 'number') apply(w);
+		});
+		ro.observe(el);
+		return () => ro.disconnect();
+	}, [hubSection, isMobile]);
 
 	const loadCapturesList = async () => {
 		try {
@@ -617,15 +626,35 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 		[inboxByGroup.now, inboxByGroup.today]
 	);
 
-	const nextUpQuest = useMemo(() => {
+	const nextUpInfo = useMemo(() => {
+		const nowMs = currentTime.getTime();
 		const timed = todayRunQuests
 			.filter((q) => q.due && hasTime(q.due))
-			.sort(
-				(a, b) =>
-					new Date(a.due!).getTime() - new Date(b.due!).getTime()
-			);
-		return timed[0] ?? inboxByGroup.now[0] ?? inboxByGroup.today[0] ?? null;
-	}, [todayRunQuests, inboxByGroup.now, inboxByGroup.today]);
+			.map((quest) => {
+				const start = new Date(quest.due!);
+				const durationMin = parseMinutes(quest.estimatedTime) || 60;
+				const end = new Date(start.getTime() + durationMin * 60_000);
+				return { quest, start, end };
+			})
+			.filter((b) => !Number.isNaN(b.start.getTime()))
+			.sort((a, b) => a.start.getTime() - b.start.getTime());
+
+		const inProgress = timed.find((b) => b.start.getTime() <= nowMs && nowMs < b.end.getTime());
+		if (inProgress) {
+			return { quest: inProgress.quest, phase: 'now' as const };
+		}
+
+		const upcoming = timed.find((b) => b.start.getTime() >= nowMs);
+		if (upcoming) {
+			return { quest: upcoming.quest, phase: 'upcoming' as const };
+		}
+
+		const fallback = inboxByGroup.now[0] ?? inboxByGroup.today[0] ?? null;
+		return { quest: fallback, phase: 'queue' as const };
+	}, [todayRunQuests, inboxByGroup.now, inboxByGroup.today, currentTime]);
+
+	const nextUpQuest = nextUpInfo.quest;
+	const nextUpPhase = nextUpInfo.phase;
 
 	const todayDateLabel = useMemo(
 		() =>
@@ -636,67 +665,6 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 			}),
 		[currentTime]
 	);
-
-	useEffect(() => {
-		if (!isMobile) {
-			setHabitDueTotal(null);
-			setHabitRemaining(null);
-			return;
-		}
-		let cancelled = false;
-		const refreshHabits = async () => {
-			try {
-				const habits = await loadHabitsFromFile(app.vault);
-				const today = getLocalDateString();
-				const due = habits.filter(
-					(h) => !h.archived && isHabitScheduledOnLocalDate(h, today)
-				);
-				if (cancelled) return;
-				setHabitDueTotal(due.length);
-				setHabitRemaining(due.filter((h) => !isCompletedToday(h)).length);
-			} catch {
-				if (!cancelled) {
-					setHabitDueTotal(null);
-					setHabitRemaining(null);
-				}
-			}
-		};
-		// Defer habit scan until after first quest paint
-		const startId = window.setTimeout(() => void refreshHabits(), 350);
-		const interval = window.setInterval(() => void refreshHabits(), 90_000);
-		return () => {
-			cancelled = true;
-			window.clearTimeout(startId);
-			window.clearInterval(interval);
-		};
-	}, [app.vault, isMobile]);
-
-	useEffect(() => {
-		if (!isMobile) {
-			setCheckInDue(false);
-			return;
-		}
-		if (plugin.settings.enableFocusCheckIns === false) {
-			setCheckInDue(false);
-			return;
-		}
-		let cancelled = false;
-		const refresh = async () => {
-			const due = await isFocusCheckInDue(app, plugin.settings);
-			if (!cancelled) setCheckInDue(due);
-		};
-		const startId = window.setTimeout(() => void refresh(), 400);
-		const unsub = subscribeFocusCheckInChanges(() => {
-			void refresh();
-		});
-		const interval = window.setInterval(() => void refresh(), 60_000);
-		return () => {
-			cancelled = true;
-			window.clearTimeout(startId);
-			unsub();
-			window.clearInterval(interval);
-		};
-	}, [app, plugin.settings, isMobile]);
 
 	const openCreate = () => {
 		setEditingQuest(null);
@@ -1263,11 +1231,13 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 			{/* Lite on mobile so Quests can still show level-up without heavy rank UI */}
 			<CeremonyHost lite={isMobile} />
 		<div
-			className={`${styles.container} ${styles.pixelSidebarQuestShell}${isMobile ? ` ${styles.mobileTodayRun}` : ''}`}
+			ref={boardRootRef}
+			className={`${styles.container} ${styles.pixelSidebarQuestShell}${isMobile ? ` ${styles.mobileTodayRun}` : ` ${styles.desktopMissionBoard}`}`}
 			data-gamification-theme-root
 			data-gamification-visual-theme={appliedVisualTheme.preset}
 			data-gamification-shell={appliedVisualTheme.shell}
 			data-gamification-mobile={isMobile ? 'true' : 'false'}
+			data-quests-density={isMobile ? 'narrow' : questsDensity}
 			data-pixel-shell="quests"
 		>
 			<div className={styles.panelHeader}>
@@ -1281,20 +1251,18 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 			/>
 			{hubSection === 'tasks' && (
 				<>
-			{isMobile && (
-				<TodayRunStrip
-					dateLabel={todayDateLabel}
-					questCount={todayRunQuests.length}
-					habitRemaining={habitRemaining}
-					habitDueTotal={habitDueTotal}
-					nextUp={nextUpQuest}
-					checkInDue={checkInDue && plugin.settings.enableFocusCheckIns !== false}
-					onOpenCheckIn={() => openFocusCheckInModal(app, plugin.settings)}
-					onOpenNextUp={openDetails}
-					onJumpToNow={handleJumpToNow}
-					onFocusNextUp={nextUpQuest ? () => handleStartFocus(nextUpQuest) : undefined}
-				/>
-			)}
+			<TodayRunStrip
+				dateLabel={todayDateLabel}
+				questCount={todayRunQuests.length}
+				nextUp={nextUpQuest}
+				nextUpPhase={nextUpPhase}
+				onOpenNextUp={openDetails}
+				onJumpToNow={handleJumpToNow}
+				onFocusNextUp={nextUpQuest ? () => handleStartFocus(nextUpQuest) : undefined}
+				energyCurrent={currentEnergy}
+				variant={isMobile ? 'mobile' : 'desktop'}
+				showWidenTip={!isMobile && questsDensity === 'narrow'}
+			/>
 			{isMobile && (
 				<div className={styles.mobileFilterRow} role="group" aria-label="Today filters">
 					<button
@@ -1320,7 +1288,11 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 			{!questsReady && isMobile && (
 				<div className={styles.mobileQuestsLoading}>Loading today's quests…</div>
 			)}
-			<div className={styles.actionColumn}>
+			<div
+				className={`${styles.actionColumn}${
+					!isMobile && questsDensity === 'narrow' ? ` ${styles.actionColumnCompact}` : ''
+				}`}
+			>
 				<button
 					type="button"
 					className={styles.addButton}
@@ -1368,108 +1340,75 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 				lite={isMobile}
 			/>
 
-			{isMobile && (
-				<MobileQuestDayPicker
-					quests={filteredQuests}
-					selectedDate={selectedDate}
-					onSelectDate={(date) => {
-						setSelectedDate(date);
-						setDayPlanExpanded(true);
-						setMobileTimelineMenuId(null);
-					}}
-					onQuestSelect={openDetails}
-					onQuestComplete={(quest) => void handleQuestComplete(quest)}
-					onAddQuest={openCreateForDate}
-					onUseDayPlan={(date) => {
-						setSelectedDate(date);
-						setDayPlanExpanded(true);
-						window.setTimeout(() => scrollTimelineToNow("smooth"), 80);
-					}}
-				/>
-			)}
+			<MobileQuestDayPicker
+				quests={filteredQuests}
+				selectedDate={selectedDate}
+				onSelectDate={(date) => {
+					setSelectedDate(date);
+					setDayPlanExpanded(true);
+					setMobileTimelineMenuId(null);
+				}}
+				onQuestSelect={openDetails}
+				onQuestComplete={(quest) => void handleQuestComplete(quest)}
+				onAddQuest={openCreateForDate}
+				onUseDayPlan={(date) => {
+					setSelectedDate(date);
+					setDayPlanExpanded(true);
+					window.setTimeout(() => scrollTimelineToNow("smooth"), 80);
+				}}
+			/>
 
-			{!isMobile && (
-			<section className={`${styles.section} ${styles.calendarSection}`}>
-				<div className={styles.calendarSectionHeader}>
-					<div className={styles.sectionTitle}>Calendar</div>
-					<button
-						type="button"
-						className={styles.calendarCollapseBtn}
-						onClick={() => setCalendarCollapsed((prev) => !prev)}
-						title={calendarCollapsed ? "Expand calendar" : "Collapse calendar"}
-					>
-						{calendarCollapsed ? "▸" : "▾"}
-					</button>
-				</div>
-				{!calendarCollapsed && (
-					<div className={styles.calendarInner}>
-						<QuestCalendarView
-							quests={filteredQuests}
-							plugin={plugin}
-							currentEnergy={currentEnergy}
-							onQuestSelect={openDetails}
-							onQuestComplete={handleQuestComplete}
-							onQuestEdit={handleEditQuest}
-							onDateSelect={(date) => {
-								const d = new Date(date);
-								d.setHours(0, 0, 0, 0);
-								setSelectedDate(d);
-							}}
-							onQuestMove={handleQuestMove}
-							hideSelectedDateDetails={true}
-							showFocusEnergyControls={false}
-						/>
-					</div>
-				)}
-			</section>
-			)}
-
-			<section className={`${styles.section}${dayPlanExpanded || !isMobile ? ` ${isMobile ? styles.dayPlanSectionMobile : styles.dayPlanSectionDesktop}` : ''}`}>
+			<div className={styles.boardMain}>
+			<section className={`${styles.section} ${styles.boardDayPlan}${dayPlanExpanded || !isMobile ? ` ${isMobile ? styles.dayPlanSectionMobile : styles.dayPlanSectionDesktop}` : ''}`}>
 				<div className={styles.timelineDayShell} ref={dayScheduleShellRef}>
-					<div className={styles.timelineHeader}>
-						<span>Day plan</span>
-						<div className={styles.timelineHeaderActions}>
-							{isMobile && (
+					<MissionSectionTitle
+						title="Day plan"
+						icon="📋"
+						count={plannerBlocks.length > 0 ? plannerBlocks.length : undefined}
+						actions={
+							<div className={styles.timelineHeaderActions}>
+								{isMobile && (
+									<button
+										type="button"
+										className={`${styles.timelineNowBtn} ${dayPlanExpanded ? styles.timelineHeaderIconActive : ''}`}
+										onClick={() => {
+											setDayPlanExpanded((open) => {
+												const next = !open;
+												if (next) {
+													setCaptureCollapsed(true);
+													window.setTimeout(() => scrollTimelineToNow("smooth"), 80);
+												}
+												return next;
+											});
+										}}
+										aria-expanded={dayPlanExpanded}
+									>
+										{dayPlanExpanded ? 'Hide' : 'Show'}
+									</button>
+								)}
 								<button
 									type="button"
-									className={`${styles.timelineNowBtn} ${dayPlanExpanded ? styles.timelineHeaderIconActive : ''}`}
-									onClick={() => {
-										setDayPlanExpanded((open) => {
-											const next = !open;
-											if (next) {
-												setCaptureCollapsed(true);
-												window.setTimeout(() => scrollTimelineToNow("smooth"), 80);
-											}
-											return next;
-										});
-									}}
-									aria-expanded={dayPlanExpanded}
+									className={styles.timelineNowBtn}
+									title="Jump to current time"
+									onClick={handleJumpToNow}
 								>
-									{dayPlanExpanded ? 'Hide plan' : 'Show plan'}
+									Now
 								</button>
-							)}
-							<button
-								type="button"
-								className={styles.timelineNowBtn}
-								title="Jump to current time"
-								onClick={handleJumpToNow}
-							>
-								Now
-							</button>
-							{!isMobile && (
-							<button
-								type="button"
-								className={`${styles.timelineHeaderIcon} ${dayScheduleOpen ? styles.timelineHeaderIconActive : ""}`}
-								title="Open a chronological list of quests for the selected day. Click again to close."
-								aria-expanded={dayScheduleOpen}
-								aria-controls="sidebar-day-schedule-list"
-								onClick={() => setDayScheduleOpen((open) => !open)}
-							>
-								☷
-							</button>
-							)}
-						</div>
-					</div>
+								{!isMobile && (
+									<button
+										type="button"
+										className={`${styles.timelineHeaderIcon} ${dayScheduleOpen ? styles.timelineHeaderIconActive : ""}`}
+										title="Open a chronological list of quests for the selected day. Click again to close."
+										aria-expanded={dayScheduleOpen}
+										aria-controls="sidebar-day-schedule-list"
+										onClick={() => setDayScheduleOpen((open) => !open)}
+									>
+										☷
+									</button>
+								)}
+							</div>
+						}
+					/>
 					{!isMobile && dayScheduleOpen && (
 						<div
 							id="sidebar-day-schedule-list"
@@ -1548,8 +1487,18 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 				)}
 			</section>
 
-			<section className={styles.section}>
-				<div className={styles.sectionTitle}>Inbox</div>
+			<section className={`${styles.section} ${styles.boardInbox}`}>
+				<MissionSectionTitle
+					title="Inbox"
+					icon="📥"
+					count={
+						inboxByGroup.now.length +
+						inboxByGroup.today.length +
+						inboxByGroup.unscheduled.length +
+						inboxByGroup.overdue.length +
+						(!isMobile ? inboxByGroup.abandon.length : 0)
+					}
+				/>
 				{!isMobile && (
 				<div className={styles.filterRow}>
 					<select value={tagFilter} onChange={(e) => setTagFilter(e.target.value)} className={styles.filterSelect}>
@@ -1611,7 +1560,7 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 				{/* Always show on mobile — brain dumps land here until timed */}
 				<InboxGroup
 					groupId="unscheduled"
-					title={isMobile ? "To schedule" : "Unscheduled"}
+					title="To schedule"
 					quests={inboxByGroup.unscheduled}
 					currentEnergy={currentEnergy}
 					onQuestClick={openDetails}
@@ -1658,6 +1607,7 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 				/>
 				)}
 			</section>
+			</div>
 				</>
 			)}
 
@@ -2142,11 +2092,16 @@ function sanitizeQuestTitle(input?: string): string {
 function groupIcon(group: string): string {
 	switch (group.toLowerCase()) {
 		case "now":
-			return "⟡";
+			return "⏱";
 		case "today":
-			return "⌄";
+			return "📅";
+		case "to schedule":
 		case "unscheduled":
-			return "ᚱ";
+			return "⌛";
+		case "overdue":
+			return "⚠";
+		case "abandon":
+			return "🗑";
 		default:
 			return "•";
 	}
@@ -2258,11 +2213,11 @@ function loadCalendarCollapsed(): boolean {
 function loadCaptureCollapsed(): boolean {
 	try {
 		const raw = localStorage.getItem(CAPTURE_COLLAPSE_KEY);
-		// First visit: collapse capture on mobile so Today's Run stays above the fold
-		if (raw === null) return isLikelyMobileDevice();
+		// First visit: collapse capture so Today's Run + Day plan stay above the fold
+		if (raw === null) return true;
 		return raw === "1";
 	} catch {
-		return false;
+		return true;
 	}
 }
 
