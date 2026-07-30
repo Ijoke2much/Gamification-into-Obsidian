@@ -164,6 +164,35 @@
 	cursor: pointer;
 }
 
+/* Mobile lite strip */
+.sectionLite {
+	border-radius: 2px;
+	border-color: rgba(34, 200, 255, 0.42);
+	background: rgba(8, 28, 54, 0.72);
+}
+
+.rowLite {
+	flex-direction: column;
+	gap: 8px;
+	padding: 10px;
+}
+
+.rowActionsLite {
+	display: grid;
+	grid-template-columns: 1fr 1fr auto;
+	width: 100%;
+	gap: 6px;
+}
+
+.actionBtnLite {
+	min-height: 40px;
+	border-radius: 2px;
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+}
+
 :global(.pixelSidebarQuestShell) .section {
 	border-radius: var(--pixel-card-radius, 10px);
 	border: 2px solid var(--pixel-border-dark, rgba(120, 147, 198, 0.35));

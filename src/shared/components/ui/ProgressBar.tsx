@@ -1,14 +1,16 @@
 import React from "react";
 import styles from "./ProgressBar.module.css";
 
+export type ProgressBarVariant = "green" | "purple" | "orange" | "teal";
+
 interface ProgressBarProps {
 	progress: number; // 0 to 100
 	label?: string; // Optional custom label
 	height?: number; // Optional height in px
 	labelPosition?: "center" | "below";
-	variant?: "green" | "purple";
-	/** Square segments / pixel frame (Player tab) */
-	appearance?: "smooth" | "pixel";
+	variant?: ProgressBarVariant;
+	/** Square segments / pixel frame (Player tab) — clay = molded progress */
+	appearance?: "smooth" | "pixel" | "clay";
 }
 
 export const ProgressBar: React.FC<ProgressBarProps> = ({
@@ -20,7 +22,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
 	appearance = "smooth",
 }) => {
 	const pct = Math.max(0, Math.min(100, Number(progress) || 0));
-	const percentage = appearance === "pixel" ? Math.max(pct, 0) : Math.max(progress, 2);
+	const percentage = Math.max(pct, 0);
 
 	const colors =
 		variant === "purple"
@@ -30,12 +32,71 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
 					to: "var(--go-progress-fill-strong, #ec4899)",
 					glow: "var(--go-progress-glow, rgba(167, 139, 250, 0.45))",
 			  }
-			: {
-					border: "var(--go-progress-fill, #4ade80)",
-					from: "var(--go-progress-fill, #4ade80)",
-					to: "var(--go-progress-fill-strong, #22d3ee)",
-					glow: "var(--go-progress-glow, rgba(74, 222, 128, 0.35))",
-			  };
+			: variant === "orange"
+				? {
+						border: "#FFB84C",
+						from: "#FFD36A",
+						to: "#FF9738",
+						glow: "rgba(255, 170, 70, 0.25)",
+				  }
+				: variant === "teal"
+					? {
+							border: "#4FCFC6",
+							from: "#72E5DB",
+							to: "#2FAFA7",
+							glow: "rgba(79, 207, 198, 0.25)",
+					  }
+					: {
+							border: "var(--go-progress-fill, #4ade80)",
+							from: "var(--go-progress-fill, #4ade80)",
+							to: "var(--go-progress-fill-strong, #22d3ee)",
+							glow: "var(--go-progress-glow, rgba(74, 222, 128, 0.35))",
+					  };
+
+	if (appearance === "clay") {
+		const clayHeight = Math.min(Math.max(height, 12), 16);
+		const fillWidth = pct <= 0 ? 0 : Math.max(pct, 8);
+		const fillClass =
+			variant === "purple"
+				? styles.clayFillPurple
+				: variant === "orange"
+					? styles.clayFillOrange
+					: variant === "teal"
+						? styles.clayFillTeal
+						: styles.clayFillGreen;
+
+		const bar = (
+			<div
+				className={styles.clayTrack}
+				style={{ "--pb-height": `${clayHeight}px` } as React.CSSProperties}
+			>
+				{fillWidth > 0 && (
+					<div
+						className={`${styles.clayFill} ${fillClass}`}
+						style={{ width: `${fillWidth}%` }}
+					/>
+				)}
+				{labelPosition === "center" && (
+					<div className={styles.clayLabelCenter}>
+						{label ? label : `${Math.round(pct)}%`}
+					</div>
+				)}
+			</div>
+		);
+
+		if (labelPosition === "below") {
+			return (
+				<div className={styles.clayWrap}>
+					<div className={styles.clayLabelAbove}>
+						{label ? label : `${Math.round(pct)}%`}
+					</div>
+					{bar}
+				</div>
+			);
+		}
+
+		return <div className={styles.clayWrap}>{bar}</div>;
+	}
 
 	if (appearance === "pixel") {
 		const bar = (
@@ -77,6 +138,7 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
 		return bar;
 	}
 
+	const smoothPct = Math.max(pct, pct > 0 ? 2 : 0);
 	const bar = (
 		<div
 			style={{
@@ -94,9 +156,8 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
 		>
 			<div
 				style={{
-					width: `${percentage}%`,
-					background:
-						`linear-gradient(90deg, ${colors.from} 0%, ${colors.to} 100%)`,
+					width: `${smoothPct}%`,
+					background: `linear-gradient(90deg, ${colors.from} 0%, ${colors.to} 100%)`,
 					height: "100%",
 					borderRadius: "6px",
 					boxShadow: `0 0 8px ${colors.glow}`,

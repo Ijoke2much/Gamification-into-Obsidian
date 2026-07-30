@@ -6,8 +6,13 @@ import {
 } from '../../../shared/utils/achievementGalleryEvents';
 import AchievementNotification from './AchievementNotification';
 
+export interface AchievementUnlockHostProps {
+	/** Mobile: no confetti, shorter toast, safer layout */
+	lite?: boolean;
+}
+
 /** Global host: shows unlock toast and offers jump to the trophy gallery. */
-export const AchievementUnlockHost: React.FC = () => {
+export const AchievementUnlockHost: React.FC<AchievementUnlockHostProps> = ({ lite = false }) => {
 	const [queue, setQueue] = useState<Achievement[]>([]);
 	const current = queue[0] ?? null;
 
@@ -27,11 +32,14 @@ export const AchievementUnlockHost: React.FC = () => {
 	if (!current) return null;
 
 	return (
-		<AchievementNotification
-			achievement={current}
-			isVisible
-			onClose={dismiss}
-			onViewGallery={viewGallery}
-		/>
+		<div data-achievement-toast-lite={lite ? 'true' : undefined}>
+			<AchievementNotification
+				achievement={current}
+				isVisible
+				onClose={dismiss}
+				onViewGallery={lite ? undefined : viewGallery}
+				lite={lite}
+			/>
+		</div>
 	);
 };

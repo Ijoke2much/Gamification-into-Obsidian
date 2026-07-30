@@ -9,6 +9,8 @@ interface AchievementNotificationProps {
   isVisible: boolean;
   onClose: () => void;
   onViewGallery?: () => void;
+  /** Mobile lite toast — no confetti, shorter, top-centered */
+  lite?: boolean;
 }
 
 export const AchievementNotification: React.FC<AchievementNotificationProps> = ({
@@ -16,6 +18,7 @@ export const AchievementNotification: React.FC<AchievementNotificationProps> = (
   isVisible,
   onClose,
   onViewGallery,
+  lite = false,
 }) => {
   const [isAnimating, setIsAnimating] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
@@ -23,16 +26,15 @@ export const AchievementNotification: React.FC<AchievementNotificationProps> = (
   useEffect(() => {
     if (isVisible) {
       setIsAnimating(true);
-      setShowConfetti(true);
+      setShowConfetti(!lite);
       
-      // Auto-hide after 5 seconds
       const timer = setTimeout(() => {
         onClose();
-      }, 5000);
+      }, lite ? 3200 : 5000);
 
       return () => clearTimeout(timer);
     }
-  }, [isVisible, onClose]);
+  }, [isVisible, onClose, lite]);
 
   if (!isVisible) return null;
 
@@ -42,29 +44,31 @@ export const AchievementNotification: React.FC<AchievementNotificationProps> = (
       <div
         style={{
           position: 'fixed',
-          top: '20px',
-          right: '20px',
+          top: lite ? 'max(12px, env(safe-area-inset-top))' : '20px',
+          right: lite ? '12px' : '20px',
+          left: lite ? '12px' : 'auto',
           background: 'linear-gradient(135deg, #1a1a2e, #16213e)',
           border: `2px solid ${getTierColor(achievement.tier)}`,
-          borderRadius: '20px',
-          padding: '24px',
-          minWidth: '320px',
-          maxWidth: '400px',
+          borderRadius: lite ? '2px' : '20px',
+          padding: lite ? '14px 16px' : '24px',
+          minWidth: lite ? '0' : '320px',
+          maxWidth: lite ? 'none' : '400px',
           boxShadow: `0 8px 32px rgba(0,0,0,0.4), 0 0 20px ${getTierColor(achievement.tier)}40`,
           zIndex: 10000,
-          transform: isAnimating ? 'translateX(0)' : 'translateX(100%)',
-          transition: 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
+          transform: isAnimating ? 'translateY(0)' : lite ? 'translateY(-12px)' : 'translateX(100%)',
+          transition: lite ? 'opacity 0.25s ease, transform 0.25s ease' : 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)',
           borderLeft: `6px solid ${getTierColor(achievement.tier)}`,
+          opacity: isAnimating ? 1 : 0,
         }}
       >
         {/* Header with Achievement Icon and Tier */}
         <div style={{ display: 'flex', alignItems: 'center', marginBottom: '16px' }}>
           <div
             style={{
-              fontSize: '48px',
-              marginRight: '16px',
+              fontSize: lite ? '28px' : '48px',
+              marginRight: lite ? '10px' : '16px',
               filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.3))',
-              animation: 'bounce 0.6s ease-in-out',
+              animation: lite ? 'none' : 'bounce 0.6s ease-in-out',
             }}
           >
             {achievement.icon}
@@ -73,13 +77,15 @@ export const AchievementNotification: React.FC<AchievementNotificationProps> = (
             <h3
               style={{
                 margin: '0 0 4px 0',
-                fontSize: '20px',
+                fontSize: lite ? '14px' : '20px',
                 fontWeight: '700',
                 color: '#fff',
                 textShadow: '0 2px 4px rgba(0,0,0,0.3)',
+                letterSpacing: lite ? '0.06em' : undefined,
+                textTransform: lite ? 'uppercase' : undefined,
               }}
             >
-              🎉 Achievement Unlocked!
+              {lite ? '🏆 Achievement unlocked' : '🎉 Achievement Unlocked!'}
             </h3>
             <div
               style={{
@@ -282,8 +288,8 @@ export const AchievementNotification: React.FC<AchievementNotificationProps> = (
         )}
       </div>
 
-      {/* Confetti Animation */}
-      {showConfetti && (
+      {/* Confetti Animation — desktop only */}
+      {showConfetti && !lite && (
         <div style={{ position: 'fixed', top: 0, left: 0, width: '100%', height: '100%', pointerEvents: 'none', zIndex: 9999 }}>
           {[...Array(50)].map((_, i) => (
             <div

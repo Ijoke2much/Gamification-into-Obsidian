@@ -120,7 +120,7 @@ export const AppearanceSettings: React.FC<AppearanceSettingsProps> = ({
           <div className="settings-section">
             <h3>Gameplay Visual Theme</h3>
             <p className="settings-section-hint">
-              Controls the Solo Leveling System look for Player, Quests, Journey, and notices. Dungeon and boss fights always stay pixel. Classic preserves the original plugin appearance everywhere.
+              Classic keeps the original look. Solo Leveling styles Player, Quests, Journey, and notices (Dungeon stays pixel). Clay is a soft-card preview on the Player tab first — other tabs stay Classic-like until expanded.
             </p>
             <div className="palette-grid palette-grid-visual-themes">
               {visualThemePresets.map((preset) => {

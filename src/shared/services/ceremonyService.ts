@@ -5,6 +5,7 @@ import { DEFAULT_VISUAL_THEME_SETTINGS, type VisualCeremonyLevel } from '../them
 import { emitCeremony } from '../utils/ceremonyEvents';
 import { fieldNotice, systemNotice } from '../utils/noticeUtils';
 import { getPluginSettingsFromApp } from '../utils/gameplayConfig';
+import { isLikelyMobileDevice } from '../utils/deviceDetect';
 
 function resolveCeremonyLevel(settings?: Partial<GamificationPluginSettings> | null): VisualCeremonyLevel {
 	return settings?.visualTheme?.ceremonyLevel ?? DEFAULT_VISUAL_THEME_SETTINGS.ceremonyLevel ?? 'minimal';
@@ -16,21 +17,28 @@ export function processXPGainCeremonies(
 ): void {
 	const level = resolveCeremonyLevel(settings);
 	if (level === 'off') return;
+	const mobile = isLikelyMobileDevice();
 
 	if (xpGain.rankChanged) {
 		if (level === 'full' || level === 'minimal') {
-			emitCeremony({
-				kind: 'rank_up',
-				oldRank: xpGain.oldRank,
-				newRank: xpGain.newRank,
-				level: xpGain.newLevel,
-			});
+			// Mobile lite host skips rank modal — notice only
+			if (mobile) {
+				showRankUpFallbackNotice(xpGain.oldRank, xpGain.newRank, xpGain.newLevel);
+			} else {
+				emitCeremony({
+					kind: 'rank_up',
+					oldRank: xpGain.oldRank,
+					newRank: xpGain.newRank,
+					level: xpGain.newLevel,
+				});
+			}
 		}
 		return;
 	}
 
 	if (xpGain.leveledUp) {
-		if (level === 'full') {
+		// Mobile always gets a light level-up ceremony (even when settings are "minimal")
+		if (level === 'full' || mobile) {
 			emitCeremony({
 				kind: 'level_up',
 				oldLevel: xpGain.oldLevel,

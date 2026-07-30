@@ -1,3 +1,115 @@
+/*
+ * Clay progress — matte claymorphism (fitness-ring / Clayplay feel)
+ * Darker fills, soft hue-keyed shadows, almost no specular shine.
+ */
+
+.clayWrap {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Recessed trough carved into the card */
+.clayTrack {
+    position: relative;
+    width: 100%;
+    height: var(--pb-height, 14px);
+    border-radius: 999px;
+    padding: 2px;
+    box-sizing: border-box;
+    overflow: visible;
+    background: #e8e4f0;
+    box-shadow:
+        inset 2px 3px 6px rgba(46, 42, 63, 0.14),
+        inset -2px -2px 5px rgba(255, 255, 255, 0.55);
+    border: none;
+}
+
+.clayFill {
+    height: 100%;
+    border-radius: 999px;
+    position: relative;
+    transition: width 0.35s ease;
+    min-width: 12px;
+    box-sizing: border-box;
+}
+
+/* No glossy highlight strip — matte clay only */
+.clayFill::after {
+    display: none;
+}
+
+/* Solid-ish matte fills, soft colored drop, tiny depth inset */
+
+.clayFillGreen {
+    /* --surface-mint #7DD4A8, slightly deeper */
+    background: #6bc496;
+    box-shadow:
+        3px 4px 10px rgba(70, 150, 110, 0.32),
+        inset 0 -2px 3px rgba(50, 120, 90, 0.18),
+        inset 0 1px 1px rgba(255, 255, 255, 0.12);
+}
+
+.clayFillOrange {
+    /* --surface-peach family, darker matte */
+    background: #f0a070;
+    box-shadow:
+        3px 4px 10px rgba(200, 110, 70, 0.32),
+        inset 0 -2px 3px rgba(170, 90, 50, 0.2),
+        inset 0 1px 1px rgba(255, 255, 255, 0.12);
+}
+
+.clayFillPurple {
+    /* --surface-lavender #B8A6FF, deeper matte clay */
+    background: #9b88e8;
+    box-shadow:
+        3px 4px 10px rgba(120, 95, 200, 0.35),
+        inset 0 -2px 3px rgba(90, 70, 160, 0.22),
+        inset 0 1px 1px rgba(255, 255, 255, 0.12);
+}
+
+.clayFillTeal {
+    background: #4db8b0;
+    box-shadow:
+        3px 4px 10px rgba(40, 130, 125, 0.32),
+        inset 0 -2px 3px rgba(30, 100, 95, 0.2),
+        inset 0 1px 1px rgba(255, 255, 255, 0.12);
+}
+
+.clayThumb {
+    display: none;
+}
+
+.clayLabelCenter {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-strong, #2e2a3f);
+    font-weight: 700;
+    font-size: 0.58rem;
+    font-family: var(--go-font-ui, "Nunito", "Quicksand", sans-serif);
+    letter-spacing: 0.02em;
+    pointer-events: none;
+    user-select: none;
+    text-shadow: none;
+    z-index: 1;
+}
+
+.clayLabelAbove,
+.clayLabelBelow {
+    text-align: left;
+    color: var(--text-muted, #6b6580);
+    font-weight: 600;
+    font-size: 0.8125rem;
+    font-family: var(--go-font-ui, "Nunito", "Quicksand", sans-serif);
+    letter-spacing: 0.01em;
+    user-select: none;
+    padding: 0 2px;
+}
+
 /* Pixel / stepped progress (Player tab) */
 .pixelTrack {
     width: 100%;
@@ -18,7 +130,6 @@
     box-sizing: border-box;
     border-right: 2px solid rgba(0, 0, 0, 0.35);
     transition: width 0.12s ease;
-    /* vertical segment ribs */
     background-image: repeating-linear-gradient(
         90deg,
         rgba(0, 0, 0, 0.22) 0,

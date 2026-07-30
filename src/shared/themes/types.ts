@@ -1,5 +1,5 @@
 /** Built-in visual theme presets for the gamification plugin UI. */
-export type VisualThemePresetId = 'classic' | 'system-hunter';
+export type VisualThemePresetId = 'classic' | 'system-hunter' | 'clay';
 
 /** UI shell layout personality (fonts, borders, shadows). */
 export type GamificationShell = 'pixel' | 'system' | 'modern' | 'minimal';

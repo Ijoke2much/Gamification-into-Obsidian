@@ -176,6 +176,24 @@
     background: transparent;
 }
 
+[data-gamification-visual-theme='clay'] .gridCol,
+[data-gamification-shell='modern'] .gridCol {
+    image-rendering: auto;
+    font-family: var(
+        --go-font-ui,
+        "Nunito",
+        "Segoe UI",
+        "Avenir Next",
+        system-ui,
+        -apple-system,
+        sans-serif
+    );
+    color: var(--clay-text, #2e2e2e);
+    background: transparent;
+    gap: 16px;
+    padding: 4px 4px 16px;
+}
+
 .progressCard {
     display: flex;
     flex-direction: column;
@@ -532,6 +550,18 @@
     align-items: stretch;
 }
 
+/* Scrollable player tab — clears Obsidian mobile bottom toolbar */
+.tabContentMobile {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px));
+    box-sizing: border-box;
+}
+
 /* Mobile dropdown styles */
 .mobileDropdown {
     width: 100%;
@@ -704,6 +734,7 @@
     gap: 0;
     margin: 10px 0 12px;
     min-width: 0;
+    flex-shrink: 0;
 }
 
 .tabRibbon {
@@ -777,6 +808,34 @@
     background: var(--background-modifier-border, rgba(255, 255, 255, 0.12));
 }
 
+/* Check-in CTA — top-right under / beside the tab ribbon */
+.checkInNavChip {
+    flex-shrink: 0;
+    align-self: center;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    min-height: 32px;
+    margin: 0 2px 0 6px;
+    padding: 4px 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(125, 211, 252, 0.6);
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.4), rgba(59, 130, 246, 0.5));
+    color: #e0f2fe;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    cursor: pointer;
+    animation: checkInPulse 2s ease-in-out infinite;
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.28);
+}
+
+.checkInNavChip:hover {
+    filter: brightness(1.1);
+}
+
 .settingsButton {
     flex-shrink: 0;
     display: inline-flex;
@@ -843,4 +902,201 @@
 .gridCol :global(.mobile-card) {
     border-radius: var(--pixel-card-radius, 0) !important;
     box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light) !important;
+}
+
+/* Full-width Player tab on touch devices — scroll via Obsidian view leaf, not nested flex */
+@media (max-width: 768px) {
+    .container {
+        width: 100%;
+        max-width: none;
+        padding: 4px;
+        box-sizing: border-box;
+        overflow-x: hidden;
+        overflow-y: visible;
+        height: auto;
+        min-height: 0;
+        display: block;
+    }
+
+    .tabContent,
+    .tabContentMobile {
+        width: 100%;
+        margin-top: 12px;
+        overflow: visible;
+        flex: none;
+        min-height: unset;
+    }
+
+    .gridCol {
+        width: 100%;
+        max-width: none;
+        padding: 2px;
+        box-sizing: border-box;
+    }
+
+    .cardRow {
+        width: 100%;
+        gap: 10px;
+    }
+}
+
+/* Undo sidebar-narrow container squashing when the viewport itself is wide enough */
+@media (min-width: 360px) and (max-width: 768px) {
+    @container (max-width: 280px) {
+        .container {
+            padding: 4px !important;
+            font-size: inherit !important;
+        }
+
+        .cardRow {
+            flex-direction: row !important;
+            flex-wrap: wrap !important;
+            gap: 10px !important;
+        }
+    }
+}
+
+/* ─── Clay theme: ChatGPT design-system chrome ─── */
+:global([data-gamification-visual-theme='clay'].gamification-player-shell),
+:global([data-gamification-visual-theme='clay'] .gamification-player-shell) {
+    background: var(--go-screen-bg, linear-gradient(180deg, #d7ece7, #c9e3de)) !important;
+    color: var(--clay-text, #2e2e2e);
+}
+
+[data-gamification-visual-theme='clay'] .container {
+    background: transparent;
+    color: var(--clay-text, #2e2e2e);
+}
+
+[data-gamification-visual-theme='clay'] .debugRow {
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+[data-gamification-visual-theme='clay'] .reloadButton {
+    background: var(--clay-button-gradient, linear-gradient(180deg, #f7f4ef, #ece3da));
+    color: var(--clay-text, #2e2e2e);
+    border: none;
+    border-radius: 18px;
+    box-shadow: var(--clay-shadow);
+    font-weight: 700;
+    transition: box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+[data-gamification-visual-theme='clay'] .reloadButton:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--clay-shadow-hover);
+}
+
+[data-gamification-visual-theme='clay'] .reloadButton:active {
+    transform: translateY(2px);
+    box-shadow: var(--clay-shadow-pressed);
+}
+
+[data-gamification-visual-theme='clay'] .checkInButton {
+    background: var(--clay-accent-gradient, linear-gradient(180deg, #6ad7d4, #53c6c2));
+    color: #fff;
+    border: none;
+    border-radius: 18px;
+    box-shadow: var(--clay-accent-shadow);
+    animation: none;
+}
+
+[data-gamification-visual-theme='clay'] .checkInButton:hover {
+    filter: brightness(1.03);
+}
+
+[data-gamification-visual-theme='clay'] .checkInNavChip {
+    background: var(--clay-accent-gradient, linear-gradient(180deg, #6ad7d4, #53c6c2));
+    color: #fff;
+    border: none;
+    border-radius: 18px;
+    box-shadow: var(--clay-accent-shadow);
+    animation: none;
+}
+
+[data-gamification-visual-theme='clay'] .tabNavBar {
+    margin: 8px 0 14px;
+    padding: 6px;
+    border-radius: var(--clay-radius, 22px);
+    background: var(--clay-gradient, linear-gradient(145deg, #f6f2ec, #efe8df));
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    box-shadow: var(--clay-shadow);
+}
+
+[data-gamification-visual-theme='clay'] .tabRibbon {
+    gap: 8px;
+    padding: 2px;
+}
+
+[data-gamification-visual-theme='clay'] .tabButton {
+    background: transparent;
+    color: var(--clay-text-light, #676767);
+    border: none;
+    border-radius: 18px;
+    box-shadow: none;
+    font-weight: 700;
+    font-size: 12px;
+    transition: background 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
+}
+
+[data-gamification-visual-theme='clay'] .tabButton:hover {
+    background: #f1ebe5;
+    color: var(--clay-text, #2e2e2e);
+    box-shadow: var(--clay-shadow);
+}
+
+[data-gamification-visual-theme='clay'] .tabButton:active {
+    transform: none;
+    box-shadow: var(--clay-shadow-pressed);
+}
+
+[data-gamification-visual-theme='clay'] .tabButtonActive {
+    background: var(--clay-accent-gradient, linear-gradient(180deg, #6ad7d4, #53c6c2));
+    color: #fff;
+    box-shadow: var(--clay-shadow-pressed);
+}
+
+[data-gamification-visual-theme='clay'] .tabNavDivider {
+    background: rgba(0, 0, 0, 0.08);
+    margin: 6px 4px;
+}
+
+[data-gamification-visual-theme='clay'] .settingsButton {
+    background: #f1ebe4;
+    color: var(--clay-text-light, #676767);
+    border: none;
+    border-radius: 50%;
+    box-shadow: var(--clay-shadow);
+}
+
+[data-gamification-visual-theme='clay'] .settingsButton:hover {
+    background: #f1ebe5;
+    color: var(--clay-text, #2e2e2e);
+    border-color: transparent;
+    box-shadow: var(--clay-shadow-hover);
+}
+
+[data-gamification-visual-theme='clay'] .tabContent {
+    margin-top: 8px;
+}
+
+[data-gamification-visual-theme='clay'] .dropdownToggle,
+[data-gamification-visual-theme='clay'] .dropdownMenu {
+    background: var(--clay-button-gradient, linear-gradient(180deg, #f7f4ef, #ece3da));
+    color: var(--clay-text, #2e2e2e);
+    border: none;
+    border-radius: 18px;
+    box-shadow: var(--clay-shadow);
+}
+
+[data-gamification-visual-theme='clay'] .dropdownToggleActive {
+    border: none;
+    background: var(--clay-accent-gradient, linear-gradient(180deg, #6ad7d4, #53c6c2));
+    color: #fff;
+    box-shadow: var(--clay-shadow-pressed);
+}
+
+[data-gamification-visual-theme='clay'] .dropdownItemActive {
+    background: #f1ebe5;
 }

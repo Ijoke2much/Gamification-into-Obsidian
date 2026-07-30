@@ -210,3 +210,192 @@
         width: 100%;
     }
 }
+
+@media (max-width: 768px) {
+    .energyCard {
+        padding: 10px 8px;
+        width: 100%;
+        max-width: none;
+    }
+
+    .skillTreeCard,
+    .inventoryCard {
+        min-height: 72px;
+    }
+}
+
+.mobileActionRow {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    gap: 8px;
+    width: 100%;
+    min-width: 0;
+}
+
+.mobileActionRow .skillTreeCard,
+.mobileActionRow .inventoryCard {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 56px;
+    padding: 8px 4px 6px;
+}
+
+.mobileActionRow .actionLabel {
+    font-size: 0.5rem;
+    line-height: 1.25;
+    letter-spacing: 0.02em;
+}
+
+.mobileActionRow .actionIcon {
+    font-size: 15px;
+}
+
+.playerTabSystem .mobileActionRow .skillTreeCard,
+.playerTabSystem .mobileActionRow .inventoryCard {
+    min-height: 52px;
+    padding: 8px 6px;
+}
+
+/* Clay (Player preview) — Bevel-matched claymorphism */
+:global([data-gamification-visual-theme='clay'].gamification-player-shell),
+:global([data-gamification-visual-theme='clay'] .gamification-player-shell) {
+    background: var(--go-screen-bg, linear-gradient(180deg, #d7ece7, #c9e3de)) !important;
+    color: var(--clay-text, #2e2e2e);
+}
+
+.playerTabClay {
+    color: var(--clay-text, #2e2e2e);
+    font-family: var(
+        --go-font-ui,
+        "Nunito",
+        "Segoe UI",
+        "Avenir Next",
+        system-ui,
+        -apple-system,
+        sans-serif
+    );
+    gap: 16px;
+    padding: 4px 2px 8px;
+}
+
+.playerTabClay .cardRow {
+    gap: 12px;
+}
+
+.playerTabClay .levelCard,
+.playerTabClay .expCard,
+.playerTabClay .coinsCard {
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    border-radius: var(--clay-radius, 22px);
+    background: var(--clay-gradient, linear-gradient(145deg, #f6f2ec, #efe8df));
+    box-shadow: var(--clay-shadow);
+    padding: 18px 14px 16px;
+    transition: box-shadow 0.18s ease, transform 0.18s ease;
+    overflow: visible;
+}
+
+.playerTabClay .skillTreeCard,
+.playerTabClay .inventoryCard {
+    border: none;
+    border-radius: 50%;
+    width: 88px;
+    height: 88px;
+    min-height: 88px;
+    flex: 0 0 88px;
+    padding: 10px 8px;
+    background: var(--clay-button-gradient, linear-gradient(180deg, #f7f4ef, #ece3da));
+    box-shadow: var(--clay-shadow);
+    color: var(--clay-text, #2e2e2e);
+    justify-content: center;
+    transition: box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.playerTabClay .levelCard:hover,
+.playerTabClay .expCard:hover,
+.playerTabClay .coinsCard:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--clay-shadow-hover);
+}
+
+.playerTabClay .skillTreeCard:hover,
+.playerTabClay .inventoryCard:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--clay-shadow-hover);
+}
+
+.playerTabClay .skillTreeCard:active,
+.playerTabClay .inventoryCard:active {
+    transform: translateY(2px);
+    box-shadow: var(--clay-shadow-pressed);
+    background: var(--clay-button-gradient, linear-gradient(180deg, #f7f4ef, #ece3da));
+}
+
+.playerTabClay .cardLabel {
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    text-transform: none;
+    color: var(--clay-text-light, #676767);
+}
+
+.playerTabClay .levelValue,
+.playerTabClay .coinsValue {
+    color: var(--clay-accent-deep, #2ba8a3);
+    font-size: 1.75rem;
+    font-weight: 800;
+    margin-top: 4px;
+}
+
+.playerTabClay .actionLabel {
+    font-family: inherit;
+    font-size: 0.62rem;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    color: var(--clay-text-light, #676767);
+    margin-top: 4px;
+    line-height: 1.15;
+}
+
+.playerTabClay .actionIcon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    box-shadow: none;
+    font-size: 22px;
+}
+
+.playerTabClay .mobileActionRow {
+    gap: 14px;
+    justify-content: center;
+    padding: 4px 0 8px;
+}
+
+.playerTabClay .mobileActionRow .skillTreeCard,
+.playerTabClay .mobileActionRow .inventoryCard {
+    width: 84px;
+    height: 84px;
+    min-height: 84px;
+    flex: 0 0 84px;
+    padding: 10px 6px;
+    border-radius: 50%;
+}
+
+.playerTabClay .expCard {
+    align-items: stretch;
+    gap: 8px;
+    padding-bottom: 18px;
+}
+
+/* Desktop action row under clay — keep circular clay buttons */
+.playerTabClay > .cardRow .skillTreeCard,
+.playerTabClay > .cardRow .inventoryCard {
+    width: 96px;
+    height: 96px;
+    min-height: 96px;
+    flex: 0 0 96px;
+}

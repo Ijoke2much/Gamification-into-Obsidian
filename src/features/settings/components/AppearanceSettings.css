@@ -271,6 +271,44 @@
     box-shadow: 0 0 12px rgba(34, 211, 238, 0.15);
 }
 
+/* Clay selected — ChatGPT clay card */
+.palette-option-clay.selected {
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    background: linear-gradient(145deg, #f6f2ec, #efe8df);
+    color: #2e2e2e;
+    box-shadow:
+        inset 3px 3px 5px rgba(255, 255, 255, 0.9),
+        inset -4px -4px 8px rgba(0, 0, 0, 0.05),
+        0 3px 5px rgba(0, 0, 0, 0.08),
+        0 12px 22px rgba(0, 0, 0, 0.12);
+}
+
+.palette-option-clay.selected .palette-active-badge {
+    background: linear-gradient(180deg, #6ad7d4, #53c6c2);
+    color: #fff;
+    border: none;
+    box-shadow:
+        inset 5px 5px 8px rgba(0, 0, 0, 0.08),
+        inset -2px -2px 5px rgba(255, 255, 255, 0.5);
+}
+
+.palette-option-clay.selected .palette-name {
+    color: #2e2e2e;
+}
+
+.palette-option-clay.selected .palette-description {
+    color: #676767;
+    opacity: 1;
+}
+
+.palette-option-clay:hover:not(.selected) {
+    border-color: rgba(255, 255, 255, 0.45);
+    box-shadow:
+        inset 3px 3px 6px rgba(255, 255, 255, 0.95),
+        inset -5px -5px 8px rgba(0, 0, 0, 0.06),
+        0 8px 18px rgba(0, 0, 0, 0.15);
+}
+
 .visual-theme-preview {
     margin-top: 18px;
     padding: 14px;
@@ -401,7 +439,7 @@
 }
 
 /* Fallback for any future preset */
-.palette-option.selected:not(.palette-option-classic):not(.palette-option-system-hunter) {
+.palette-option.selected:not(.palette-option-classic):not(.palette-option-system-hunter):not(.palette-option-clay) {
     border-color: var(--primary-color, #667eea);
     background: var(--primary-color, #667eea);
     color: white;
