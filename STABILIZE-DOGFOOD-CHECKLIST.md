@@ -4,13 +4,13 @@ Use this after landing WIP on `cursor/game-data-hub`. Work top to bottom; don’
 
 ---
 
-## Phase A — Stabilize (Mac / Agent) — IN PROGRESS
+## Phase A — Stabilize (Mac / Agent) — DONE
 
 - [x] Review diff: keep plugin code + checklists; skip `focus-checkin-state.json`
-- [ ] Commit on `cursor/game-data-hub` (quests Now pin, week days, capture CSS, skill chips, skill load fix, shop/craft/player shell, materials, etc.)
-- [ ] `npm run build:sync` — settings show **v1.0.0** on phone after sync
-- [ ] Push branch to origin (optional but good before dogfood)
-- [ ] Note follow-ups that shouldn’t block stabilize
+- [x] Commit on `cursor/game-data-hub` (`bc0101f`)
+- [x] `npm run build:sync` — published to iCloud lab vault; settings should show **v1.0.0** after phone reload
+- [x] Push branch to origin (`cursor/game-data-hub`)
+- [x] Follow-ups that don’t block: Solo Leveling chrome polish; BRAT release packaging (Phase E)
 
 ---
 
