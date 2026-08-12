@@ -10,7 +10,10 @@ import {
 	AchievementCategory,
 	BadgeTier,
 } from "../../../data/models/AchievementSystem";
+import { useMobileOptimizations } from "../../../shared/hooks/useMobileOptimizations";
 import achStyles from "./AchievementsTab.module.css";
+
+const MOBILE_PAGE_SIZE = 20;
 
 export interface AchievementsTabProps {
 	tracker: AchievementTracker;
@@ -49,15 +52,20 @@ export default function AchievementsTab({
 	onRefresh,
 	highlightAchievementId = null,
 }: AchievementsTabProps) {
+	const { isMobile } = useMobileOptimizations();
 	const [selectedCategory, setSelectedCategory] = useState<
 		AchievementCategory | "all"
 	>("all");
 	const [showCompleted, setShowCompleted] = useState<boolean>(true);
 	const [showInProgress, setShowInProgress] = useState<boolean>(true);
-	const [showLocked, setShowLocked] = useState<boolean>(true);
+	// Mobile: hide locked by default — fewer cards, faster first paint
+	const [showLocked, setShowLocked] = useState<boolean>(() => !isMobile);
 	const [searchTerm, setSearchTerm] = useState<string>("");
 	const [sortBy, setSortBy] = useState<"progress" | "tier" | "name" | "date">("progress");
-	const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+	const [viewMode, setViewMode] = useState<"grid" | "list">(() =>
+		isMobile ? "list" : "grid"
+	);
+	const [mobileVisibleCount, setMobileVisibleCount] = useState(MOBILE_PAGE_SIZE);
 	const [recentlyUnlocked, setRecentlyUnlocked] = useState<string[]>([]);
 	const [detailEntry, setDetailEntry] = useState<{
 		achievement: Achievement;
@@ -505,8 +513,8 @@ export default function AchievementsTab({
 								position: "relative",
 							}}
 						>
-							{/* Progress bar shine effect */}
-							{isInProgress && (
+							{/* Progress bar shine — desktop only */}
+							{isInProgress && !isMobile && (
 								<div
 									style={{
 										position: "absolute",
@@ -650,14 +658,24 @@ export default function AchievementsTab({
 		);
 	};
 
+	useEffect(() => {
+		setMobileVisibleCount(MOBILE_PAGE_SIZE);
+	}, [selectedCategory, showCompleted, showInProgress, showLocked, searchTerm, sortBy]);
+
+	const mobileList = useMemo(() => {
+		if (!isMobile) return sortedAchievements;
+		return sortedAchievements.slice(0, mobileVisibleCount);
+	}, [isMobile, sortedAchievements, mobileVisibleCount]);
+
 	return (
 		<div
 			ref={shellRef}
-			className={achStyles.pixelAchievementsShell}
+			className={`${achStyles.pixelAchievementsShell}${isMobile ? ` ${achStyles.mobileAchievementsShell}` : ""}`}
 			data-pixel-shell="achievements"
+			data-gamification-mobile={isMobile ? "true" : "false"}
 			style={{
-				padding: "16px",
-				maxHeight: "80vh",
+				padding: isMobile ? "10px" : "16px",
+				maxHeight: isMobile ? "none" : "80vh",
 				overflowY: "auto",
 				color: "#fff",
 				background: "linear-gradient(135deg, #0f0f23, #1a1a2e)",
@@ -669,8 +687,8 @@ export default function AchievementsTab({
 			<div
 				style={{
 					background: "linear-gradient(135deg, #1a1a2e, #16213e)",
-					borderRadius: "12px",
-					padding: "16px",
+					borderRadius: isMobile ? "2px" : "12px",
+					padding: isMobile ? "12px" : "16px",
 					marginBottom: "16px",
 					textAlign: "center",
 					border: "1px solid rgba(255,255,255,0.1)",
@@ -679,7 +697,7 @@ export default function AchievementsTab({
 			>
 				<h2 style={{ 
 					margin: "0 0 12px 0", 
-					fontSize: "18px",
+					fontSize: isMobile ? "16px" : "18px",
 					fontWeight: "700",
 					background: "linear-gradient(135deg, #FFD700, #FFA500)",
 					WebkitBackgroundClip: "text",
@@ -710,13 +728,14 @@ export default function AchievementsTab({
 						style={{
 							background: "linear-gradient(90deg, #4CAF50, #66BB6A, #81C784)",
 							height: "100%",
-							width: `${(completedCount / totalCount) * 100}%`,
+							width: `${totalCount > 0 ? (completedCount / totalCount) * 100 : 0}%`,
 							borderRadius: "8px",
-							transition: "width 0.8s cubic-bezier(0.4, 0, 0.2, 1)",
+							transition: isMobile ? "none" : "width 0.8s cubic-bezier(0.4, 0, 0.2, 1)",
 							position: "relative",
 						}}
 					>
-						{/* Progress bar shine effect */}
+						{/* Progress bar shine — desktop only */}
+						{!isMobile && (
 						<div
 							style={{
 								position: "absolute",
@@ -728,6 +747,7 @@ export default function AchievementsTab({
 								animation: "shimmer 3s infinite",
 							}}
 						/>
+						)}
 					</div>
 				</div>
 				<div
@@ -737,15 +757,17 @@ export default function AchievementsTab({
 						fontWeight: "500",
 					}}
 				>
-					{Math.round((completedCount / totalCount) * 100)}% Complete
+					{totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0}% Complete
 				</div>
 			</div>
 
 			<div className={achStyles.galleryHero}>
 				<h3 className={achStyles.galleryHeroTitle}>TROPHY ROOM</h3>
+				{!isMobile && (
 				<p className={achStyles.galleryHeroSub}>
 					Badges earned across quests, focus, habits, crafting, and gate raids.
 				</p>
+				)}
 				<div className={achStyles.tierStrip}>
 					{(["bronze", "silver", "gold", "legendary"] as BadgeTier[]).map((tier) => (
 						<div
@@ -765,7 +787,7 @@ export default function AchievementsTab({
 				<section className={achStyles.recentSection}>
 					<h3 className={achStyles.sectionLabel}>RECENT UNLOCKS</h3>
 					<div className={achStyles.recentRow}>
-						{recentUnlocks.slice(0, 8).map(({ achievement, playerData }) => (
+						{recentUnlocks.slice(0, isMobile ? 4 : 8).map(({ achievement, playerData }) => (
 							<button
 								key={achievement.id}
 								type="button"
@@ -786,33 +808,36 @@ export default function AchievementsTab({
 				</section>
 			)}
 
-			{showcase.length > 0 ? (
-				<section className={achStyles.showcaseSection}>
-					<h3 className={achStyles.sectionLabel}>SHOWCASE</h3>
-					<div className={achStyles.showcaseRow}>
-						{showcase.map(({ achievement, playerData }) => (
-							<button
-								key={achievement.id}
-								type="button"
-								className={achStyles.showcaseBadge}
-								data-achievement-id={achievement.id}
-								onClick={() => openDetail(achievement, playerData)}
-							>
-								<span className={achStyles.showcaseIcon}>{achievement.icon}</span>
-								<span className={achStyles.showcaseTitle} title={achievement.title}>
-									{achievement.title}
-								</span>
-								<span className={`${achStyles.showcaseTier} ${TIER_CLASS[achievement.tier]}`}>
-									{achievement.tier}
-								</span>
-							</button>
-						))}
+			{/* Showcase is desktop-only — heavy horizontal row */}
+			{!isMobile && (
+				showcase.length > 0 ? (
+					<section className={achStyles.showcaseSection}>
+						<h3 className={achStyles.sectionLabel}>SHOWCASE</h3>
+						<div className={achStyles.showcaseRow}>
+							{showcase.map(({ achievement, playerData }) => (
+								<button
+									key={achievement.id}
+									type="button"
+									className={achStyles.showcaseBadge}
+									data-achievement-id={achievement.id}
+									onClick={() => openDetail(achievement, playerData)}
+								>
+									<span className={achStyles.showcaseIcon}>{achievement.icon}</span>
+									<span className={achStyles.showcaseTitle} title={achievement.title}>
+										{achievement.title}
+									</span>
+									<span className={`${achStyles.showcaseTier} ${TIER_CLASS[achievement.tier]}`}>
+										{achievement.tier}
+									</span>
+								</button>
+							))}
+						</div>
+					</section>
+				) : (
+					<div className={achStyles.emptyGallery}>
+						No trophies yet — complete quests and gate raids to fill the room.
 					</div>
-				</section>
-			) : (
-				<div className={achStyles.emptyGallery}>
-					No trophies yet — complete quests and gate raids to fill the room.
-				</div>
+				)
 			)}
 
 			{/* Compact Filter Controls */}
@@ -915,7 +940,8 @@ export default function AchievementsTab({
 						})}
 					</div>
 
-					{/* Compact View Mode Toggle */}
+					{/* View mode toggle — desktop only (mobile always list) */}
+					{!isMobile && (
 					<div style={{ display: "flex", gap: "4px", alignItems: "center" }}>
 						<button
 							onClick={() => setViewMode("list")}
@@ -956,6 +982,7 @@ export default function AchievementsTab({
 							📱 Grid
 						</button>
 					</div>
+					)}
 				</div>
 
 				{/* Compact Sorting */}
@@ -1078,8 +1105,37 @@ export default function AchievementsTab({
 				</div>
 			</div>
 
-			{/* Achievement List by Category - Optimized for sidebar */}
-			{Object.entries(groupedAchievements).map(
+			{/* Mobile: flat paginated list. Desktop: grouped by category. */}
+			{isMobile ? (
+				<div style={{ display: "block" }}>
+					{mobileList.length === 0 ? (
+						<div className={achStyles.emptyGallery}>
+							No achievements match these filters.
+						</div>
+					) : (
+						mobileList.map(({ achievement, playerData }) => (
+							<AchievementCard
+								key={achievement.id}
+								achievement={achievement}
+								playerData={playerData}
+								viewMode="list"
+							/>
+						))
+					)}
+					{sortedAchievements.length > mobileVisibleCount && (
+						<button
+							type="button"
+							className={achStyles.mobileShowMore}
+							onClick={() =>
+								setMobileVisibleCount((n) => n + MOBILE_PAGE_SIZE)
+							}
+						>
+							Show more ({sortedAchievements.length - mobileVisibleCount} left)
+						</button>
+					)}
+				</div>
+			) : (
+			Object.entries(groupedAchievements).map(
 				([category, achievements]) => {
 					const categoryInfo = getCategoryInfo(
 						category as AchievementCategory
@@ -1123,7 +1179,6 @@ export default function AchievementsTab({
 								</span>
 							</h3>
 
-							{/* Conditional view based on viewMode */}
 							<div style={{
 								display: viewMode === "grid" ? "grid" : "block",
 								gridTemplateColumns: viewMode === "grid" ? "repeat(auto-fit, minmax(120px, 1fr))" : undefined,
@@ -1141,6 +1196,7 @@ export default function AchievementsTab({
 						</div>
 					);
 				}
+			)
 			)}
 
 			{/* Compact Empty State */}

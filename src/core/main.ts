@@ -1,5 +1,7 @@
 import "../shared/styles/gamified-notices.css";
 import "../shared/styles/system-hunter-shell.css";
+import "../shared/styles/tab-system-shell.css";
+import "../shared/styles/shop-system-hunter.css";
 import "../shared/styles/pixel-enclave.css";
 import { Plugin, App, PluginSettingTab, Setting, Modal } from "obsidian";
 import React from 'react';
@@ -59,10 +61,11 @@ export default class GamifiedObsidianPlugin extends Plugin {
 	public questSystem: QuestSystemIntegration | null = null;
 	public enhancedQuestSystem?: EnhancedQuestSystem;
 	private advancedQuestDashboard: unknown = null;
-	private performanceOptimizer!: PerformanceOptimizer;
+	private performanceOptimizer?: PerformanceOptimizer;
 	private energyResetService?: EnergyResetService;
 	private energyNotificationService?: EnergyNotificationService;
 	private lastSavedModules: GamificationModules = { ...BALANCED_GAMEPLAY_MODULES };
+	private playerRibbonEl?: HTMLElement;
 
 	// Make AdvancedQuestModal available on the plugin instance
 	public AdvancedQuestModal = AdvancedQuestModal;
@@ -74,9 +77,10 @@ export default class GamifiedObsidianPlugin extends Plugin {
 		const userAgent = navigator.userAgent.toLowerCase();
 		const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
 		const isSmallScreen = window.innerWidth <= 768;
-		const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+		const isCoarsePointer = typeof window.matchMedia === 'function'
+			&& window.matchMedia('(pointer: coarse)').matches;
 
-		return isMobileDevice || (isSmallScreen && isTouchDevice);
+		return isMobileDevice || isSmallScreen || isCoarsePointer;
 	}
 
 	private initializeMobileOptimizations(): void {
@@ -147,28 +151,41 @@ export default class GamifiedObsidianPlugin extends Plugin {
 			}
 			
 			/* Only adjust padding within our plugin */
-			.gamification-mobile .gamification-container {
-				padding: 8px !important;
+			.gamification-mobile .gamification-container,
+			[data-gamification-mobile="true"].gamification-container {
+				padding: 4px !important;
+				width: 100% !important;
+				max-width: none !important;
+				box-sizing: border-box !important;
+			}
+
+			.gamification-mobile .gamification-player-grid,
+			[data-gamification-mobile="true"] .gamification-player-grid {
+				width: 100% !important;
+				max-width: none !important;
+				padding: 2px !important;
+				box-sizing: border-box !important;
+			}
+
+			.gamification-mobile .gamification-energy-hud [class*="statRow"],
+			[data-gamification-mobile="true"] .gamification-energy-hud [class*="statRow"] {
+				flex-direction: column !important;
+				align-items: stretch !important;
+				gap: 6px !important;
+			}
+
+			.gamification-mobile .gamification-energy-hud [class*="statBar"],
+			[data-gamification-mobile="true"] .gamification-energy-hud [class*="statBar"] {
+				width: 100% !important;
+				min-width: 0 !important;
+			}
+
+			.gamification-mobile .gamification-energy-hud [class*="quickActions"],
+			[data-gamification-mobile="true"] .gamification-energy-hud [class*="quickActions"] {
+				display: none !important;
 			}
 		`;
 		document.head.appendChild(style);
-
-		// Only prevent zoom within our plugin containers, not globally
-		let lastTouchEnd = 0;
-		this.preventZoomHandler = (event: TouchEvent) => {
-			// Only prevent zoom if the touch is within our plugin
-			const target = event.target as Element;
-			if (target && target.closest('.gamification-mobile')) {
-				const now = (new Date()).getTime();
-				if (now - lastTouchEnd <= 300) {
-					event.preventDefault();
-				}
-				lastTouchEnd = now;
-			}
-		};
-		document.addEventListener('touchend', this.preventZoomHandler, false);
-
-		// Don't modify viewport meta tag - let Obsidian handle it
 	}
 
 	private cleanupMobileOptimizations(): void {
@@ -185,13 +202,16 @@ export default class GamifiedObsidianPlugin extends Plugin {
 			performanceStyle.remove();
 		}
 
-		// Remove touch event listeners
-		if (this.preventZoomHandler) {
-			document.removeEventListener('touchend', this.preventZoomHandler);
-		}
 	}
 
-	private preventZoomHandler?: (event: TouchEvent) => void;
+	private removePlayerRibbon(): void {
+		this.playerRibbonEl?.remove();
+		this.playerRibbonEl = undefined;
+		// Fallback: strip stale ribbon nodes if onunload ran after a crash
+		document.querySelectorAll('.side-dock-ribbon-action[aria-label="Open Player"]').forEach((el) => {
+			el.remove();
+		});
+	}
 
 	private setupMobileErrorHandling(): void {
 		// Add mobile-specific error handling
@@ -273,11 +293,14 @@ export default class GamifiedObsidianPlugin extends Plugin {
 			// Failed to initialize mobile optimizations - continue without mobile features
 		}
 
-		// Initialize Performance Optimizer (non-blocking so plugin load stays fast)
-		this.performanceOptimizer = PerformanceOptimizer.getInstance(this.app);
-		this.performanceOptimizer.initialize().catch(() => {
-			// Performance optimizer is optional; continue without it if initialization fails
-		});
+        // Initialize Performance Optimizer (desktop only — timers add mobile WebView pressure)
+        const isMobileLoad = this.detectMobileDevice();
+        if (!isMobileLoad) {
+            this.performanceOptimizer = PerformanceOptimizer.getInstance(this.app);
+            this.performanceOptimizer.initialize().catch(() => {
+                // Performance optimizer is optional; continue without it if initialization fails
+            });
+        }
 
 		// Defer heavy initialization so Obsidian stays responsive while the plugin
 		// finishes loading. This runs in the background without blocking onload.
@@ -298,10 +321,20 @@ export default class GamifiedObsidianPlugin extends Plugin {
 			}
 		});
 
-		this.addRibbonIcon("dice", "Open Player", () => {
+		this.removePlayerRibbon();
+		this.playerRibbonEl = this.addRibbonIcon("dice", "Open Player", () => {
 			this.app.workspace.onLayoutReady(async () => {
 				this.activatePlayerTabView();
 			});
+		});
+
+		this.addCommand({
+			id: 'open-player-tab',
+			name: 'Open Player tab',
+			icon: 'dice',
+			callback: () => {
+				void this.activatePlayerTabView();
+			},
 		});
 
 		// Removed the Advanced Quest Dashboard ribbon since it should be accessed through buttons
@@ -448,6 +481,14 @@ export default class GamifiedObsidianPlugin extends Plugin {
 				},
 			});
 		}
+
+		this.addCommand({
+			id: 'expand-mission-board',
+			name: 'Expand Mission Board',
+			callback: () => {
+				void this.openMissionBoardExpanded();
+			},
+		});
 
 		// Register Sidebar Boss View
 		this.registerView(
@@ -883,6 +924,63 @@ export default class GamifiedObsidianPlugin extends Plugin {
 		}
 	}
 
+	/** Open Quests Mission Board in a wide main tab (expanded day plan + inbox). */
+	async openMissionBoardExpanded(): Promise<void> {
+		const { QUEST_HUB_SECTION_KEY } = await import('../features/quests/utils/questProjectUtils');
+		try {
+			localStorage.setItem(QUEST_HUB_SECTION_KEY, 'tasks');
+			localStorage.setItem('gamification-selected-tab', 'quests');
+		} catch {
+			/* ignore storage failures */
+		}
+
+		await this.app.workspace.onLayoutReady(async () => {
+			const { workspace } = this.app;
+
+			if (this.settings.enableSidebarQuestBoard) {
+				const leaf = workspace.getLeaf('tab');
+				await leaf.setViewState({
+					type: SIDEBAR_QUEST_VIEW_TYPE,
+					active: true,
+				});
+				workspace.revealLeaf(leaf);
+				workspace.setActiveLeaf(leaf, { focus: true });
+				try {
+					window.dispatchEvent(
+						new CustomEvent('gamification-quest-hub-focus', {
+							detail: { section: 'tasks' },
+						})
+					);
+				} catch {
+					/* ignore */
+				}
+				return;
+			}
+
+			let leaf = workspace.getLeavesOfType(PLAYER_TAB_VIEW_TYPE)[0];
+			if (!leaf) {
+				leaf = workspace.getLeaf('tab');
+				await leaf.setViewState({
+					type: PLAYER_TAB_VIEW_TYPE,
+					active: true,
+				});
+			}
+			workspace.revealLeaf(leaf);
+			workspace.setActiveLeaf(leaf, { focus: true });
+			window.setTimeout(() => {
+				try {
+					window.dispatchEvent(
+						new CustomEvent('requestActiveTabChange', {
+							detail: { targetTab: 'quests' },
+						})
+					);
+				} catch {
+					/* ignore */
+				}
+			}, 80);
+		});
+	}
+
 	/** Open the sidebar quest board on a hub section (e.g. Dungeon gate roster). */
 	async focusQuestHubSection(
 		section: import('../features/quests/utils/questProjectUtils').QuestHubSection = 'dungeon'
@@ -917,6 +1015,9 @@ export default class GamifiedObsidianPlugin extends Plugin {
 	}
 
 	onunload() {
+		this.removePlayerRibbon();
+		playerStore.resetForPluginUnload();
+
 		// Clean up mobile optimizations
 		this.cleanupMobileOptimizations();
 
@@ -1103,9 +1204,12 @@ export default class GamifiedObsidianPlugin extends Plugin {
 		try {
 			// Load plugin settings
 			await this.loadSettings();
+			const isMobile = this.detectMobileDevice();
 
-			// Set the vault on the player store
-			playerStore.setVault(this.app.vault);
+			// Player store initializes when the Player tab opens on mobile (avoids retry storms at plugin enable).
+			if (!isMobile) {
+				playerStore.setVault(this.app.vault);
+			}
 
 			// Initialize buff service
 			buffService;
@@ -1117,41 +1221,41 @@ export default class GamifiedObsidianPlugin extends Plugin {
 			// Sync settings to runtime config on startup
 			this.syncSettingsToRuntimeConfig();
 
-			// Set up periodic level checking to ensure UI stays in sync
-			this.setupPeriodicLevelCheck();
+			// Desktop-only background services are deliberately not started on mobile.
+			// They scan files/DOM and add timers even when their views are closed, which
+			// can exhaust an iOS WebView and terminate the whole Obsidian app.
+			if (!isMobile) {
+				this.setupPeriodicLevelCheck();
 
-			// Initialize achievement event service for game event tracking (lazy)
-			import('../features/achievements/services/achievementEventService').catch(() => {
-				// Achievement service loading is optional
-			});
-
-			// Initialize quest tracking services
-			this.taskScanner = new GamifiedTaskScanner(this.app);
-			this.completionTracker = new QuestCompletionTracker(this.app);
-
-			// Start automatic tracking
-			// this.taskScanner.startAutoScan(); // Disabled - was causing repetitive notifications every 10 seconds
-			this.completionTracker.startTracking();
-
-			// Initialize shop integration when shop module is enabled
-			const shopEnabled = this.settings.modules?.enableShopTab === true;
-			this.shopIntegration = new ShopIntegration(this);
-			setShopIntegration(this.shopIntegration);
-			if (shopEnabled) {
-				this.shopIntegration.initialize().catch(() => {
-					// Shop integration is optional
+				import('../features/achievements/services/achievementEventService').catch(() => {
+					// Achievement service loading is optional
 				});
+
+				this.taskScanner = new GamifiedTaskScanner(this.app);
+				this.completionTracker = new QuestCompletionTracker(this.app);
+				this.completionTracker.startTracking();
+
+				const shopEnabled = this.settings.modules?.enableShopTab === true;
+				this.shopIntegration = new ShopIntegration(this);
+				setShopIntegration(this.shopIntegration);
+				if (shopEnabled) {
+					this.shopIntegration.initialize().catch(() => {
+						// Shop integration is optional
+					});
+				}
 			}
 
-			// Initialize task integration service
-			this.taskIntegrationService = TaskIntegrationService.getInstance(
-				this.app.vault,
-				this.app.metadataCache
-			);
+			// Task integration and energy timers are deferred on mobile until a view needs them.
+			if (!isMobile) {
+				this.taskIntegrationService = TaskIntegrationService.getInstance(
+					this.app.vault,
+					this.app.metadataCache
+				);
+			}
 
 			// Initialize Energy Services when energy module is enabled
 			const energyEnabled = this.settings.modules?.enableEnergySystem !== false;
-			if (energyEnabled) {
+			if (energyEnabled && !isMobile) {
 				this.energyResetService = EnergyResetService.getInstance(this.app);
 				this.energyResetService.initialize().catch(() => {
 					// Energy reset service is optional; failures are logged internally
@@ -1163,31 +1267,32 @@ export default class GamifiedObsidianPlugin extends Plugin {
 				});
 			}
 
-			// Initialize Advanced Quest System in the background so it doesn't block plugin load
-			QuestSystemIntegration.initializeQuestSystem(this.app)
-				.then((questSystem) => {
-					this.questSystem = questSystem;
-					// Check if advanced features are enabled
-					if (QuestSystemIntegration.isAdvancedFeaturesEnabled()) {
-						this.setupAdvancedQuestFeatures();
-					}
-				})
-				.catch(() => {
-					// Advanced quest system is optional; fall back to basic quest features
+			if (!isMobile) {
+				// Initialize Advanced Quest System in the background so it doesn't block plugin load
+				QuestSystemIntegration.initializeQuestSystem(this.app)
+					.then((questSystem) => {
+						this.questSystem = questSystem;
+						if (QuestSystemIntegration.isAdvancedFeaturesEnabled()) {
+							this.setupAdvancedQuestFeatures();
+						}
+					})
+					.catch(() => {
+						// Advanced quest system is optional; fall back to basic quest features
+					});
+
+				// Banner fallback is desktop-only. It observes only the plugin root.
+				this.enhancedQuestSystem = new EnhancedQuestSystem(this);
+				this.enhancedQuestSystem.initialize().catch((err) => {
+					console.error('Enhanced Quest System init failed:', err);
 				});
 
-			// Initialize Enhanced Quest System for banner caching and display
-			this.enhancedQuestSystem = new EnhancedQuestSystem(this);
-			this.enhancedQuestSystem.initialize().catch((err) => {
-				console.error('Enhanced Quest System init failed:', err);
-			});
-
-			// Migrate legacy habits file into per-habit notes if needed
-			try {
-				const { migrateHabitsToPerFile } = await import('../features/habits/utils/habitsUtils');
-				await migrateHabitsToPerFile(this.app.vault);
-			} catch (e) {
-				// Habit migration is best-effort; failures are logged in the utility
+				// File migrations must not run during iCloud mobile startup.
+				try {
+					const { migrateHabitsToPerFile } = await import('../features/habits/utils/habitsUtils');
+					await migrateHabitsToPerFile(this.app.vault);
+				} catch (e) {
+					// Habit migration is best-effort; failures are logged in the utility
+				}
 			}
 		} catch (error) {
 			// Failed to initialize new services - using defaults

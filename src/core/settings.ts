@@ -44,7 +44,7 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
     id: 'quests',
     name: 'Quests & Timeline',
     icon: '📋',
-    description: 'Quest management, timeline view, and task tracking',
+    description: 'Quest board, timeline view, and task tracking',
     color: '#4CAF50',
     categories: [
       {
@@ -66,108 +66,17 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
     ]
   },
   {
-    id: 'rewards',
-    name: 'Rewards & Progression',
-    icon: '🏆',
-    description: 'Currency, rewards, shop system, and progression mechanics',
-    color: '#FFD700',
-    categories: [
-      {
-        id: 'currency',
-        name: 'Currency & Rewards',
-        icon: '🪙',
-        description: 'Configure XP, coins, and reward systems',
-        color: '#FFD700',
-        settings: ['xpPerTask', 'coinPerTask', 'currencyName', 'currencySymbol', 'levelingFormula']
-      },
-      {
-        id: 'shop',
-        name: 'Shop System',
-        icon: '🛒',
-        description: 'Seasonal shop, events, and inventory rotation',
-        color: '#9C27B0',
-        settings: ['enableSeasonalShop', 'shopRotationDays', 'enableSpecialEvents', 'dragonFestivalEnabled', 'mysticalMarketEnabled']
-      },
-      {
-        id: 'game-data-hub',
-        name: 'Game data hub',
-        icon: '🧰',
-        description: 'Create and edit shop items, materials, and crafting recipes in vault markdown files',
-        color: '#673AB7',
-        settings: []
-      },
-      {
-        id: 'tree',
-        name: 'Tree Rewards',
-        icon: '🌳',
-        description: 'Habit tree growth and reward multipliers',
-        color: '#8BC34A',
-        settings: ['treeRewardConfig']
-      }
-    ]
-  },
-  {
-    id: 'performance',
-    name: 'Performance & Energy',
-    icon: '⚡',
-    description: 'Performance optimization, energy system, and focus mechanics',
-    color: '#FF9800',
-    categories: [
-      {
-        id: 'energy',
-        name: 'Energy & Focus',
-        icon: '⚡',
-        description: 'Energy system, daily resets, and recovery rates',
-        color: '#2196F3',
-        settings: ['enableEnergyHUD', 'energyHudMode', 'dailyResetHour', 'dailyRestoreEnergy', 'dailyRestoreFocus', 'dailyRestoreMotivation', 'dailyRestoreCalm', 'dailyRestoreStressReduce']
-      },
-      {
-        id: 'performance',
-        name: 'Performance',
-        icon: '🚀',
-        description: 'Performance optimization and caching settings',
-        color: '#FF9800',
-        settings: ['performanceSettings']
-      }
-    ]
-  },
-  {
-    id: 'appearance',
-    name: 'Appearance & Localization',
-    icon: '🎨',
-    description: 'Theming, internationalization, and accessibility settings',
-    color: '#8B5CF6',
-    categories: [
-      {
-        id: 'theming',
-        name: 'Theming',
-        icon: '🎨',
-        description: 'Dark/light mode, accent colors, and visual customization',
-        color: '#8B5CF6',
-        settings: ['themeMode', 'accentColor', 'colorPalette', 'accessibilitySettings']
-      },
-      {
-        id: 'internationalization',
-        name: 'Internationalization',
-        icon: '🌍',
-        description: 'Language, date/time formatting, and regional settings',
-        color: '#06B6D4',
-        settings: ['locale', 'dateFormat', 'timeFormat', 'numberFormat']
-      }
-    ]
-  },
-  {
-    id: 'advanced',
-    name: 'Advanced & Management',
-    icon: '🔧',
-    description: 'Advanced settings, penalties, and system management',
-    color: '#795548',
+    id: 'gameplay',
+    name: 'Gameplay',
+    icon: '🎮',
+    description: 'Profiles, tabs, notifications, currency, and penalties',
+    color: '#7C4DFF',
     categories: [
       {
         id: 'game-modules',
         name: 'Feature Modules',
         icon: '🧩',
-        description: 'Enable or hide tabs and major game systems',
+        description: 'Gameplay profile and which tabs / systems are enabled',
         color: '#7C4DFF',
         settings: ['gameplayProfile', 'modules']
       },
@@ -180,44 +89,191 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
         settings: ['notificationLevel', 'preferQuickComplete']
       },
       {
+        id: 'currency',
+        name: 'Currency & Rewards',
+        icon: '🪙',
+        description: 'XP, coins, and reward amounts',
+        color: '#FFD700',
+        settings: ['xpPerTask', 'coinPerTask', 'currencyName', 'currencySymbol', 'levelingFormula']
+      },
+      {
         id: 'penalties',
         name: 'Penalties & Consequences',
         icon: '⚠️',
         description: 'Failure penalties and debt management',
         color: '#FF5722',
         settings: ['gameplayProfile', 'modules', 'penaltyLowPct', 'penaltyMediumPct', 'penaltyHighPct', 'dailyDebtCapXP', 'dailyDebtCapCoins', 'pomodoroFailOnlyOnReset']
+      }
+    ]
+  },
+  {
+    id: 'economy',
+    name: 'Economy & Content',
+    icon: '🧰',
+    description: 'Shop, crafting data, and habit tree rewards',
+    color: '#9C27B0',
+    categories: [
+      {
+        id: 'game-data-hub',
+        name: 'Game data hub',
+        icon: '🧰',
+        description: 'Edit shop items, materials, and recipes in vault markdown',
+        color: '#673AB7',
+        settings: ['shop', 'materials', 'recipes', 'Shop.md', 'Materials.md', 'Recipes.md']
       },
       {
-        id: 'advanced-config',
-        name: 'Advanced Configuration',
-        icon: '🔧',
-        description: 'Advanced configuration and system settings',
-        color: '#795548',
-        settings: ['questCostEasyMental', 'questCostEasyPhysical', 'questCostEasyEmotional', 'questCostMediumMental', 'questCostMediumPhysical', 'questCostMediumEmotional', 'questCostHardMental', 'questCostHardPhysical', 'questCostHardEmotional', 'pomoCostPerMinMental', 'pomoCostPerMinPhysical', 'pomoCostPerMinEmotional', 'breakRestEnergy', 'breakRestFocus', 'breakRestMotivation', 'breakWalkEnergy', 'breakWalkFocus', 'breakWalkMotivation', 'breakMeditationEnergy', 'breakMeditationFocus', 'breakMeditationMotivation', 'breakYogaEnergy', 'breakYogaFocus', 'breakYogaMotivation']
+        id: 'shop',
+        name: 'Shop System',
+        icon: '🛒',
+        description: 'Seasonal shop, rotation, and special events',
+        color: '#9C27B0',
+        settings: ['enableSeasonalShop', 'shopRotationDays', 'enableSpecialEvents', 'dragonFestivalEnabled', 'mysticalMarketEnabled']
       },
+      {
+        id: 'tree',
+        name: 'Tree Rewards',
+        icon: '🌳',
+        description: 'Habit tree growth and reward multipliers',
+        color: '#8BC34A',
+        settings: ['treeRewardConfig', 'habits']
+      }
+    ]
+  },
+  {
+    id: 'energy',
+    name: 'Energy & Focus',
+    icon: '⚡',
+    description: 'HUD, daily restore, and quest energy costs',
+    color: '#2196F3',
+    categories: [
+      {
+        id: 'energy',
+        name: 'Energy & Focus',
+        icon: '⚡',
+        description: 'Energy HUD, daily reset, restore values, and quest costs',
+        color: '#2196F3',
+        settings: [
+          'enableEnergyHUD',
+          'energyHudMode',
+          'dailyResetHour',
+          'dailyRestoreEnergy',
+          'dailyRestoreFocus',
+          'dailyRestoreMotivation',
+          'dailyRestoreCalm',
+          'dailyRestoreStressReduce',
+          'questCostEasyMental',
+          'questCostEasyPhysical',
+          'questCostEasyEmotional',
+          'questCostMediumMental',
+          'questCostMediumPhysical',
+          'questCostMediumEmotional',
+          'questCostHardMental',
+          'questCostHardPhysical',
+          'questCostHardEmotional',
+          'pomoCostPerMinMental',
+          'pomoCostPerMinPhysical',
+          'pomoCostPerMinEmotional'
+        ]
+      }
+    ]
+  },
+  {
+    id: 'appearance',
+    name: 'Appearance',
+    icon: '🎨',
+    description: 'Visual theme, localization, and accessibility',
+    color: '#8B5CF6',
+    categories: [
+      {
+        id: 'appearance',
+        name: 'Appearance & Localization',
+        icon: '🎨',
+        description: 'Theme, accent colors, language, and date/time formats',
+        color: '#8B5CF6',
+        settings: [
+          'themeMode',
+          'accentColor',
+          'colorPalette',
+          'accessibilitySettings',
+          'locale',
+          'dateFormat',
+          'timeFormat',
+          'numberFormat',
+          'visualTheme',
+          'solo leveling',
+          'clay'
+        ]
+      }
+    ]
+  },
+  {
+    id: 'performance',
+    name: 'Performance',
+    icon: '🚀',
+    description: 'Caching, workers, and optimization toggles',
+    color: '#FF9800',
+    categories: [
+      {
+        id: 'performance',
+        name: 'Performance',
+        icon: '🚀',
+        description: 'Performance optimization and caching settings',
+        color: '#FF9800',
+        settings: ['performanceSettings', 'cache', 'workers', 'betaMode']
+      }
+    ]
+  },
+  {
+    id: 'vault',
+    name: 'Vault & Files',
+    icon: '📁',
+    description: 'File paths and vault storage locations',
+    color: '#607D8B',
+    categories: [
       {
         id: 'files',
         name: 'File Paths',
         icon: '📁',
-        description: 'Customize folder and file locations',
+        description: 'Quest files, inventory, images, and skill tree folders',
         color: '#607D8B',
-        settings: ['shopkeeperImagePath', 'questGiverImagePath', 'avatarFolder', 'inventoryFilePath', 'skillTreeRoot', 'masterClassFolder', 'classFolder', 'skillFolder', 'statFolder']
-      },
+        settings: [
+          'shopkeeperImagePath',
+          'questGiverImagePath',
+          'avatarFolder',
+          'inventoryFilePath',
+          'skillTreeRoot',
+          'masterClassFolder',
+          'classFolder',
+          'skillFolder',
+          'statFolder',
+          'defaultQuestFilePath',
+          'questSaveLocations'
+        ]
+      }
+    ]
+  },
+  {
+    id: 'help',
+    name: 'Help & Reset',
+    icon: '🎓',
+    description: 'Tutorials, onboarding, and danger-zone resets',
+    color: '#6366F1',
+    categories: [
       {
         id: 'tutorials',
         name: 'Tutorials & Help',
         icon: '🎓',
-        description: 'Interactive tutorials and onboarding system',
+        description: 'Interactive tutorials and onboarding',
         color: '#6366F1',
-        settings: ['tutorialSettings']
+        settings: ['tutorialSettings', 'onboarding']
       },
       {
         id: 'reset',
         name: 'Reset & Management',
         icon: '🔄',
-        description: 'Reset individual systems and player progress',
+        description: 'Reset systems and restore player backups',
         color: '#F44336',
-        settings: ['resetOptions']
+        settings: ['resetOptions', 'backup', 'player progress']
       }
     ]
   }

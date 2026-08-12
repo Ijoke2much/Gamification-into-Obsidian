@@ -1,4 +1,4 @@
-import { App, Modal } from 'obsidian';
+import { App, Modal, Platform } from 'obsidian';
 import type { GamificationPluginSettings } from '../../../core/settings';
 import { pixelNotice } from '../../../shared/utils/noticeUtils';
 import {
@@ -14,11 +14,14 @@ export class QuickCaptureModal extends Modal {
 	private selectedTag: string | undefined;
 	private inputEl: HTMLInputElement | null = null;
 	private descriptionEl: HTMLTextAreaElement | null = null;
+	private descriptionWrap: HTMLElement | null = null;
 	private tagButtons: HTMLButtonElement[] = [];
+	private onMobile = false;
 
 	constructor(app: App, settings: GamificationPluginSettings) {
 		super(app);
 		this.settings = settings;
+		this.onMobile = Platform.isMobile || Platform.isPhone || Platform.isTablet;
 		if (settings.captureRememberLastTag !== false) {
 			this.selectedTag = loadRememberedCaptureTag();
 		}
@@ -26,19 +29,25 @@ export class QuickCaptureModal extends Modal {
 
 	onOpen() {
 		const { contentEl, modalEl } = this;
+		modalEl?.addClass('gamify-quick-capture-modal');
 		if (modalEl) {
-			modalEl.style.zIndex = '10001';
+			modalEl.style.zIndex = '100095';
+		}
+		if (this.containerEl) {
+			this.containerEl.style.zIndex = '100094';
 		}
 
 		const wrapper = contentEl.createDiv({ cls: styles.modalWrapper });
 
 		const header = wrapper.createEl('div', { cls: styles.modalHeader });
-		header.innerHTML = '<span aria-hidden="true">🧠</span> Brain Dump';
+		header.setText('System: Brain Dump');
 
-		wrapper.createEl('p', {
-			cls: styles.hint,
-			text: 'Enter saves with #gamified-task. Continue keeps dumping — Done closes.',
-		});
+		if (!this.onMobile) {
+			wrapper.createEl('p', {
+				cls: styles.hint,
+				text: 'Enter saves. Continue keeps dumping — Done closes.',
+			});
+		}
 
 		this.inputEl = wrapper.createEl('input', {
 			type: 'text',
@@ -46,22 +55,53 @@ export class QuickCaptureModal extends Modal {
 			attr: {
 				placeholder: 'Capture an idea…',
 				'aria-label': 'Capture text',
+				autocomplete: 'off',
+				autocapitalize: 'sentences',
 			},
 		});
 
-		if (this.settings.captureIncludeDescription !== false) {
-			wrapper.createEl('label', {
-				cls: styles.sectionTitle,
-				text: 'Description (optional)',
-			});
-			this.descriptionEl = wrapper.createEl('textarea', {
-				cls: styles.descriptionInput,
-				attr: {
-					placeholder: 'Extra context, links, or notes…',
-					rows: '2',
-					'aria-label': 'Capture description',
-				},
-			});
+		const showDescription = this.settings.captureIncludeDescription !== false;
+		if (showDescription) {
+			if (this.onMobile) {
+				const noteToggle = wrapper.createEl('button', {
+					type: 'button',
+					cls: styles.noteToggle,
+					text: '▸ Add note (optional)',
+				});
+				this.descriptionWrap = wrapper.createDiv();
+				this.descriptionWrap.style.display = 'none';
+				this.descriptionWrap.createEl('label', {
+					cls: styles.sectionTitle,
+					text: 'Description',
+				});
+				this.descriptionEl = this.descriptionWrap.createEl('textarea', {
+					cls: styles.descriptionInput,
+					attr: {
+						placeholder: 'Extra context…',
+						rows: '2',
+						'aria-label': 'Capture description',
+					},
+				});
+				noteToggle.onclick = () => {
+					const open = this.descriptionWrap!.style.display !== 'none';
+					this.descriptionWrap!.style.display = open ? 'none' : 'block';
+					noteToggle.setText(open ? '▸ Add note (optional)' : '▾ Note');
+					if (!open) this.descriptionEl?.focus();
+				};
+			} else {
+				wrapper.createEl('label', {
+					cls: styles.sectionTitle,
+					text: 'Description (optional)',
+				});
+				this.descriptionEl = wrapper.createEl('textarea', {
+					cls: styles.descriptionInput,
+					attr: {
+						placeholder: 'Extra context, links, or notes…',
+						rows: '2',
+						'aria-label': 'Capture description',
+					},
+				});
+			}
 		}
 
 		const tagSection = wrapper.createDiv();
@@ -98,7 +138,8 @@ export class QuickCaptureModal extends Modal {
 		});
 		continueBtn.onclick = () => void this.handleContinue();
 
-		setTimeout(() => this.inputEl?.focus(), 80);
+		// Focus ASAP — delay felt sluggish on phone
+		requestAnimationFrame(() => this.inputEl?.focus());
 
 		this.inputEl.addEventListener('keydown', (event: KeyboardEvent) => {
 			if (event.key === 'Enter' && !event.shiftKey) {
@@ -173,9 +214,11 @@ export class QuickCaptureModal extends Modal {
 	}
 
 	onClose() {
+		this.modalEl?.removeClass('gamify-quick-capture-modal');
 		this.contentEl.empty();
 		this.inputEl = null;
 		this.descriptionEl = null;
+		this.descriptionWrap = null;
 		this.tagButtons = [];
 	}
 }

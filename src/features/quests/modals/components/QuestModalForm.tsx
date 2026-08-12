@@ -155,12 +155,16 @@ export const QuestModalForm: React.FC<QuestModalFormProps> = memo(({
                 <select
                     value={selectedSkill}
                     onChange={(e) => handleSkillSelection(e.target.value)}
-                    disabled={skillsLoading}
+                    disabled={skillsLoading || (!skillsLoading && allSkills.length === 0)}
                     className={styles.select}
                     style={{ marginBottom: 12 }}
                 >
                     <option value="">
-                        {skillsLoading ? "Loading skills..." : "Select a skill to add..."}
+                        {skillsLoading
+                            ? "Loading skills..."
+                            : allSkills.length === 0
+                                ? "No skills found in SkillTree"
+                                : "Select a skill to add..."}
                     </option>
                     {!skillsLoading && allSkills
                         .filter(skill => !skills.some(s => s.name === skill.name))
@@ -432,17 +436,19 @@ export const QuestModalForm: React.FC<QuestModalFormProps> = memo(({
                         </select>
                     </div>
                 </div>
-                <p style={{
-                    margin: "8px 0 0 0",
-                    fontSize: 12,
-                    color: "var(--text-muted)",
-                    lineHeight: 1.4,
-                }}>
-                    Stamina cost defaults to 10 if your task line does not set a custom cost. It is not the same as stress or motivation (see Activity type).
-                </p>
+                {!isMobile && (
+                    <p style={{
+                        margin: "8px 0 0 0",
+                        fontSize: 12,
+                        color: "var(--text-muted)",
+                        lineHeight: 1.4,
+                    }}>
+                        Stamina cost defaults to 10 if your task line does not set a custom cost. It is not the same as stress or motivation (see Activity type).
+                    </p>
+                )}
             </div>
 
-            <div style={{ marginBottom: 20 }}>
+            <div style={{ marginBottom: isMobile ? 14 : 20 }}>
                 <label style={{
                     display: "block",
                     marginBottom: 8,
@@ -463,23 +469,25 @@ export const QuestModalForm: React.FC<QuestModalFormProps> = memo(({
                         </option>
                     ))}
                 </select>
-                <span style={{
-                    display: "block",
-                    marginTop: 6,
-                    fontSize: 12,
-                    color: "var(--text-muted)",
-                    lineHeight: 1.35,
-                }}>
-                    On complete, adjusts stress, motivation, focus, and calm (e.g. chores tend to lower stress; exercise raises motivation). “Generic” adds no extra wellbeing change—only energy and rewards, like an untagged task.
-                </span>
+                {!isMobile && (
+                    <span style={{
+                        display: "block",
+                        marginTop: 6,
+                        fontSize: 12,
+                        color: "var(--text-muted)",
+                        lineHeight: 1.35,
+                    }}>
+                        On complete, adjusts stress, motivation, focus, and calm (e.g. chores tend to lower stress; exercise raises motivation). “Generic” adds no extra wellbeing change—only energy and rewards, like an untagged task.
+                    </span>
+                )}
             </div>
 
             {/* XP and CP Rewards - Core */}
             <div style={{ 
                 display: "flex", 
-                gap: 16, 
-                marginBottom: 32,
-                padding: 16,
+                gap: isMobile ? 10 : 16, 
+                marginBottom: isMobile ? 12 : 32,
+                padding: isMobile ? 12 : 16,
                 backgroundColor: "rgba(var(--interactive-accent-rgb), 0.1)",
                 borderRadius: 12,
                 border: "1px solid var(--interactive-accent)",

@@ -45,6 +45,9 @@ import {
 	notifyDungeonUnlocked,
 	processXPGainCeremonies,
 } from "../services/ceremonyService";
+import { recordDailyActivity } from "./dailyActivityStreak";
+import { MaterialInventoryManager } from "../services/materialInventoryManager";
+import { showGameNotice } from "./noticeUtils";
 
 export interface QuestRewardSettings {
 	currencyName?: string;
@@ -76,6 +79,8 @@ export interface QuestRewardResult {
 	bossRaidHpPercent?: number;
 	bossRaidBossName?: string;
 	bossRaidPendingVictory?: boolean;
+	/** Crafting materials granted (chance-based). */
+	materialsGranted?: { name: string; icon: string }[];
 }
 
 /** Default stamina cost when a quest has no `energyCost` in metadata. */
@@ -191,6 +196,31 @@ export async function awardQuestRewards(
 
 	let journeyVictoryLoot: JourneyVictoryLoot | undefined;
 	let journeyVictoryNotice: string | undefined;
+	let materialsGranted: { name: string; icon: string }[] | undefined;
+
+	// Live crafting inventory — chance-based mats on the main quest path
+	if (app) {
+		try {
+			const difficulty = String(quest.difficulty || 'medium');
+			const matResult = await MaterialInventoryManager.addQuestMaterials(app, difficulty);
+			if (matResult.materials.length > 0) {
+				materialsGranted = matResult.materials.map((m) => ({
+					name: m.name,
+					icon: m.icon,
+				}));
+				const summary = matResult.materials
+					.map((m) => `${m.icon} ${m.name}`)
+					.join(', ');
+				try {
+					showGameNotice(`📦 Materials: ${summary}`, 2500);
+				} catch {
+					/* ignore */
+				}
+			}
+		} catch (error) {
+			console.warn('[awardQuestRewards] Material grant failed:', error);
+		}
+	}
 
 	if (journeyHit.defeated) {
 		const state = loadJourneyState();
@@ -239,6 +269,7 @@ export async function awardQuestRewards(
 					bossRaidPendingVictory: bossRaidHit.pendingVictoryClaim,
 				}
 			: {}),
+		...(materialsGranted?.length ? { materialsGranted } : {}),
 	};
 }
 
@@ -294,7 +325,7 @@ export function buildCompletionNoticeText(
 	const currencyName = rewardSettings?.currencyName || "Coins";
 	const currencySymbol = rewardSettings?.currencySymbol || "🪙";
 	const lines = [
-		`QUEST COMPLETE\n+${result.awardedXP} XP · +${result.awardedCP} CP · ${currencySymbol}${result.awardedCoins} ${currencyName}`,
+		`✅ QUEST COMPLETE!\n+${result.awardedXP} XP · +${result.awardedCP} CP · ${currencySymbol}${result.awardedCoins} ${currencyName}`,
 	];
 	if (result.wellbeingLine) {
 		lines.push(result.wellbeingLine);
@@ -333,6 +364,7 @@ export function emitQuestCompletionFeedback(
 	}
 
 	notifyQuestComplete(buildCompletionNoticeText(result, settings));
+	recordDailyActivity();
 
 	if (result.xpGain) {
 		const ceremonySettings =

@@ -48,7 +48,7 @@ export const GameplayOnboardingModal: React.FC<GameplayOnboardingModalProps> = (
       </h2>
       <p className={styles.onboardingLead}>
         Pick a starting profile. You can change tabs, penalties, and modules anytime under{' '}
-        <strong>Advanced → Feature Modules</strong>.
+        <strong>Gameplay → Feature Modules</strong>.
       </p>
 
       <div className={styles.onboardingChoices}>

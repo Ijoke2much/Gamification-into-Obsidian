@@ -3,8 +3,14 @@ import { playerStore } from '../../../shared/state/playerStore';
 import { PlayerData, Buff } from '../../../data/models/PlayerData';
 import styles from './ActiveBuffsCard.module.css';
 
-export const ActiveBuffsCard: React.FC = () => {
+export interface ActiveBuffsCardProps {
+    /** Mobile: start collapsed — header + count only until expand */
+    collapsed?: boolean;
+}
+
+export const ActiveBuffsCard: React.FC<ActiveBuffsCardProps> = ({ collapsed = false }) => {
     const [playerData, setPlayerData] = useState<PlayerData | null>(null);
+    const [expanded, setExpanded] = useState(!collapsed);
 
     useEffect(() => {
         // Get initial data
@@ -108,13 +114,22 @@ export const ActiveBuffsCard: React.FC = () => {
 
     return (
         <div className={styles.buffsCard}>
-            <div className={styles.buffsHeader}>
-                <h3 className={styles.buffsTitle}>✨ Active Buffs</h3>
+            <button
+                type="button"
+                className={styles.buffsHeader}
+                onClick={collapsed ? () => setExpanded((v) => !v) : undefined}
+                style={collapsed ? { width: '100%', cursor: 'pointer', background: 'transparent', border: 'none', textAlign: 'left' } : undefined}
+                aria-expanded={collapsed ? expanded : undefined}
+            >
+                <h3 className={styles.buffsTitle}>
+                    {collapsed ? `${expanded ? '▾' : '▸'} ` : ''}✨ Active Buffs
+                </h3>
                 <div className={styles.buffsCount}>
                     {activeBuffs.length} active
                 </div>
-            </div>
-            
+            </button>
+
+            {(!collapsed || expanded) && (
             <div className={styles.buffsContent}>
                 {activeBuffs.map((buff, index) => (
                     <div 
@@ -148,10 +163,13 @@ export const ActiveBuffsCard: React.FC = () => {
                     </div>
                 ))}
                 
+                {!collapsed && (
                 <div className={styles.buffsTip}>
                     <small>💡 Buffs provide temporary bonuses to your rewards and stats!</small>
                 </div>
+                )}
             </div>
+            )}
         </div>
     );
 };

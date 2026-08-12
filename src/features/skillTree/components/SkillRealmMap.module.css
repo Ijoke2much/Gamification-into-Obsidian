@@ -697,3 +697,113 @@
 	font-size: 12px;
 	color: var(--go-muted, #94a3b8);
 }
+
+/* Phone lite — real mobile only (class set from isMobile hook) */
+.realmRootMobile {
+	min-height: auto;
+	padding: 10px 10px 28px;
+	overflow: visible;
+}
+
+.realmRootMobile::before,
+.realmRootMobile::after {
+	animation: none;
+	opacity: 0.04;
+}
+
+.realmRootMobile .classTabs {
+	flex-wrap: nowrap;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: thin;
+	margin-bottom: 10px;
+	padding-bottom: 8px;
+	gap: 8px;
+}
+
+.realmRootMobile .classTab {
+	flex: 0 0 auto;
+	min-width: 108px;
+	min-height: 72px;
+	max-width: 150px;
+	color: #c8f0ff;
+	border-color: rgba(34, 200, 255, 0.55);
+	background:
+		linear-gradient(180deg, rgba(45, 100, 150, 0.78), rgba(14, 42, 78, 0.92));
+}
+
+.realmRootMobile .classTabActive {
+	color: #fff;
+	border-color: #4fc3f7;
+}
+
+.realmRootMobile .classTabLabel {
+	color: inherit;
+	font-size: 9px;
+	line-height: 1.25;
+	white-space: normal;
+	overflow: visible;
+	text-overflow: unset;
+	text-align: center;
+	max-width: 100%;
+}
+
+.realmRootMobile .classTabCount {
+	color: rgba(200, 240, 255, 0.9);
+	opacity: 1;
+}
+
+.realmRootMobile .layout {
+	grid-template-columns: 1fr;
+}
+
+.realmRootMobile .pathPanel {
+	overflow: visible;
+}
+
+.realmRootMobile .pathScroll {
+	max-height: none;
+	overflow: visible;
+	padding-right: 0;
+	padding-bottom: 12px;
+}
+
+.realmRootMobile .nodeBtn {
+	min-height: 52px;
+	padding: 12px 10px;
+	touch-action: manipulation;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.realmRootMobile .searchInput {
+	min-height: 44px;
+	font-size: 16px; /* avoid iOS zoom */
+}
+
+.realmRootMobile .masterHub {
+	margin-bottom: 10px;
+}
+
+.mobileShowMore {
+	display: block;
+	width: 100%;
+	margin: 12px 0 4px;
+	padding: 12px 14px;
+	min-height: 44px;
+	font-family: inherit;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--go-accent, #4fc3f7);
+	background: rgba(79, 195, 247, 0.08);
+	border: 1px solid rgba(34, 200, 255, 0.42);
+	border-radius: 2px;
+	cursor: pointer;
+	touch-action: manipulation;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.mobileShowMore:active {
+	background: rgba(79, 195, 247, 0.18);
+}

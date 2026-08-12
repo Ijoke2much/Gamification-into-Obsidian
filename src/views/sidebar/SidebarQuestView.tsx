@@ -1130,10 +1130,24 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 			const questName = getQuestDisplayTitle(dragState.quest);
 			await persistQuestGroupMove(app, dragState.quest, targetGroup, todayISO);
 			await loadQuests();
+			// Now/Today land on today's date — keep Day plan in sync with the inbox.
+			if (
+				(targetGroup === "now" || targetGroup === "today") &&
+				selectedDateISO !== todayISO
+			) {
+				setSelectedDate(new Date(`${todayISO}T00:00:00`));
+			}
+			if (targetGroup === "now" && isMobile && !dayPlanExpanded) {
+				setDayPlanExpanded(true);
+			}
 			pixelNotice(`Moved "${questName}" to ${groupTitle(targetGroup)}`, 2500);
 		} catch (error) {
 			console.error("Failed to move quest between inbox groups:", error);
-			pixelNotice("Could not move quest. Please try again.", 3500);
+			const message =
+				error instanceof Error && error.message
+					? error.message
+					: "Could not move quest. Please try again.";
+			pixelNotice(message, 3500);
 		} finally {
 			setDragState(null);
 			setActiveDropZone(null);
@@ -1352,9 +1366,20 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 				onQuestComplete={(quest) => void handleQuestComplete(quest)}
 				onAddQuest={openCreateForDate}
 				onUseDayPlan={(date) => {
+					const iso = toISODate(date);
 					setSelectedDate(date);
 					setDayPlanExpanded(true);
-					window.setTimeout(() => scrollTimelineToNow("smooth"), 80);
+					setMobileTimelineMenuId(null);
+					if (isMobile) setCaptureCollapsed(true);
+					window.setTimeout(() => {
+						dayScheduleShellRef.current?.scrollIntoView({
+							behavior: "smooth",
+							block: "start",
+						});
+						if (iso === todayISO) {
+							scrollTimelineToNow("smooth");
+						}
+					}, 80);
 				}}
 			/>
 
@@ -1813,21 +1838,23 @@ const InboxGroup: React.FC<InboxGroupProps> = ({
 	onDrop,
 	isDropActive = false,
 }) => (
-	<div className={styles.inboxGroup}>
+	<div
+		className={styles.inboxGroup}
+		onDragOver={(e) => {
+			if (!onDragOver) return;
+			e.preventDefault();
+			onDragOver(groupId);
+		}}
+		onDrop={(e) => {
+			if (!onDrop) return;
+			e.preventDefault();
+			onDrop(groupId);
+		}}
+	>
 		<button
 			type="button"
 			className={`${styles.inboxGroupTitle} ${styles.inboxGroupHeaderButton}`}
 			onClick={() => onToggleCollapse(groupId)}
-			onDragOver={(e) => {
-				if (!onDragOver) return;
-				e.preventDefault();
-				onDragOver(groupId);
-			}}
-			onDrop={(e) => {
-				if (!onDrop) return;
-				e.preventDefault();
-				onDrop(groupId);
-			}}
 		>
 			<span className={styles.groupTitleText}>
 				<span className={styles.groupChevron}>{collapsed ? "▸" : "▾"}</span>
@@ -1840,19 +1867,7 @@ const InboxGroup: React.FC<InboxGroupProps> = ({
 				{isDropActive ? `Drop here to move to ${title}` : "No quests"}
 			</div>
 		) : !collapsed ? (
-			<div
-				className={`${styles.inboxList} ${isDropActive ? styles.inboxDropActive : ""}`}
-				onDragOver={(e) => {
-					if (!onDragOver) return;
-					e.preventDefault();
-					onDragOver(groupId);
-				}}
-				onDrop={(e) => {
-					if (!onDrop) return;
-					e.preventDefault();
-					onDrop(groupId);
-				}}
-			>
+			<div className={`${styles.inboxList} ${isDropActive ? styles.inboxDropActive : ""}`}>
 				{isDropActive && (
 					<div className={styles.dropHint}>Drop here to move to {title}</div>
 				)}
@@ -2239,6 +2254,17 @@ function isTodayQuest(quest: Quest, todayISO: string): boolean {
 }
 
 function isNowQuest(quest: Quest, todayISO: string, now: Date): boolean {
+	// Explicit pin wins — drag-to-Now must stick until cleared, not a ±90m window.
+	if (quest.now === true) return true;
+	if (
+		quest.tags?.some((t) => {
+			const tag = t.replace(/^#/, "").toLowerCase();
+			return tag === "now" || tag === "now/true";
+		})
+	) {
+		return true;
+	}
+	// Soft fallback: timed due today still in the near window (legacy / Day Plan).
 	if (!quest.due || !hasTime(quest.due)) return false;
 	if (quest.due.split("T")[0] !== todayISO) return false;
 	const due = new Date(quest.due);
@@ -2273,12 +2299,17 @@ async function persistQuestGroupMove(
 	targetGroup: InboxGroupId,
 	todayISO: string
 ): Promise<void> {
-	const file = app.vault.getAbstractFileByPath(quest.filePath || "GamifiedTasks.md");
-	if (!(file instanceof TFile)) return;
+	const filePath = quest.filePath || "GamifiedTasks.md";
+	const file = app.vault.getAbstractFileByPath(filePath);
+	if (!(file instanceof TFile)) {
+		throw new Error(`Quest file not found: ${filePath}`);
+	}
 	const content = await app.vault.read(file);
 	const lines = content.split("\n");
 	const index = findQuestLineIndex(lines, quest);
-	if (index === -1) return;
+	if (index === -1) {
+		throw new Error(`Could not find quest line for "${getQuestDisplayTitle(quest)}"`);
+	}
 
 	lines[index] = applyGroupMoveToLine(lines[index], targetGroup, todayISO);
 	await app.vault.modify(file, lines.join("\n"));
@@ -2333,10 +2364,11 @@ function applyGroupMoveToLine(line: string, targetGroup: InboxGroupId, todayISO:
 	let updated = line;
 	const nowIso = new Date().toISOString();
 
-	// Remove stale status/today tags and time hints we manage.
+	// Remove stale status/today/now tags and time hints we manage.
 	updated = updated
 		.replace(/\s#status\/[^\s]+/g, "")
 		.replace(/\s#today\/[^\s]+/g, "")
+		.replace(/\s#now\/[^\s]+/g, "")
 		.replace(/\s#due\/[^\s]+/g, "");
 
 	// Strip due markers for unscheduled movement.
@@ -2354,22 +2386,63 @@ function applyGroupMoveToLine(line: string, targetGroup: InboxGroupId, todayISO:
 	updated = upsertMetaField(updated, "modified", nowIso);
 
 	switch (targetGroup) {
-		case "now":
+		case "now": {
+			// Durable Now pin + timed due so Day Plan / soft window still see it.
+			const stamp = new Date();
+			const hh = String(stamp.getHours()).padStart(2, "0");
+			const mm = String(stamp.getMinutes()).padStart(2, "0");
+			const dueWithTime = `${todayISO}T${hh}:${mm}`;
+			updated = updated
+				.replace(/📅\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?)?/g, "")
+				.replace(/due::\s*\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?)?/gi, "")
+				.replace(/due:\s*\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?)?/gi, "");
+			updated = upsertMetaField(updated, "due", dueWithTime);
+			updated = upsertMetaField(updated, "today", "true");
+			updated = upsertMetaField(updated, "now", "true");
+			// Keep emoji form in sync so parsers that prefer 📅 still see the time.
+			if (!/📅\d{4}-\d{2}-\d{2}/.test(updated)) {
+				const gamifiedIdx = updated.indexOf("#gamified-task");
+				if (gamifiedIdx !== -1) {
+					updated =
+						updated.slice(0, gamifiedIdx) +
+						`📅${dueWithTime} ` +
+						updated.slice(gamifiedIdx);
+				} else {
+					updated = `${updated} 📅${dueWithTime}`;
+				}
+			}
+			updated += " #today/true #now/true #status/active";
+			break;
+		}
 		case "today":
 			updated = updated
-				.replace(/📅\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?/g, "")
-				.replace(/due::\s*\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?/gi, "")
-				.replace(/due:\s*\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?/gi, "");
+				.replace(/📅\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?)?/g, "")
+				.replace(/due::\s*\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?)?/gi, "")
+				.replace(/due:\s*\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?)?/gi, "");
 			updated = upsertMetaField(updated, "due", todayISO);
 			updated = upsertMetaField(updated, "today", "true");
+			updated = upsertMetaField(updated, "now", "false");
+			if (!/📅\d{4}-\d{2}-\d{2}/.test(updated)) {
+				const gamifiedIdx = updated.indexOf("#gamified-task");
+				if (gamifiedIdx !== -1) {
+					updated =
+						updated.slice(0, gamifiedIdx) +
+						`📅${todayISO} ` +
+						updated.slice(gamifiedIdx);
+				} else {
+					updated = `${updated} 📅${todayISO}`;
+				}
+			}
 			updated += " #today/true #status/active";
 			break;
 		case "unscheduled":
 			updated = upsertMetaField(updated, "today", "false");
+			updated = upsertMetaField(updated, "now", "false");
 			updated += " #today/false #status/active";
 			break;
 		case "abandon":
 			updated = upsertMetaField(updated, "today", "false");
+			updated = upsertMetaField(updated, "now", "false");
 			updated += " #today/false #status/abandoned";
 			break;
 		case "overdue":

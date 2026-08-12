@@ -10,9 +10,16 @@ import type { ShopItemEffect } from "../../shop/utils/ShopParser";
 import { MaterialUtils } from "../../../shared/utils/materialUtils";
 import { EnhancedInventoryItem, InventoryFilter, InventorySortOptions, BulkOperation, InventoryState } from "../types/EnhancedInventoryTypes";
 import { InventoryOperations } from "../utils/inventoryOperations";
+import { useMobileOptimizations } from "../../../shared/hooks/useMobileOptimizations";
+import { useVisualThemeShell } from "../../../shared/hooks/useVisualThemeShell";
+import {
+    SystemHeader,
+} from "../../../shared/components/ui/system/SystemPanel";
 
 // Import CSS modules
 import inventoryStyles from '../../../shared/components/ui/Inventory.module.css';
+
+const MOBILE_INV_PAGE = 24;
 
 // Enhanced BotW-style category mapping with better organization
 const CATEGORIES = {
@@ -153,9 +160,16 @@ const getMaterialIcon = (itemName: string): string => {
     return "💎";
 };
 
-const InventoryModalContent: React.FC = () => {
+interface InventoryModalContentProps {
+    onClose?: () => void;
+}
+
+const InventoryModalContent: React.FC<InventoryModalContentProps> = ({ onClose }) => {
     console.log('🎒 InventoryModalContent component loaded!');
+    const { isMobile } = useMobileOptimizations();
+    const { isSystemTheme } = useVisualThemeShell();
     const { app, inventory, reloadInventory } = useInventoryModalContext();
+    const useSystemChrome = isMobile || isSystemTheme;
     const [selectedItem, setSelectedItem] = useState<string | null>(null);
     const [hoveredItem, setHoveredItem] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
@@ -163,8 +177,16 @@ const InventoryModalContent: React.FC = () => {
     const [activeTab, setActiveTab] = useState<"all" | "materials" | "equipment" | "artifact">("all");
     const [sortMethod, setSortMethod] = useState<"name" | "rarity" | "quantity" | "value">("name");
     const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-    const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+    const [viewMode, setViewMode] = useState<"grid" | "list">(() =>
+        typeof document !== "undefined" &&
+        (document.body.classList.contains("is-mobile") ||
+            document.body.classList.contains("is-phone") ||
+            document.body.classList.contains("is-tablet"))
+            ? "list"
+            : "grid"
+    );
     const [showFilters, setShowFilters] = useState(false);
+    const [mobileVisibleCount, setMobileVisibleCount] = useState(MOBILE_INV_PAGE);
     
     // Enhanced modal state
     const [enhancedState, setEnhancedState] = useState<InventoryState>({
@@ -187,50 +209,90 @@ const InventoryModalContent: React.FC = () => {
         return [...new Set(inventory.map((item: InventoryItem) => item.category).filter(Boolean))];
     }, [inventory]);
 
-    // Process inventory based on selected tab and category
+    // Process inventory based on selected tab, search, filters, and sort
     const processedInventory = useMemo(() => {
-        let filtered = inventory;
+        let filtered = [...inventory];
 
         // Filter by tab (simplified to All, Materials, Equipment, Artifacts)
         if (activeTab === "materials") {
-            filtered = inventory.filter(item => MaterialUtils.isCraftingMaterial(item));
+            filtered = filtered.filter(item => MaterialUtils.isCraftingMaterial(item));
         } else if (activeTab === "equipment") {
-            filtered = inventory.filter(item =>
+            filtered = filtered.filter(item =>
                 item.category === 'equipment' ||
                 item.tags?.includes('weapon') ||
                 item.tags?.includes('armor')
             );
         } else if (activeTab === "artifact") {
-            filtered = inventory.filter(item =>
+            filtered = filtered.filter(item =>
                 item.category === 'artifact' ||
                 item.tags?.includes('artifact') ||
                 item.tags?.includes('key')
             );
         }
 
-        // Filter by search term
-        if (searchTerm) {
+        // Material quality chip (desktop materials tab)
+        if (selectedCategory && selectedCategory !== "all") {
+            const q = selectedCategory.toLowerCase();
             filtered = filtered.filter(item =>
-                item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                item.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                item.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+                item.tags?.some(tag => String(tag).toLowerCase().includes(q))
             );
         }
 
-        // Sort inventory based on selected method
-        const rarityOrder = { common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5, mythic: 6 };
-        
+        // Search (search bar + enhanced filter search stay in sync)
+        const qSearch = (enhancedState.filter.search || searchTerm || "").trim().toLowerCase();
+        if (qSearch) {
+            filtered = filtered.filter(item =>
+                item.name.toLowerCase().includes(qSearch) ||
+                item.description?.toLowerCase().includes(qSearch) ||
+                item.tags?.some(tag => tag.toLowerCase().includes(qSearch))
+            );
+        }
+
+        // Enhanced panel filters (were written but never applied)
+        const ef = enhancedState.filter;
+        if (ef.category) {
+            filtered = filtered.filter(item => item.category === ef.category);
+        }
+        if (ef.rarity) {
+            filtered = filtered.filter(
+                item => (item.rarity || "common").toLowerCase() === ef.rarity!.toLowerCase()
+            );
+        }
+        if (ef.equipped) {
+            filtered = filtered.filter(item => item.tags?.includes("equipped"));
+        }
+        if (ef.hasEffects) {
+            filtered = filtered.filter(
+                item => Array.isArray(item.effects) && item.effects.length > 0
+            );
+        }
+
+        // Sort — prefer list controls; fall back to enhanced sort field
+        const rarityOrder: Record<string, number> = {
+            common: 1,
+            uncommon: 2,
+            rare: 3,
+            epic: 4,
+            legendary: 5,
+            mythic: 6,
+        };
+        const field =
+            sortMethod ||
+            (enhancedState.sort.field === "rarity" ||
+            enhancedState.sort.field === "quantity" ||
+            enhancedState.sort.field === "value" ||
+            enhancedState.sort.field === "name"
+                ? enhancedState.sort.field
+                : "name");
+        const order = sortOrder || enhancedState.sort.order || "asc";
+
         filtered.sort((a, b) => {
             let comparison = 0;
-            
-            switch (sortMethod) {
-                case "name":
-                    comparison = a.name.localeCompare(b.name);
-                    break;
+            switch (field) {
                 case "rarity":
-                    const rarityA = rarityOrder[a.rarity as keyof typeof rarityOrder] || 0;
-                    const rarityB = rarityOrder[b.rarity as keyof typeof rarityOrder] || 0;
-                    comparison = rarityA - rarityB;
+                    comparison =
+                        (rarityOrder[a.rarity || "common"] || 0) -
+                        (rarityOrder[b.rarity || "common"] || 0);
                     break;
                 case "quantity":
                     comparison = (Number(a.quantity) || 1) - (Number(b.quantity) || 1);
@@ -238,15 +300,25 @@ const InventoryModalContent: React.FC = () => {
                 case "value":
                     comparison = (Number(a.value) || 0) - (Number(b.value) || 0);
                     break;
+                case "name":
                 default:
                     comparison = a.name.localeCompare(b.name);
             }
-            
-            return sortOrder === "desc" ? -comparison : comparison;
+            return order === "desc" ? -comparison : comparison;
         });
 
         return filtered;
-    }, [inventory, activeTab, selectedCategory, searchTerm, sortMethod, sortOrder]);
+    }, [
+        inventory,
+        activeTab,
+        selectedCategory,
+        searchTerm,
+        sortMethod,
+        sortOrder,
+        enhancedState.filter,
+        enhancedState.sort.field,
+        enhancedState.sort.order,
+    ]);
 
     // Get materials with quality information
     const materials = useMemo(() => {
@@ -268,6 +340,21 @@ const InventoryModalContent: React.FC = () => {
         console.log('🔍 Looking for item:', selectedItem, 'Found:', foundItem);
         return foundItem;
     }, [selectedItem, inventory]);
+
+    useEffect(() => {
+        setMobileVisibleCount(MOBILE_INV_PAGE);
+    }, [activeTab, selectedCategory, searchTerm, sortMethod, sortOrder]);
+
+    useEffect(() => {
+        if (isMobile && viewMode !== "list") {
+            setViewMode("list");
+        }
+    }, [isMobile, viewMode]);
+
+    const visibleInventory = useMemo(() => {
+        if (!isMobile) return processedInventory;
+        return processedInventory.slice(0, mobileVisibleCount);
+    }, [isMobile, processedInventory, mobileVisibleCount]);
 
     // Debug inventory data
     console.log('📦 Inventory data:', { inventoryCount: inventory?.length, inventory: inventory?.slice(0, 3) });
@@ -294,7 +381,31 @@ const InventoryModalContent: React.FC = () => {
     };
 
     return (
-        <div className={inventoryStyles.inventoryModalContent}>
+        <div
+            className={`${inventoryStyles.inventoryModalContent}${isMobile ? ` ${inventoryStyles.inventoryModalContentMobile}` : ""}${useSystemChrome && !isMobile ? ` ${inventoryStyles.inventoryModalContentSystem}` : ""}`}
+            data-gamification-mobile={isMobile ? "true" : "false"}
+            data-inventory-system={useSystemChrome ? "true" : "false"}
+        >
+            {useSystemChrome && (
+                <div className={inventoryStyles.mobileSystemHeader}>
+                    <SystemHeader
+                        icon="🎒"
+                        label="SYSTEM: INVENTORY"
+                        title="Hunter storage"
+                    />
+                    {/* Sole list-view close — hidden while item detail is open (detail owns the one X) */}
+                    {onClose && !selectedItemData ? (
+                        <button
+                            type="button"
+                            className={inventoryStyles.mobileInvClose}
+                            onClick={onClose}
+                            aria-label="Close inventory"
+                        >
+                            ✕
+                        </button>
+                    ) : null}
+                </div>
+            )}
             {/* Left Panel - Categories & Items Grid */}
             <div
                 className={`${inventoryStyles.inventoryLeftPanel} ${
@@ -308,14 +419,14 @@ const InventoryModalContent: React.FC = () => {
                         onClick={() => setActiveTab("all")}
                     >
                         <span className={inventoryStyles.tabIcon}>📦</span>
-                        All Items
+                        {isMobile ? "All" : "All Items"}
                     </button>
                     <button
                         className={`${inventoryStyles.tabButton} ${activeTab === "materials" ? inventoryStyles.activeTab : ""}`}
                         onClick={() => setActiveTab("materials")}
                     >
                         <span className={inventoryStyles.tabIcon}>💎</span>
-                        Materials
+                        {isMobile ? "Mats" : "Materials"}
                         {materials.length > 0 && (
                             <span className={inventoryStyles.tabBadge}>{materials.length}</span>
                         )}
@@ -325,17 +436,17 @@ const InventoryModalContent: React.FC = () => {
                         onClick={() => setActiveTab("equipment")}
                     >
                         <span className={inventoryStyles.tabIcon}>⚔️</span>
-                        Equipment
+                        {isMobile ? "Gear" : "Equipment"}
                     </button>
                     <button
                         className={`${inventoryStyles.tabButton} ${activeTab === "artifact" ? inventoryStyles.activeTab : ""}`}
                         onClick={() => setActiveTab("artifact")}
                     >
                         <span className={inventoryStyles.tabIcon}>🗝️</span>
-                        Artifacts
+                        {isMobile ? "Keys" : "Artifacts"}
                     </button>
                     
-                    {/* Refresh Button */}
+                    {/* Refresh — icon-only on phone to save tab space */}
                     <button
                         className={inventoryStyles.tabButton}
                         onClick={async () => {
@@ -344,16 +455,17 @@ const InventoryModalContent: React.FC = () => {
                         }}
                         style={{ marginLeft: 'auto' }}
                         title="Refresh Inventory"
+                        aria-label="Refresh Inventory"
                     >
                         <span className={inventoryStyles.tabIcon}>🔄</span>
-                        Refresh
+                        {!isMobile && "Refresh"}
                     </button>
                 </div>
 
                 {/* Category chips removed for simplified tab layout */}
 
-                {/* Materials Quality Filter (only show for Materials tab) */}
-                {activeTab === "materials" && (
+                {/* Materials Quality Filter — desktop chrome; phone keeps tabs + search only */}
+                {activeTab === "materials" && !isMobile && (
                     <div className={inventoryStyles.qualityFilter}>
                         <div className={inventoryStyles.qualityTitle}>Quality Filter:</div>
                         <div className={inventoryStyles.qualityButtons}>
@@ -414,11 +526,11 @@ const InventoryModalContent: React.FC = () => {
                     </div>
                 )}
 
-                {/* Enhanced Search Bar */}
+                {/* Search + filters */}
                 <div className={inventoryStyles.searchContainer}>
                     <input
-                        type="text"
-                        placeholder="🔍 Search items, descriptions, tags..."
+                        type="search"
+                        placeholder={isMobile ? "Search items…" : "🔍 Search items, descriptions, tags..."}
                         value={enhancedState.filter.search || searchTerm}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                             const value = e.target.value;
@@ -432,7 +544,54 @@ const InventoryModalContent: React.FC = () => {
                     />
                 </div>
 
-                {/* Enhanced Filtering Controls */}
+                {/* Phone: compact sort that actually drives the list */}
+                {isMobile ? (
+                    <div className={inventoryStyles.mobileSortRow}>
+                        <label className={inventoryStyles.mobileSortLabel} htmlFor="inv-mobile-sort">
+                            Sort
+                        </label>
+                        <select
+                            id="inv-mobile-sort"
+                            className={inventoryStyles.mobileSortSelect}
+                            value={sortMethod}
+                            onChange={(e) => {
+                                const field = e.target.value as typeof sortMethod;
+                                setSortMethod(field);
+                                setEnhancedState(prev => ({
+                                    ...prev,
+                                    sort: { ...prev.sort, field: field as InventorySortOptions['field'] }
+                                }));
+                            }}
+                        >
+                            <option value="name">Name</option>
+                            <option value="rarity">Rarity</option>
+                            <option value="quantity">Quantity</option>
+                            <option value="value">Value</option>
+                        </select>
+                        <button
+                            type="button"
+                            className={inventoryStyles.mobileSortOrder}
+                            onClick={() => {
+                                const next = sortOrder === "asc" ? "desc" : "asc";
+                                setSortOrder(next);
+                                setEnhancedState(prev => ({
+                                    ...prev,
+                                    sort: { ...prev.sort, order: next }
+                                }));
+                            }}
+                            aria-label="Toggle sort order"
+                        >
+                            {sortOrder === "asc" ? "↑" : "↓"}
+                        </button>
+                        <button
+                            type="button"
+                            className={`${inventoryStyles.filterToggle} ${showFilters ? inventoryStyles.active : ""}`}
+                            onClick={() => setShowFilters(!showFilters)}
+                        >
+                            Filters
+                        </button>
+                    </div>
+                ) : (
                 <div className={inventoryStyles.filterControls}>
                     <div className={inventoryStyles.filterSection}>
                         <button
@@ -525,10 +684,21 @@ const InventoryModalContent: React.FC = () => {
                                 <label>Sort by:</label>
                                 <select
                                     value={enhancedState.sort.field}
-                                    onChange={(e) => setEnhancedState(prev => ({
-                                        ...prev,
-                                        sort: { ...prev.sort, field: e.target.value as InventorySortOptions['field'] }
-                                    }))}
+                                    onChange={(e) => {
+                                        const field = e.target.value as InventorySortOptions['field'];
+                                        setEnhancedState(prev => ({
+                                            ...prev,
+                                            sort: { ...prev.sort, field }
+                                        }));
+                                        if (
+                                            field === "name" ||
+                                            field === "rarity" ||
+                                            field === "quantity" ||
+                                            field === "value"
+                                        ) {
+                                            setSortMethod(field);
+                                        }
+                                    }}
                                     className={inventoryStyles.sortSelect}
                                 >
                                     <option value="name">Name</option>
@@ -541,10 +711,14 @@ const InventoryModalContent: React.FC = () => {
                                 </select>
                                 <button
                                     className={`${inventoryStyles.sortOrderButton} ${enhancedState.sort.order === 'desc' ? inventoryStyles.active : ''}`}
-                                    onClick={() => setEnhancedState(prev => ({
-                                        ...prev,
-                                        sort: { ...prev.sort, order: prev.sort.order === 'asc' ? 'desc' : 'asc' }
-                                    }))}
+                                    onClick={() => {
+                                        const next = enhancedState.sort.order === 'asc' ? 'desc' : 'asc';
+                                        setEnhancedState(prev => ({
+                                            ...prev,
+                                            sort: { ...prev.sort, order: next }
+                                        }));
+                                        setSortOrder(next);
+                                    }}
                                 >
                                     {enhancedState.sort.order === 'asc' ? '↑' : '↓'}
                                 </button>
@@ -578,7 +752,8 @@ const InventoryModalContent: React.FC = () => {
                                 </select>
                             </div>
 
-                            {/* View Mode */}
+                            {/* View Mode — desktop only (phone stays list) */}
+                            {!isMobile && (
                             <div className={inventoryStyles.filterGroup}>
                                 <label className={inventoryStyles.filterLabel}>View:</label>
                                 <div className={inventoryStyles.viewModeButtons}>
@@ -596,12 +771,86 @@ const InventoryModalContent: React.FC = () => {
                                     </button>
                                 </div>
                             </div>
+                            )}
                         </div>
                     )}
                 </div>
+                )}
 
-                {/* Enhanced Selection Controls */}
-                {enhancedState.selectedItems.size > 0 && (
+                {/* Phone filter panel — same state, now wired into the list */}
+                {isMobile && showFilters && (
+                    <div className={inventoryStyles.mobileFilterPanel}>
+                        <select
+                            value={enhancedState.filter.category || "all"}
+                            onChange={(e) =>
+                                setEnhancedState((prev) => ({
+                                    ...prev,
+                                    filter: {
+                                        ...prev.filter,
+                                        category:
+                                            e.target.value === "all"
+                                                ? undefined
+                                                : e.target.value,
+                                    },
+                                }))
+                            }
+                            className={inventoryStyles.filterSelect}
+                        >
+                            <option value="all">All Categories</option>
+                            <option value="equipment">Equipment</option>
+                            <option value="material">Materials</option>
+                            <option value="consumable">Consumables</option>
+                            <option value="artifact">Artifacts</option>
+                            <option value="tool">Tools</option>
+                            <option value="treasure">Treasures</option>
+                            <option value="misc">Misc</option>
+                        </select>
+                        <select
+                            value={enhancedState.filter.rarity || "all"}
+                            onChange={(e) =>
+                                setEnhancedState((prev) => ({
+                                    ...prev,
+                                    filter: {
+                                        ...prev.filter,
+                                        rarity:
+                                            e.target.value === "all"
+                                                ? undefined
+                                                : e.target.value,
+                                    },
+                                }))
+                            }
+                            className={inventoryStyles.filterSelect}
+                        >
+                            <option value="all">All Rarities</option>
+                            <option value="common">Common</option>
+                            <option value="uncommon">Uncommon</option>
+                            <option value="rare">Rare</option>
+                            <option value="epic">Epic</option>
+                            <option value="legendary">Legendary</option>
+                        </select>
+                        <label className={inventoryStyles.toggleFilter}>
+                            <input
+                                type="checkbox"
+                                checked={enhancedState.filter.equipped === true}
+                                onChange={(e) =>
+                                    setEnhancedState((prev) => ({
+                                        ...prev,
+                                        filter: {
+                                            ...prev.filter,
+                                            equipped: e.target.checked
+                                                ? true
+                                                : undefined,
+                                        },
+                                    }))
+                                }
+                            />
+                            Equipped only
+                        </label>
+                    </div>
+                )}
+
+                {/* Enhanced Selection Controls — desktop bulk only */}
+                {!isMobile && enhancedState.selectedItems.size > 0 && (
                     <div className={inventoryStyles.selectionBar}>
                         <div className={inventoryStyles.selectionInfo}>
                             {enhancedState.selectedItems.size} item(s) selected
@@ -634,8 +883,8 @@ const InventoryModalContent: React.FC = () => {
                     </div>
                 )}
 
-                {/* Bulk Actions */}
-                {enhancedState.showBulkActions && (
+                {/* Bulk Actions — desktop only */}
+                {!isMobile && enhancedState.showBulkActions && (
                     <div className={inventoryStyles.bulkActions}>
                         <button 
                             onClick={async () => {
@@ -757,11 +1006,11 @@ const InventoryModalContent: React.FC = () => {
                             </div>
                         </div>
                     ) : (
-                        <div className={inventoryStyles.inventoryGrid}>
-                            {processedInventory.map((item: InventoryItem) => {
+                        <div className={`${inventoryStyles.inventoryGrid}${isMobile ? ` ${inventoryStyles.inventoryGridMobileList}` : ""}`}>
+                            {visibleInventory.map((item: InventoryItem) => {
                                 const isSelected = selectedItem === item.name;
-                                const isHovered = hoveredItem === item.name;
-                                const isEnhancedSelected = enhancedState.selectedItems.has(item.name);
+                                const isHovered = !isMobile && hoveredItem === item.name;
+                                const isEnhancedSelected = !isMobile && enhancedState.selectedItems.has(item.name);
                                 const rarityColor = getRarityColor(item.rarity || "common");
                                 const isMaterial = item.category === "material";
                                 const isEquipped = item.tags?.includes('equipped') || false;
@@ -778,15 +1027,16 @@ const InventoryModalContent: React.FC = () => {
                                             isEquipped ? inventoryStyles.equipped : ""
                                         }`}
                                         onClick={() => handleItemClick(item.name)}
-                                        onMouseEnter={() => setHoveredItem(item.name)}
-                                        onMouseLeave={() => setHoveredItem("")}
+                                        onMouseEnter={() => !isMobile && setHoveredItem(item.name)}
+                                        onMouseLeave={() => !isMobile && setHoveredItem("")}
                                         style={{
                                             borderColor: isSelected || isHovered || isEnhancedSelected
                                                 ? rarityColor 
                                                 : "rgba(255, 255, 255, 0.15)"
                                         }}
                                     >
-                                        {/* Enhanced Selection Checkbox */}
+                                        {/* Enhanced Selection Checkbox — desktop only */}
+                                        {!isMobile && (
                                         <div className={inventoryStyles.itemCheckbox}>
                                             <input
                                                 type="checkbox"
@@ -807,6 +1057,7 @@ const InventoryModalContent: React.FC = () => {
                                                 }}
                                             />
                                         </div>
+                                        )}
 
                                         {/* Favorite Indicator */}
                                         {isFavorite && (
@@ -846,7 +1097,8 @@ const InventoryModalContent: React.FC = () => {
                                             {item.icon || (isMaterial ? getMaterialIcon(item.name) : getItemIcon(item.name))}
                                         </div>
 
-                                        {/* Mobile-friendly change icon button */}
+                                        {/* Change icon — desktop only */}
+                                        {!isMobile && (
                                         <button
                                             className={inventoryStyles.changeIconButton}
                                             onClick={(e) => {
@@ -862,6 +1114,7 @@ const InventoryModalContent: React.FC = () => {
                                         >
                                             ✏️
                                         </button>
+                                        )}
 
                                         {/* Item Name */}
                                         <div className={inventoryStyles.itemName}>
@@ -876,8 +1129,8 @@ const InventoryModalContent: React.FC = () => {
                                             {getRarityDisplayName(item.rarity || "common")}
                                         </div>
 
-                                        {/* Material Category for Materials */}
-                                        {isMaterial && (
+                                        {/* Material Category — desktop list chrome */}
+                                        {isMaterial && !isMobile && (
                                             <div className={inventoryStyles.materialCategory}>
                                                 {item.tags?.find(tag => ['organic', 'mineral', 'crystal', 'essence', 'mystical'].includes(tag)) || 'material'}
                                             </div>
@@ -887,15 +1140,34 @@ const InventoryModalContent: React.FC = () => {
                                     </div>
                                 );
                             })}
+                            {isMobile && processedInventory.length > mobileVisibleCount && (
+                                <button
+                                    type="button"
+                                    className={inventoryStyles.mobileShowMore}
+                                    onClick={() =>
+                                        setMobileVisibleCount((n) => n + MOBILE_INV_PAGE)
+                                    }
+                                >
+                                    Show more ({processedInventory.length - mobileVisibleCount} left)
+                                </button>
+                            )}
                         </div>
                     )}
                 </div>
             </div>
 
-            {/* Right Panel - Enhanced Item Details */}
-            {console.log('🎯 Rendering details panel check:', { selectedItemData: !!selectedItemData, selectedItem })}
+            {/* Item details — bottom sheet on phone, side panel on desktop */}
             {selectedItemData && (
-                <div className={inventoryStyles.itemDetailsPanel}>
+                <div
+                    className={isMobile ? inventoryStyles.itemDetailBackdrop : undefined}
+                    onClick={isMobile ? () => setSelectedItem(null) : undefined}
+                    role={isMobile ? "presentation" : undefined}
+                    style={isMobile ? undefined : { display: "contents" }}
+                >
+                <div
+                    className={`${inventoryStyles.itemDetailsPanel}${isMobile ? ` ${inventoryStyles.itemDetailsPanelMobile}` : ""}`}
+                    onClick={isMobile ? (e) => e.stopPropagation() : undefined}
+                >
                     {/* Enhanced Item Header with Close Button */}
                     <div className={inventoryStyles.selectedItemHeader}>
                         <div className={inventoryStyles.selectedItemIcon}>
@@ -916,11 +1188,13 @@ const InventoryModalContent: React.FC = () => {
                             ✦ {getRarityDisplayName(selectedItemData.rarity || "common")} ✦
                         </div>
 
-                        {/* Close Button */}
-                        <button 
+                        {/* Sole X while detail is open — returns to list (list header owns inventory close) */}
+                        <button
+                            type="button"
                             className={inventoryStyles.closeItemButton}
                             onClick={() => setSelectedItem(null)}
                             title="Close item details"
+                            aria-label="Close item details"
                         >
                             ✕
                         </button>
@@ -947,7 +1221,7 @@ const InventoryModalContent: React.FC = () => {
                                                 background: '#1f3b4d',
                                                 color: '#cbe9ff',
                                                 border: '1px solid #2c5b73',
-                                                borderRadius: 9999,
+                                                borderRadius: 2,
                                                 padding: '2px 8px',
                                                 fontSize: '0.8em'
                                             }}>
@@ -997,7 +1271,7 @@ const InventoryModalContent: React.FC = () => {
                         </div>
 
                         {/* Item Tags (if available) */}
-                        {selectedItemData.tags && selectedItemData.tags.length > 0 && (
+                        {!isMobile && selectedItemData.tags && selectedItemData.tags.length > 0 && (
                             <div className={inventoryStyles.detailItem}>
                                 <div className={inventoryStyles.detailLabel}>
                                     <span className={inventoryStyles.detailIcon}>🏷️</span>
@@ -1040,7 +1314,7 @@ const InventoryModalContent: React.FC = () => {
                             }}
                         >
                             <span>⚡</span>
-                            Use Item
+                            Use
                         </button>
                         
                         <button 
@@ -1084,28 +1358,30 @@ const InventoryModalContent: React.FC = () => {
                             Sell
                         </button>
 
-                        {/* Favorite Button */}
+                        {!isMobile && (
                         <button 
                             className={`${inventoryStyles.actionButton} ${inventoryStyles.favoriteActionButton}`}
                             onClick={async () => {
-                                // Toggle favorite functionality
                                 console.log('Toggle favorite for:', selectedItemData.name);
-                                // TODO: Implement favorite toggle
                             }}
                             title="Toggle favorite"
                         >
                             <span>⭐</span>
                             Favorite
                         </button>
+                        )}
                     </div>
 
-                    {/* Item Lore/Flavor Text */}
+                    {/* Item Lore — desktop only */}
+                    {!isMobile && (
                     <div className={inventoryStyles.itemLore}>
                         <div className={inventoryStyles.loreTitle}>✨ Item Lore</div>
                         <div className={inventoryStyles.loreText}>
                             {getItemLore(selectedItemData)}
                         </div>
                     </div>
+                    )}
+                </div>
                 </div>
             )}
 

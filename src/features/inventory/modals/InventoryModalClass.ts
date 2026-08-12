@@ -2,6 +2,29 @@ import { Modal, App } from "obsidian";
 import React from "react";
 import { createRoot, Root } from "react-dom/client";
 import InventoryModal from "./InventoryModal";
+import { isLikelyMobileDevice } from "../../../shared/utils/deviceDetect";
+import { getAppliedVisualTheme } from "../../../shared/utils/visualThemeManager";
+
+function isSystemHunterTheme(): boolean {
+	try {
+		const applied = getAppliedVisualTheme();
+		if (applied.preset === "system-hunter" || applied.shell === "system") {
+			return true;
+		}
+	} catch {
+		/* ignore */
+	}
+	if (typeof document !== "undefined") {
+		const htmlPreset = document.documentElement.getAttribute(
+			"data-gamification-visual-theme"
+		);
+		const htmlShell = document.documentElement.getAttribute(
+			"data-gamification-shell"
+		);
+		if (htmlPreset === "system-hunter" || htmlShell === "system") return true;
+	}
+	return false;
+}
 
 export class InventoryModalClass extends Modal {
 	private root: Root | null = null;
@@ -12,11 +35,13 @@ export class InventoryModalClass extends Modal {
 	private initialY = 0;
 	private xOffset = 0;
 	private yOffset = 0;
+	private closeWatcher: MutationObserver | null = null;
 
 	// Store bound functions for proper cleanup
 	private boundDragMove: (e: MouseEvent) => void;
 	private boundDragEnd: () => void;
 	private boundDragStart: (e: MouseEvent) => void;
+	private closeStyleEl: HTMLStyleElement | null = null;
 
 	constructor(app: App) {
 		super(app);
@@ -26,6 +51,61 @@ export class InventoryModalClass extends Modal {
 		this.boundDragStart = this.dragStart.bind(this);
 	}
 
+	/** Document-level CSS so Obsidian's frame X cannot win over module CSS. */
+	private ensureCloseKillStyle() {
+		if (this.closeStyleEl?.isConnected) return;
+		const style = document.createElement("style");
+		style.setAttribute("data-gamify-inventory-close-kill", "true");
+		style.textContent = `
+.modal-container.gamify-inventory-modal-host > .modal-close-button,
+.modal-container.gamify-inventory-modal-host .modal-close-button {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  position: absolute !important;
+  clip: rect(0, 0, 0, 0) !important;
+}
+`;
+		document.head.appendChild(style);
+		this.closeStyleEl = style;
+	}
+
+	/** Remove Obsidian / legacy X nodes — React System header owns the single close. */
+	private hideNativeCloseButtons() {
+		const modal = this.modalEl;
+		if (!modal) return;
+
+		const kill = (el: Element) => {
+			const html = el as HTMLElement;
+			html.style.setProperty("display", "none", "important");
+			html.style.setProperty("visibility", "hidden", "important");
+			html.style.setProperty("opacity", "0", "important");
+			html.style.setProperty("pointer-events", "none", "important");
+			html.setAttribute("aria-hidden", "true");
+			html.remove();
+		};
+
+		// Obsidian places this on the modal; remove so it cannot reappear over the frame
+		modal.querySelectorAll(".modal-close-button").forEach(kill);
+
+		// Sweep container (some Obsidian builds nest close outside .modal)
+		const container = modal.parentElement;
+		if (container?.classList.contains("modal-container")) {
+			container.classList.add("gamify-inventory-modal-host");
+			container.querySelectorAll(".modal-close-button").forEach(kill);
+		}
+
+		// Some builds expose a close button handle on Modal
+		const closeBtn = (this as unknown as { closeButtonEl?: HTMLElement }).closeButtonEl;
+		if (closeBtn) kill(closeBtn);
+
+		modal.querySelectorAll(".gamify-close-btn").forEach(kill);
+	}
+
 	private setupDragFunctionality() {
 		// Wait for modal to be created, then add drag functionality
 		setTimeout(() => {
@@ -33,55 +113,26 @@ export class InventoryModalClass extends Modal {
 			if (!modal) return;
 
 			// Ensure Obsidian's native title exists and reads "Inventory"
-			let titleBar = modal.querySelector('.modal-title') as HTMLElement;
+			let titleBar = modal.querySelector(".modal-title") as HTMLElement;
 			if (!titleBar) {
-				titleBar = document.createElement('div');
-				titleBar.className = 'modal-title';
+				titleBar = document.createElement("div");
+				titleBar.className = "modal-title";
 				modal.insertBefore(titleBar, modal.firstChild);
 			}
-			titleBar.textContent = 'Inventory';
-			titleBar.style.cursor = 'move';
-			titleBar.style.userSelect = 'none';
+			titleBar.textContent = "Inventory";
+			titleBar.style.cursor = "move";
+			titleBar.style.userSelect = "none";
 
 			// Add drag event listeners (bind once to avoid duplicate listeners)
-			titleBar.removeEventListener('mousedown', this.boundDragStart);
-			titleBar.addEventListener('mousedown', this.boundDragStart);
-			document.addEventListener('mousemove', this.boundDragMove);
-			document.addEventListener('mouseup', this.boundDragEnd);
+			titleBar.removeEventListener("mousedown", this.boundDragStart);
+			titleBar.addEventListener("mousedown", this.boundDragStart);
+			document.addEventListener("mousemove", this.boundDragMove);
+			document.addEventListener("mouseup", this.boundDragEnd);
 
 			// Prevent text selection during drag
-			titleBar.addEventListener('selectstart', (e) => e.preventDefault());
+			titleBar.addEventListener("selectstart", (e) => e.preventDefault());
 
-			// Move our custom circular close button into the title bar and hide the default X
-			const defaultClose = modal.querySelector('.modal-close-button') as HTMLElement | null;
-			if (defaultClose) {
-				// Hide the default X
-				defaultClose.style.display = 'none';
-			}
-
-			// If a custom close button already exists, reuse it; else create one
-			let customClose = modal.querySelector('.gamify-close-btn') as HTMLButtonElement | null;
-			if (!customClose) {
-				customClose = document.createElement('button');
-				customClose.className = 'gamify-close-btn';
-				customClose.setAttribute('aria-label', 'Close');
-				customClose.textContent = '✕';
-				customClose.style.cssText = `
-          position: absolute;
-          top: 8px; right: 10px;
-          width: 32px; height: 32px;
-          border-radius: 0;
-          background: #252742;
-          border: 2px solid #0f1120;
-          box-shadow: 2px 2px 0 #0f1120;
-          color: #ecefff; font-weight: bold; font-size: 10px;
-          font-family: "Press Start 2P","VT323",monospace;
-          display: flex; align-items: center; justify-content: center;
-          cursor: pointer; z-index: 1001;
-        `;
-				customClose.addEventListener('click', () => this.close());
-				titleBar.appendChild(customClose);
-			}
+			this.hideNativeCloseButtons();
 		}, 100);
 	}
 
@@ -93,7 +144,7 @@ export class InventoryModalClass extends Modal {
 			this.isDragging = true;
 			const modal = this.modalEl;
 			if (modal) {
-				modal.style.cursor = 'grabbing';
+				modal.style.cursor = "grabbing";
 			}
 		}
 	}
@@ -122,7 +173,7 @@ export class InventoryModalClass extends Modal {
 
 		const modal = this.modalEl;
 		if (modal) {
-			modal.style.cursor = '';
+			modal.style.cursor = "";
 		}
 	}
 
@@ -131,20 +182,78 @@ export class InventoryModalClass extends Modal {
 		this.titleEl.setText("Inventory");
 
 		// Mark this modal for targeted CSS without using :has()
-		this.modalEl.classList.add("gamify-inventory-modal", "gamify-inventory-modal--pixel");
+		this.modalEl.classList.add("gamify-inventory-modal");
+		this.modalEl.parentElement?.classList.add("gamify-inventory-modal-host");
+		this.ensureCloseKillStyle();
+		const onMobile = isLikelyMobileDevice();
+		const systemTheme = isSystemHunterTheme();
+
+		if (onMobile) {
+			// Solo Leveling / System Hunter chrome — never attach --pixel on phone
+			this.modalEl.classList.add(
+				"gamify-inventory-modal--mobile",
+				"gamify-inventory-modal--system"
+			);
+			this.modalEl.setAttribute("data-gamification-mobile", "true");
+		} else if (systemTheme) {
+			// Desktop Solo Leveling: same system shell as mobile (not pixel RPG)
+			this.modalEl.classList.add("gamify-inventory-modal--system");
+			this.modalEl.classList.remove("gamify-inventory-modal--pixel");
+		} else {
+			this.modalEl.classList.add("gamify-inventory-modal--pixel");
+			this.modalEl.classList.remove("gamify-inventory-modal--system");
+		}
+
+		if (systemTheme || onMobile) {
+			this.modalEl.setAttribute("data-inventory-system", "true");
+		} else {
+			this.modalEl.removeAttribute("data-inventory-system");
+		}
 
 		this.root = createRoot(this.contentEl);
 		this.root.render(
-			React.createElement(InventoryModal, { app: this.app, onClose: () => this.close() })
+			React.createElement(InventoryModal, {
+				app: this.app,
+				onClose: () => this.close(),
+			})
 		);
 
-		// Setup drag functionality after render
-		this.setupDragFunctionality();
+		// Always hide native / legacy close buttons — React owns the one X
+		this.hideNativeCloseButtons();
+		window.setTimeout(() => this.hideNativeCloseButtons(), 0);
+		window.setTimeout(() => this.hideNativeCloseButtons(), 120);
+
+		// Obsidian sometimes re-injects .modal-close-button after open — keep it gone
+		this.closeWatcher?.disconnect();
+		this.closeWatcher = new MutationObserver(() => this.hideNativeCloseButtons());
+		this.closeWatcher.observe(this.modalEl, { childList: true, subtree: true });
+		const parent = this.modalEl.parentElement;
+		if (parent) {
+			this.closeWatcher.observe(parent, { childList: true });
+		}
+
+		// Drag chrome is desktop-only (conflicts with touch scroll on phone)
+		if (!onMobile) {
+			this.setupDragFunctionality();
+		}
 	}
 
 	onClose() {
+		this.closeWatcher?.disconnect();
+		this.closeWatcher = null;
+		this.closeStyleEl?.remove();
+		this.closeStyleEl = null;
+
 		// Remove marker class
-		this.modalEl.classList.remove("gamify-inventory-modal", "gamify-inventory-modal--pixel");
+		this.modalEl.classList.remove(
+			"gamify-inventory-modal",
+			"gamify-inventory-modal--pixel",
+			"gamify-inventory-modal--mobile",
+			"gamify-inventory-modal--system"
+		);
+		this.modalEl.parentElement?.classList.remove("gamify-inventory-modal-host");
+		this.modalEl.removeAttribute("data-gamification-mobile");
+		this.modalEl.removeAttribute("data-inventory-system");
 		if (this.root) {
 			this.root.unmount();
 			this.root = null;
@@ -152,14 +261,11 @@ export class InventoryModalClass extends Modal {
 		this.contentEl.empty();
 
 		// Clean up drag event listeners with proper function references
-		document.removeEventListener('mousemove', this.boundDragMove);
-		document.removeEventListener('mouseup', this.boundDragEnd);
+		document.removeEventListener("mousemove", this.boundDragMove);
+		document.removeEventListener("mouseup", this.boundDragEnd);
 		const modal = this.modalEl;
-		const titleBar = modal?.querySelector('.modal-title') as HTMLElement | null;
-		if (titleBar) titleBar.removeEventListener('mousedown', this.boundDragStart);
-		const customClose = modal?.querySelector('.gamify-close-btn') as HTMLElement | null;
-		if (customClose) customClose.remove();
-		const defaultClose = modal?.querySelector('.modal-close-button') as HTMLElement | null;
-		if (defaultClose) defaultClose.style.display = '';
+		const titleBar = modal?.querySelector(".modal-title") as HTMLElement | null;
+		if (titleBar) titleBar.removeEventListener("mousedown", this.boundDragStart);
+		modal?.querySelectorAll(".gamify-close-btn").forEach((el) => el.remove());
 	}
 }

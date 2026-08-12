@@ -245,6 +245,9 @@ export const MobileQuestDayPicker: React.FC<MobileQuestDayPickerProps> = ({
 
 	const onWeekPointerDown = (e: React.PointerEvent) => {
 		if (e.button !== 0 && e.pointerType === 'mouse') return;
+		// Day buttons own taps/long-press — capturing here steals click and makes days feel dead.
+		const dayEl = (e.target as HTMLElement | null)?.closest?.('[data-week-day]');
+		if (dayEl) return;
 		pointerIdRef.current = e.pointerId;
 		startXRef.current = e.clientX;
 		startYRef.current = e.clientY;
@@ -298,11 +301,17 @@ export const MobileQuestDayPicker: React.FC<MobileQuestDayPickerProps> = ({
 		clearLongPress();
 	};
 
+	const selectDayFromPress = (day: DayCell) => {
+		if (ignoreClickRef.current || longPressFired.current) return;
+		goToDayPlan(day.date);
+	};
+
 	const renderDayButton = (day: DayCell) => (
 		<button
 			key={day.iso}
 			type="button"
 			role="listitem"
+			data-week-day={day.iso}
 			className={[
 				styles.day,
 				day.isSelected ? styles.daySelected : '',
@@ -311,16 +320,16 @@ export const MobileQuestDayPicker: React.FC<MobileQuestDayPickerProps> = ({
 			]
 				.filter(Boolean)
 				.join(' ')}
-			onClick={() => {
-				if (ignoreClickRef.current || longPressFired.current) {
-					ignoreClickRef.current = false;
-					longPressFired.current = false;
-					return;
+			onPointerDown={(e) => {
+				// Keep week swipe from capturing this pointer (see onWeekPointerDown).
+				e.stopPropagation();
+				try {
+					e.currentTarget.setPointerCapture(e.pointerId);
+				} catch {
+					/* ignore */
 				}
-				goToDayPlan(day.date);
-			}}
-			onPointerDown={() => {
 				longPressFired.current = false;
+				ignoreClickRef.current = false;
 				clearLongPress();
 				longPressTimer.current = window.setTimeout(() => {
 					longPressFired.current = true;
@@ -328,9 +337,43 @@ export const MobileQuestDayPicker: React.FC<MobileQuestDayPickerProps> = ({
 					openDaySheet(day.date);
 				}, LONG_PRESS_MS);
 			}}
-			onPointerUp={clearLongPress}
-			onPointerLeave={clearLongPress}
-			onPointerCancel={clearLongPress}
+			onPointerUp={(e) => {
+				e.stopPropagation();
+				try {
+					if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+						e.currentTarget.releasePointerCapture(e.pointerId);
+					}
+				} catch {
+					/* ignore */
+				}
+				const wasLongPress = longPressFired.current;
+				clearLongPress();
+				// Quick press → open that day's plan (not just highlight the cell).
+				if (!wasLongPress && !ignoreClickRef.current) {
+					goToDayPlan(day.date);
+					ignoreClickRef.current = true;
+				}
+				longPressFired.current = false;
+			}}
+			onClick={(e) => {
+				// Keyboard / accessibility fallback when pointerup path didn't run.
+				e.preventDefault();
+				selectDayFromPress(day);
+				ignoreClickRef.current = false;
+			}}
+			onPointerCancel={(e) => {
+				e.stopPropagation();
+				try {
+					if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+						e.currentTarget.releasePointerCapture(e.pointerId);
+					}
+				} catch {
+					/* ignore */
+				}
+				clearLongPress();
+				longPressFired.current = false;
+				ignoreClickRef.current = false;
+			}}
 			aria-pressed={day.isSelected}
 			aria-label={`${day.date.toLocaleDateString(undefined, {
 				weekday: 'long',
@@ -376,6 +419,7 @@ export const MobileQuestDayPicker: React.FC<MobileQuestDayPickerProps> = ({
 					className={styles.collapseToggle}
 					onClick={() => setCollapsed((v) => !v)}
 					aria-expanded={!collapsed}
+					title={collapsed ? 'Show calendar details' : 'Hide calendar details'}
 				>
 					<MissionSectionTitle
 						title={view === 'month' ? 'Month' : 'Week'}
@@ -384,30 +428,47 @@ export const MobileQuestDayPicker: React.FC<MobileQuestDayPickerProps> = ({
 					/>
 					<span className={styles.range}>{rangeLabel}</span>
 				</button>
-				{!collapsed && (
-					<div className={styles.nav}>
-						<button
-							type="button"
-							className={styles.navBtn}
-							onClick={() => shift(-1)}
-							aria-label={view === 'month' ? 'Previous month' : 'Previous week'}
-						>
-							‹
-						</button>
-						<button type="button" className={styles.todayBtn} onClick={goToday}>
-							Today
-						</button>
-						<button
-							type="button"
-							className={styles.navBtn}
-							onClick={() => shift(1)}
-							aria-label={view === 'month' ? 'Next month' : 'Next week'}
-						>
-							›
-						</button>
-					</div>
-				)}
+				<div className={styles.nav}>
+					<button
+						type="button"
+						className={styles.navBtn}
+						onClick={() => shift(-1)}
+						aria-label={view === 'month' ? 'Previous month' : 'Previous week'}
+					>
+						‹
+					</button>
+					<button type="button" className={styles.todayBtn} onClick={goToday}>
+						Today
+					</button>
+					<button
+						type="button"
+						className={styles.navBtn}
+						onClick={() => shift(1)}
+						aria-label={view === 'month' ? 'Next month' : 'Next week'}
+					>
+						›
+					</button>
+				</div>
 			</div>
+
+			{/* Week day strip stays available for quick-press → day plan, even when details are collapsed. */}
+			{view === 'week' && (
+				<div
+					className={styles.weekViewport}
+					onPointerDown={onWeekPointerDown}
+					onPointerMove={onWeekPointerMove}
+					onPointerUp={onWeekPointerUp}
+					onPointerCancel={onWeekPointerCancel}
+				>
+					<div className={styles.weekTrack} style={trackStyle}>
+						{weekPages.map((page) => (
+							<div key={page.key} className={styles.weekPage} role="list">
+								{page.days.map((day) => renderDayButton(day))}
+							</div>
+						))}
+					</div>
+				</div>
+			)}
 
 			{!collapsed && (
 				<>
@@ -426,40 +487,26 @@ export const MobileQuestDayPicker: React.FC<MobileQuestDayPickerProps> = ({
 							role="tab"
 							aria-selected={view === 'month'}
 							className={`${styles.viewBtn}${view === 'month' ? ` ${styles.viewBtnActive}` : ''}`}
-							onClick={() => setView('month')}
+							onClick={() => {
+								setView('month');
+								setCollapsed(false);
+							}}
 						>
 							Month
 						</button>
 					</div>
 
 					{view === 'month' && (
-						<div className={styles.monthWeekdays} aria-hidden="true">
-							{WEEKDAYS.map((d, i) => (
-								<span key={`${d}-${i}`}>{d}</span>
-							))}
-						</div>
-					)}
-
-					{view === 'week' ? (
-						<div
-							className={styles.weekViewport}
-							onPointerDown={onWeekPointerDown}
-							onPointerMove={onWeekPointerMove}
-							onPointerUp={onWeekPointerUp}
-							onPointerCancel={onWeekPointerCancel}
-						>
-							<div className={styles.weekTrack} style={trackStyle}>
-								{weekPages.map((page) => (
-									<div key={page.key} className={styles.weekPage} role="list">
-										{page.days.map((day) => renderDayButton(day))}
-									</div>
+						<>
+							<div className={styles.monthWeekdays} aria-hidden="true">
+								{WEEKDAYS.map((d, i) => (
+									<span key={`${d}-${i}`}>{d}</span>
 								))}
 							</div>
-						</div>
-					) : (
-						<div className={styles.month} role="list">
-							{monthDays.map((day) => renderDayButton(day))}
-						</div>
+							<div className={styles.month} role="list">
+								{monthDays.map((day) => renderDayButton(day))}
+							</div>
+						</>
 					)}
 
 					<div className={styles.selectedBar}>

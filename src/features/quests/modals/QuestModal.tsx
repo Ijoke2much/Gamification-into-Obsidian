@@ -258,29 +258,49 @@ export const QuestModal: React.FC<QuestModalProps> = ({
         plugin.saveSettings();
     };
 
-    // Load skills on component mount
+    // Load skills on component mount (safety timer so mobile never sticks on "Loading skills...")
     useEffect(() => {
+        let cancelled = false;
+        const safetyTimer = window.setTimeout(() => {
+            if (!cancelled) setSkillsLoading(false);
+        }, 10000);
+
         const loadSkills = async () => {
             try {
                 setSkillsLoading(true);
-                const discoveredSkills = await getAllSkills(plugin.app.vault);
+                let discoveredSkills = await getAllSkills(plugin.app.vault);
+                // Phone vault index can lag — one short retry if empty
+                if (!cancelled && discoveredSkills.length === 0) {
+                    await new Promise((r) => window.setTimeout(r, 400));
+                    if (!cancelled) {
+                        discoveredSkills = await getAllSkills(plugin.app.vault);
+                    }
+                }
+                if (cancelled) return;
+
                 setAllSkills(discoveredSkills);
-                
+
                 // If editing, populate skills from quest
                 if (mode === "edit" && quest && quest.skills) {
-                    const questSkills = discoveredSkills.filter((skill: SkillMetadata) => 
+                    const questSkills = discoveredSkills.filter((skill: SkillMetadata) =>
                         quest.skills!.includes(skill.name)
                     );
                     setSkills(questSkills);
                 }
             } catch (error) {
                 console.error("Error loading skills:", error);
+                if (!cancelled) setAllSkills([]);
             } finally {
-                setSkillsLoading(false);
+                window.clearTimeout(safetyTimer);
+                if (!cancelled) setSkillsLoading(false);
             }
         };
-        
-        loadSkills();
+
+        void loadSkills();
+        return () => {
+            cancelled = true;
+            window.clearTimeout(safetyTimer);
+        };
     }, [mode, quest, plugin.app.vault]);
 
     // Handle skill selection from dropdown
@@ -688,160 +708,180 @@ export const QuestModal: React.FC<QuestModalProps> = ({
 
     // Quest Modal UI
     const questModalPortal = ReactDOM.createPortal(
-        <div className={`${styles.modalOverlay} ${styles.pixelQuestModalOverlay} ${isMobile ? 'mobile-quest-modal' : ''}`} data-pixel-modal="quest-form" onClick={onClose}>
-            <div className={`${styles.modal} ${styles.pixelQuestModalPanel} ${isMobile ? 'mobile-quest-modal-content' : ''}`} data-pixel-shell="quest-form" onClick={(e) => e.stopPropagation()}>
-                <QuestModalHeader 
-                    mode={mode}
-                    isMobile={isMobile}
-                    onClose={onClose}
-                />
-
-                {/* Quest Giver */}
-                {!questGiverCollapsed && (
-                    <div className={styles.questGiverSection}>
-                        <QuestGiverAvatar
-                            plugin={plugin}
-                            imagePath={questGiverImagePath}
-                            onImageChange={handleQuestGiverImageChange}
-                            collapsed={false}
-                        />
-                        
-                        <div className={styles.questGiverDialogue}>
-                            <p className={styles.questGiverDialogueText}>
-                                {animatedDialogue}
-                                {isAnimating && <span className={styles.blinkingCursor}>|</span>}
-                            </p>
-                        </div>
-                    </div>
-                )}
-
-                <form onSubmit={handleSubmit}>
-                    {/* Save Location Selector (where to write the quest in your vault) */}
-                    <div className={styles.saveLocationSection}>
-                        <div className={styles.saveLocationHeader}>
-                            <span className={styles.saveLocationTitle}>
-                                <span>📁 Save Quest To</span>
-                            </span>
-                        </div>
-                        <select
-                            value={saveLocationId}
-                            onChange={(e) => setSaveLocationId(e.target.value)}
-                            className={styles.select}
-                            style={{ marginBottom: 8 }}
-                        >
-                            <option value="default">
-                                Default quest note ({defaultQuestFilePath})
-                            </option>
-                            {questSaveLocations.map((loc) => (
-                                <option key={loc.id} value={loc.id}>
-                                    {loc.label} — {loc.filePath}
-                                </option>
-                            ))}
-                            <option value="custom">Custom file path…</option>
-                        </select>
-                        {saveLocationId === "custom" && (
-                            <input
-                                type="text"
-                                value={customFilePath}
-                                onChange={(e) => setCustomFilePath(e.target.value)}
-                                placeholder="e.g. Daily/2025-11-24.md"
-                                className={styles.customPathInput}
-                            />
-                        )}
-                        <div className={styles.saveLocationHint}>
-                            {isPerNoteMode(plugin.settings) && saveLocationId === "default"
-                                ? `Default save creates a new note in ${getTaskNoteFolder(plugin.settings)}. Pick another location to append to a list file instead.`
-                                : "Choose a saved location or type a custom note path. New quests will be appended to that file."}
-                        </div>
-                    </div>
-
-                    <QuestModalForm
-                        title={title}
-                        setTitle={setTitle}
-                        description={description}
-                        setDescription={setDescription}
-                        skills={skills}
-                        allSkills={allSkills}
-                        skillsLoading={skillsLoading}
-                        selectedSkill={selectedSkill}
-                        setSelectedSkill={setSelectedSkill}
-                        priority={priority}
-                        setPriority={setPriority}
-                        difficulty={difficulty}
-                        setDifficulty={setDifficulty}
-                        xp={xp}
-                        setXp={setXp}
-                        cp={cp}
-                        setCp={setCp}
-                        energyOnComplete={getQuestEnergyCost({ energyCost })}
-                        activityProfile={activityProfile}
-                        setActivityProfile={setActivityProfile}
-                        due={due}
-                        setDue={setDue}
-                        time={scheduleTime}
-                        setTime={setScheduleTime}
-                        estimatedMinutes={estimatedMinutes}
-                        setEstimatedMinutes={setEstimatedMinutes}
-                        recur={recur}
-                        setRecur={setRecur}
-                        subtasks={subtasks}
-                        newSubtask={newSubtask}
-                        setNewSubtask={setNewSubtask}
-                    newSubtaskDescription={newSubtaskDescription}
-                    setNewSubtaskDescription={setNewSubtaskDescription}
-                    handleSkillSelection={handleSkillSelection}
-                        handleSkillRemoval={handleSkillRemoval}
-                        handleAddSubtask={handleAddSubtask}
-                        handleRemoveSubtask={handleRemoveSubtask}
-                        isMobile={isMobile}
-                        showContractPicker={mode === "create" && openContracts.length > 0}
-                        openContracts={openContracts}
-                        attachedContract={attachedContract}
-                        setAttachedContract={setAttachedContract}
-                    />
-
-                    <QuestModalAdvancedOptions
-                        showAdvancedOptions={showAdvancedOptions}
-                        setShowAdvancedOptions={setShowAdvancedOptions}
-                        activeAdvancedTab={activeAdvancedTab}
-                        setActiveAdvancedTab={setActiveAdvancedTab}
-                        description={description}
-                        setDescription={setDescription}
-                        due={due}
-                        setDue={setDue}
-                        recur={recur}
-                        setRecur={setRecur}
-                        scheduleTime={scheduleTime}
-                        setScheduleTime={setScheduleTime}
-                        estimatedMinutes={estimatedMinutes}
-                        setEstimatedMinutes={setEstimatedMinutes}
-                        questGiverImagePath={questGiverImagePath}
-                        setQuestGiverImagePath={setQuestGiverImagePath}
-                    questBanner={banner}
-                    setQuestBanner={setBanner}
-                    bannerAlign={bannerAlign}
-                    setBannerAlign={setBannerAlign}
-                    timelineTheme={timelineTheme}
-                    setTimelineTheme={setTimelineTheme}
-                        subtasks={subtasks}
-                        newSubtask={newSubtask}
-                        setNewSubtask={setNewSubtask}
-                        newSubtaskDescription={newSubtaskDescription}
-                        setNewSubtaskDescription={setNewSubtaskDescription}
-                        handleAddSubtask={handleAddSubtask}
-                        handleRemoveSubtask={handleRemoveSubtask}
-                        isMobile={isMobile}
-                    />
-
-                    <QuestModalActions
+        <div
+            className={`${styles.modalOverlay} ${styles.pixelQuestModalOverlay}${isMobile ? ` ${styles.mobileOverlay}` : ''}`}
+            data-pixel-modal="quest-form"
+            onClick={onClose}
+        >
+            <div
+                className={`${styles.modal} ${styles.pixelQuestModalPanel}${isMobile ? ` ${styles.mobileShell}` : ''}`}
+                data-pixel-shell="quest-form"
+                onClick={(e) => e.stopPropagation()}
+            >
+                <div className={isMobile ? styles.mobileHeader : undefined}>
+                    <QuestModalHeader
                         mode={mode}
+                        isMobile={isMobile}
                         onClose={onClose}
-                        onSubmit={handleSubmit}
-                        isSubmitting={isSubmitting}
                     />
-                </form>
+                </div>
 
-                {error && <div className={styles.error}>{error}</div>}
+                <form
+                    onSubmit={handleSubmit}
+                    className={isMobile ? styles.mobileForm : undefined}
+                >
+                    <div className={isMobile ? styles.mobileBody : undefined}>
+                        {/* Quest Giver */}
+                        {!questGiverCollapsed && (
+                            <div className={styles.questGiverSection}>
+                                <QuestGiverAvatar
+                                    plugin={plugin}
+                                    imagePath={questGiverImagePath}
+                                    onImageChange={handleQuestGiverImageChange}
+                                    collapsed={false}
+                                />
+
+                                <div className={styles.questGiverDialogue}>
+                                    <p className={styles.questGiverDialogueText}>
+                                        {animatedDialogue}
+                                        {isAnimating && <span className={styles.blinkingCursor}>|</span>}
+                                    </p>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Save Location Selector (where to write the quest in your vault) */}
+                        <div className={styles.saveLocationSection}>
+                            <div className={styles.saveLocationHeader}>
+                                <span className={styles.saveLocationTitle}>
+                                    <span>📁 Save Quest To</span>
+                                </span>
+                            </div>
+                            <select
+                                value={saveLocationId}
+                                onChange={(e) => setSaveLocationId(e.target.value)}
+                                className={styles.select}
+                                style={{ marginBottom: 8 }}
+                            >
+                                <option value="default">
+                                    Default quest note ({defaultQuestFilePath})
+                                </option>
+                                {questSaveLocations.map((loc) => (
+                                    <option key={loc.id} value={loc.id}>
+                                        {loc.label} — {loc.filePath}
+                                    </option>
+                                ))}
+                                <option value="custom">Custom file path…</option>
+                            </select>
+                            {saveLocationId === "custom" && (
+                                <input
+                                    type="text"
+                                    value={customFilePath}
+                                    onChange={(e) => setCustomFilePath(e.target.value)}
+                                    placeholder="e.g. Daily/2025-11-24.md"
+                                    className={styles.customPathInput}
+                                />
+                            )}
+                            {!isMobile && (
+                                <div className={styles.saveLocationHint}>
+                                    {isPerNoteMode(plugin.settings) && saveLocationId === "default"
+                                        ? `Default save creates a new note in ${getTaskNoteFolder(plugin.settings)}. Pick another location to append to a list file instead.`
+                                        : "Choose a saved location or type a custom note path. New quests will be appended to that file."}
+                                </div>
+                            )}
+                        </div>
+
+                        <QuestModalForm
+                            title={title}
+                            setTitle={setTitle}
+                            description={description}
+                            setDescription={setDescription}
+                            skills={skills}
+                            allSkills={allSkills}
+                            skillsLoading={skillsLoading}
+                            selectedSkill={selectedSkill}
+                            setSelectedSkill={setSelectedSkill}
+                            priority={priority}
+                            setPriority={setPriority}
+                            difficulty={difficulty}
+                            setDifficulty={setDifficulty}
+                            xp={xp}
+                            setXp={setXp}
+                            cp={cp}
+                            setCp={setCp}
+                            energyOnComplete={getQuestEnergyCost({ energyCost })}
+                            activityProfile={activityProfile}
+                            setActivityProfile={setActivityProfile}
+                            due={due}
+                            setDue={setDue}
+                            time={scheduleTime}
+                            setTime={setScheduleTime}
+                            estimatedMinutes={estimatedMinutes}
+                            setEstimatedMinutes={setEstimatedMinutes}
+                            recur={recur}
+                            setRecur={setRecur}
+                            subtasks={subtasks}
+                            newSubtask={newSubtask}
+                            setNewSubtask={setNewSubtask}
+                            newSubtaskDescription={newSubtaskDescription}
+                            setNewSubtaskDescription={setNewSubtaskDescription}
+                            handleSkillSelection={handleSkillSelection}
+                            handleSkillRemoval={handleSkillRemoval}
+                            handleAddSubtask={handleAddSubtask}
+                            handleRemoveSubtask={handleRemoveSubtask}
+                            isMobile={isMobile}
+                            showContractPicker={mode === "create" && openContracts.length > 0}
+                            openContracts={openContracts}
+                            attachedContract={attachedContract}
+                            setAttachedContract={setAttachedContract}
+                        />
+
+                        <QuestModalAdvancedOptions
+                            showAdvancedOptions={showAdvancedOptions}
+                            setShowAdvancedOptions={setShowAdvancedOptions}
+                            activeAdvancedTab={activeAdvancedTab}
+                            setActiveAdvancedTab={setActiveAdvancedTab}
+                            description={description}
+                            setDescription={setDescription}
+                            due={due}
+                            setDue={setDue}
+                            recur={recur}
+                            setRecur={setRecur}
+                            scheduleTime={scheduleTime}
+                            setScheduleTime={setScheduleTime}
+                            estimatedMinutes={estimatedMinutes}
+                            setEstimatedMinutes={setEstimatedMinutes}
+                            questGiverImagePath={questGiverImagePath}
+                            setQuestGiverImagePath={setQuestGiverImagePath}
+                            questBanner={banner}
+                            setQuestBanner={setBanner}
+                            bannerAlign={bannerAlign}
+                            setBannerAlign={setBannerAlign}
+                            timelineTheme={timelineTheme}
+                            setTimelineTheme={setTimelineTheme}
+                            subtasks={subtasks}
+                            newSubtask={newSubtask}
+                            setNewSubtask={setNewSubtask}
+                            newSubtaskDescription={newSubtaskDescription}
+                            setNewSubtaskDescription={setNewSubtaskDescription}
+                            handleAddSubtask={handleAddSubtask}
+                            handleRemoveSubtask={handleRemoveSubtask}
+                            isMobile={isMobile}
+                        />
+
+                        {error && <div className={styles.error}>{error}</div>}
+                    </div>
+
+                    <div className={isMobile ? styles.mobileFooter : undefined}>
+                        <QuestModalActions
+                            mode={mode}
+                            onClose={onClose}
+                            onSubmit={handleSubmit}
+                            isSubmitting={isSubmitting}
+                            isMobile={isMobile}
+                        />
+                    </div>
+                </form>
             </div>
         </div>,
         document.body

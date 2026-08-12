@@ -1,6 +1,8 @@
 // src/utils/ShopParser.ts
 
+import { TFile } from "obsidian";
 import type GamifiedObsidianPlugin from "../../../core/main";
+import { resolveVaultMarkdownFile } from "../../../shared/utils/resolveVaultMarkdownFile";
 
 // The complete item format used in the shop and inventory
 export interface ShopItem {
@@ -144,11 +146,19 @@ function parseEffectLine(effectStr: string): ShopItemEffect | null {
 	return null;
 }
 
+/** Prefer direct path lookups — avoid scanning the whole vault on every open (mobile/iCloud). */
+function resolveShopFile(plugin: GamifiedObsidianPlugin): TFile | undefined {
+	return resolveVaultMarkdownFile(plugin.app, "shop", [
+		"Shop.md",
+		"shop.md",
+		"Gamification/Shop.md",
+		"Gamified/Shop.md",
+	]);
+}
+
 // --- SHOP.md PARSER ---
 export async function getAllShopItems(plugin: GamifiedObsidianPlugin): Promise<ShopItem[]> {
-	const files = plugin.app.vault.getMarkdownFiles();
-	const shopFile = files.find(f => f.basename.toLowerCase() === "shop");
-
+	const shopFile = resolveShopFile(plugin);
 	if (!shopFile) return [];
 
 	const content = await plugin.app.vault.read(shopFile);
@@ -159,8 +169,12 @@ export async function getAllShopItems(plugin: GamifiedObsidianPlugin): Promise<S
 
 // --- INVENTORY.md PARSER ---
 export async function getAllInventoryItems(plugin: GamifiedObsidianPlugin): Promise<ShopItem[]> {
-	const files = plugin.app.vault.getMarkdownFiles();
-	const invFile = files.find(f => f.basename.toLowerCase() === "inventory");
+	const invFile = resolveVaultMarkdownFile(plugin.app, "inventory", [
+		"Inventory.md",
+		"inventory.md",
+		"Gamification/Inventory.md",
+		"Gamified/Inventory.md",
+	]);
 
 	if (!invFile) return [];
 
@@ -172,8 +186,12 @@ export async function getAllInventoryItems(plugin: GamifiedObsidianPlugin): Prom
 
 // ShopTemplates.md PARSER
 export async function getAllShopTemplates(plugin: GamifiedObsidianPlugin): Promise<ShopItem[]> {
-	const files = plugin.app.vault.getMarkdownFiles();
-	const templateFile = files.find(f => f.basename.toLowerCase() === "shoptemplates");
+	const templateFile = resolveVaultMarkdownFile(plugin.app, "shoptemplates", [
+		"ShopTemplates.md",
+		"shoptemplates.md",
+		"Gamification/ShopTemplates.md",
+		"Gamified/ShopTemplates.md",
+	]);
 
 	if (!templateFile) return [];
 
@@ -206,8 +224,7 @@ export async function getAllShopTemplates(plugin: GamifiedObsidianPlugin): Promi
 // Inventory parsing is centralized in inventory utils; use that instead.
 
 export async function writeShopItems(plugin: GamifiedObsidianPlugin, items: ShopItem[]): Promise<void> {
-	const files = plugin.app.vault.getMarkdownFiles();
-	const shopFile = files.find(f => f.basename.toLowerCase() === "shop");
+	const shopFile = resolveShopFile(plugin);
 	if (!shopFile) return;
 
 	const lines: string[] = [];

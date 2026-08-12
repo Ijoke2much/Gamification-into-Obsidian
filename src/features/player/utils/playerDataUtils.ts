@@ -2,6 +2,7 @@ import { Vault, TFile } from "obsidian";
 const matter = require("gray-matter");
 import { PlayerData, DEFAULT_PLAYER } from "../../../data/models/PlayerData";
 import { readYamlFrontmatter, sanitizeForYaml } from "../../../shared/utils/progressUpdater";
+import { isLikelyMobileDevice } from "../../../shared/utils/deviceDetect";
 
 // ---------------------------------------------------------------------------
 // Reliability: backups, write queue with debounce + lock, schema versioning
@@ -73,120 +74,108 @@ async function performWrite(vault: Vault, tfile: TFile, updated: string) {
   document.dispatchEvent(new Event('player-data-updated'));
 }
 
+/** Lightweight markdown/YAML parse used on mobile/tablet (gray-matter can fail there). */
+function parsePlayerDataFromMarkdown(content: string): PlayerData | null {
+  if (!content || !content.trim()) return null;
+
+  const yamlMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  if (!yamlMatch) return null;
+
+  const yamlContent = yamlMatch[1];
+  const data: Record<string, string | number | unknown[]> = {};
+  const lines = yamlContent.split('\n');
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+
+    const colonIndex = trimmed.indexOf(':');
+    if (colonIndex === -1) continue;
+
+    const key = trimmed.substring(0, colonIndex).trim();
+    let value = trimmed.substring(colonIndex + 1).trim();
+
+    if (value === '>-' || value === '|-' || value === '>' || value === '|') {
+      continue;
+    }
+
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+
+    if (/^\d+$/.test(value)) {
+      data[key] = parseInt(value, 10);
+    } else if (/^\d+\.\d+$/.test(value)) {
+      data[key] = parseFloat(value);
+    } else if (value.startsWith('[') && value.endsWith(']')) {
+      const arrayContent = value.slice(1, -1);
+      data[key] = arrayContent.trim()
+        ? arrayContent.split(',').map((item) => item.trim().replace(/['"]/g, ''))
+        : [];
+    } else {
+      if (key === 'description' && (value.length < 5 || value.includes('>') || value.includes('|'))) {
+        continue;
+      }
+      data[key] = value;
+    }
+  }
+
+  if (!data.name && data.level === undefined && data.xp === undefined) {
+    // Still allow defaults, but require at least some parsed keys
+    if (Object.keys(data).length === 0) return null;
+  }
+
+  return {
+    name: String(data.name ?? DEFAULT_PLAYER.name),
+    avatar: String(data.avatar ?? DEFAULT_PLAYER.avatar),
+    rank: String(data.rank ?? DEFAULT_PLAYER.rank),
+    masterClass: String(data.masterClass ?? DEFAULT_PLAYER.masterClass),
+    description: String(data.description ?? DEFAULT_PLAYER.description),
+    level: Number(data.level ?? DEFAULT_PLAYER.level),
+    xp: Number(data.xp ?? DEFAULT_PLAYER.xp),
+    xpRequired: Number(data.xpRequired ?? DEFAULT_PLAYER.xpRequired),
+    total_exp: Number(data.total_exp ?? DEFAULT_PLAYER.total_exp),
+    coins: Number(data.coins ?? DEFAULT_PLAYER.coins),
+    cp: Number(data.cp ?? DEFAULT_PLAYER.cp),
+    inventory: Array.isArray(data.inventory) ? (data.inventory as string[]) : DEFAULT_PLAYER.inventory,
+    stats: (data.stats as unknown as PlayerData['stats']) || DEFAULT_PLAYER.stats,
+    buffs: Array.isArray(data.buffs) ? (data.buffs as PlayerData['buffs']) : [],
+    debuffs: Array.isArray(data.debuffs) ? (data.debuffs as PlayerData['debuffs']) : [],
+    activeArtifacts: Array.isArray(data.activeArtifacts)
+      ? (data.activeArtifacts as PlayerData['activeArtifacts'])
+      : [],
+    failureDebtXP: Number(data.failureDebtXP ?? 0),
+    failureDebtCoins: Number(data.failureDebtCoins ?? 0),
+    questReputation: Number(data.questReputation ?? 0),
+    lastDailyReset: String(data.lastDailyReset || new Date().toISOString()),
+  };
+}
 
 // Reads and parses PlayerData.md, returns PlayerData object
 export async function readPlayerData(vault: Vault): Promise<PlayerData | null> {
   let filePath = "SkillTree/PlayerData.md";
   console.log("[readPlayerData] Looking for file at:", filePath);
 
-  // Enhanced mobile debugging
-  const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent.toLowerCase());
+  // iPad/iPhone/Android: Obsidian body classes + Platform + iPad desktop-UA touch heuristic
+  const isMobile = isLikelyMobileDevice();
   if (isMobile) {
-    console.log("📱 [Mobile] Reading PlayerData on mobile device");
+    console.log("📱 [Mobile/Tablet] Reading PlayerData (adapter-first path)");
 
     // Use the proven working method: direct adapter.read
     try {
       console.log("📱 [Mobile] Using direct adapter.read method...");
       const content = await vault.adapter.read(filePath);
       console.log("📱 [Mobile] File read successfully, length:", content.length);
-      console.log("📱 [Mobile] First 100 chars of content:", content.substring(0, 100));
-
-      // Use the exact same parsing method as the working debug button
-      const yamlMatch = content.match(/^---\n([\s\S]*?)\n---/);
-      if (!yamlMatch) {
-        throw new Error("No YAML frontmatter found");
+      const parsed = parsePlayerDataFromMarkdown(content);
+      if (parsed) {
+        console.log("📱 [Mobile] PlayerData created successfully:", parsed.name, "Level", parsed.level);
+        return parsed;
       }
-
-      const yamlContent = yamlMatch[1];
-      console.log("📱 [Mobile] YAML content extracted:", yamlContent.substring(0, 200));
-
-      // Simple YAML parser (same as debug button)
-      const data: Record<string, string | number | unknown[]> = {};
-      const lines = yamlContent.split('\n');
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed || trimmed.startsWith('#')) continue;
-
-        const colonIndex = trimmed.indexOf(':');
-        if (colonIndex === -1) continue;
-
-        const key = trimmed.substring(0, colonIndex).trim();
-        let value = trimmed.substring(colonIndex + 1).trim();
-
-        // Mobile-safe YAML value parsing
-        // Handle multi-line strings that might be corrupted on mobile
-        if (value === '>-' || value === '|-' || value === '>' || value === '|') {
-          console.log('📱 [Mobile] Detected YAML block scalar indicator, skipping corrupted value for key:', key);
-          // Skip this corrupted value, will use default
-          continue;
-        }
-
-        // Remove quotes
-        if ((value.startsWith('"') && value.endsWith('"')) ||
-          (value.startsWith("'") && value.endsWith("'"))) {
-          value = value.slice(1, -1);
-        }
-
-        // Convert numbers
-        if (/^\d+$/.test(value)) {
-          data[key] = parseInt(value, 10);
-        } else if (/^\d+\.\d+$/.test(value)) {
-          data[key] = parseFloat(value);
-        } else if (value.startsWith('[') && value.endsWith(']')) {
-          // Simple array parsing
-          const arrayContent = value.slice(1, -1);
-          if (arrayContent.trim()) {
-            data[key] = arrayContent.split(',').map(item => item.trim().replace(/['"]/g, ''));
-          } else {
-            data[key] = [];
-          }
-        } else {
-          // Additional validation for description field
-          if (key === 'description' && (value.length < 5 || value.includes('>') || value.includes('|'))) {
-            console.log('📱 [Mobile] Skipping potentially corrupted description value:', value);
-            continue;
-          }
-          data[key] = value;
-        }
-      }
-
-      console.log("📱 [Mobile] Manual YAML parsing successful, keys:", Object.keys(data));
-
-      // Create complete PlayerData object
-      const playerData: PlayerData = {
-        name: String(data.name ?? DEFAULT_PLAYER.name),
-        avatar: String(data.avatar ?? DEFAULT_PLAYER.avatar),
-        rank: String(data.rank ?? DEFAULT_PLAYER.rank),
-        masterClass: String(data.masterClass ?? DEFAULT_PLAYER.masterClass),
-        description: String(data.description ?? DEFAULT_PLAYER.description),
-        level: Number(data.level ?? DEFAULT_PLAYER.level),
-        xp: Number(data.xp ?? DEFAULT_PLAYER.xp),
-        xpRequired: Number(data.xpRequired ?? DEFAULT_PLAYER.xpRequired),
-        total_exp: Number(data.total_exp ?? DEFAULT_PLAYER.total_exp),
-        coins: Number(data.coins ?? DEFAULT_PLAYER.coins),
-        cp: Number(data.cp ?? DEFAULT_PLAYER.cp),
-        inventory: Array.isArray(data.inventory) ? data.inventory as string[] : DEFAULT_PLAYER.inventory,
-        stats: (data.stats as unknown as PlayerData['stats']) || DEFAULT_PLAYER.stats,
-        buffs: Array.isArray(data.buffs) ? data.buffs as PlayerData['buffs'] : [],
-        debuffs: Array.isArray(data.debuffs) ? data.debuffs as PlayerData['debuffs'] : [],
-        activeArtifacts: Array.isArray(data.activeArtifacts) ? data.activeArtifacts as PlayerData['activeArtifacts'] : [],
-        failureDebtXP: Number(data.failureDebtXP ?? 0),
-        failureDebtCoins: Number(data.failureDebtCoins ?? 0),
-        questReputation: Number(data.questReputation ?? 0),
-        lastDailyReset: String(data.lastDailyReset || new Date().toISOString()),
-      };
-
-      console.log("📱 [Mobile] PlayerData created successfully:", playerData.name, "Level", playerData.level);
-      return playerData;
-
+      console.warn("📱 [Mobile] adapter.read succeeded but YAML parse failed; falling back");
     } catch (mobileError) {
       console.error("📱 [Mobile] Direct adapter.read failed:", mobileError);
-      console.error("📱 [Mobile] Error details:", {
-        message: mobileError instanceof Error ? mobileError.message : String(mobileError),
-        stack: mobileError instanceof Error ? mobileError.stack : undefined,
-        filePath,
-        type: typeof mobileError
-      });
       console.log("📱 [Mobile] Falling back to normal method...");
     }
   }
@@ -511,6 +500,18 @@ export async function readPlayerData(vault: Vault): Promise<PlayerData | null> {
         filePath: tfile?.path,
         fileSize: tfile?.stat?.size
       });
+    }
+
+    // Last-resort: adapter.read + lightweight parse (helps iPad desktop-UA / gray-matter failures)
+    try {
+      const raw = await vault.adapter.read(filePath);
+      const recovered = parsePlayerDataFromMarkdown(raw);
+      if (recovered) {
+        console.log("[readPlayerData] Recovered via adapter.read fallback:", recovered.name);
+        return recovered;
+      }
+    } catch (fallbackErr) {
+      console.error("[readPlayerData] adapter.read fallback also failed:", fallbackErr);
     }
 
     return null;

@@ -1,5 +1,9 @@
 import type GamifiedObsidianPlugin from '../../../core/main';
 import type { CraftingRecipe } from '../types/CraftingTypes';
+import {
+	clearVaultMarkdownFileCache,
+	resolveVaultMarkdownFile,
+} from '../../../shared/utils/resolveVaultMarkdownFile';
 
 const RECIPE_CATEGORIES = [
 	'weapon',
@@ -19,18 +23,20 @@ export const RECIPES_FILE_BASENAME = 'recipes';
 
 const RECIPES_FILE_HEADER = `# Crafting Recipes
 
-// Managed by Gamification — custom entries merge with built-in defaults by id.
-// Example:
-// 🧪 Moon Tea #recipe #consumable #easy
-// // id: moon-tea
-// // time: 30
-// // skill: 1
-// // station: workbench
-// // mat: moonleaf:2
-// // mat: herb:1
-// // out: Moon Tea | consumable | uncommon | 🍵
-// // outEffect: Restore 20 Energy
+Managed by Gamification — custom entries merge with built-in defaults by id.
+
+Format (title line must include the recipe tag; meta lines use // key: value):
+
+\`\`\`
+🧪 Moon Tea #recipe #consumable #easy
+// id: moon-tea
+// mat: herb:2
+// out: Moon Tea | consumable | uncommon | 🍵
+// outEffect: energy:+20
 // A calming tea brewed from moon herbs.
+\`\`\`
+
+Add your recipes below this line.
 `;
 
 function slugify(name: string): string {
@@ -48,7 +54,9 @@ function parseMetaLine(line: string): { key: string; value: string } | null {
 }
 
 function parseRecipeHeaderLine(line: string): Partial<CraftingRecipe> | null {
+	// Comment / meta lines are never recipe titles (avoids header examples becoming ghost recipes)
 	if (!line.includes('#recipe')) return null;
+	if (line.startsWith('//')) return null;
 
 	const iconMatch = line.match(/^([\p{Emoji}\p{So}\p{Sk}\p{Sc}\p{Sm}])\s+/u);
 	let icon: string | undefined;
@@ -58,7 +66,12 @@ function parseRecipeHeaderLine(line: string): Partial<CraftingRecipe> | null {
 		rest = line.slice(iconMatch[0].length);
 	}
 
-	const name = rest.split(' #')[0].trim();
+	// Strip accidental comment markers from older bad parses / hand edits
+	const name = rest
+		.split(' #')[0]
+		.trim()
+		.replace(/^\/\/\s*/, '')
+		.trim();
 	if (!name) return null;
 
 	const tagMatches = [...rest.matchAll(/#(\w+)/g)].map((m) => m[1].toLowerCase());
@@ -128,9 +141,18 @@ function parseOutputSpec(value: string): NonNullable<CraftingRecipe['guaranteedI
 export function parseRecipesFromLines(lines: string[]): CraftingRecipe[] {
 	const recipes: CraftingRecipe[] = [];
 
+	let inFence = false;
 	for (let i = 0; i < lines.length; i++) {
-		const line = lines[i].trim();
+		const raw = lines[i];
+		const line = raw.trim();
+		if (line.startsWith('```')) {
+			inFence = !inFence;
+			continue;
+		}
+		if (inFence) continue;
 		if (!line) continue;
+		// Markdown headings and // comments are never recipe title rows
+		if (line.startsWith('//')) continue;
 		if (line.startsWith('#') && !line.includes('#recipe')) continue;
 
 		const header = parseRecipeHeaderLine(line);
@@ -221,9 +243,12 @@ export function parseRecipesFromLines(lines: string[]): CraftingRecipe[] {
 }
 
 export function findRecipesFile(plugin: GamifiedObsidianPlugin) {
-	return plugin.app.vault
-		.getMarkdownFiles()
-		.find((f) => f.basename.toLowerCase() === RECIPES_FILE_BASENAME);
+	return resolveVaultMarkdownFile(plugin.app, RECIPES_FILE_BASENAME, [
+		'Recipes.md',
+		'recipes.md',
+		'Gamification/Recipes.md',
+		'Gamified/Recipes.md',
+	]);
 }
 
 export async function getVaultRecipes(plugin: GamifiedObsidianPlugin): Promise<CraftingRecipe[]> {
@@ -238,7 +263,9 @@ export async function ensureRecipesFile(plugin: GamifiedObsidianPlugin): Promise
 	if (findRecipesFile(plugin)) return true;
 
 	try {
+		clearVaultMarkdownFileCache(RECIPES_FILE_BASENAME);
 		await plugin.app.vault.create('Recipes.md', RECIPES_FILE_HEADER);
+		clearVaultMarkdownFileCache(RECIPES_FILE_BASENAME);
 		return true;
 	} catch (error) {
 		console.error('[recipesParser] Failed to create Recipes.md', error);

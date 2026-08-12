@@ -688,3 +688,130 @@
 .pixelQuestModalPanel .coreFormSection select {
     border-radius: var(--pixel-radius) !important;
 }
+
+/* ========== Mobile full-screen shell (safe area + sticky footer) ========== */
+.mobileShell {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    height: 100% !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+    z-index: 10000;
+}
+
+.mobileOverlay {
+    align-items: stretch !important;
+    justify-content: stretch !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    height: 100dvh !important;
+}
+
+.mobileHeader {
+    flex-shrink: 0;
+    padding: max(10px, env(safe-area-inset-top, 0px)) 12px 10px;
+    border-bottom: 1px solid rgba(34, 200, 255, 0.28);
+    background: rgba(6, 18, 34, 0.96);
+}
+
+.mobileHeaderBar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
+
+.mobileCloseBtn {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    flex-shrink: 0;
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 1px solid rgba(34, 200, 255, 0.55) !important;
+    border-radius: 8px !important;
+    background: rgba(8, 28, 54, 0.95) !important;
+    color: #22c8ff !important;
+    font-size: 22px !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: none !important;
+}
+
+.mobileForm {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.mobileBody {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding: 12px 12px 20px;
+    padding-left: max(12px, env(safe-area-inset-left, 0px));
+    padding-right: max(12px, env(safe-area-inset-right, 0px));
+}
+
+.mobileFooter {
+    flex-shrink: 0;
+    padding: 10px 12px max(12px, env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid rgba(34, 200, 255, 0.28);
+    background: rgba(4, 14, 28, 0.98);
+    box-shadow: 0 -8px 20px rgba(0, 0, 0, 0.35);
+}
+
+.mobileFooterActions {
+    display: grid !important;
+    grid-template-columns: 1fr 1.35fr;
+    gap: 10px !important;
+    margin-top: 0 !important;
+    justify-content: stretch !important;
+}
+
+.mobileFooterActions button {
+    width: 100%;
+    min-height: 48px !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+}
+
+.mobileHintCompact {
+    display: none !important;
+}
+
+@media (max-width: 768px), (pointer: coarse) {
+    .mobileHintCompact {
+        display: none !important;
+    }
+
+    .mobileShell input,
+    .mobileShell select,
+    .mobileShell textarea {
+        min-height: 44px;
+        font-size: 16px !important; /* prevent iOS zoom */
+    }
+}

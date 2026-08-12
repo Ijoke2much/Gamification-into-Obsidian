@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { showGameNotice } from '../../../shared/utils/noticeUtils';
-import { HabitData, getTreeStageForStreak, getDisplayTreeStage, applyEvolutionMissPenalties, adjustEvolutionPenaltyForStreakChange, checkAndUpdateTreeMilestones, saveHabitsToFile, loadHabitsFromFile, calculateStreak, isCompletedToday, getLocalDateString, calculateStreakFromCompletedDates } from '../../../features/habits/utils/habitsUtils';
+import { HabitData, getTreeStageForStreak, getDisplayTreeStage, applyEvolutionMissPenalties, adjustEvolutionPenaltyForStreakChange, checkAndUpdateTreeMilestones, saveHabitsToFile, loadHabitsFromFile, calculateStreak, isCompletedToday, getLocalDateString, calculateStreakFromCompletedDates, isHabitScheduledOnLocalDate } from '../../../features/habits/utils/habitsUtils';
 import { calculateTreeRewards, DEFAULT_TREE_REWARD_CONFIG, getTreeItemDrop, checkSpecialBonuses } from '../../../features/habits/utils/treeRewardSystem';
 import { SeasonalTreeEventManager } from '../../../features/habits/utils/seasonalTreeEvents';
 import { TreeVisualEffectsManager } from '../../../features/habits/utils/treeVisualEffects';
@@ -9,6 +9,8 @@ import GamifiedObsidianPlugin from '../../../core/main';
 import { distributeCPFromQuest, updatePlayerData } from '../../../shared/utils/progressUpdater';
 import { MaterialInventoryManager } from '../../../shared/services/materialInventoryManager';
 import { currencyDisplay } from '../../../shared/services/currencyDisplayService';
+import { tryClaimHabitDailyClearBonus } from '../../../shared/utils/dailyClearBonus';
+import { recordDailyActivity } from '../../../shared/utils/dailyActivityStreak';
 import styles from './HabitsTab.module.css';
 
 // Import the correct component name
@@ -17,15 +19,11 @@ import HabitForm from '../../../features/habits/modals/AddHabitForm';
 // Import optimized icons
 import { AddIcon, EditIcon, DeleteIcon } from '../../../shared/components/ui/OptimizedIcons';
 
-// Tree stages - using PNG files
-import treeStage1 from '../../../assets/trees/tree_stage_1.png';
-import treeStage2 from '../../../assets/trees/tree_stage_2.png';
-import treeStage3 from '../../../assets/trees/tree_stage_3.png';
-import treeStage4 from '../../../assets/trees/tree_stage_4.png';
-import treeStage5 from '../../../assets/trees/tree_stage_5.png';
+// Tree stages — loaded from plugin assets/ at runtime (not inlined in main.js)
+import { getPluginTreeStageUrls } from '../../../shared/utils/pluginAssetUrl';
+import { useMobileOptimizations } from '../../../shared/hooks/useMobileOptimizations';
 
-// Tree stages
-const treeStages = [treeStage1, treeStage2, treeStage3, treeStage4, treeStage5];
+const HABITS_LOAD_TIMEOUT_MS = 15_000;
 
 // Shared definition of tree stage thresholds so labels stay in sync with logic
 const TREE_STAGE_THRESHOLDS = [
@@ -82,6 +80,11 @@ interface HabitsTabProps {
 }
 
 export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reloadPlayerData }) => {
+    const { isMobile } = useMobileOptimizations();
+    const treeStages = useMemo(
+        () => getPluginTreeStageUrls(plugin.app),
+        [plugin.app]
+    );
     // Ensure currency display service is initialized
     currencyDisplay.initialize(plugin.settings);
     
@@ -89,6 +92,9 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
     const currencySymbol = currencyDisplay.getCurrencySymbol();
     const [habits, setHabits] = useState<HabitData[]>([]);
     const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState<string | null>(null);
+    const [loadAttempt, setLoadAttempt] = useState(0);
+    const loadFinishedRef = useRef(false);
     const [showAddHabit, setShowAddHabit] = useState(false);
     const [editingHabit, setEditingHabit] = useState<HabitData | null>(null);
     const [activeTab, setActiveTab] = useState<'today' | 'all' | 'done' | 'archived'>('today');
@@ -104,54 +110,79 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
     const [activeEvents, setActiveEvents] = useState<any[]>([]);
     const [eventEffects, setEventEffects] = useState<any>(null);
 
-    // Load habits on component mount and normalize streaks from completed dates
-    useEffect(() => {
-        const loadHabits = async () => {
-            try {
-                const loadedHabits = await loadHabitsFromFile(plugin.app.vault);
+    const loadHabitsData = useCallback(async () => {
+        loadFinishedRef.current = false;
+        setLoading(true);
+        setLoadError(null);
 
-                // Recompute streaks so they always match the visible checked days
-                const normalizedHabits = loadedHabits.map(habit => {
-                    const newStreak = calculateStreakFromCompletedDates(habit.completedDates || []);
-
-                    // Find the most recent completion date (if any)
-                    const dates = habit.completedDates || [];
-                    const latestDate = dates.length > 0
-                        ? dates.slice().sort().slice(-1)[0]
-                        : habit.lastCompleted;
-
-                    const merged = {
-                        ...habit,
-                        streak: newStreak,
-                        longestStreak: Math.max(habit.longestStreak || 0, newStreak),
-                        lastCompleted: latestDate || habit.lastCompleted
-                    };
-                    return applyEvolutionMissPenalties(merged);
-                });
-
-                const prevById = new Map(loadedHabits.map(h => [h.id, h]));
-                const evolutionDirty = normalizedHabits.some(h => {
-                    const o = prevById.get(h.id);
-                    return (
-                        !o ||
-                        (o.evolutionPenalty ?? 0) !== (h.evolutionPenalty ?? 0) ||
-                        o.lastEvolutionEvalDate !== h.lastEvolutionEvalDate
-                    );
-                });
-                if (evolutionDirty) {
-                    await saveHabitsToFile(plugin.app.vault, normalizedHabits);
-                }
-
-                setHabits(normalizedHabits);
-            } catch (error) {
-                console.error('Error loading habits:', error);
-                showGameNotice('Error loading habits');
-            } finally {
+        const timeoutId = window.setTimeout(() => {
+            if (!loadFinishedRef.current) {
+                loadFinishedRef.current = true;
+                setLoadError('Habits took too long to load. Check iCloud sync, then tap Retry.');
                 setLoading(false);
             }
-        };
-        loadHabits();
-    }, [plugin]);
+        }, HABITS_LOAD_TIMEOUT_MS);
+
+        try {
+            const loadedHabits = await loadHabitsFromFile(plugin.app.vault);
+
+            const normalizedHabits = loadedHabits.map(habit => {
+                const newStreak = calculateStreakFromCompletedDates(habit.completedDates || []);
+                const dates = habit.completedDates || [];
+                const latestDate = dates.length > 0
+                    ? dates.slice().sort().slice(-1)[0]
+                    : habit.lastCompleted;
+
+                const merged = {
+                    ...habit,
+                    streak: newStreak,
+                    longestStreak: Math.max(habit.longestStreak || 0, newStreak),
+                    lastCompleted: latestDate || habit.lastCompleted
+                };
+                return applyEvolutionMissPenalties(merged);
+            });
+
+            const prevById = new Map(loadedHabits.map(h => [h.id, h]));
+            const evolutionDirty = normalizedHabits.some(h => {
+                const o = prevById.get(h.id);
+                return (
+                    !o ||
+                    (o.evolutionPenalty ?? 0) !== (h.evolutionPenalty ?? 0) ||
+                    o.lastEvolutionEvalDate !== h.lastEvolutionEvalDate
+                );
+            });
+
+            setHabits(normalizedHabits);
+            loadFinishedRef.current = true;
+            setLoading(false);
+
+            if (evolutionDirty) {
+                const persist = () => {
+                    void saveHabitsToFile(plugin.app.vault, normalizedHabits).catch((error) => {
+                        console.error('Deferred habit save failed:', error);
+                    });
+                };
+                if (isMobile) {
+                    window.setTimeout(persist, 500);
+                } else {
+                    persist();
+                }
+            }
+        } catch (error) {
+            console.error('Error loading habits:', error);
+            showGameNotice('Error loading habits');
+            setLoadError('Could not load habits. Tap Retry.');
+            loadFinishedRef.current = true;
+            setLoading(false);
+        } finally {
+            window.clearTimeout(timeoutId);
+        }
+    }, [plugin.app.vault, isMobile]);
+
+    // Load habits on mount and when user retries
+    useEffect(() => {
+        void loadHabitsData();
+    }, [loadHabitsData, loadAttempt]);
 
     // Load persistent toggle states from localStorage
     useEffect(() => {
@@ -177,33 +208,36 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
     }, [persistentToggleStates]);
 
     // Load persistent tree section states from localStorage
+    // Mobile: always start collapsed (skip restoring open trees — heavy PNGs/effects)
     useEffect(() => {
+        if (isMobile) {
+            setTreeSectionsOpen({});
+            return;
+        }
         const loadTreeSectionStates = () => {
             try {
                 const savedStates = localStorage.getItem('gamified-tree-section-states');
                 if (savedStates) {
                     const parsedStates = JSON.parse(savedStates);
-                    // Validate that parsedStates is an object with boolean values
                     if (parsedStates && typeof parsedStates === 'object') {
-                
                         setTreeSectionsOpen(parsedStates);
                     }
                 }
             } catch (error) {
                 console.error('Error loading tree section states:', error);
-                // Clear corrupted data
                 localStorage.removeItem('gamified-tree-section-states');
             }
         };
         loadTreeSectionStates();
-    }, []);
+    }, [isMobile]);
 
-    // Save tree section states to localStorage whenever they change
+    // Save tree section states to localStorage whenever they change (desktop only)
     useEffect(() => {
+        if (isMobile) return;
         if (Object.keys(treeSectionsOpen).length > 0) {
             localStorage.setItem('gamified-tree-section-states', JSON.stringify(treeSectionsOpen));
         }
-    }, [treeSectionsOpen]);
+    }, [treeSectionsOpen, isMobile]);
 
     // Initialize seasonal events and check for active events
     useEffect(() => {
@@ -245,8 +279,9 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
         return () => clearInterval(quickCheckInterval);
     }, [activeEvents, eventEffects]);
 
-    // Apply seasonal effects to all visible trees when events change
+    // Apply seasonal effects to all visible trees when events change (desktop only)
     useEffect(() => {
+        if (isMobile) return;
         if (activeEvents.length > 0) {
             habits.forEach(habit => {
                 const treeElement = document.getElementById(`tree-${habit.id}`);
@@ -255,7 +290,7 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
                 }
             });
         }
-    }, [activeEvents, treeSectionsOpen, habits]);
+    }, [activeEvents, treeSectionsOpen, habits, isMobile]);
 
     // Initialize tree sections for new habits (only if not already saved)
     useEffect(() => {
@@ -472,39 +507,59 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
         const isCompleting = !originalCompletedDates.includes(targetDate);
         if (habit && isCompleting) {
             awardHabitRewards(habit);
+            if (targetDate === getLocalDateString()) {
+                recordDailyActivity(targetDate);
+            }
+
+            // Daily clear bonus once all habits due today are done
+            if (targetDate === getLocalDateString()) {
+                const allDueCleared = updatedHabits
+                    .filter((h) => !h.archived && isHabitScheduledOnLocalDate(h, targetDate))
+                    .every((h) => isCompletedToday(h));
+                void tryClaimHabitDailyClearBonus({
+                    allDueTodayCleared: allDueCleared,
+                    day: targetDate,
+                }).then((claimed) => {
+                    if (claimed && reloadPlayerData) void reloadPlayerData();
+                });
+            }
             
-            // Trigger visual effects
-            setTimeout(() => {
-                const treeElement = document.getElementById(`tree-${habitId}`);
-                if (treeElement) {
-                    // Always trigger completion effects
-                    TreeVisualEffectsManager.triggerCompletionEffect(treeElement);
-                    
-                    // Check for milestone effects
-                    if (habit.streak > 0 && habit.streak % 7 === 0) {
-                        setTimeout(() => {
-                            TreeVisualEffectsManager.triggerMilestoneEffect(treeElement);
-                        }, 1000);
+            // Trigger visual effects (desktop only — mobile skips DOM tree animations)
+            if (!isMobile) {
+                setTimeout(() => {
+                    const treeElement = document.getElementById(`tree-${habitId}`);
+                    if (treeElement) {
+                        TreeVisualEffectsManager.triggerCompletionEffect(treeElement);
+
+                        if (habit.streak > 0 && habit.streak % 7 === 0) {
+                            setTimeout(() => {
+                                TreeVisualEffectsManager.triggerMilestoneEffect(treeElement);
+                            }, 1000);
+                        }
+
+                        const oldStage = originalHabit ? getDisplayTreeStage(originalHabit) : 0;
+                        const newStage = getDisplayTreeStage(habit);
+                        if (newStage > oldStage) {
+                            setTimeout(() => {
+                                TreeVisualEffectsManager.triggerStageTransition(
+                                    treeElement,
+                                    oldStage,
+                                    newStage,
+                                    () => {
+                                        showGameNotice(`🌳 Tree evolved to Stage ${newStage + 1}!`, 4000);
+                                    }
+                                );
+                            }, 2000);
+                        }
                     }
-                    
-                    // Check for stage transitions (visible evolution stage)
-                    const oldStage = originalHabit ? getDisplayTreeStage(originalHabit) : 0;
-                    const newStage = getDisplayTreeStage(habit);
-                    if (newStage > oldStage) {
-                        setTimeout(() => {
-                            TreeVisualEffectsManager.triggerStageTransition(
-                                treeElement,
-                                oldStage,
-                                newStage,
-                                () => {
-                                    // Stage transition complete - could trigger additional effects
-                                    showGameNotice(`🌳 Tree evolved to Stage ${newStage + 1}!`, 4000);
-                                }
-                            );
-                        }, 2000);
-                    }
+                }, 100);
+            } else if (originalHabit) {
+                const oldStage = getDisplayTreeStage(originalHabit);
+                const newStage = getDisplayTreeStage(habit);
+                if (newStage > oldStage) {
+                    showGameNotice(`🌳 Tree evolved to Stage ${newStage + 1}!`, 4000);
                 }
-            }, 100); // Small delay to ensure DOM update
+            }
         }
     };
 
@@ -632,8 +687,8 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
         }
         
         // Show reward notification
-        const rewardMessage = `🌳 Habit Complete! +${Math.round(totalXP)} XP, +${Math.round(totalCP)} CP, +${Math.round(totalCoins)} Coins`;
-        showGameNotice(rewardMessage, 3000);
+        const rewardMessage = `✅ Habit complete! +${Math.round(totalXP)} XP · +${Math.round(totalCP)} CP · +${Math.round(totalCoins)} coins`;
+        showGameNotice(rewardMessage, 3500);
 
         // Trigger achievement events
         try {
@@ -813,22 +868,39 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
         );
     }
 
+    if (loadError) {
+        return (
+            <div
+                className={`${styles.loading} ${styles.pixelHabitsShell}`}
+                data-pixel-shell="habits"
+            >
+                <p style={{ marginBottom: '12px' }}>{loadError}</p>
+                <button
+                    type="button"
+                    onClick={() => setLoadAttempt((n) => n + 1)}
+                    style={{
+                        padding: '10px 16px',
+                        background: 'var(--interactive-accent)',
+                        color: 'var(--text-on-accent)',
+                        border: 'none',
+                        borderRadius: '6px',
+                        fontSize: '14px',
+                    }}
+                >
+                    Retry
+                </button>
+            </div>
+        );
+    }
+
     const todayStr = getLocalDateString();
-    const dow = new Date().getDay();
 
     const visibleHabits = habits.filter(h => h.archived !== true);
     const completedTodayCount = visibleHabits.filter(habit => isCompletedToday(habit)).length;
-    const todayScheduledHabits = visibleHabits.filter((habit) => {
-        const scheduleType = habit.scheduleType || 'daily';
-        const scheduleDays = habit.scheduleDays && habit.scheduleDays.length > 0
-            ? habit.scheduleDays
-            : [0, 1, 2, 3, 4, 5, 6];
-
-        return scheduleType === 'daily' || scheduleDays.includes(dow);
-    });
-    const quickCheckHabits = todayScheduledHabits.filter((habit) => {
-        return !(habit.completedDates || []).includes(todayStr) && habit.lastCompleted !== todayStr;
-    });
+    const todayScheduledHabits = visibleHabits.filter((habit) =>
+        isHabitScheduledOnLocalDate(habit, todayStr)
+    );
+    const quickCheckHabits = todayScheduledHabits.filter((habit) => !isCompletedToday(habit));
 
     const filteredHabits = habits.filter((habit) => {
         const isArchived = habit.archived === true;
@@ -838,20 +910,19 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
 
         if (activeTab === 'all') return true;
         if (activeTab === 'done') {
-            return (habit.completedDates || []).includes(todayStr) || habit.lastCompleted === todayStr;
+            return isCompletedToday(habit);
         }
 
         // today: scheduled today
-        const scheduleType = habit.scheduleType || 'daily';
-        const scheduleDays = habit.scheduleDays && habit.scheduleDays.length > 0
-            ? habit.scheduleDays
-            : [0, 1, 2, 3, 4, 5, 6];
-        return scheduleType === 'daily' || scheduleDays.includes(dow);
+        return isHabitScheduledOnLocalDate(habit, todayStr);
     });
 
     return (
-        <div className={`${styles.container} ${styles.pixelHabitsShell}`} data-pixel-shell="habits">
-            {/* Header */}
+        <div
+            className={`${styles.container} ${styles.pixelHabitsShell}${isMobile ? ` ${styles.mobileHabitsShell}` : ''}`}
+            data-pixel-shell="habits"
+            data-gamification-mobile={isMobile ? 'true' : 'false'}
+        >            {/* Header */}
             <div className={styles.header}>
                 <div className={styles.headerInfo}>
                     <div className="flex items-center gap-2">
@@ -878,13 +949,16 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
             </div>
 
             {(activeTab === 'today' || activeTab === 'all') && (
-                <section className={styles.quickCheckPanel} aria-label="Quick check today's habits">
+                <section
+                    className={`${styles.quickCheckPanel}${isMobile ? ` ${styles.dueTodayPanel}` : ''}`}
+                    aria-label="Due today habits"
+                >
                     <div className={styles.quickCheckHeader}>
                         <div>
-                            <div className={styles.quickCheckTitle}>Quick Check</div>
+                            <div className={styles.quickCheckTitle}>Due today</div>
                             <div className={styles.quickCheckSubtitle}>
                                 {quickCheckHabits.length > 0
-                                    ? `${quickCheckHabits.length} habit${quickCheckHabits.length === 1 ? '' : 's'} left today`
+                                    ? `${quickCheckHabits.length} habit${quickCheckHabits.length === 1 ? '' : 's'} left — tap to check off`
                                     : 'All scheduled habits are checked off'}
                             </div>
                         </div>
@@ -922,7 +996,11 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
                             })}
                         </div>
                     ) : (
-                        <div className={styles.quickCheckEmpty}>Nice, your habit inbox is clear for today.</div>
+                        <div className={styles.quickCheckEmpty}>
+                            {todayScheduledHabits.length > 0
+                                ? '🏆 Due today cleared — bonus if first clear today.'
+                                : 'No habits scheduled for today.'}
+                        </div>
                     )}
                 </section>
             )}
@@ -1029,10 +1107,13 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
             <div className={styles.habitsList}>
                 {filteredHabits.map(habit => {
                     const weeklyData = generateWeeklyView(habit.completedDates || []);
-                    const scrollableHeatmapData = generateScrollableHeatmapData(habit.completedDates || [], habit.id);
                     const today = getLocalDateString();
                     const isCompletedToday = (habit.completedDates || []).includes(today);
                     const isHeatmapExpanded = expandedHeatmaps[habit.id];
+                    // Defer heatmap month generation until the section is expanded
+                    const scrollableHeatmapData = isHeatmapExpanded
+                        ? generateScrollableHeatmapData(habit.completedDates || [], habit.id)
+                        : [];
                     const treeOpen = !!treeSectionsOpen[habit.id];
                     const treePanelId = `habit-tree-panel-${habit.id}`;
                     const treeTriggerId = `habit-tree-trigger-${habit.id}`;
@@ -1173,6 +1254,7 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
                                                         className={styles.treeWindowView}
                                                         id={`tree-${habit.id}`}
                                                         onMouseEnter={() => {
+                                                            if (isMobile) return;
                                                             const treeElement = document.getElementById(`tree-${habit.id}`);
                                                             if (treeElement) {
                                                                 TreeVisualEffectsManager.addInteractiveEffects(treeElement);

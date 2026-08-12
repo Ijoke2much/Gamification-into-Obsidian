@@ -5,7 +5,11 @@
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
-		"build": "echo '🔧 Running TypeScript check...' && tsc -noEmit -skipLibCheck && echo '📦 Building with esbuild...' && node esbuild.config.mjs production && echo '✅ Build completed!'",
+		"build": "echo '🔧 Running TypeScript check...' && tsc -noEmit -skipLibCheck && echo '📦 Building with esbuild...' && node esbuild.config.mjs production && echo '✅ Build completed!' && npm run build:verify",
+		"build:sync": "npm run build && npm run publish:icloud",
+		"build:verify": "node scripts/verify-plugin-build.mjs",
+		"assets:copy": "node scripts/copy-plugin-assets.mjs",
+		"publish:icloud": "node scripts/publish-to-icloud-vault.mjs",
 		"build:analyze": "npm run build && node scripts/analyze-bundle.mjs",
 		"verify-dialogue": "node scripts/verify-shopkeeper-dialogue.js",
 		"analyze": "node scripts/analyze-bundle.mjs",

@@ -14,6 +14,8 @@ export class EnhancedQuestSystem {
     private plugin: GamifiedObsidianPlugin;
     private bannerCache: Map<string, string> = new Map();
     private observer: MutationObserver | null = null;
+    private scanInterval: number | null = null;
+    private injectionTimeout: number | null = null;
 
     constructor(plugin: GamifiedObsidianPlugin) {
         this.plugin = plugin;
@@ -23,8 +25,8 @@ export class EnhancedQuestSystem {
      * Initialize the enhanced quest system
      */
     async initialize(): Promise<void> {
-        this.startFallbackBannerSystem();
         await this.preloadBannerCache();
+        this.startFallbackBannerSystem();
     }
 
     /**
@@ -123,73 +125,78 @@ export class EnhancedQuestSystem {
      * This runs continuously and injects banners into quest cards that don't have them
      */
     private startFallbackBannerSystem(): void {
-        // Initial injection
-        this.injectBannersIntoQuestCards();
+        const getRoot = (): HTMLElement | null =>
+            document.querySelector<HTMLElement>('[data-gamification-plugin]');
 
-        // Set up mutation observer to catch new quest cards
-        this.observer = new MutationObserver((mutations) => {
-            let shouldInject = false;
+        const attachObserver = () => {
+            const root = getRoot();
+            if (!root) return;
 
-            mutations.forEach((mutation) => {
-                if (mutation.type === 'childList') {
-                    mutation.addedNodes.forEach((node) => {
-                        if (node instanceof HTMLElement) {
-                            // Check if this might be a quest card or contain quest cards
-                            const text = node.textContent || '';
-                            if (text.includes('MAIN QUEST') || text.includes('FITNESS QUEST') ||
-                                text.includes('SKILL:') || text.includes('DIFFICULTY:')) {
-                                shouldInject = true;
+            void this.injectBannersIntoQuestCards(root);
+            if (this.observer) return;
+
+            this.observer = new MutationObserver((mutations) => {
+                let shouldInject = false;
+
+                mutations.forEach((mutation) => {
+                    if (mutation.type === 'childList') {
+                        mutation.addedNodes.forEach((node) => {
+                            if (node instanceof HTMLElement) {
+                                const text = node.textContent || '';
+                                if (text.includes('MAIN QUEST') || text.includes('FITNESS QUEST') ||
+                                    text.includes('SKILL:') || text.includes('DIFFICULTY:')) {
+                                    shouldInject = true;
+                                }
                             }
-                        }
-                    });
+                        });
+                    }
+                });
+
+                if (shouldInject) {
+                    if (this.injectionTimeout !== null) {
+                        window.clearTimeout(this.injectionTimeout);
+                    }
+                    this.injectionTimeout = window.setTimeout(() => {
+                        this.injectionTimeout = null;
+                        const currentRoot = getRoot();
+                        if (currentRoot) void this.injectBannersIntoQuestCards(currentRoot);
+                    }, 500);
                 }
             });
 
-            if (shouldInject) {
-                // Debounce the injection to avoid excessive calls
-                setTimeout(() => this.injectBannersIntoQuestCards(), 500);
-            }
-        });
+            this.observer.observe(root, {
+                childList: true,
+                subtree: true
+            });
+        };
 
-        // Start observing
-        this.observer.observe(document.body, {
-            childList: true,
-            subtree: true
-        });
+        attachObserver();
 
-        // Also run periodically as a backup
-        setInterval(() => this.injectBannersIntoQuestCards(), 5000);
+        // Retry slowly until the Player UI exists. Never scan Obsidian's whole DOM.
+        this.scanInterval = window.setInterval(() => {
+            attachObserver();
+            const root = getRoot();
+            if (root) void this.injectBannersIntoQuestCards(root);
+        }, 15_000);
     }
 
     /**
-     * Inject banners into quest cards that don't have them
+     * Inject banners into quest cards that don't have them.
+     * The scan is intentionally scoped to this plugin's own root.
      */
-    private async injectBannersIntoQuestCards(): Promise<void> {
+    private async injectBannersIntoQuestCards(root: ParentNode): Promise<void> {
         try {
             const questCardSelectors = [
                 '.quest-card',
                 '.cinematic-quest-card',
-                '[class*="quest"]',
-                '[class*="Quest"]',
-                '[class*="task"]',
-                '[class*="Task"]'
+                '[data-quest-id]',
+                '[data-gamification-quest]'
             ];
 
             const elements = new Set<HTMLElement>();
 
             questCardSelectors.forEach(selector => {
-                document.querySelectorAll(selector).forEach(el => elements.add(el as HTMLElement));
-            });
-
-            Array.from(document.querySelectorAll('*')).forEach(element => {
-                const text = element.textContent || '';
-                if (text.includes('MAIN QUEST') || text.includes('FITNESS QUEST') ||
-                    text.includes('SIDE QUEST') || text.includes('DAILY QUEST') ||
-                    text.includes('SKILL:') || text.includes('DIFFICULTY:') ||
-                    text.includes('#gamified-task') || text.includes('🛠️') ||
-                    text.includes('⭐') || text.includes('✨')) {
-                    elements.add(element as HTMLElement);
-                }
+                root.querySelectorAll(selector).forEach(el => elements.add(el as HTMLElement));
             });
 
             for (const element of elements) {
@@ -374,6 +381,14 @@ export class EnhancedQuestSystem {
         if (this.observer) {
             this.observer.disconnect();
             this.observer = null;
+        }
+        if (this.scanInterval !== null) {
+            window.clearInterval(this.scanInterval);
+            this.scanInterval = null;
+        }
+        if (this.injectionTimeout !== null) {
+            window.clearTimeout(this.injectionTimeout);
+            this.injectionTimeout = null;
         }
         this.bannerCache.clear();
     }

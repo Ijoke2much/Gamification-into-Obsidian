@@ -6,6 +6,13 @@ import { BatteryProgressBar } from '../../../shared/components/ui/BatteryProgres
 import { EnergyManagementSystem, EnergyRecommendation, EnergyActivity } from '../utils/energyManagementSystem';
 import type { WellbeingStatKey } from '../../../shared/utils/energyHudConfig';
 import { ENERGY_HUD_MODE_STATS } from '../../../shared/utils/energyHudConfig';
+import { useMobileOptimizations } from '../../../shared/hooks/useMobileOptimizations';
+import {
+    SystemActionBtn,
+    SystemFrame,
+    SystemHeader,
+    SystemResourceBar,
+} from '../../../shared/components/ui/system';
 import styles from './EnhancedEnergyHUD.module.css';
 
 /** Native tooltips: energy = physical drain; others = mental/emotional “shape of the day.” */
@@ -24,9 +31,11 @@ interface EnhancedEnergyHUDProps {
     showRecommendations?: boolean;
     compact?: boolean;
     autoRefresh?: boolean;
-    variant?: 'default' | 'pixel';
+    variant?: 'default' | 'pixel' | 'system';
     visibleStats?: WellbeingStatKey[];
     hudTitle?: string;
+    /** When provided, skips an extra playerStore.get() on mount. */
+    playerData?: PlayerData | null;
 }
 
 export const EnhancedEnergyHUD: React.FC<EnhancedEnergyHUDProps> = ({
@@ -37,8 +46,9 @@ export const EnhancedEnergyHUD: React.FC<EnhancedEnergyHUDProps> = ({
     variant = 'default',
     visibleStats = ENERGY_HUD_MODE_STATS.full,
     hudTitle = 'Energy Management',
+    playerData: playerDataProp,
 }) => {
-    const [playerData, setPlayerData] = useState<PlayerData | null>(null);
+    const [playerData, setPlayerData] = useState<PlayerData | null>(playerDataProp ?? null);
     const [recommendations, setRecommendations] = useState<EnergyRecommendation[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const [selectedRecommendation, setSelectedRecommendation] = useState<string | null>(null);
@@ -46,6 +56,7 @@ export const EnhancedEnergyHUD: React.FC<EnhancedEnergyHUDProps> = ({
     const [showStatModal, setShowStatModal] = useState<{ stat: string; value: number } | null>(null);
     const [manualStatValue, setManualStatValue] = useState<number>(70);
     const [manualStatHours, setManualStatHours] = useState<number>(4);
+    const { isMobile } = useMobileOptimizations();
 
     // Update modal value when stat modal opens
     useEffect(() => {
@@ -55,10 +66,19 @@ export const EnhancedEnergyHUD: React.FC<EnhancedEnergyHUDProps> = ({
     }, [showStatModal]);
 
     useEffect(() => {
+        if (playerDataProp !== undefined) {
+            setPlayerData(playerDataProp);
+        }
+    }, [playerDataProp]);
+
+    useEffect(() => {
         const loadData = async () => {
+            if (playerDataProp != null) {
+                setLastUpdate(new Date());
+                return;
+            }
             const data = await playerStore.get();
             setPlayerData(data);
-            
             if (showRecommendations) {
                 const recs = await EnergyManagementSystem.getEnergyRecommendations();
                 setRecommendations(recs);
@@ -66,9 +86,13 @@ export const EnhancedEnergyHUD: React.FC<EnhancedEnergyHUDProps> = ({
             setLastUpdate(new Date());
         };
 
-        loadData();
+        if (playerDataProp !== undefined && playerDataProp !== null) {
+            setPlayerData(playerDataProp);
+            setLastUpdate(new Date());
+        } else {
+            void loadData();
+        }
 
-        // Subscribe to player data changes
         const unsubscribe = playerStore.onChange((change: PlayerStateChange) => {
             if (change.type === 'data-updated') {
                 setPlayerData(change.payload);
@@ -79,7 +103,6 @@ export const EnhancedEnergyHUD: React.FC<EnhancedEnergyHUDProps> = ({
             }
         });
 
-        // Auto-refresh every 5 minutes
         let interval: NodeJS.Timeout | null = null;
         if (autoRefresh) {
             interval = setInterval(loadData, 5 * 60 * 1000);
@@ -89,7 +112,7 @@ export const EnhancedEnergyHUD: React.FC<EnhancedEnergyHUDProps> = ({
             unsubscribe();
             if (interval) clearInterval(interval);
         };
-    }, [showRecommendations, autoRefresh]);
+    }, [showRecommendations, autoRefresh, playerDataProp]);
 
     const handleActivityStart = async (activityId: string, duration?: number) => {
         setIsLoading(true);
@@ -103,8 +126,16 @@ export const EnhancedEnergyHUD: React.FC<EnhancedEnergyHUDProps> = ({
         }
     };
 
-    const hudRootClass = `${styles.energyHUD} ${variant === 'pixel' ? styles.pixelSkin : ''} ${className}`.trim();
-    const batteryPixel = variant === 'pixel';
+    const hudRootClass = [
+        'gamification-energy-hud',
+        styles.energyHUD,
+        styles.pixelSkin,
+        isMobile ? styles.mobileLayout : '',
+        className,
+    ].filter(Boolean).join(' ');
+    // Always batteries — do not switch to SystemResourceBar for any theme/device.
+    const batteryPixel = true;
+    const useSystemBars = false;
 
     if (!playerData?.stats) {
         return <div className={hudRootClass}>Loading energy data...</div>;
@@ -313,24 +344,252 @@ export const EnhancedEnergyHUD: React.FC<EnhancedEnergyHUDProps> = ({
 
     const energyTrend = getEnergyTrend();
 
+    const renderStatEditButton = (
+        statKey: WellbeingStatKey,
+        value: number,
+        name: string
+    ) => (
+        <button
+            type="button"
+            className={batteryPixel ? styles.statEditBtn : styles.statEditBtnInline}
+            onClick={() => {
+                setManualStatValue(value);
+                setShowStatModal({ stat: statKey, value });
+            }}
+            title={`Adjust ${name.toLowerCase()} manually`}
+            aria-label={`Adjust ${name}`}
+        >
+            ✎
+        </button>
+    );
+
+    const renderStatRow = (
+        statKey: WellbeingStatKey,
+        value: number,
+        icon: string,
+        name: string,
+        tip: string,
+        statType: 'energy' | 'focus' | 'motivation' | 'calm' | 'stress'
+    ) => {
+        if (useSystemBars) {
+            return (
+                <div
+                    key={statKey}
+                    className={`${styles.statRow} ${styles.statRowSystem} ${isMobile ? styles.statRowMobile : ''}`}
+                >
+                    <SystemResourceBar
+                        label={name}
+                        current={value}
+                        max={100}
+                        iconNode={<span aria-hidden="true">{icon}</span>}
+                        className={styles.systemResourceBar}
+                    />
+                    <button
+                        type="button"
+                        className={styles.statEditBtnSystem}
+                        onClick={() => {
+                            setManualStatValue(value);
+                            setShowStatModal({ stat: statKey, value });
+                        }}
+                        title={`Adjust ${name.toLowerCase()} manually`}
+                        aria-label={`Adjust ${name}`}
+                    >
+                        ✎
+                    </button>
+                </div>
+            );
+        }
+
+        return (
+        <div
+            key={statKey}
+            className={
+                isMobile
+                    ? `${styles.statRow} ${styles.statRowMobile}`
+                    : `${styles.statRow} ${styles.statRowDesktop}`
+            }
+        >
+            {isMobile ? (
+                <>
+                    <div className={styles.statTopRow}>
+                        <div className={styles.statInfo} title={tip}>
+                            <span className={styles.statIcon}>{icon}</span>
+                            <span className={styles.statName}>{name}</span>
+                            <span className={styles.statValue}>{value}/100</span>
+                        </div>
+                        {renderStatEditButton(statKey, value, name)}
+                    </div>
+                    <div className={styles.statBar}>
+                        <BatteryProgressBar
+                            percent={value}
+                            segments={10}
+                            height={20}
+                            statType={statType}
+                            pixel={batteryPixel}
+                            statLabel={name}
+                        />
+                    </div>
+                </>
+            ) : (
+                <>
+                    <div className={styles.statInfo} title={tip}>
+                        <span className={styles.statIcon}>{icon}</span>
+                        <span className={styles.statName}>{name}</span>
+                        <span className={styles.statValue}>{value}/100</span>
+                    </div>
+                    <div className={styles.statBar}>
+                        <BatteryProgressBar
+                            percent={value}
+                            segments={10}
+                            height={22}
+                            statType={statType}
+                            pixel={batteryPixel}
+                            statLabel={name}
+                        />
+                    </div>
+                    {renderStatEditButton(statKey, value, name)}
+                </>
+            )}
+        </div>
+        );
+    };
+
+    const renderStatAdjustModal = () => {
+        if (!showStatModal) return null;
+
+        const statName = getStatDisplayName(showStatModal.stat);
+        const useSystemModal = useSystemBars;
+
+        const formBody = (
+            <>
+                <p className={styles.statAdjustDesc}>
+                    Set how you feel right now. This temporarily overrides system {statName.toLowerCase()}.
+                </p>
+                <label className={styles.statAdjustField}>
+                    <span className={styles.statAdjustLabel}>Value</span>
+                    <div className={styles.statAdjustControlRow}>
+                        <input
+                            type="range"
+                            min={0}
+                            max={100}
+                            value={manualStatValue}
+                            onChange={(e) => setManualStatValue(parseInt(e.target.value, 10))}
+                            className={styles.statAdjustRange}
+                        />
+                        <input
+                            type="number"
+                            min={0}
+                            max={100}
+                            value={manualStatValue}
+                            onChange={(e) =>
+                                setManualStatValue(Math.max(0, Math.min(100, parseInt(e.target.value || '0', 10))))
+                            }
+                            className={styles.statAdjustNumber}
+                        />
+                    </div>
+                </label>
+                <label className={styles.statAdjustField}>
+                    <span className={styles.statAdjustLabel}>Expires</span>
+                    <select
+                        value={manualStatHours}
+                        onChange={(e) => setManualStatHours(parseInt(e.target.value, 10))}
+                        className={styles.statAdjustSelect}
+                    >
+                        <option value={1}>in 1 hour</option>
+                        <option value={2}>in 2 hours</option>
+                        <option value={4}>in 4 hours</option>
+                        <option value={8}>in 8 hours</option>
+                        <option value={12}>in 12 hours</option>
+                        <option value={24}>in 24 hours</option>
+                    </select>
+                </label>
+                <div className={styles.statAdjustActions}>
+                    {useSystemModal ? (
+                        <>
+                            <SystemActionBtn secondary onClick={() => setShowStatModal(null)}>
+                                Cancel
+                            </SystemActionBtn>
+                            <SystemActionBtn
+                                onClick={() =>
+                                    applyManualStatOverride(showStatModal.stat, manualStatValue, manualStatHours)
+                                }
+                            >
+                                Save
+                            </SystemActionBtn>
+                        </>
+                    ) : (
+                        <>
+                            <button type="button" className={styles.statAdjustCancel} onClick={() => setShowStatModal(null)}>
+                                Cancel
+                            </button>
+                            <button
+                                type="button"
+                                className={styles.statAdjustSave}
+                                onClick={() =>
+                                    applyManualStatOverride(showStatModal.stat, manualStatValue, manualStatHours)
+                                }
+                            >
+                                Save
+                            </button>
+                        </>
+                    )}
+                </div>
+            </>
+        );
+
+        return (
+            <div
+                className={`${styles.statAdjustBackdrop} ${isMobile ? styles.statAdjustBackdropSheet : ''}`}
+                role="presentation"
+                onClick={() => setShowStatModal(null)}
+                onKeyDown={(e) => e.key === 'Escape' && setShowStatModal(null)}
+            >
+                {useSystemModal ? (
+                    <SystemFrame
+                        className={`${styles.statAdjustPanel} ${isMobile ? styles.statAdjustSheet : ''}`}
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <SystemHeader
+                            icon={getStatIcon(showStatModal.stat)}
+                            label="SYSTEM"
+                            title={`Adjust ${statName}`}
+                        />
+                        {formBody}
+                    </SystemFrame>
+                ) : (
+                    <div
+                        className={`${styles.statAdjustPanel} ${isMobile ? styles.statAdjustSheet : ''}`}
+                        role="dialog"
+                        aria-modal="true"
+                        onClick={(e) => e.stopPropagation()}
+                    >
+                        <h4 className={styles.statAdjustTitle}>
+                            {getStatIcon(showStatModal.stat)} Adjust {statName}
+                        </h4>
+                        {formBody}
+                    </div>
+                )}
+            </div>
+        );
+    };
+
     return (
         <div className={hudRootClass}>
-            {/* Header with trend and last update */}
             <div className={styles.header}>
-                <div className={styles.titleSection}>
-                    <h3
-                        className={styles.title}
-                        title="Physical energy (drain) is separate from stress, motivation, focus, and calm—how regulated, driven, or sharp you feel."
-                    >
-                        {hudTitle}
-                    </h3>
-                    <div className={`${styles.trend} ${energyTrend.class}`}>
+                <h3
+                    className={styles.title}
+                    title="Physical energy (drain) is separate from stress, motivation, focus, and calm—how regulated, driven, or sharp you feel."
+                >
+                    {hudTitle}
+                </h3>
+                <div className={`${styles.headerMeta} ${isMobile ? styles.headerMetaMobile : ''}`}>
+                    <div className={styles.lastUpdate}>
+                        {isMobile ? `Updated ${lastUpdate.toLocaleTimeString()}` : `Last updated: ${lastUpdate.toLocaleTimeString()}`}
+                    </div>
+                    <div className={`${styles.trend} ${energyTrend.class} ${isMobile ? styles.trendMobile : ''}`}>
                         <span className={styles.trendIcon}>{energyTrend.icon}</span>
                         <span className={styles.trendText}>{energyTrend.text}</span>
                     </div>
-                </div>
-                <div className={styles.lastUpdate}>
-                    Last updated: {lastUpdate.toLocaleTimeString()}
                 </div>
             </div>
             {/* Manual override indicators */}
@@ -354,170 +613,12 @@ export const EnhancedEnergyHUD: React.FC<EnhancedEnergyHUDProps> = ({
 
             {/* Enhanced stat bars */}
             <div className={styles.statsContainer}>
-                {showStat('energy') && (
-                <div className={styles.statRow}>
-                    <div className={styles.statInfo} title={HUD_STAT_TIPS.energy}>
-                        <span className={styles.statIcon}>⚡</span>
-                        <span className={styles.statName}>Energy</span>
-                        <span className={styles.statValue}>{energy}/100</span>
-                    </div>
-                    <div className={styles.statBar}>
-                        <BatteryProgressBar 
-                            percent={energy} 
-                            segments={10} 
-                            width={200} 
-                            height={22}
-                            statType="energy"
-                            pixel={batteryPixel}
-                            statLabel="Energy"
-                        />
-                    </div>
-                    <button 
-                        type="button"
-                        className={batteryPixel ? styles.statEditBtn : undefined}
-                        onClick={() => { 
-                            setManualStatValue(energy); 
-                            setShowStatModal({ stat: 'energy', value: energy }); 
-                        }} 
-                        title="Adjust energy manually"
-                        style={batteryPixel ? undefined : { marginLeft: 8, fontSize: 12, padding: '2px 6px' }}
-                    >
-                        ✎
-                    </button>
-                </div>
-                )}
+                {showStat('energy') && renderStatRow('energy', energy, '⚡', 'Energy', HUD_STAT_TIPS.energy, 'energy')}
+                {showStat('focus') && renderStatRow('focus', focus, '🎯', 'Focus', HUD_STAT_TIPS.focus, 'focus')}
+                {showStat('motivation') && renderStatRow('motivation', motivation, '💪', 'Motivation', HUD_STAT_TIPS.motivation, 'motivation')}
+                {showStat('calm') && renderStatRow('calm', calm, '🧘', 'Calm', HUD_STAT_TIPS.calm, 'calm')}
 
-                {showStat('focus') && (
-                <div className={styles.statRow}>
-                    <div className={styles.statInfo} title={HUD_STAT_TIPS.focus}>
-                        <span className={styles.statIcon}>🎯</span>
-                        <span className={styles.statName}>Focus</span>
-                        <span className={styles.statValue}>{focus}/100</span>
-                    </div>
-                    <div className={styles.statBar}>
-                        <BatteryProgressBar 
-                            percent={focus} 
-                            segments={10} 
-                            width={200} 
-                            height={22}
-                            statType="focus"
-                            pixel={batteryPixel}
-                            statLabel="Focus"
-                        />
-                    </div>
-                    <button 
-                        type="button"
-                        className={batteryPixel ? styles.statEditBtn : undefined}
-                        onClick={() => { 
-                            setManualStatValue(focus); 
-                            setShowStatModal({ stat: 'focus', value: focus }); 
-                        }} 
-                        title="Adjust focus manually"
-                        style={batteryPixel ? undefined : { marginLeft: 8, fontSize: 12, padding: '2px 6px' }}
-                    >
-                        ✎
-                    </button>
-                </div>
-                )}
-
-                {showStat('motivation') && (
-                <div className={styles.statRow}>
-                    <div className={styles.statInfo} title={HUD_STAT_TIPS.motivation}>
-                        <span className={styles.statIcon}>💪</span>
-                        <span className={styles.statName}>Motivation</span>
-                        <span className={styles.statValue}>{motivation}/100</span>
-                    </div>
-                    <div className={styles.statBar}>
-                        <BatteryProgressBar 
-                            percent={motivation} 
-                            segments={10} 
-                            width={200} 
-                            height={22}
-                            statType="motivation"
-                            pixel={batteryPixel}
-                            statLabel="Motivation"
-                        />
-                    </div>
-                    <button 
-                        type="button"
-                        className={batteryPixel ? styles.statEditBtn : undefined}
-                        onClick={() => { 
-                            setManualStatValue(motivation); 
-                            setShowStatModal({ stat: 'motivation', value: motivation }); 
-                        }} 
-                        title="Adjust motivation manually"
-                        style={batteryPixel ? undefined : { marginLeft: 8, fontSize: 12, padding: '2px 6px' }}
-                    >
-                        ✎
-                    </button>
-                </div>
-                )}
-
-                {showStat('calm') && (
-                <div className={styles.statRow}>
-                    <div className={styles.statInfo} title={HUD_STAT_TIPS.calm}>
-                        <span className={styles.statIcon}>🧘</span>
-                        <span className={styles.statName}>Calm</span>
-                        <span className={styles.statValue}>{calm}/100</span>
-                    </div>
-                    <div className={styles.statBar}>
-                        <BatteryProgressBar 
-                            percent={calm} 
-                            segments={10} 
-                            width={200} 
-                            height={22}
-                            statType="calm"
-                            pixel={batteryPixel}
-                            statLabel="Calm"
-                        />
-                    </div>
-                    <button 
-                        type="button"
-                        className={batteryPixel ? styles.statEditBtn : undefined}
-                        onClick={() => { 
-                            setManualStatValue(calm); 
-                            setShowStatModal({ stat: 'calm', value: calm }); 
-                        }} 
-                        title="Adjust calm manually"
-                        style={batteryPixel ? undefined : { marginLeft: 8, fontSize: 12, padding: '2px 6px' }}
-                    >
-                        ✎
-                    </button>
-                </div>
-                )}
-
-                {showStat('stress') && (
-                <div className={styles.statRow}>
-                    <div className={styles.statInfo} title={HUD_STAT_TIPS.stress}>
-                        <span className={styles.statIcon}>😰</span>
-                        <span className={styles.statName}>Stress</span>
-                        <span className={styles.statValue}>{stress}/100</span>
-                    </div>
-                    <div className={styles.statBar}>
-                        <BatteryProgressBar 
-                            percent={stress} 
-                            segments={10} 
-                            width={200} 
-                            height={22}
-                            statType="stress"
-                            pixel={batteryPixel}
-                            statLabel="Stress"
-                        />
-                    </div>
-                    <button 
-                        type="button"
-                        className={batteryPixel ? styles.statEditBtn : undefined}
-                        onClick={() => { 
-                            setManualStatValue(stress); 
-                            setShowStatModal({ stat: 'stress', value: stress }); 
-                        }} 
-                        title="Adjust stress manually"
-                        style={batteryPixel ? undefined : { marginLeft: 8, fontSize: 12, padding: '2px 6px' }}
-                    >
-                        ✎
-                    </button>
-                </div>
-                )}
+                {showStat('stress') && renderStatRow('stress', stress, '😰', 'Stress', HUD_STAT_TIPS.stress, 'stress')}
             </div>
 
             {/* Energy management recommendations */}
@@ -537,80 +638,8 @@ export const EnhancedEnergyHUD: React.FC<EnhancedEnergyHUDProps> = ({
                 </div>
             )}
 
-            {/* Quick actions */}
-            {/* Manual Stat Modal */}
-            {showStatModal && (
-                <div style={{
-                    position: 'fixed',
-                    inset: 0,
-                    background: 'rgba(0,0,0,0.5)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    zIndex: 9999
-                }}
-                    onClick={() => setShowStatModal(null)}
-                >
-                    <div 
-                        style={{ 
-                            background: 'var(--background-primary)', 
-                            border: '1px solid var(--background-modifier-border)',
-                            borderRadius: 10,
-                            padding: 16,
-                            width: 340,
-                            boxShadow: '0 10px 30px rgba(0,0,0,0.35)'
-                        }}
-                        onClick={(e) => e.stopPropagation()}
-                    >
-                        <h4 style={{ margin: 0, marginBottom: 8 }}>
-                            {getStatIcon(showStatModal.stat)} Adjust {getStatDisplayName(showStatModal.stat)}
-                        </h4>
-                        <div style={{ fontSize: 12, opacity: 0.8, marginBottom: 12 }}>
-                            Set how you feel right now; this will temporarily override system {getStatDisplayName(showStatModal.stat).toLowerCase()}.
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                            <span style={{ width: 36 }}>Value</span>
-                            <input 
-                                type="range" 
-                                min={0} max={100} 
-                                value={manualStatValue} 
-                                onChange={(e) => setManualStatValue(parseInt(e.target.value))}
-                                style={{ flex: 1 }}
-                            />
-                            <input 
-                                type="number" 
-                                min={0} max={100} 
-                                value={manualStatValue} 
-                                onChange={(e) => setManualStatValue(Math.max(0, Math.min(100, parseInt(e.target.value || '0'))))}
-                                style={{ width: 64 }}
-                            />
-                        </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
-                            <span style={{ width: 36 }}>Expires</span>
-                            <select 
-                                value={manualStatHours} 
-                                onChange={(e) => setManualStatHours(parseInt(e.target.value))}
-                            >
-                                <option value={1}>in 1 hour</option>
-                                <option value={2}>in 2 hours</option>
-                                <option value={4}>in 4 hours</option>
-                                <option value={8}>in 8 hours</option>
-                                <option value={12}>in 12 hours</option>
-                                <option value={24}>in 24 hours</option>
-                            </select>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8 }}>
-                            <button onClick={() => setShowStatModal(null)}>Cancel</button>
-                            <button 
-                                onClick={() => applyManualStatOverride(showStatModal.stat, manualStatValue, manualStatHours)}
-                                style={{ background: 'var(--interactive-accent)', color: 'var(--text-on-accent)', border: 'none', padding: '6px 10px', borderRadius: 6 }}
-                            >
-                                Save
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            )}
+            {renderStatAdjustModal()}
+            {!isMobile && (
             <div className={styles.quickActions}>
                 <button 
                     className={`${styles.quickAction} ${styles.restAction}`}
@@ -732,6 +761,7 @@ export const EnhancedEnergyHUD: React.FC<EnhancedEnergyHUDProps> = ({
                     🎯 Focus Session (45min)
                 </button>
             </div>
+            )}
         </div>
     );
 };

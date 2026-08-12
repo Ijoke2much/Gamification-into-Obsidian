@@ -173,7 +173,7 @@
 	width: 100%;
 	overflow: hidden;
 	touch-action: pan-y;
-	margin: 0 -2px;
+	margin: 4px -2px 0;
 	padding: 0 2px;
 	cursor: grab;
 	user-select: none;

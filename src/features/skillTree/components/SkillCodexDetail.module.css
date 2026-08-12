@@ -10,6 +10,19 @@
     justify-content: center;
     padding: 16px;
     animation: fadeIn 0.15s ease-out;
+    box-sizing: border-box;
+}
+
+/* Phone: fixed bottom sheet so Realm Map stays usable underneath */
+.backdropMobile {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 100060 !important;
+    align-items: flex-end;
+    justify-content: stretch;
+    padding: 0;
+    padding-top: 12vh;
+    background: rgba(8, 10, 20, 0.78);
 }
 
 .panel {
@@ -17,6 +30,7 @@
     max-width: 420px;
     max-height: min(78vh, 640px);
     overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
     background: var(--pixel-panel, #252742);
     border: 2px solid var(--pixel-border-dark, #0f1120);
     box-shadow: 3px 3px 0 var(--pixel-border-dark, #0f1120),
@@ -30,6 +44,19 @@
     gap: 12px;
     padding: 16px;
     image-rendering: pixelated;
+    box-sizing: border-box;
+}
+
+.panelMobile {
+    max-width: none;
+    width: 100%;
+    max-height: min(82dvh, 82vh);
+    border-left: none;
+    border-right: none;
+    border-bottom: none;
+    border-radius: 12px 12px 0 0;
+    padding: 14px 16px calc(20px + env(safe-area-inset-bottom, 0px));
+    box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.45);
 }
 
 .headerRow {
@@ -168,11 +195,13 @@
     margin-top: 4px;
     padding-top: 12px;
     border-top: 2px solid var(--pixel-border-dark, #0f1120);
+    flex-shrink: 0;
 }
 
 .btnPrimary {
     flex: 1;
     min-width: 120px;
+    min-height: 44px;
     padding: 10px 14px;
     border: 2px solid var(--pixel-border-dark, #0f1120);
     border-radius: 0;
@@ -184,6 +213,7 @@
     cursor: pointer;
     box-shadow: 3px 3px 0 var(--pixel-border-dark, #0f1120);
     text-transform: uppercase;
+    touch-action: manipulation;
 }
 
 .btnPrimary:hover {
@@ -196,6 +226,7 @@
 }
 
 .btnGhost {
+    min-height: 44px;
     padding: 10px 14px;
     border: 2px solid var(--pixel-border-dark, #0f1120);
     border-radius: 0;
@@ -207,6 +238,7 @@
     cursor: pointer;
     box-shadow: 2px 2px 0 var(--pixel-border-dark, #0f1120);
     text-transform: uppercase;
+    touch-action: manipulation;
 }
 
 .btnGhost:hover {

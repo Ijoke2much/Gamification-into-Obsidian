@@ -25,6 +25,17 @@ export type PlayerTabKey =
 	| 'pomodoro'
 	| 'analytics';
 
+/** Tabs enabled on phone/tablet until each is mobile-optimized */
+export const MOBILE_SAFE_PLAYER_TABS: readonly PlayerTabKey[] = [
+	'player',
+	'quests',
+	'habits',
+	'pomodoro',
+	'shop',
+	'crafting',
+	'achievements',
+];
+
 const PLUGIN_ID = 'Gamification-into-Obsidian';
 
 export function getPluginSettingsFromApp(app?: App): GamificationPluginSettings | undefined {
@@ -94,6 +105,20 @@ export function isPenaltyTypeEnabled(
 export function isFailureDebtEnabled(settings?: Partial<GamificationPluginSettings> | null): boolean {
 	const config = resolveGameplayConfig(settings);
 	return config.penaltiesEnabled && config.modules.enableFailureDebt === true;
+}
+
+export function isPlayerTabEnabledForDevice(
+	config: ResolvedGameplayConfig,
+	tabKey: PlayerTabKey,
+	isMobile: boolean
+): boolean {
+	if (!isPlayerTabEnabled(config, tabKey)) {
+		return false;
+	}
+	if (!isMobile) {
+		return true;
+	}
+	return MOBILE_SAFE_PLAYER_TABS.includes(tabKey);
 }
 
 export function isPlayerTabEnabled(

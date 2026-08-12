@@ -12,7 +12,7 @@ import {
 } from '../types/CraftingTypes';
 import { PlayerData } from '../../../data/models/PlayerData';
 import { readInventory, dropItem, addOrIncrementInventoryItem } from '../../inventory/utils/updateInventoryFile';
-import { ShopItem } from '../../shop/utils/ShopParser';
+import type { ShopItem, ShopLikeItem } from '../../shop/utils/ShopParser';
 import { App } from 'obsidian';
 import { DEFAULT_CRAFTING_MATERIALS } from '../data/defaultMaterials';
 import { DEFAULT_CRAFTING_RECIPES } from '../data/defaultRecipes';
@@ -295,39 +295,27 @@ export class CraftingEngine {
     }
 
     // Get player's available materials (from actual inventory)
-    static async getPlayerMaterialsFromInventory(app: App): Promise<CraftingMaterial[]> {
+    static async getPlayerMaterialsFromInventory(
+        app: App
+    ): Promise<Array<CraftingMaterial & { quantity: number }>> {
         const allMaterials = getCraftingMaterials();
-        const playerMaterials: CraftingMaterial[] = [];
+        const playerMaterials: Array<CraftingMaterial & { quantity: number }> = [];
 
         try {
-            // Read the actual inventory file
             const inventory = await readInventory(app.vault);
 
-            // Convert inventory items to crafting materials
             for (const inventoryItem of inventory) {
                 const material = findMaterialByIdOrName(allMaterials, inventoryItem.name);
 
                 if (material) {
-                    // Create a copy with the actual quantity from inventory
-                    const materialWithQuantity = {
-                        ...material
-                    };
-                    playerMaterials.push(materialWithQuantity);
+                    playerMaterials.push({
+                        ...material,
+                        quantity: Math.max(1, inventoryItem.quantity || 1),
+                    });
                 }
             }
         } catch (error) {
             console.error('Error reading inventory:', error);
-        }
-
-        // If no materials found in inventory, give some basic starter materials
-        if (playerMaterials.length === 0) {
-            const starterMaterials = ['wood', 'stone', 'herb', 'iron'];
-            starterMaterials.forEach(materialId => {
-                const material = allMaterials.find(m => m.id === materialId);
-                if (material) {
-                    playerMaterials.push(material);
-                }
-            });
         }
 
         return playerMaterials;
@@ -374,12 +362,14 @@ export class CraftingEngine {
                 }
             }
 
-            // Consume the materials
+            // Consume the materials (quantity-aware)
             for (const requirement of recipe.materials) {
                 if (requirement.required) {
                     const def = findMaterialByIdOrName(allMaterials, requirement.materialId);
                     const lookupName = def?.name ?? requirement.materialId;
-                    await dropItem(app, lookupName);
+                    for (let i = 0; i < requirement.quantity; i++) {
+                        await dropItem(app, lookupName);
+                    }
                 }
             }
 
@@ -390,17 +380,23 @@ export class CraftingEngine {
         }
     }
 
-    // Add crafted item to inventory
+    // Add crafted item to inventory (effects must be machine-readable inventory lines)
     static async addCraftedItemToInventory(app: App, craftedItem: RandomCraftingResult): Promise<void> {
         try {
-            const inventoryItem: ShopItem = {
+            const effectLines = (craftedItem.effects || [])
+                .map((e) => String(e).trim())
+                .filter(Boolean);
+
+            const inventoryItem: ShopLikeItem & { rawEffectLines?: string[] } = {
                 name: craftedItem.name,
                 price: this.calculateItemValue(craftedItem),
                 tags: [craftedItem.category, craftedItem.rarity],
                 rarity: craftedItem.rarity,
                 category: craftedItem.category,
                 description: craftedItem.description,
-                icon: craftedItem.icon
+                icon: craftedItem.icon,
+                effects: effectLines,
+                rawEffectLines: effectLines,
             };
 
             await addOrIncrementInventoryItem(app, inventoryItem, 1);
@@ -434,34 +430,31 @@ export class CraftingEngine {
         return Math.floor(baseValue * qualityMultiplier * rarityMultiplier);
     }
 
-    // Check if player can craft a recipe
-    static canCraftRecipe(recipe: CraftingRecipe, playerMaterials: CraftingMaterial[], playerData: PlayerData): { canCraft: boolean; missingMaterials: string[]; missingRequirements: string[] } {
+    // Materials-only gate (no crafting skill / level tree)
+    static canCraftRecipe(
+        recipe: CraftingRecipe,
+        playerMaterials: Array<CraftingMaterial & { quantity?: number }>,
+        _playerData?: PlayerData
+    ): { canCraft: boolean; missingMaterials: string[]; missingRequirements: string[] } {
         const missingMaterials: string[] = [];
         const missingRequirements: string[] = [];
 
-        // Check material requirements
         for (const requirement of recipe.materials) {
-            if (requirement.required) {
-                const hasMaterial = playerMaterials.some(m => m.id === requirement.materialId);
-                if (!hasMaterial) {
-                    missingMaterials.push(requirement.materialId);
-                }
+            if (!requirement.required) continue;
+            const owned = playerMaterials.find((m) => m.id === requirement.materialId);
+            const qty = owned?.quantity ?? (owned ? 1 : 0);
+            if (!owned || qty < requirement.quantity) {
+                const short = requirement.quantity - qty;
+                missingMaterials.push(
+                    short > 0
+                        ? `${requirement.materialId}×${short}`
+                        : requirement.materialId
+                );
             }
         }
 
-        // Check skill requirements
-        const skill = this.getPlayerCraftingSkill(playerData);
-        if (skill.level < recipe.skillRequired) {
-            missingRequirements.push(`Crafting Level ${recipe.skillRequired}`);
-        }
-
-        // Check level requirements
-        if (recipe.requiredLevel && playerData.level < recipe.requiredLevel) {
-            missingRequirements.push(`Player Level ${recipe.requiredLevel}`);
-        }
-
         return {
-            canCraft: missingMaterials.length === 0 && missingRequirements.length === 0,
+            canCraft: missingMaterials.length === 0,
             missingMaterials,
             missingRequirements
         };

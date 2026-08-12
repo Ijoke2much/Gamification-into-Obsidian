@@ -141,7 +141,7 @@ export const CaptureInboxPanel: React.FC<CaptureInboxPanelProps> = ({
 											</button>
 											<button
 												type="button"
-												className={`${styles.actionBtn} ${lite ? styles.actionBtnLite : ''}`}
+												className={`${styles.actionBtn} ${styles.promoteBtn} ${lite ? styles.actionBtnLite : ''}`}
 												title="Promote to full quest"
 												onClick={() => onPromote(quest)}
 											>
@@ -149,9 +149,10 @@ export const CaptureInboxPanel: React.FC<CaptureInboxPanelProps> = ({
 											</button>
 											<button
 												type="button"
-												className={`${styles.actionBtn} ${lite ? styles.actionBtnLite : ''}`}
+												className={`${styles.actionBtn} ${styles.dismissBtn} ${lite ? styles.actionBtnLite : ''}`}
 												title="Dismiss capture"
 												onClick={() => onDismiss(quest)}
+												aria-label="Dismiss capture"
 											>
 												✕
 											</button>

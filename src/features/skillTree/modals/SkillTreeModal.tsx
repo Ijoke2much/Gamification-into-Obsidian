@@ -2,13 +2,24 @@ import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { TFile, WorkspaceLeaf } from 'obsidian';
 import type GamifiedObsidianPlugin from '../../../core/main';
-import { getAllSkills, getAllClasses, getAllStats, SkillMetadata, ClassMetadata, StatMetadata, parseFrontmatterMobile, isMobile, clearSkillsCache } from '../../../shared/utils/skillDiscovery';
+import { getAllSkills, getAllClasses, getAllStats, SkillMetadata, ClassMetadata, StatMetadata, parseFrontmatterMobile, isMobile as isMobileParser, clearSkillsCache } from '../../../shared/utils/skillDiscovery';
 import { SkillRealmMap } from '../components/SkillRealmMap';
 import { SkillCodexDetail } from '../components/SkillCodexDetail';
 import { skillToProgressView } from '../utils/skillProgressView';
-import { syncClassSkillEdgesOnCanvas } from '../utils/canvasClassSkillSync';
+import {
+    appendClassToMasterNote,
+    findMasterNodeForClass,
+    findMasterNodeOnCanvas,
+    makeHierarchyEdge,
+    resolveMasterClassFilePath,
+    syncClassSkillEdgesOnCanvas,
+    syncMasterClassEdgesOnCanvas,
+} from '../utils/canvasClassSkillSync';
+import { buildClassNoteFromTemplate } from '../utils/classNoteTemplate';
+import { buildSkillNoteFromTemplate } from '../utils/skillNoteTemplate';
 import { readPlayerData } from '../../../features/player/utils/playerDataUtils';
 import { useMasterClassProgress } from '../../../features/player/hooks/useMasterClassProgress';
+import { useMobileOptimizations } from '../../../shared/hooks/useMobileOptimizations';
 import styles from './SkillTreeModal.module.css';
 import { pixelNotice } from '../../../shared/utils/noticeUtils';
 const matter = require('gray-matter');
@@ -63,6 +74,7 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
     plugin,
     initialTab = 'mobile'
 }) => {
+    const { isMobile } = useMobileOptimizations();
     const [activeTab, setActiveTab] = useState<SkillTreeModalTab>(initialTab);
     const [skills, setSkills] = useState<SkillMetadata[]>([]);
     const [classes, setClasses] = useState<Record<string, SkillMetadata[]>>({});
@@ -72,12 +84,21 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
     const [selectedClass, setSelectedClass] = useState<string>('');
     const [iconEditSkillPath, setIconEditSkillPath] = useState<string | null>(null);
     const [iconEditValue, setIconEditValue] = useState<string>('');
+    const [showMobileAdvanced, setShowMobileAdvanced] = useState(false);
     
     const [codexSkill, setCodexSkill] = useState<SkillMetadata | null>(null);
     const [playerMasterClass, setPlayerMasterClass] = useState('');
     
     const { classIcon: masterClassIcon, progress: masterClassProgress } =
         useMasterClassProgress(plugin, playerMasterClass || undefined);
+
+    // Phone: always land on Realm Map; leave desktop tab choice alone
+    useEffect(() => {
+        if (isOpen && isMobile) {
+            setActiveTab('mobile');
+            setShowMobileAdvanced(false);
+        }
+    }, [isOpen, isMobile]);
     
     // Create form states
     const [createType, setCreateType] = useState<'skill' | 'class'>('skill');
@@ -91,7 +112,6 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
         class: '',
         stats: [] as string[],
         category: '',
-        showStatsDropdown: false,
         icon: '',
         iconImage: ''
     });
@@ -112,49 +132,70 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
     const loadSkillData = async () => {
         try {
             setIsLoading(true);
-            clearSkillsCache();
-            
-            const allSkills = await getAllSkills(plugin.app.vault);
+            // Desktop: always refresh. Mobile: keep cache only when it previously had skills
+            // (empty cache often means vault wasn't indexed yet on phone).
+            if (!isMobile || skills.length === 0) {
+                clearSkillsCache();
+            }
+
+            let allSkills = await getAllSkills(plugin.app.vault);
+            // Phone: one retry if vault index was empty on first pass
+            if (isMobile && allSkills.length === 0) {
+                await new Promise((r) => window.setTimeout(r, 350));
+                clearSkillsCache();
+                allSkills = await getAllSkills(plugin.app.vault);
+            }
             const allClassesData = await getAllClasses(plugin.app.vault);
-            const allStatsData = await getAllStats(plugin.app.vault);
+            // Stats only needed for Create tab — defer on phone
+            const allStatsData = isMobile ? [] : await getAllStats(plugin.app.vault);
             const playerData = await readPlayerData(plugin.app.vault);
             setPlayerMasterClass(playerData?.masterClass ?? '');
-            
-            // No need to filter - getAllSkills already returns only skills
+
             setSkills(allSkills);
             setAllClasses(allClassesData);
             setAllStats(allStatsData);
-            
-            // Group skills by class
+
             const classGroups = allSkills.reduce((acc, skill) => {
                 if (!acc[skill.class]) acc[skill.class] = [];
                 acc[skill.class].push(skill);
                 return acc;
             }, {} as Record<string, SkillMetadata[]>);
-            
-            // Add all class files to ensure they're counted even if they have no skills
+
             allClassesData.forEach(classItem => {
                 if (!classGroups[classItem.name]) {
                     classGroups[classItem.name] = [];
                 }
             });
-            
+
             setClasses(classGroups);
 
-            // Keep canvas in sync with all existing classes
-            await ensureClassesOnCanvas(allClassesData);
+            // Canvas sync is desktop-only (writes SkillTree.canvas)
+            // Adds missing nodes / hierarchy edges only — never rewrites existing positions.
+            if (!isMobile) {
+                const masterName = playerData?.masterClass ?? undefined;
+                await ensureClassesOnCanvas(allClassesData, masterName);
 
-            const canvasOpen = plugin.app.workspace.getLeavesOfType('canvas').some((leaf: WorkspaceLeaf) => {
-                const view = leaf.view as { file?: TFile } | undefined;
-                return view?.file?.path === 'SkillTree/SkillTree.canvas';
-            });
-            const edgeSync = await syncClassSkillEdgesOnCanvas(
-                plugin.app.vault,
-                allSkills,
-                () => canvasOpen
-            );
-            if (edgeSync.added > 0) {
-                console.log(`[Gamified] Skill canvas: added ${edgeSync.added} class→skill edge(s)`);
+                const canvasOpen = plugin.app.workspace.getLeavesOfType('canvas').some((leaf: WorkspaceLeaf) => {
+                    const view = leaf.view as { file?: TFile } | undefined;
+                    return view?.file?.path === 'SkillTree/SkillTree.canvas';
+                });
+                const masterEdgeSync = await syncMasterClassEdgesOnCanvas(
+                    plugin.app.vault,
+                    allClassesData,
+                    () => canvasOpen,
+                    masterName
+                );
+                if (masterEdgeSync.added > 0) {
+                    console.log(`[Gamified] Skill canvas: added ${masterEdgeSync.added} master→class edge(s)`);
+                }
+                const edgeSync = await syncClassSkillEdgesOnCanvas(
+                    plugin.app.vault,
+                    allSkills,
+                    () => canvasOpen
+                );
+                if (edgeSync.added > 0) {
+                    console.log(`[Gamified] Skill canvas: added ${edgeSync.added} class→skill edge(s)`);
+                }
             }
         } catch (error) {
             console.error('Failed to load skill data:', error);
@@ -241,7 +282,7 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
             }
 
             const rawContent = await plugin.app.vault.read(file);
-            const { data, content: markdownContent } = isMobile
+            const { data, content: markdownContent } = isMobileParser
                 ? parseFrontmatterMobile(rawContent)
                 : matter(rawContent);
 
@@ -257,7 +298,7 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
 
             let updatedContent: string;
 
-            if (isMobile) {
+            if (isMobileParser) {
                 // Mobile-safe YAML writer (mirrors skillBasedBattleEngine.ts)
                 const yamlLines = [
                     '---',
@@ -279,7 +320,7 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
             setIconEditSkillPath(null);
             setIconEditValue('');
 
-            // Reload skill data so UI reflects the new icon
+            clearSkillsCache();
             await loadSkillData();
         } catch (error: any) {
             console.error('Failed to update skill icon:', error);
@@ -325,7 +366,7 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
             }
 
             const rawContent = await plugin.app.vault.read(file);
-            const parsed = isMobile ? parseFrontmatterMobile(rawContent) : matter(rawContent);
+            const parsed = isMobileParser ? parseFrontmatterMobile(rawContent) : matter(rawContent);
             const data = { ...parsed.data } as Record<string, any>;
 
             if (newIcon) {
@@ -334,14 +375,14 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
                 delete data.icon;
             }
 
-            const updatedContent = isMobile
+            const updatedContent = isMobileParser
                 ? `${buildYamlFromData(data)}\n${parsed.content}`
                 : matter.stringify(parsed.content, data);
             await plugin.app.vault.modify(file, updatedContent);
 
             showNotice('✅ Class icon updated');
 
-            // Reload data so any class-derived views stay in sync
+            clearSkillsCache();
             await loadSkillData();
         } catch (error) {
             console.error('Failed to update class icon:', error);
@@ -431,12 +472,11 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
                 class: '',
                 stats: [],
                 category: '',
-                showStatsDropdown: false,
                 icon: '',
                 iconImage: ''
             });
             
-            // Reload data
+            clearSkillsCache();
             await loadSkillData();
         } catch (error) {
             console.error('Failed to create:', error);
@@ -448,45 +488,19 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
         const name = formData.name.trim();
         const statsArray = formData.stats;
         const skillPath = `SkillTree/Master-Class/Skills/${name}.md`;
-        const iconLine = formData.icon ? `icon: "${formData.icon}"\n` : '';
-        const iconImageLine = formData.iconImage ? `iconImage: "${formData.iconImage}"\n` : '';
-        const epithet = formData.epithet.trim();
-        const epithetLine = epithet
-            ? `epithet: "${epithet.replace(/"/g, '\\"')}"\n`
-            : '';
-        
-        const content = `---
-name: ${name}
-class: ${formData.class.trim()}
-stats:
-${statsArray.map(s => `  - ${s}`).join('\n')}
-${iconLine}${iconImageLine}${epithetLine}level: 1
-currentCP: 0
-requiredCP: 100
-totalCP: 0
-Description: ${formData.description}
----
-
-# ${name}
-
-${epithet ? `> *${epithet}*\n\n` : ''}${formData.description}
-
-## Class Assignment
-This skill belongs to the **${formData.class.trim()}** class.
-
-## Associated Stats
-${statsArray.map(stat => `- **${stat}**: Primary stat that affects this skill`).join('\n')}
-
-## Progression
-- Level 1: Unlocked
-- Level 2: Requires 100 CP
-- Level 3: Requires 250 CP
-- Level 4: Requires 500 CP
-- Level 5: Requires 1000 CP
-
-## Usage
-This skill can be used in various activities and quests.
-`;
+        const content = await buildSkillNoteFromTemplate(plugin.app.vault, {
+            name,
+            className: formData.class.trim(),
+            stats: statsArray,
+            icon: formData.icon.trim() || '◆',
+            iconImage: formData.iconImage.trim(),
+            epithet: formData.epithet.trim(),
+            description: formData.description.trim() || 'No description provided',
+            level: 1,
+            currentCP: 0,
+            requiredCP: 100,
+            totalCP: 0,
+        });
     
                 await plugin.app.vault.create(skillPath, content);
                 showNotice(`✅ Created skill "${name}" assigned to ${formData.class.trim()}`);
@@ -498,47 +512,32 @@ This skill can be used in various activities and quests.
             const createNewClass = async () => {
                 const name = formData.name.trim();
                 const classPath = `SkillTree/Master-Class/Class/${name}.md`;
-                const iconLine = formData.icon ? `icon: "${formData.icon}"\n` : '';
-                const iconImageLine = formData.iconImage ? `iconImage: "${formData.iconImage}"\n` : '';
-                const tagline = formData.tagline.trim();
-                const taglineLine = tagline
-                    ? `tagline: "${tagline.replace(/"/g, '\\"')}"\n`
-                    : '';
-                
-                const content = `---
-name: ${name}
-masterClass: Jester
-${iconLine}${iconImageLine}${taglineLine}level: 1
-currentCP: 0
-requiredCP: 100
-totalCP: 0
-description: ${formData.description || 'No description provided'}
----
-
-# ${name}
-
-${tagline ? `> *${tagline}*\n\n` : ''}## Class Overview
-This class represents a specialized path within the skill tree.
-
-## Skills
-- No skills assigned yet
-
-## Progression
-- Level 1: Unlocked
-- Level 2: Requires 100 CP
-- Level 3: Requires 250 CP
-- Level 4: Requires 500 CP
-- Level 5: Requires 1000 CP
-
-## Master Class
-This class belongs to the **Jester** master class.
-`;
+                const masterName = (playerMasterClass || 'Jester').trim() || 'Jester';
+                const content = await buildClassNoteFromTemplate(plugin.app.vault, {
+                    name,
+                    masterClass: masterName,
+                    tagline: formData.tagline.trim(),
+                    icon: formData.icon.trim() || '❖',
+                    iconImage: formData.iconImage.trim(),
+                    description: formData.description.trim() || 'No description provided',
+                    level: 1,
+                    currentCP: 0,
+                    requiredCP: 100,
+                    totalCP: 0,
+                });
             
                 await plugin.app.vault.create(classPath, content);
                 showNotice(`✅ Created class "${name}"`);
+
+                const masterPath =
+                    masterClassProgress?.filePath ||
+                    resolveMasterClassFilePath(plugin.app.vault, masterName);
+                if (masterPath) {
+                    await appendClassToMasterNote(plugin.app.vault, masterPath, name);
+                }
                 
-                // Add to canvas (as a standalone node – you can drag it near Jester)
-                await addClassToCanvas(name);
+                // Add to canvas near master + Master→Class edge (positions stay movable)
+                await addClassToCanvas(name, masterName);
             };
 
     const addSkillToCanvas = async (skillName: string, className: string) => {
@@ -591,15 +590,11 @@ This class belongs to the **Jester** master class.
             };
 
             // Create connection from class to skill
-            const newEdge = {
-                "id": `edge-${classNode.id}-${newNode.id}`,
-                "fromNode": classNode.id,
-                "toNode": newNode.id,
-                "fromSide": "bottom",
-                "toSide": "top",
-                "color": "#6b7280",
-                "width": 2
-            };
+            const newEdge = makeHierarchyEdge(
+                classNode.id,
+                newNode.id,
+                `edge-${classNode.id}-${newNode.id}`
+            );
 
             canvasData.nodes.push(newNode);
             canvasData.edges.push(newEdge);
@@ -612,9 +607,10 @@ This class belongs to the **Jester** master class.
         }
     };
 
-    const addClassToCanvas = async (className: string) => {
+    const addClassToCanvas = async (className: string, preferredMasterName?: string) => {
         try {
             const name = className.trim();
+            const masterHint = (preferredMasterName || playerMasterClass || 'Jester').trim();
 
             // IMPORTANT: Avoid modifying the canvas file while it is open in a Canvas view.
             // Obsidian will happily overwrite external changes when the view autosaves,
@@ -643,40 +639,56 @@ This class belongs to the **Jester** master class.
 
             const content = await plugin.app.vault.read(canvasFile);
             const canvasData: CanvasData = JSON.parse(content);
+            if (!Array.isArray(canvasData.edges)) {
+                canvasData.edges = [];
+            }
 
-            // Find the Jester master class node (we only use this to position near it)
-            const masterNode = canvasData.nodes.find((node: CanvasNode) => 
-                node.file === 'SkillTree/Master-Class/Jester 🎭.md'
-            );
+            // Find master class node (used for initial placement + Master→Class edge)
+            const masterNode = findMasterNodeOnCanvas(canvasData.nodes, masterHint);
 
             if (!masterNode) {
-                showNotice('❌ Jester master class node not found in canvas');
+                showNotice('❌ Master class node not found in canvas');
                 return;
             }
 
-            // If this class already has a node, don't add a duplicate
+            // If this class already has a node, ensure Master→Class edge exists, then return
             const existingClassNode = canvasData.nodes.find((node: CanvasNode) =>
                 node.file === `SkillTree/Master-Class/Class/${name}.md`
             );
 
             if (existingClassNode) {
-                window.console.log('[SkillTreeModal] addClassToCanvas: node already exists for', name, '→ skipping');
+                window.console.log('[SkillTreeModal] addClassToCanvas: node already exists for', name);
+                const hasEdge = canvasData.edges.some(
+                    (e) => e.fromNode === masterNode.id && e.toNode === existingClassNode.id
+                );
+                if (!hasEdge) {
+                    canvasData.edges.push(
+                        makeHierarchyEdge(
+                            masterNode.id,
+                            existingClassNode.id,
+                            `edge-${masterNode.id}-${existingClassNode.id}`
+                        )
+                    );
+                    await plugin.app.vault.modify(canvasFile, JSON.stringify(canvasData, null, 2));
+                    showNotice(`✅ Linked class "${name}" to master on Skill Tree canvas`);
+                }
                 return;
             }
 
-            // Calculate position for new class node
+            // Calculate initial position for new class node (user can rearrange freely after)
             const existingClasses = canvasData.nodes.filter((node: CanvasNode) => 
                 node.id !== masterNode.id && node.file && node.file.includes('SkillTree/Master-Class/Class/')
             );
             const classCount = existingClasses.length;
             
-            // Position classes in a loose arc near the master node (but not connected)
             const angle = (classCount * 60) * (Math.PI / 180); // 60 degrees apart
-            const radius = 260; // slightly farther so it's clearly separate
-            const x = masterNode.x + Math.cos(angle) * radius;
-            const y = masterNode.y + masterNode.height + 80 + Math.sin(angle) * radius;
+            const radius = 260;
+            const masterX = masterNode.x ?? 400;
+            const masterY = masterNode.y ?? 50;
+            const masterH = masterNode.height ?? 120;
+            const x = masterX + Math.cos(angle) * radius;
+            const y = masterY + masterH + 80 + Math.sin(angle) * radius;
 
-            // Create new class node (no edge – user can manually connect / add portal via properties)
             const newNode: CanvasNode = {
                 "id": `class-${name.toLowerCase().replace(/\s+/g, '-')}`,
                 "type": "file",
@@ -687,8 +699,15 @@ This class belongs to the **Jester** master class.
                 "height": 80
             };
 
+            const newEdge = makeHierarchyEdge(
+                masterNode.id,
+                newNode.id,
+                `edge-${masterNode.id}-${newNode.id}`
+            );
+
             window.console.log('[SkillTreeModal] addClassToCanvas: nodes before push', canvasData.nodes.length);
             canvasData.nodes.push(newNode);
+            canvasData.edges.push(newEdge);
             window.console.log('[SkillTreeModal] addClassToCanvas: nodes after push', canvasData.nodes.length);
 
             await plugin.app.vault.modify(canvasFile, JSON.stringify(canvasData, null, 2));
@@ -711,8 +730,7 @@ This class belongs to the **Jester** master class.
                 y: persistedNode.y
             });
 
-            // Surface feedback so we know this actually ran
-            showNotice(`✅ Added class "${name}" to Skill Tree canvas. Drag it where you want and add it to the Jester properties if needed.`);
+            showNotice(`✅ Added class "${name}" to Skill Tree canvas (linked to master — drag to rearrange)`);
         } catch (error) {
             window.console.error('Failed to add class to canvas:', error);
             showNotice('❌ Failed to add class to canvas');
@@ -721,9 +739,12 @@ This class belongs to the **Jester** master class.
 
     /**
      * Ensure every discovered class has a corresponding node on the SkillTree canvas.
-     * This is a safety net in case per-class creation ever fails or classes were created manually.
+     * Adds missing class nodes + Master→Class edges only; never rewrites existing positions.
      */
-    const ensureClassesOnCanvas = async (classesList: ClassMetadata[]) => {
+    const ensureClassesOnCanvas = async (
+        classesList: ClassMetadata[],
+        preferredMasterName?: string
+    ) => {
         try {
             // Same caveat as addClassToCanvas – don't silently modify while the canvas is open,
             // or Obsidian may overwrite our changes from the open view.
@@ -746,49 +767,75 @@ This class belongs to the **Jester** master class.
 
             const content = await plugin.app.vault.read(canvasFile);
             const canvasData: CanvasData = JSON.parse(content);
+            if (!Array.isArray(canvasData.edges)) {
+                canvasData.edges = [];
+            }
 
-            const masterNode = canvasData.nodes.find((node: CanvasNode) => 
-                node.file === 'SkillTree/Master-Class/Jester 🎭.md'
-            );
+            const masterHint = (preferredMasterName || playerMasterClass || 'Jester').trim();
+            const fallbackMaster = findMasterNodeOnCanvas(canvasData.nodes, masterHint);
 
-            if (!masterNode) {
-                // Can't place classes without a master node
+            if (!fallbackMaster) {
+                // Can't place / link classes without a master node
                 return;
             }
 
             let didChange = false;
+            const existingEdgeKeys = new Set(
+                canvasData.edges.map((e) => `${e.fromNode}→${e.toNode}`)
+            );
 
             for (const classMeta of classesList) {
                 const name = classMeta.name.trim();
                 if (!name) continue;
 
-                const alreadyExists = canvasData.nodes.find((node: CanvasNode) =>
+                const masterNode =
+                    findMasterNodeForClass(
+                        canvasData.nodes,
+                        classMeta.masterClass,
+                        masterHint
+                    ) || fallbackMaster;
+
+                let classNode = canvasData.nodes.find((node: CanvasNode) =>
+                    node.file === (classMeta.filePath || `SkillTree/Master-Class/Class/${name}.md`)
+                ) || canvasData.nodes.find((node: CanvasNode) =>
                     node.file === `SkillTree/Master-Class/Class/${name}.md`
                 );
-                if (alreadyExists) continue;
 
-                // Position after existing + newly added classes (same pattern as addClassToCanvas)
-                const existingClasses = canvasData.nodes.filter((node: CanvasNode) => 
-                    node.id !== masterNode.id && node.file && node.file.includes('SkillTree/Master-Class/Class/')
-                );
-                const classCount = existingClasses.length;
-                const angle = (classCount * 60) * (Math.PI / 180); // 60 degrees apart
-                const radius = 260;
-                const x = masterNode.x + Math.cos(angle) * radius;
-                const y = masterNode.y + masterNode.height + 80 + Math.sin(angle) * radius;
+                if (!classNode) {
+                    // Initial placement only for brand-new nodes
+                    const existingClasses = canvasData.nodes.filter((node: CanvasNode) => 
+                        node.id !== masterNode.id && node.file && node.file.includes('SkillTree/Master-Class/Class/')
+                    );
+                    const classCount = existingClasses.length;
+                    const angle = (classCount * 60) * (Math.PI / 180);
+                    const radius = 260;
+                    const masterX = masterNode.x ?? 400;
+                    const masterY = masterNode.y ?? 50;
+                    const masterH = masterNode.height ?? 120;
+                    const x = masterX + Math.cos(angle) * radius;
+                    const y = masterY + masterH + 80 + Math.sin(angle) * radius;
 
-                const newNode: CanvasNode = {
-                    "id": `class-${name.toLowerCase().replace(/\s+/g, '-')}`,
-                    "type": "file",
-                    "file": `SkillTree/Master-Class/Class/${name}.md`,
-                    "x": Math.round(x),
-                    "y": Math.round(y),
-                    "width": 200,
-                    "height": 80
-                };
+                    classNode = {
+                        "id": `class-${name.toLowerCase().replace(/\s+/g, '-')}`,
+                        "type": "file",
+                        "file": `SkillTree/Master-Class/Class/${name}.md`,
+                        "x": Math.round(x),
+                        "y": Math.round(y),
+                        "width": 200,
+                        "height": 80
+                    };
 
-                canvasData.nodes.push(newNode);
-                didChange = true;
+                    canvasData.nodes.push(classNode);
+                    didChange = true;
+                }
+
+                const edgeId = `edge-${masterNode.id}-${classNode.id}`;
+                const key = `${masterNode.id}→${classNode.id}`;
+                if (!existingEdgeKeys.has(key)) {
+                    canvasData.edges.push(makeHierarchyEdge(masterNode.id, classNode.id, edgeId));
+                    existingEdgeKeys.add(key);
+                    didChange = true;
+                }
             }
 
             if (didChange) {
@@ -803,8 +850,15 @@ This class belongs to the **Jester** master class.
     if (!isOpen) return null;
 
     return ReactDOM.createPortal(
-        <div className={styles.modalOverlay} onClick={(e) => e.target === e.currentTarget && onClose()}>
-            <div className={styles.modalContent} data-skill-system="true">
+        <div
+            className={`${styles.modalOverlay}${isMobile ? ` ${styles.modalOverlayMobile}` : ''}`}
+            onClick={(e) => e.target === e.currentTarget && onClose()}
+            data-gamification-mobile={isMobile ? 'true' : 'false'}
+        >
+            <div
+                className={`${styles.modalContent}${isMobile ? ` ${styles.modalContentMobile}` : ''}`}
+                data-skill-system="true"
+            >
                 <div className={styles.modalHeader}>
                     <h2 className={styles.modalTitle}>Skill Codex</h2>
                     <button type="button" className={styles.closeButton} onClick={onClose} aria-label="Close">✕</button>
@@ -817,30 +871,69 @@ This class belongs to the **Jester** master class.
                     >
                         ⚔ Realm Map
                     </button>
-                    <button 
-                        className={`${styles.tab} ${activeTab === 'overview' ? styles.active : ''}`}
-                        onClick={() => setActiveTab('overview')}
-                    >
-                        📊 Canvas
-                    </button>
-
-                    <button 
-                        className={`${styles.tab} ${activeTab === 'manage' ? styles.active : ''}`}
-                        onClick={() => setActiveTab('manage')}
-                    >
-                        ⚙️ Manage Skills
-                    </button>
-                    <button 
-                        className={`${styles.tab} ${activeTab === 'create' ? styles.active : ''}`}
-                        onClick={() => setActiveTab('create')}
-                    >
-                        🆕 Create New
-                    </button>
+                    {/* Canvas / Manage / Create stay desktop-first; optional Advanced on phone */}
+                    {(!isMobile || showMobileAdvanced) && (
+                        <>
+                            <button 
+                                className={`${styles.tab} ${activeTab === 'overview' ? styles.active : ''}`}
+                                onClick={() => setActiveTab('overview')}
+                            >
+                                📊 Canvas
+                            </button>
+                            <button 
+                                className={`${styles.tab} ${activeTab === 'manage' ? styles.active : ''}`}
+                                onClick={() => setActiveTab('manage')}
+                            >
+                                ⚙️ Manage Skills
+                            </button>
+                            <button 
+                                className={`${styles.tab} ${activeTab === 'create' ? styles.active : ''}`}
+                                onClick={async () => {
+                                    if (isMobile && allStats.length === 0) {
+                                        try {
+                                            setAllStats(await getAllStats(plugin.app.vault));
+                                        } catch {
+                                            /* ignore — create form can still open */
+                                        }
+                                    }
+                                    setActiveTab('create');
+                                }}
+                            >
+                                🆕 Create New
+                            </button>
+                        </>
+                    )}
+                    {isMobile && (
+                        <button
+                            type="button"
+                            className={`${styles.tab} ${showMobileAdvanced ? styles.active : ''}`}
+                            onClick={async () => {
+                                const next = !showMobileAdvanced;
+                                setShowMobileAdvanced(next);
+                                if (next && allStats.length === 0) {
+                                    try {
+                                        setAllStats(await getAllStats(plugin.app.vault));
+                                    } catch {
+                                        /* Create tab can retry via Reload */
+                                    }
+                                }
+                            }}
+                        >
+                            {showMobileAdvanced ? '▾ Advanced' : '▸ Advanced'}
+                        </button>
+                    )}
                 </div>
 
                 <div className={styles.tabContent}>
                     {isLoading ? (
-                        <div className={styles.loading}>Loading skill data...</div>
+                        <div className={styles.loading}>
+                            Loading skill data…
+                            {isMobile ? (
+                                <div style={{ marginTop: 8, fontSize: 14, opacity: 0.75 }}>
+                                    Scanning SkillTree notes…
+                                </div>
+                            ) : null}
+                        </div>
                     ) : (
                         <>
                             {activeTab === 'overview' && (
@@ -1121,57 +1214,58 @@ This class belongs to the **Jester** master class.
 
                                                 <div className={styles.formField}>
                                                     <label>Associated Stats (Required):</label>
-                                                    <div className={styles.multiSelectContainer}>
-                                                        <div 
-                                                            className={styles.multiSelectDropdown}
-                                                            onClick={() => setFormData({...formData, showStatsDropdown: !formData.showStatsDropdown})}
-                                                        >
-                                                            {formData.stats.length === 0 ? (
-                                                                <span className={styles.placeholder}>Select Stats (Required)</span>
-                                                            ) : (
-                                                                <div className={styles.selectedStats}>
-                                                                    {formData.stats.map((stat, index) => (
-                                                                        <span key={stat} className={styles.selectedStat}>
-                                                                            {stat}
-                                                                            <button 
-                                                                                onClick={(e) => {
-                                                                                    e.stopPropagation();
-                                                                                    setFormData({
-                                                                                        ...formData, 
-                                                                                        stats: formData.stats.filter((_, i) => i !== index)
-                                                                                    });
-                                                                                }}
-                                                                                className={styles.removeStat}
-                                                                            >
-                                                                                ×
-                                                                            </button>
-                                                                        </span>
-                                                                    ))}
-                                                                </div>
-                                                            )}
-                                                            <span className={styles.dropdownArrow}>▼</span>
+                                                    {allStats.length === 0 ? (
+                                                        <div className={styles.statsEmptyHint}>
+                                                            No stats found under SkillTree/Master-Class/Stats.
+                                                            <button
+                                                                type="button"
+                                                                className={styles.statsReloadBtn}
+                                                                onClick={async () => {
+                                                                    try {
+                                                                        setAllStats(await getAllStats(plugin.app.vault));
+                                                                    } catch {
+                                                                        showNotice('Could not load stats');
+                                                                    }
+                                                                }}
+                                                            >
+                                                                Reload stats
+                                                            </button>
                                                         </div>
-                                                        
-                                                        {formData.showStatsDropdown && (
-                                                            <div className={styles.dropdownOptions}>
-                                                                {allStats.map(stat => (
-                                                                    <div 
+                                                    ) : (
+                                                        <div
+                                                            className={styles.statsChipGrid}
+                                                            role="group"
+                                                            aria-label="Associated stats"
+                                                        >
+                                                            {allStats.map((stat) => {
+                                                                const selected = formData.stats.includes(stat.name);
+                                                                return (
+                                                                    <button
                                                                         key={stat.name}
-                                                                        className={`${styles.dropdownOption} ${formData.stats.includes(stat.name) ? styles.selected : ''}`}
+                                                                        type="button"
+                                                                        className={`${styles.statChip} ${selected ? styles.statChipSelected : ''}`}
+                                                                        aria-pressed={selected}
                                                                         onClick={() => {
-                                                                            const newStats = formData.stats.includes(stat.name)
-                                                                                ? formData.stats.filter(s => s !== stat.name)
+                                                                            const next = selected
+                                                                                ? formData.stats.filter((s) => s !== stat.name)
                                                                                 : [...formData.stats, stat.name];
-                                                                            setFormData({...formData, stats: newStats});
+                                                                            setFormData({ ...formData, stats: next });
                                                                         }}
                                                                     >
+                                                                        <span className={styles.statChipCheck} aria-hidden="true">
+                                                                            {selected ? '✓' : ''}
+                                                                        </span>
                                                                         {stat.name}
-                                                                        {formData.stats.includes(stat.name) && <span className={styles.checkmark}>✓</span>}
-                                                                    </div>
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                    </div>
+                                                                    </button>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    )}
+                                                    {formData.stats.length > 0 && (
+                                                        <div className={styles.statsSelectedHint}>
+                                                            Selected: {formData.stats.join(', ')}
+                                                        </div>
+                                                    )}
                                                 </div>
 
                                                 {/* Icon configuration */}

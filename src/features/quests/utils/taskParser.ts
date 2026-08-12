@@ -2,6 +2,20 @@ import { Vault, TFile } from 'obsidian';
 import * as yaml from "js-yaml";
 import { normalizeActivityProfileId } from '../../../shared/utils/questWellbeingProfiles';
 
+/**
+ * Parse `key: value` pipe metadata on the first colon only.
+ * Splitting on every `:` truncates ISO datetimes (`due: 2026-07-30T21:17` → `2026-07-30T21`).
+ */
+export function parsePipeMetaPair(pair: string): { key: string; value: string } | null {
+	const trimmed = pair.trim();
+	if (!trimmed) return null;
+	const colon = trimmed.indexOf(':');
+	if (colon <= 0) return null;
+	const key = trimmed.slice(0, colon).trim().toLowerCase();
+	const value = trimmed.slice(colon + 1).trim();
+	if (!key || !value) return null;
+	return { key, value };
+}
 
 // define priority/difficulty XP logic and generate markdown tasks.
 
@@ -69,8 +83,8 @@ export async function parseCompletedTasks(vault: Vault, file: TFile): Promise<Pa
       const pipeMatch = line.match(/\/\/(.*)/);
       if (pipeMatch) {
         pipeMatch[1].split('|').forEach((pair) => {
-          const [k, v] = pair.split(':').map((s) => s.trim());
-          if (k && v) pipeMeta[k.toLowerCase()] = v;
+          const parsed = parsePipeMetaPair(pair);
+          if (parsed) pipeMeta[parsed.key] = parsed.value;
         });
       }
 
@@ -389,6 +403,8 @@ export interface Quest {
   subtasks: { text: string; completed: boolean; description?: string }[];
   completed: boolean;
   today?: boolean;
+  /** Explicit inbox "Now" pin (`now: true` / `#now/true`) — not a time window. */
+  now?: boolean;
   dependencies?: string[];
   rewards?: string[];
   type?: string;
@@ -573,8 +589,8 @@ export function parseQuestsFromMarkdown(md: string): Quest[] {
             pipeMetaStr = pipeMetaStr.replace(/\{[\s\S]+\}$/, "");
           }
           pipeMetaStr.split("|").forEach((pair) => {
-            const [k, v] = pair.split(":").map((s) => s.trim());
-            if (k && v) meta[k.toLowerCase()] = v;
+            const parsed = parsePipeMetaPair(pair);
+            if (parsed) meta[parsed.key] = parsed.value;
           });
         }
 
@@ -641,6 +657,7 @@ export function parseQuestsFromMarkdown(md: string): Quest[] {
         const giver = String(getField('giver') || '');
         const status = String(getField('status') || '');
         const today = parseBooleanMeta(getField('today'));
+        const nowPin = parseBooleanMeta(getField('now'));
         const isFavorite = Boolean(getField('favorite') || getField('starred') || false);
         const createdDate = String(getField('created') || '');
         const lastModified = String(getField('modified') || '');
@@ -736,6 +753,7 @@ export function parseQuestsFromMarkdown(md: string): Quest[] {
           giver,
           status,
           today,
+          now: nowPin,
           tags: tagArr,
           isFavorite,
           createdDate,

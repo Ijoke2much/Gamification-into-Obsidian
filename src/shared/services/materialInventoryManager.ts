@@ -4,6 +4,14 @@ import { addOrIncrementInventoryItem } from '../../features/inventory/utils/upda
 import { ShopItem } from '../../features/shop/utils/ShopParser';
 import { MaterialRewardService } from './materialRewardService';
 import { getCraftingMaterials, findMaterialByIdOrName } from '../../features/crafting/utils/craftingMaterialRegistry';
+import {
+	HABIT_TREE_MATERIAL_DROP_CHANCE,
+	normalizeQuestDifficulty,
+	POMODORO_MATERIAL_DROP_CHANCE,
+	POMODORO_RARE_BONUS_CHANCE,
+	QUEST_MATERIAL_DROP_CHANCE,
+	rollChance,
+} from '../utils/materialEconomyConfig';
 
 export interface MaterialReward {
     name: string;
@@ -19,6 +27,11 @@ export class MaterialInventoryManager {
     // Add materials to inventory from quest completion
     static async addQuestMaterials(app: App, difficulty: string): Promise<{ materials: MaterialReward[], quality: string }> {
         try {
+            const key = normalizeQuestDifficulty(difficulty);
+            if (!rollChance(QUEST_MATERIAL_DROP_CHANCE[key])) {
+                return { materials: [], quality: 'normal' };
+            }
+
             const reward = MaterialRewardService.getQuestMaterials(difficulty);
             const materials: MaterialReward[] = [];
 
@@ -64,6 +77,10 @@ export class MaterialInventoryManager {
     // Add materials to inventory from habit tree milestone
     static async addHabitTreeMaterials(app: App, treeStage: number): Promise<{ materials: MaterialReward[], quality: string }> {
         try {
+            if (!rollChance(HABIT_TREE_MATERIAL_DROP_CHANCE)) {
+                return { materials: [], quality: 'normal' };
+            }
+
             const reward = MaterialRewardService.getHabitTreeMaterials(treeStage);
             const materials: MaterialReward[] = [];
 
@@ -108,38 +125,52 @@ export class MaterialInventoryManager {
     // Add materials to inventory from pomodoro session
     static async addPomodoroMaterials(app: App, sessionType: string, duration: number): Promise<{ materials: MaterialReward[], quality: string }> {
         try {
+            if (!rollChance(POMODORO_MATERIAL_DROP_CHANCE)) {
+                return { materials: [], quality: 'normal' };
+            }
+
             const reward = MaterialRewardService.getPomodoroMaterials(sessionType, duration);
             const materials: MaterialReward[] = [];
 
-            // Select random materials from the available pool
-            for (let i = 0; i < reward.quantity; i++) {
-                const { materialId, quality } = MaterialRewardService.getRandomMaterial(reward.materials, reward.quality);
-
-                // Get material details and add to inventory
+            const grantOne = async (materialId: string, quality: string) => {
                 const materialDetails = this.getMaterialDetails(materialId, quality);
-                if (materialDetails) {
-                    const inventoryItem: ShopItem = {
-                        name: materialDetails.name,
-                        price: materialDetails.baseValue,
-                        tags: [materialDetails.category, materialDetails.rarity],
-                        rarity: materialDetails.rarity,
-                        category: materialDetails.category,
-                        description: materialDetails.description,
-                        icon: materialDetails.icon
-                    };
+                if (!materialDetails) return;
+                const inventoryItem: ShopItem = {
+                    name: materialDetails.name,
+                    price: materialDetails.baseValue,
+                    tags: [materialDetails.category, materialDetails.rarity],
+                    rarity: materialDetails.rarity,
+                    category: materialDetails.category,
+                    description: materialDetails.description,
+                    icon: materialDetails.icon
+                };
+                await addOrIncrementInventoryItem(app, inventoryItem, 1);
+                materials.push({
+                    name: materialDetails.name,
+                    icon: materialDetails.icon,
+                    quality: materialDetails.quality,
+                    rarity: materialDetails.rarity,
+                    category: materialDetails.category,
+                    baseValue: materialDetails.baseValue
+                });
+            };
 
-                    await addOrIncrementInventoryItem(app, inventoryItem, 1);
+            for (let i = 0; i < reward.quantity; i++) {
+                const { materialId, quality } = MaterialRewardService.getRandomMaterial(
+                    reward.materials,
+                    reward.quality
+                );
+                await grantOne(materialId, quality);
+            }
 
-                    // Add to materials array for notification
-                    materials.push({
-                        name: materialDetails.name,
-                        icon: materialDetails.icon,
-                        quality: materialDetails.quality,
-                        rarity: materialDetails.rarity,
-                        category: materialDetails.category,
-                        baseValue: materialDetails.baseValue
-                    });
-                }
+            // Optional rare bonus — never guaranteed from the base pool
+            const rarePool = MaterialRewardService.getPomodoroRareBonusPool(duration);
+            if (rarePool.length > 0 && rollChance(POMODORO_RARE_BONUS_CHANCE)) {
+                const { materialId, quality } = MaterialRewardService.getRandomMaterial(
+                    rarePool,
+                    'masterwork'
+                );
+                await grantOne(materialId, quality);
             }
 
             return { materials, quality: reward.quality };

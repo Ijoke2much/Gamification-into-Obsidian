@@ -86,7 +86,12 @@ export class MaterialRewardService {
     }
 
     // Get materials based on pomodoro session type and duration
-    static getPomodoroMaterials(sessionType: string, duration: number): { materials: string[], quantity: number, quality: string } {
+    static getPomodoroMaterials(sessionType: string, duration: number): {
+        materials: string[];
+        quantity: number;
+        quality: string;
+        bonusMaterials?: string[];
+    } {
         // Base materials based on session type
         let baseMaterials: string[] = [];
         let baseQuantity = 1;
@@ -129,44 +134,49 @@ export class MaterialRewardService {
                 baseQuality = 'normal';
         }
 
-        // Bonus materials for longer sessions
+        // Long sessions may roll a rare bonus separately (see MaterialInventoryManager)
         let bonusMaterials: string[] = [];
-        if (duration >= 120) { // 2+ hours
-            bonusMaterials = ['diamond', 'phoenix'];
-        } else if (duration >= 60) { // 1+ hour
-            bonusMaterials = ['gold', 'essence'];
-        } else if (duration >= 30) { // 30+ minutes
-            bonusMaterials = ['silver', 'crystal'];
+        if (duration >= 120) {
+            bonusMaterials = ['essence', 'crystal'];
+        } else if (duration >= 60) {
+            bonusMaterials = ['crystal', 'silver'];
+        } else if (duration >= 30) {
+            bonusMaterials = ['silver', 'iron'];
         }
 
         return {
-            materials: [...baseMaterials, ...bonusMaterials],
-            quantity: baseQuantity + (bonusMaterials.length > 0 ? 1 : 0),
-            quality: bonusMaterials.length > 0 ? 'masterwork' : baseQuality
+            materials: baseMaterials,
+            quantity: baseQuantity,
+            quality: baseQuality,
+            // Carried for optional rare roll — not mixed into the base pool
+            bonusMaterials,
         };
     }
 
-    // Get random material from a list with quality variation
+    /** Ultra-rare long-session pool (rolled with low chance, never guaranteed). */
+    static getPomodoroRareBonusPool(duration: number): string[] {
+        if (duration >= 120) return ['diamond', 'phoenix'];
+        if (duration >= 60) return ['gold', 'essence'];
+        if (duration >= 30) return ['crystal'];
+        return [];
+    }
+
+    // Get random material from a list — keep intended quality most of the time
     static getRandomMaterial(materialIds: string[], quality: string): { materialId: string, quality: string } {
         const materialId = materialIds[Math.floor(Math.random() * materialIds.length)];
 
-        // Add some quality variation
-        const qualityVariation = Math.random();
-        let finalQuality = quality;
-
-        if (qualityVariation > 0.95) {
-            finalQuality = 'masterwork';
-        } else if (qualityVariation > 0.85) {
-            finalQuality = 'refined';
-        } else if (qualityVariation > 0.70) {
-            finalQuality = 'normal';
-        } else if (qualityVariation > 0.50) {
-            finalQuality = 'fresh';
-        } else {
-            finalQuality = 'dried';
+        // ~70% keep intended quality; light variance otherwise
+        const roll = Math.random();
+        if (roll < 0.7) {
+            return { materialId, quality };
         }
-
-        return { materialId, quality: finalQuality };
+        if (roll < 0.85) {
+            return { materialId, quality: 'refined' };
+        }
+        if (roll < 0.95) {
+            return { materialId, quality: 'normal' };
+        }
+        return { materialId, quality: 'masterwork' };
     }
 
     // Calculate material rarity bonus

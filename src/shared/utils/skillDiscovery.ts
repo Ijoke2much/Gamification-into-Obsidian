@@ -244,7 +244,7 @@ export async function getAllStats(vault: Vault): Promise<StatMetadata[]> {
       ) {
         try {
           const content = await vault.read(file);
-          const { data } = matter(content);
+          const { data } = isMobile ? parseFrontmatterMobile(content) : matter(content);
 
           if (data.name) {
             stats.push({
@@ -286,10 +286,6 @@ export async function getAllClasses(vault: Vault): Promise<ClassMetadata[]> {
     try {
       const content = await vault.read(file);
       const { data } = isMobile ? parseFrontmatterMobile(content) : matter(content);
-
-      if (isMobile) {
-        console.log('📱 [Mobile] Parsing class file:', file.path, 'Data:', data);
-      }
 
       const name = resolveClassDisplayName(data, file);
       const dedupeKey = name.toLowerCase();
@@ -342,164 +338,196 @@ export function clearSkillsCache(): void {
  * @param vault Obsidian Vault instance
  * @returns Promise<SkillMetadata[]> Array of skill metadata
  */
+function isSkillTreeSkillNote(file: TFile): boolean {
+  if (file.extension !== 'md') return false;
+  const p = normVaultPath(file.path);
+  if (!pathUnderSkillTreeRoot(p)) return false;
+  // Match /Skills/ segment case-insensitively (vault sync / OS path quirks)
+  return /(^|\/)skills\//i.test(p);
+}
+
+/** Avoid hanging forever on iCloud/slow vault reads (common on phone). */
+async function readVaultTextWithTimeout(
+  vault: Vault,
+  file: TFile,
+  timeoutMs = isMobile ? 2500 : 8000
+): Promise<string | null> {
+  try {
+    return await Promise.race([
+      vault.read(file),
+      new Promise<null>((resolve) => window.setTimeout(() => resolve(null), timeoutMs)),
+    ]);
+  } catch {
+    return null;
+  }
+}
+
+function normalizeSkillStats(skillStats: unknown): { [statName: string]: string } {
+  const stats: { [statName: string]: string } = {};
+  if (skillStats == null || skillStats === '') return stats;
+  const statsArr = Array.isArray(skillStats) ? skillStats : [skillStats];
+  for (const statNameRaw of statsArr) {
+    const statName = String(statNameRaw || '').trim();
+    if (!statName) continue;
+    stats[statName] = `SkillTree/Master-Class/Stats/${statName}.md`;
+  }
+  return stats;
+}
+
+function masterFromSkillPath(filePath: string): string | undefined {
+  const pathParts = normVaultPath(filePath).split('/');
+  const mcIdx = pathParts.findIndex((p) => p.toLowerCase() === 'master-class');
+  if (
+    mcIdx >= 0 &&
+    pathParts[mcIdx + 1] &&
+    pathParts[mcIdx + 1].toLowerCase() !== 'skills' &&
+    pathParts[mcIdx + 1].toLowerCase() !== 'class' &&
+    pathParts[mcIdx + 1].toLowerCase() !== 'stats'
+  ) {
+    return pathParts[mcIdx + 1];
+  }
+  return undefined;
+}
+
 export async function getAllSkills(vault: Vault): Promise<SkillMetadata[]> {
   const now = Date.now();
-  if (skillsCache && (now - skillsCacheTime) < SKILLS_CACHE_TTL_MS) {
+  // Never reuse an empty cache — mobile often opens before the vault finishes indexing
+  if (
+    skillsCache &&
+    skillsCache.length > 0 &&
+    (now - skillsCacheTime) < SKILLS_CACHE_TTL_MS
+  ) {
     return skillsCache;
   }
 
-  const skills: SkillMetadata[] = [];
   const allFiles = vault.getAllLoadedFiles();
+  const skillFiles = allFiles.filter(
+    (f): f is TFile => f instanceof TFile && isSkillTreeSkillNote(f)
+  );
 
-  if (isMobile) {
-    console.log('📱 [Mobile] getAllSkills called, total files:', allFiles.length);
-    const skillFiles = allFiles.filter(f =>
-      f.path.startsWith('SkillTree/') &&
-      f.path.includes('/Skills/') &&
-      f.path.endsWith('.md')
+  // Precompute once (was previously re-filtered for every skill — expensive on mobile).
+  const masterClassFiles = allFiles.filter(
+    (f): f is TFile =>
+      f instanceof TFile &&
+      pathUnderSkillTreeRoot(f.path) &&
+      f.path.toLowerCase().includes('/master-class/') &&
+      f.path.endsWith('.md') &&
+      !/\/class\//i.test(f.path) &&
+      !/\/skills\//i.test(f.path) &&
+      !/\/stat\//i.test(f.path) &&
+      !/\/stats\//i.test(f.path)
+  );
+
+  // Desktop: resolve class → master once. Mobile: path-derived master is enough for quest picker.
+  const classMasterMap = new Map<string, string>();
+  if (!isMobile) {
+    const classFiles = allFiles.filter(
+      (f): f is TFile => f instanceof TFile && isSkillTreeClassNoteFile(f)
     );
-    console.log('📱 [Mobile] Found potential skill files:', skillFiles.map(f => f.path));
+    await Promise.all(
+      classFiles.map(async (clsFile) => {
+        const clsContent = await readVaultTextWithTimeout(vault, clsFile);
+        if (!clsContent) return;
+        const { data: clsData } = matter(clsContent);
+        const className = resolveClassDisplayName(clsData, clsFile);
+        const master = (clsData.master || clsData.masterClass) as string | undefined;
+        if (className && master) {
+          classMasterMap.set(className.toLowerCase(), String(master));
+        }
+      })
+    );
   }
 
-  for (const file of allFiles) {
-    if (file instanceof TFile) {
-      if (
-        file.path.startsWith('SkillTree/') &&
-        file.path.includes('/Skills/') &&
-        file.path.endsWith('.md')
-      ) {
-        const content = await vault.read(file);
-        const { data } = isMobile ? parseFrontmatterMobile(content) : matter(content);
+  const settled = await Promise.allSettled(
+    skillFiles.map(async (file) => {
+      const content = await readVaultTextWithTimeout(vault, file);
+      if (!content) return null;
+      const { data } = isMobile ? parseFrontmatterMobile(content) : matter(content);
 
-        if (isMobile) {
-          console.log('📱 [Mobile] Parsing skill file:', file.path);
-          console.log('📱 [Mobile] Raw content preview:', content.substring(0, 200));
-          console.log('📱 [Mobile] Parsed data:', data);
-          console.log('📱 [Mobile] Has required fields?', {
-            hasName: !!data.name,
-            hasClass: !!data.class,
-            hasStats: !!data.stats,
-            name: data.name,
-            class: data.class,
-            stats: data.stats
-          });
-        }
-        if (data.name && data.class && data.stats) {
-          // Expected pathParts: [SkillTree, Master-Class, <MasterName>, Skills, <Skill>.md]
-          const pathParts = file.path.split('/');
-          const mcIdx = pathParts.findIndex((p) => p === 'Master-Class');
-          const className = data.class as string; // From YAML
-          // Class files are stored at SkillTree/Master-Class/Class/<Class>.md
-          const classPath = `SkillTree/Master-Class/Class/${className}.md`;
+      const skillName = data.name ?? data.Name;
+      const skillClass = data.class ?? data.Class;
+      // Stats preferred but not required — missing stats used to hide skills entirely on mobile.
+      if (!skillName || !skillClass) return null;
 
-          // Derive master class by reading the class file's frontmatter if available
-          let masterClass: string | undefined;
-          try {
-            const clsFile = vault.getAbstractFileByPath(classPath);
-            if (clsFile instanceof TFile) {
-              const clsContent = await vault.read(clsFile);
-              const { data: clsData } = isMobile ? parseFrontmatterMobile(clsContent) : matter(clsContent);
-              masterClass = (clsData.master || clsData.masterClass) as string | undefined;
-            }
-          } catch {
-            // ignore
-          }
-          // Fallback: if folder structure includes a master between Master-Class and Skills, use it
-          if (!masterClass && mcIdx >= 0 && pathParts[mcIdx + 1] && pathParts[mcIdx + 1] !== 'Skills') {
-            masterClass = pathParts[mcIdx + 1];
-          }
+      const className = String(skillClass);
+      const classPath = `SkillTree/Master-Class/Class/${className}.md`;
+      let masterClass =
+        classMasterMap.get(className.toLowerCase()) || masterFromSkillPath(file.path) || '';
 
-          // Find the actual master class file in the master class folder
-          let masterClassPath = masterClass ? `SkillTree/Master-Class/${masterClass}/${masterClass}.md` : '';
-          const masterClassFiles = allFiles.filter(f =>
-            f instanceof TFile &&
-            f.path.startsWith(`SkillTree/Master-Class/`) &&
-            f.path.endsWith('.md') &&
-            !f.path.includes('/Class/') &&
-            !f.path.includes('/Skills/') &&
-            !f.path.includes('/Stat/') &&
-            !f.path.includes('/Stats/')
+      let masterClassPath = masterClass
+        ? `SkillTree/Master-Class/${masterClass}/${masterClass}.md`
+        : '';
+      if (masterClassFiles.length > 0) {
+        if (masterClass) {
+          const exact = masterClassFiles.find(
+            (f) =>
+              f.path === `SkillTree/Master-Class/${masterClass}.md` ||
+              f.path.endsWith(`/${masterClass}.md`)
           );
-          if (masterClassFiles.length > 0) {
-            if (masterClass) {
-              // Prefer a file that matches the master name
-              const exact = masterClassFiles.find(f => f.path === `SkillTree/Master-Class/${masterClass}.md` || f.path.endsWith(`/${masterClass}.md`));
-              masterClassPath = (exact || masterClassFiles[0]).path;
-            } else {
-              masterClassPath = masterClassFiles[0].path;
-            }
-          }
-          // Stats are in SkillTree/Master-Class/Stats/<Stat>.md
-          const statsArr = Array.isArray(data.stats) ? data.stats : [data.stats];
-          const stats: { [statName: string]: string } = {};
-          for (const statNameRaw of statsArr) {
-            const statName = String(statNameRaw || '').trim();
-            if (!statName) continue;
-            stats[statName] = `SkillTree/Master-Class/Stats/${statName}.md`;
-          }
-          const epithetRaw = data.epithet ?? data.Epithet ?? data.tagline ?? data.Tagline;
-          const epithetStr =
-            epithetRaw !== undefined && epithetRaw !== null
-              ? String(epithetRaw).trim()
-              : '';
-          const cpRaw = data.cp ?? data.currentCP ?? data.CP;
-          const cpNum =
-            typeof cpRaw === 'number' && !Number.isNaN(cpRaw)
-              ? cpRaw
-              : parseInt(String(cpRaw ?? 0), 10) || 0;
-          const reqRaw = data.maxCP ?? data.requiredCP ?? data.RequiredCP;
-          let maxCPNum: number | undefined;
-          if (reqRaw !== undefined && reqRaw !== null && reqRaw !== '') {
-            const n =
-              typeof reqRaw === 'number' && !Number.isNaN(reqRaw)
-                ? reqRaw
-                : parseInt(String(reqRaw), 10);
-            maxCPNum = n > 0 ? n : undefined;
-          }
-          const totalRaw = data.totalCP ?? data.TotalCP;
-          const totalNum =
-            totalRaw !== undefined && totalRaw !== null && totalRaw !== ''
-              ? (typeof totalRaw === 'number' && !Number.isNaN(totalRaw)
-                  ? totalRaw
-                  : parseInt(String(totalRaw), 10)) || cpNum
-              : cpNum;
-
-          const masteredRaw = data.mastered ?? data.isMastered ?? data.Mastered;
-          const mastered =
-            masteredRaw === true ||
-            masteredRaw === 'true' ||
-            String(masteredRaw).toLowerCase() === 'yes';
-
-          skills.push({
-            name: data.name,
-            class: className,
-            classPath,
-            masterClass: masterClass || '',
-            masterClassPath,
-            stats,
-            description: data.Description || data.description,
-            epithet: epithetStr || undefined,
-            filePath: file.path,
-            level: data.level,
-            cp: cpNum,
-            maxCP: maxCPNum,
-            totalCP: totalNum,
-            icon: data.icon,
-            iconImage: data.iconImage,
-            mastered: mastered || undefined
-          });
+          masterClassPath = (exact || masterClassFiles[0]).path;
+        } else {
+          masterClassPath = masterClassFiles[0].path;
         }
       }
-    }
-  }
 
-  if (isMobile) {
-    console.log('📱 [Mobile] getAllSkills final results:', {
-      totalSkillsFound: skills.length,
-      skillNames: skills.map(s => s.name),
-      skillPaths: skills.map(s => s.filePath)
-    });
-  }
+      const stats = normalizeSkillStats(data.stats ?? data.Stats);
+      const epithetRaw = data.epithet ?? data.Epithet ?? data.tagline ?? data.Tagline;
+      const epithetStr =
+        epithetRaw !== undefined && epithetRaw !== null ? String(epithetRaw).trim() : '';
+      const cpRaw = data.cp ?? data.currentCP ?? data.CP;
+      const cpNum =
+        typeof cpRaw === 'number' && !Number.isNaN(cpRaw)
+          ? cpRaw
+          : parseInt(String(cpRaw ?? 0), 10) || 0;
+      const reqRaw = data.maxCP ?? data.requiredCP ?? data.RequiredCP;
+      let maxCPNum: number | undefined;
+      if (reqRaw !== undefined && reqRaw !== null && reqRaw !== '') {
+        const n =
+          typeof reqRaw === 'number' && !Number.isNaN(reqRaw)
+            ? reqRaw
+            : parseInt(String(reqRaw), 10);
+        maxCPNum = n > 0 ? n : undefined;
+      }
+      const totalRaw = data.totalCP ?? data.TotalCP;
+      const totalNum =
+        totalRaw !== undefined && totalRaw !== null && totalRaw !== ''
+          ? (typeof totalRaw === 'number' && !Number.isNaN(totalRaw)
+              ? totalRaw
+              : parseInt(String(totalRaw), 10)) || cpNum
+          : cpNum;
+
+      const masteredRaw = data.mastered ?? data.isMastered ?? data.Mastered;
+      const mastered =
+        masteredRaw === true ||
+        masteredRaw === 'true' ||
+        String(masteredRaw).toLowerCase() === 'yes';
+
+      const skill: SkillMetadata = {
+        name: String(skillName),
+        class: className,
+        classPath,
+        masterClass: masterClass || '',
+        masterClassPath,
+        stats,
+        description: data.Description || data.description,
+        epithet: epithetStr || undefined,
+        filePath: file.path,
+        level: data.level,
+        cp: cpNum,
+        maxCP: maxCPNum,
+        totalCP: totalNum,
+        icon: data.icon,
+        iconImage: data.iconImage,
+        mastered: mastered || undefined,
+      };
+      return skill;
+    })
+  );
+
+  const skills = settled
+    .map((result) => (result.status === 'fulfilled' ? result.value : null))
+    .filter((skill): skill is SkillMetadata => Boolean(skill))
+    .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
 
   skillsCache = skills;
   skillsCacheTime = Date.now();

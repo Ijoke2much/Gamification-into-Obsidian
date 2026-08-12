@@ -689,6 +689,63 @@
     }
 }
 
+/* Real phone shell — full bleed; desktop modal sizes unchanged */
+.modalOverlayMobile {
+    align-items: stretch;
+    justify-content: flex-start;
+    padding: 0;
+    backdrop-filter: none;
+    background: rgba(8, 10, 20, 0.94);
+    /* Above TabView / Obsidian mobile chrome (Stats uses 100000) */
+    z-index: 100050 !important;
+    height: 100vh;
+    height: 100dvh;
+}
+
+.modalContentMobile {
+    width: 100vw !important;
+    max-width: none !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    max-height: 100vh !important;
+    max-height: 100dvh !important;
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.modalContentMobile .tabContent {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none !important;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+}
+
+.modalContentMobile .tabNavigation {
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    flex-direction: row;
+    gap: 0;
+}
+
+.modalContentMobile .tab {
+    flex: 1 1 auto;
+    min-height: 44px;
+    font-size: 0.55rem;
+    padding: 10px 8px;
+}
+
+.modalContentMobile .mobileTab {
+    min-height: auto;
+    padding-bottom: 8px;
+}
+
 @media (max-width: 768px) {
     .modalContent {
         width: 95vw;
@@ -706,6 +763,16 @@
     }
 
     .tab:last-child {
+        border-bottom: none;
+    }
+
+    /* Phone shell already sets row tabs — don't stack again */
+    .modalContentMobile .tabNavigation {
+        flex-direction: row;
+    }
+
+    .modalContentMobile .tab {
+        border-right: 2px solid var(--pixel-border-dark);
         border-bottom: none;
     }
 
@@ -731,141 +798,82 @@
     }
 }
 
-/* Multi-select */
-.multiSelectContainer {
-    position: relative;
+/* Associated stats — always-visible chips (mobile-safe; no absolute dropdown) */
+.statsChipGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+    gap: 8px;
     width: 100%;
 }
 
-.multiSelectDropdown {
-    background: var(--pixel-bg);
-    border: 2px solid var(--pixel-border-dark);
-    border-radius: 0;
-    padding: 10px 12px;
-    cursor: pointer;
-    display: flex;
+.statChip {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    display: inline-flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
+    gap: 6px;
     min-height: 44px;
-    transition: border-color 0.15s ease;
+    margin: 0 !important;
+    padding: 10px 12px !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    border-radius: 0 !important;
+    background: var(--pixel-bg) !important;
+    color: var(--pixel-text) !important;
+    font-size: 0.92rem !important;
+    font-weight: 600 !important;
+    text-align: left;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
     box-shadow: inset 0 0 0 1px var(--pixel-border-light);
 }
 
-.multiSelectDropdown:hover {
-    border-color: var(--pixel-accent);
+.statChip:hover {
+    border-color: var(--pixel-accent) !important;
 }
 
-.multiSelectDropdown:focus {
-    outline: none;
-    border-color: var(--pixel-accent);
+.statChipSelected {
+    background: var(--pixel-accent) !important;
+    color: var(--pixel-border-dark) !important;
+    border-color: var(--pixel-accent) !important;
+    font-weight: 800 !important;
 }
 
-.placeholder {
-    color: var(--pixel-muted);
-    font-style: italic;
+.statChipCheck {
+    width: 1em;
+    flex-shrink: 0;
+    font-weight: 800;
 }
 
-.selectedStats {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-    flex: 1;
-}
-
-.selectedStat {
-    background: var(--pixel-panel-alt);
-    color: var(--pixel-text);
-    padding: 4px 8px;
-    border-radius: 0;
+.statsSelectedHint {
+    margin-top: 8px;
     font-size: 0.8rem;
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    max-width: 120px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    border: 2px solid var(--pixel-border-dark);
-    box-shadow: 2px 2px 0 var(--pixel-border-dark);
-}
-
-.removeStat {
-    background: none;
-    border: none;
     color: var(--pixel-muted);
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: bold;
-    padding: 0;
-    width: 16px;
-    height: 16px;
+}
+
+.statsEmptyHint {
     display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.removeStat:hover {
-    color: var(--pixel-text);
-}
-
-.dropdownArrow {
-    color: var(--pixel-muted);
-    font-size: 12px;
-    transition: transform 0.2s ease;
-}
-
-.multiSelectDropdown:focus .dropdownArrow {
-    transform: rotate(180deg);
-}
-
-.dropdownOptions {
-    position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    border: 2px dashed var(--pixel-border-dark);
     background: var(--pixel-panel-alt);
-    border: 2px solid var(--pixel-border-dark);
-    border-top-width: 0;
-    border-radius: 0;
-    max-height: 200px;
-    overflow-y: auto;
-    z-index: 10;
-    box-shadow: var(--pixel-shadow);
+    color: var(--pixel-muted);
+    font-size: 0.85rem;
 }
 
-.dropdownOption {
-    padding: 10px 12px;
+.statsReloadBtn {
+    appearance: none !important;
+    align-self: flex-start;
+    min-height: 40px;
+    padding: 8px 12px !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    background: var(--pixel-bg) !important;
+    color: var(--pixel-accent) !important;
+    font-weight: 700 !important;
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    transition: background 0.12s ease;
-    color: var(--pixel-text);
-    font-size: 0.92rem;
-    border-bottom: 1px solid var(--pixel-border-dark);
-}
-
-.dropdownOption:last-child {
-    border-bottom: none;
-}
-
-.dropdownOption:hover {
-    background: var(--pixel-panel);
-}
-
-.dropdownOption.selected {
-    background: var(--pixel-accent);
-    color: var(--pixel-border-dark);
-    font-weight: 700;
-}
-
-.checkmark {
-    color: var(--pixel-highlight);
-    font-weight: bold;
-}
-
-.dropdownOption.selected .checkmark {
-    color: var(--pixel-border-dark);
+    touch-action: manipulation;
 }
 
 /* ── Solo Leveling System shell for Skill Codex ── */
@@ -916,6 +924,12 @@
 .modalContent[data-skill-system="true"] > * {
     position: relative;
     z-index: 1;
+}
+
+/* Codex detail must stay a real overlay — do not force position:relative */
+.modalContent[data-skill-system="true"] > [data-skill-codex-detail] {
+    position: fixed;
+    z-index: 100060;
 }
 
 .modalContent[data-skill-system="true"] .modalTitle {

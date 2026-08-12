@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { TFile } from 'obsidian';
 import type GamifiedObsidianPlugin from '../../../core/main';
-import { Card } from '../../../shared/components/ui/Card';
 import { AddItemModal } from '../../player/modals/AddItemModal';
 import { AddMaterialModal } from '../../crafting/modals/AddMaterialModal';
 import {
@@ -17,7 +16,6 @@ import { AddRecipeModal } from '../../crafting/modals/AddRecipeModal';
 import {
 	ensureRecipesFile,
 	findRecipesFile,
-	formatRecipeMaterials,
 	formatRecipeOutput,
 } from '../../crafting/utils/recipesParser';
 import {
@@ -39,6 +37,7 @@ import {
 	type ShopItem,
 } from '../../shop/utils/ShopParser';
 import { currencyDisplay } from '../../../shared/services/currencyDisplayService';
+import { resolveVaultMarkdownFile } from '../../../shared/utils/resolveVaultMarkdownFile';
 import styles from './GameDataHubPanel.module.css';
 
 interface GameDataHubPanelProps {
@@ -46,6 +45,47 @@ interface GameDataHubPanelProps {
 }
 
 type HubTab = 'shop' | 'materials' | 'recipes' | 'bosses' | 'dungeon';
+
+const HUB_TABS: { key: HubTab; label: string }[] = [
+	{ key: 'shop', label: 'Shop' },
+	{ key: 'materials', label: 'Materials' },
+	{ key: 'recipes', label: 'Recipes' },
+	{ key: 'bosses', label: 'Bosses' },
+	{ key: 'dungeon', label: 'Dungeon' },
+];
+
+const FOOTER_BY_TAB: Record<HubTab, React.ReactNode> = {
+	shop: (
+		<>
+			Shop tab buys from these listings · edits save to <strong>Shop.md</strong>
+		</>
+	),
+	materials: (
+		<>
+			Workshop consumes these · edits save to <strong>Materials.md</strong>
+		</>
+	),
+	recipes: (
+		<>
+			Workshop uses these · edits save to <strong>Recipes.md</strong>
+		</>
+	),
+	bosses: (
+		<>
+			Dungeon gate roster · notes live in <strong>{BOSS_FOLDER}/</strong>
+		</>
+	),
+	dungeon: (
+		<>
+			Gate cycle tools for the Quest sidebar <strong>Dungeon</strong> tab
+		</>
+	),
+};
+
+function materialChipLabel(materialId: string): { icon: string; name: string } {
+	const def = getCraftingMaterials().find((m) => m.id === materialId);
+	return { icon: def?.icon ?? '📦', name: def?.name ?? materialId };
+}
 
 export const GameDataHubPanel: React.FC<GameDataHubPanelProps> = ({ plugin }) => {
 	const [activeTab, setActiveTab] = useState<HubTab>('shop');
@@ -61,9 +101,12 @@ export const GameDataHubPanel: React.FC<GameDataHubPanelProps> = ({ plugin }) =>
 	const loadShop = useCallback(async () => {
 		try {
 			currencyDisplay.initialize(plugin.settings);
-			const shopFile = plugin.app.vault
-				.getMarkdownFiles()
-				.find((f) => f.basename.toLowerCase() === 'shop');
+			const shopFile = resolveVaultMarkdownFile(plugin.app, 'shop', [
+				'Shop.md',
+				'shop.md',
+				'Gamification/Shop.md',
+				'Gamified/Shop.md',
+			]);
 			setShopNoteMissing(!shopFile);
 			const list = shopFile ? await getAllShopItems(plugin) : [];
 			setItems(list);
@@ -275,459 +318,406 @@ export const GameDataHubPanel: React.FC<GameDataHubPanelProps> = ({ plugin }) =>
 	};
 
 	return (
-		<div>
-			<Card className={styles.panel}>
-				<h3>🧰 Game data hub</h3>
-				<p className={styles.intro}>
-					Manage shop listings (<strong>Shop.md</strong>), crafting materials (
-					<strong>Materials.md</strong>), recipes (<strong>Recipes.md</strong>), and gate bosses (
-					<strong>Bosses/</strong>). Custom entries merge with built-in defaults by{' '}
-					<strong>id</strong>.
-				</p>
+		<div className={styles.shell} data-gamification-shell="system">
+			<header className={styles.header}>
+				<span className={styles.headerIcon} aria-hidden="true">
+					🗂
+				</span>
+				<p className={styles.systemLabel}>[ SYSTEM : DATA HUB ]</p>
+				<h3 className={styles.title}>Vault content</h3>
+			</header>
+			<p className={styles.intro}>
+				Author shop listings, materials, recipes, and gate bosses. Customs merge with built-ins by{' '}
+				<strong>id</strong>.
+			</p>
 
-				<div className={styles.tabs}>
+			<div className={styles.tabs} role="tablist" aria-label="Game data sections">
+				{HUB_TABS.map((tab) => (
 					<button
+						key={tab.key}
 						type="button"
-						className={`${styles.tab} ${activeTab === 'shop' ? styles.tabActive : ''}`}
-						onClick={() => setActiveTab('shop')}
+						role="tab"
+						aria-selected={activeTab === tab.key}
+						className={`${styles.tab} ${activeTab === tab.key ? styles.tabActive : ''}`}
+						onClick={() => setActiveTab(tab.key)}
 					>
-						🛒 Shop
+						{tab.label}
 					</button>
-					<button
-						type="button"
-						className={`${styles.tab} ${activeTab === 'materials' ? styles.tabActive : ''}`}
-						onClick={() => setActiveTab('materials')}
-					>
-						📦 Materials
-					</button>
-					<button
-						type="button"
-						className={`${styles.tab} ${activeTab === 'recipes' ? styles.tabActive : ''}`}
-						onClick={() => setActiveTab('recipes')}
-					>
-						📜 Recipes
-					</button>
-					<button
-						type="button"
-						className={`${styles.tab} ${activeTab === 'bosses' ? styles.tabActive : ''}`}
-						onClick={() => setActiveTab('bosses')}
-					>
-						⚔️ Bosses
-					</button>
-					<button
-						type="button"
-						className={`${styles.tab} ${activeTab === 'dungeon' ? styles.tabActive : ''}`}
-						onClick={() => setActiveTab('dungeon')}
-					>
-						🏛 Dungeon
-					</button>
-				</div>
+				))}
+			</div>
 
-				{activeTab === 'shop' && (
-					<>
-						{shopNoteMissing && (
-							<div className={styles.warn}>
-								Could not find <strong>Shop.md</strong>. Add a note with that basename so shop items
-								can be saved.
-							</div>
-						)}
-
-						<div className={styles.actions}>
-							<button
-								type="button"
-								className={`${styles.actionBtn} ${styles.actionBtnMuted}`}
-								onClick={() => void reloadAll()}
-							>
-								↻ Reload
-							</button>
-							<button
-								type="button"
-								className={`${styles.actionBtn} ${styles.actionBtnMuted}`}
-								disabled={shopNoteMissing}
-								onClick={() => void openShopMd()}
-							>
-								Open Shop.md
-							</button>
-							<button
-								type="button"
-								className={`${styles.actionBtn} ${styles.actionBtnPrimary}`}
-								disabled={shopNoteMissing}
-								onClick={openAddItem}
-							>
-								＋ Add shop item
-							</button>
-							<button
-								type="button"
-								className={`${styles.actionBtn} ${styles.actionBtnPrimary}`}
-								disabled={shopNoteMissing}
-								onClick={openNewArtifact}
-							>
-								🏺 New artifact listing
-							</button>
+			{activeTab === 'shop' && (
+				<>
+					{shopNoteMissing && (
+						<div className={styles.warn}>
+							Could not find <strong>Shop.md</strong>. Add a note with that basename so shop items
+							can be saved.
 						</div>
+					)}
 
-						{loading ? (
-							<p className={styles.empty}>Loading shop items…</p>
-						) : sortedItems.length === 0 ? (
-							<p className={styles.empty}>
-								No items loaded.{' '}
-								{shopNoteMissing ? 'Create Shop.md first.' : 'Shop.md exists but has no item lines.'}
-							</p>
-						) : (
-							<div className={styles.tableWrap}>
-								<table className={styles.table}>
-									<thead>
-										<tr>
-											<th>Name</th>
-											<th>Price</th>
-											<th>Category</th>
-											<th>Rarity</th>
-											<th aria-label="Actions" />
-										</tr>
-									</thead>
-									<tbody>
-										{sortedItems.map((item, idx) => (
-											<tr key={`${idx}-${item.name}-${item.price}`}>
-												<td>
-													{item.icon ? `${item.icon} ` : ''}
-													{item.name}
-												</td>
-												<td>
-													{item.price} {currencyLabel}
-												</td>
-												<td>{item.category || '—'}</td>
-												<td>{item.rarity || '—'}</td>
-												<td>
-													<button
-														type="button"
-														className={styles.editBtn}
-														onClick={() => openEditShopItem(item)}
-														disabled={shopNoteMissing}
-													>
-														Edit
-													</button>
-												</td>
-											</tr>
-										))}
-									</tbody>
-								</table>
-							</div>
-						)}
-					</>
-				)}
+					<div className={styles.actions}>
+						<button
+							type="button"
+							className={`${styles.actionBtn} ${styles.actionBtnMuted}`}
+							onClick={() => void reloadAll()}
+						>
+							↻ Reload
+						</button>
+						<button
+							type="button"
+							className={`${styles.actionBtn} ${styles.actionBtnMuted}`}
+							disabled={shopNoteMissing}
+							onClick={() => void openShopMd()}
+						>
+							Open Shop.md
+						</button>
+						<button
+							type="button"
+							className={`${styles.actionBtn} ${styles.actionBtnPrimary}`}
+							disabled={shopNoteMissing}
+							onClick={openAddItem}
+						>
+							＋ Add shop item
+						</button>
+						<button
+							type="button"
+							className={`${styles.actionBtn} ${styles.actionBtnMuted}`}
+							disabled={shopNoteMissing}
+							onClick={openNewArtifact}
+						>
+							＋ Artifact listing
+						</button>
+					</div>
 
-				{activeTab === 'materials' && (
-					<>
-						{materialsNoteMissing && (
-							<div className={styles.warn}>
-								No <strong>Materials.md</strong> yet. Use &quot;Create Materials.md&quot; or add a
-								material — a starter file will be created automatically.
-							</div>
-						)}
-
-						<div className={styles.actions}>
-							<button
-								type="button"
-								className={`${styles.actionBtn} ${styles.actionBtnMuted}`}
-								onClick={() => void reloadAll()}
-							>
-								↻ Reload
-							</button>
-							<button
-								type="button"
-								className={`${styles.actionBtn} ${styles.actionBtnMuted}`}
-								onClick={() => void openMaterialsMd()}
-							>
-								{materialsNoteMissing ? 'Create Materials.md' : 'Open Materials.md'}
-							</button>
-							<button
-								type="button"
-								className={`${styles.actionBtn} ${styles.actionBtnPrimary}`}
-								onClick={() => void openAddMaterial()}
-							>
-								＋ Add material
-							</button>
-						</div>
-
-						{loading ? (
-							<p className={styles.empty}>Loading materials…</p>
-						) : (
-							<div className={styles.tableWrap}>
-								<table className={styles.table}>
-									<thead>
-										<tr>
-											<th>Name</th>
-											<th>Id</th>
-											<th>Category</th>
-											<th>Rarity</th>
-											<th>Source</th>
-											<th aria-label="Actions" />
-										</tr>
-									</thead>
-									<tbody>
-										{sortedMaterials.map((material) => (
-											<tr key={material.id}>
-												<td>
-													{material.icon ? `${material.icon} ` : ''}
-													{material.name}
-													{isVaultMaterial(material.id) ? (
-														<span className={`${styles.badge} ${styles.badgeCustom}`}>
-															Custom
-														</span>
-													) : (
-														<span className={`${styles.badge} ${styles.badgeBuiltin}`}>
-															Built-in
-														</span>
-													)}
-												</td>
-												<td>
-													<code>{material.id}</code>
-												</td>
-												<td>{material.category}</td>
-												<td>{material.rarity}</td>
-												<td>{material.source}</td>
-												<td>
-													<button
-														type="button"
-														className={styles.editBtn}
-														onClick={() => void openEditMaterial(material)}
-													>
-														{isVaultMaterial(material.id) ? 'Edit' : 'Override'}
-													</button>
-												</td>
-											</tr>
-										))}
-									</tbody>
-								</table>
-							</div>
-						)}
-					</>
-				)}
-
-				{activeTab === 'recipes' && (
-					<>
-						{recipesNoteMissing && (
-							<div className={styles.warn}>
-								No <strong>Recipes.md</strong> yet. Add a recipe or create the file — custom recipes
-								define what materials craft which items and artifacts.
-							</div>
-						)}
-
-						<div className={styles.actions}>
-							<button
-								type="button"
-								className={`${styles.actionBtn} ${styles.actionBtnMuted}`}
-								onClick={() => void reloadAll()}
-							>
-								↻ Reload
-							</button>
-							<button
-								type="button"
-								className={`${styles.actionBtn} ${styles.actionBtnMuted}`}
-								onClick={() => void openRecipesMd()}
-							>
-								{recipesNoteMissing ? 'Create Recipes.md' : 'Open Recipes.md'}
-							</button>
-							<button
-								type="button"
-								className={`${styles.actionBtn} ${styles.actionBtnPrimary}`}
-								onClick={() => void openAddRecipe()}
-							>
-								＋ Add recipe
-							</button>
-						</div>
-
-						{loading ? (
-							<p className={styles.empty}>Loading recipes…</p>
-						) : (
-							<div className={styles.tableWrap}>
-								<table className={styles.table}>
-									<thead>
-										<tr>
-											<th>Recipe</th>
-											<th>Materials</th>
-											<th>Creates</th>
-											<th>Category</th>
-											<th aria-label="Actions" />
-										</tr>
-									</thead>
-									<tbody>
-										{sortedRecipes.map((recipe) => (
-											<tr key={recipe.id}>
-												<td>
-													{recipe.icon ? `${recipe.icon} ` : ''}
-													{recipe.name}
-													{isVaultRecipe(recipe.id) ? (
-														<span className={`${styles.badge} ${styles.badgeCustom}`}>
-															Custom
-														</span>
-													) : (
-														<span className={`${styles.badge} ${styles.badgeBuiltin}`}>
-															Built-in
-														</span>
-													)}
-													<div style={{ fontSize: '0.75em', opacity: 0.7 }}>
-														<code>{recipe.id}</code>
-													</div>
-												</td>
-												<td>{formatRecipeMaterials(recipe)}</td>
-												<td>{formatRecipeOutput(recipe)}</td>
-												<td>{recipe.category}</td>
-												<td>
-													<button
-														type="button"
-														className={styles.editBtn}
-														onClick={() => void openEditRecipe(recipe)}
-													>
-														{isVaultRecipe(recipe.id) ? 'Edit' : 'Override'}
-													</button>
-												</td>
-											</tr>
-										))}
-									</tbody>
-								</table>
-							</div>
-						)}
-					</>
-				)}
-
-				{activeTab === 'bosses' && (
-					<>
-						<div className={styles.actions}>
-							<button
-								type="button"
-								className={`${styles.actionBtn} ${styles.actionBtnMuted}`}
-								onClick={() => void reloadAll()}
-							>
-								↻ Reload
-							</button>
-							<button
-								type="button"
-								className={`${styles.actionBtn} ${styles.actionBtnPrimary}`}
-								onClick={() => void plugin.openCreateBossModal(() => void reloadAll())}
-							>
-								⚔️ Forge a boss
-							</button>
-						</div>
-
-						{loading ? (
-							<p className={styles.empty}>Loading gate bosses…</p>
-						) : sortedBosses.length === 0 ? (
-							<p className={styles.empty}>
-								No bosses in <strong>{BOSS_FOLDER}/</strong> yet. Forge one to populate the dungeon
-								gate roster.
-							</p>
-						) : (
-							<div className={styles.tableWrap}>
-								<table className={styles.table}>
-									<thead>
-										<tr>
-											<th>Boss</th>
-											<th>Difficulty</th>
-											<th>Affinity</th>
-											<th>Status</th>
-											<th aria-label="Actions" />
-										</tr>
-									</thead>
-									<tbody>
-										{sortedBosses.map((boss) => (
-											<tr key={boss.filePath}>
-												<td>
-													{boss.emoji ? `${boss.emoji} ` : ''}
-													{boss.name}
-												</td>
-												<td>{boss.difficulty}</td>
-												<td>{describeAffinityRule(boss.affinityRule)}</td>
-												<td>{boss.status}</td>
-												<td>
-													<button
-														type="button"
-														className={styles.editBtn}
-														onClick={() =>
-															void plugin.openEditBossModal(boss, () => void reloadAll())
-														}
-													>
-														Edit
-													</button>
-													<button
-														type="button"
-														className={styles.editBtn}
-														onClick={() => void openBossNote(boss.filePath)}
-													>
-														Open note
-													</button>
-												</td>
-											</tr>
-										))}
-									</tbody>
-								</table>
-							</div>
-						)}
-					</>
-				)}
-
-				{activeTab === 'dungeon' && (
-					<>
-						<p className={styles.intro}>
-							Gate cycle tools for the Quest sidebar <strong>Dungeon</strong> tab. Reopening the gate
-							only clears the &quot;cleared this cycle&quot; seal — it does not wipe Journey foe
-							progress.
+					{loading ? (
+						<p className={styles.empty}>Loading shop items…</p>
+					) : sortedItems.length === 0 ? (
+						<p className={styles.empty}>
+							No items loaded.{' '}
+							{shopNoteMissing ? 'Create Shop.md first.' : 'Shop.md exists but has no item lines.'}
 						</p>
+					) : (
+						<ul className={styles.list}>
+							{sortedItems.map((item, idx) => (
+								<li key={`${idx}-${item.name}-${item.price}`} className={styles.row}>
+									<span className={styles.rowIcon} aria-hidden="true">
+										{item.icon || '🛒'}
+									</span>
+									<div className={styles.rowMain}>
+										<div className={styles.rowNameLine}>
+											<span className={styles.rowName}>{item.name}</span>
+										</div>
+										<div className={styles.rowMeta}>
+											{item.price} {currencyLabel}
+											{item.category ? ` · ${item.category}` : ''}
+											{item.rarity ? ` · ${item.rarity}` : ''}
+										</div>
+									</div>
+									<button
+										type="button"
+										className={styles.editBtn}
+										onClick={() => openEditShopItem(item)}
+										disabled={shopNoteMissing}
+									>
+										Edit
+									</button>
+								</li>
+							))}
+						</ul>
+					)}
+				</>
+			)}
 
-						<div className={styles.dungeonStatusCard}>
-							<div className={styles.dungeonStatusRow}>
-								<span>Gate unlocked</span>
-								<strong>{dungeonProgress.unlocked ? 'Yes' : 'No'}</strong>
-							</div>
-							<div className={styles.dungeonStatusRow}>
-								<span>Clearance</span>
-								<strong>
-									{dungeonProgress.clearedCount}/{dungeonProgress.required}
-								</strong>
-							</div>
-							<div className={styles.dungeonStatusRow}>
-								<span>Gate sealed this cycle</span>
-								<strong>{dungeonProgress.clearedForCycle ? 'Yes — spoils claimed' : 'No'}</strong>
-							</div>
-							<div className={styles.dungeonStatusRow}>
-								<span>Raid in progress</span>
-								<strong>{dungeonProgress.raidActive ? 'Yes' : 'No'}</strong>
-							</div>
+			{activeTab === 'materials' && (
+				<>
+					{materialsNoteMissing && (
+						<div className={styles.warn}>
+							No <strong>Materials.md</strong> yet. Use &quot;Create Materials.md&quot; or add a
+							material — a starter file will be created automatically.
 						</div>
+					)}
 
-						<div className={styles.actions}>
-							<button
-								type="button"
-								className={`${styles.actionBtn} ${styles.actionBtnMuted}`}
-								onClick={() => void reloadAll()}
-							>
-								↻ Refresh status
-							</button>
-							<button
-								type="button"
-								className={`${styles.actionBtn} ${styles.actionBtnPrimary}`}
-								disabled={!dungeonProgress.clearedForCycle}
-								onClick={handleReopenDungeonGate}
-							>
-								🔓 Reopen gate this cycle
-							</button>
-							<button
-								type="button"
-								className={`${styles.actionBtn} ${styles.actionBtnMuted}`}
-								onClick={() => void plugin.focusQuestHubSection('dungeon')}
-							>
-								Open Dungeon sidebar
-							</button>
+					<div className={styles.actions}>
+						<button
+							type="button"
+							className={`${styles.actionBtn} ${styles.actionBtnMuted}`}
+							onClick={() => void reloadAll()}
+						>
+							↻ Reload
+						</button>
+						<button
+							type="button"
+							className={`${styles.actionBtn} ${styles.actionBtnMuted}`}
+							onClick={() => void openMaterialsMd()}
+						>
+							{materialsNoteMissing ? 'Create Materials.md' : 'Open Materials.md'}
+						</button>
+						<button
+							type="button"
+							className={`${styles.actionBtn} ${styles.actionBtnPrimary}`}
+							onClick={() => void openAddMaterial()}
+						>
+							＋ Add material
+						</button>
+					</div>
+
+					{loading ? (
+						<p className={styles.empty}>Loading materials…</p>
+					) : (
+						<ul className={styles.list}>
+							{sortedMaterials.map((material) => (
+								<li key={material.id} className={styles.row}>
+									<span className={styles.rowIcon} aria-hidden="true">
+										{material.icon || '📦'}
+									</span>
+									<div className={styles.rowMain}>
+										<div className={styles.rowNameLine}>
+											<span className={styles.rowName}>{material.name}</span>
+											{isVaultMaterial(material.id) ? (
+												<span className={`${styles.badge} ${styles.badgeCustom}`}>Custom</span>
+											) : (
+												<span className={`${styles.badge} ${styles.badgeBuiltin}`}>
+													Built-in
+												</span>
+											)}
+										</div>
+										<span className={styles.rowId}>{material.id}</span>
+										<div className={styles.rowMeta}>
+											{material.category} · {material.rarity}
+										</div>
+									</div>
+									<button
+										type="button"
+										className={styles.editBtn}
+										onClick={() => void openEditMaterial(material)}
+									>
+										{isVaultMaterial(material.id) ? 'Edit' : 'Override'}
+									</button>
+								</li>
+							))}
+						</ul>
+					)}
+				</>
+			)}
+
+			{activeTab === 'recipes' && (
+				<>
+					{recipesNoteMissing && (
+						<div className={styles.warn}>
+							No <strong>Recipes.md</strong> yet. Add a recipe or create the file — custom recipes
+							define what materials craft which items and artifacts.
 						</div>
+					)}
 
-						{!dungeonProgress.clearedForCycle && (
-							<p className={styles.empty}>
-								Gate is open for raids, or you have not claimed spoils yet this cycle.
-							</p>
-						)}
-					</>
-				)}
-			</Card>
+					<div className={styles.actions}>
+						<button
+							type="button"
+							className={`${styles.actionBtn} ${styles.actionBtnMuted}`}
+							onClick={() => void reloadAll()}
+						>
+							↻ Reload
+						</button>
+						<button
+							type="button"
+							className={`${styles.actionBtn} ${styles.actionBtnMuted}`}
+							onClick={() => void openRecipesMd()}
+						>
+							{recipesNoteMissing ? 'Create Recipes.md' : 'Open Recipes.md'}
+						</button>
+						<button
+							type="button"
+							className={`${styles.actionBtn} ${styles.actionBtnPrimary}`}
+							onClick={() => void openAddRecipe()}
+						>
+							＋ Add recipe
+						</button>
+					</div>
+
+					{loading ? (
+						<p className={styles.empty}>Loading recipes…</p>
+					) : (
+						<ul className={styles.list}>
+							{sortedRecipes.map((recipe) => (
+								<li key={recipe.id} className={styles.row}>
+									<span className={styles.rowIcon} aria-hidden="true">
+										{recipe.icon || '📜'}
+									</span>
+									<div className={styles.rowMain}>
+										<div className={styles.rowNameLine}>
+											<span className={styles.rowName}>{recipe.name}</span>
+											{isVaultRecipe(recipe.id) ? (
+												<span className={`${styles.badge} ${styles.badgeCustom}`}>Custom</span>
+											) : (
+												<span className={`${styles.badge} ${styles.badgeBuiltin}`}>
+													Built-in
+												</span>
+											)}
+										</div>
+										<span className={styles.rowId}>{recipe.id}</span>
+										<div className={styles.chips}>
+											{recipe.materials
+												.filter((m) => m.required !== false)
+												.map((m) => {
+													const { icon, name } = materialChipLabel(m.materialId);
+													return (
+														<span
+															key={`${recipe.id}-${m.materialId}`}
+															className={styles.chip}
+															title={`${name} ×${m.quantity}`}
+														>
+															{icon} {name} ×{m.quantity}
+														</span>
+													);
+												})}
+										</div>
+										<div className={styles.creates}>
+											Creates <strong>{formatRecipeOutput(recipe)}</strong>
+											{recipe.category ? ` · ${recipe.category}` : ''}
+										</div>
+									</div>
+									<button
+										type="button"
+										className={styles.editBtn}
+										onClick={() => void openEditRecipe(recipe)}
+									>
+										{isVaultRecipe(recipe.id) ? 'Edit' : 'Override'}
+									</button>
+								</li>
+							))}
+						</ul>
+					)}
+				</>
+			)}
+
+			{activeTab === 'bosses' && (
+				<>
+					<div className={styles.actions}>
+						<button
+							type="button"
+							className={`${styles.actionBtn} ${styles.actionBtnMuted}`}
+							onClick={() => void reloadAll()}
+						>
+							↻ Reload
+						</button>
+						<button
+							type="button"
+							className={`${styles.actionBtn} ${styles.actionBtnPrimary}`}
+							onClick={() => void plugin.openCreateBossModal(() => void reloadAll())}
+						>
+							＋ Forge a boss
+						</button>
+					</div>
+
+					{loading ? (
+						<p className={styles.empty}>Loading gate bosses…</p>
+					) : sortedBosses.length === 0 ? (
+						<p className={styles.empty}>
+							No bosses in <strong>{BOSS_FOLDER}/</strong> yet. Forge one to populate the dungeon
+							gate roster.
+						</p>
+					) : (
+						<ul className={styles.list}>
+							{sortedBosses.map((boss) => (
+								<li key={boss.filePath} className={styles.row}>
+									<span className={styles.rowIcon} aria-hidden="true">
+										{boss.emoji || '⚔️'}
+									</span>
+									<div className={styles.rowMain}>
+										<div className={styles.rowNameLine}>
+											<span className={styles.rowName}>{boss.name}</span>
+										</div>
+										<div className={styles.rowMeta}>
+											{boss.difficulty} · {describeAffinityRule(boss.affinityRule)} ·{' '}
+											{boss.status}
+										</div>
+									</div>
+									<div className={styles.rowActions}>
+										<button
+											type="button"
+											className={styles.editBtn}
+											onClick={() =>
+												void plugin.openEditBossModal(boss, () => void reloadAll())
+											}
+										>
+											Edit
+										</button>
+										<button
+											type="button"
+											className={styles.editBtn}
+											onClick={() => void openBossNote(boss.filePath)}
+										>
+											Open note
+										</button>
+									</div>
+								</li>
+							))}
+						</ul>
+					)}
+				</>
+			)}
+
+			{activeTab === 'dungeon' && (
+				<>
+					<p className={styles.intro}>
+						Reopening the gate only clears the &quot;cleared this cycle&quot; seal — it does not wipe
+						Journey foe progress.
+					</p>
+
+					<div className={styles.dungeonStatusCard}>
+						<div className={styles.dungeonStatusRow}>
+							<span>Gate unlocked</span>
+							<strong>{dungeonProgress.unlocked ? 'Yes' : 'No'}</strong>
+						</div>
+						<div className={styles.dungeonStatusRow}>
+							<span>Clearance</span>
+							<strong>
+								{dungeonProgress.clearedCount}/{dungeonProgress.required}
+							</strong>
+						</div>
+						<div className={styles.dungeonStatusRow}>
+							<span>Gate sealed this cycle</span>
+							<strong>{dungeonProgress.clearedForCycle ? 'Yes — spoils claimed' : 'No'}</strong>
+						</div>
+						<div className={styles.dungeonStatusRow}>
+							<span>Raid in progress</span>
+							<strong>{dungeonProgress.raidActive ? 'Yes' : 'No'}</strong>
+						</div>
+					</div>
+
+					<div className={styles.actions}>
+						<button
+							type="button"
+							className={`${styles.actionBtn} ${styles.actionBtnMuted}`}
+							onClick={() => void reloadAll()}
+						>
+							↻ Refresh status
+						</button>
+						<button
+							type="button"
+							className={`${styles.actionBtn} ${styles.actionBtnPrimary}`}
+							disabled={!dungeonProgress.clearedForCycle}
+							onClick={handleReopenDungeonGate}
+						>
+							Reopen gate this cycle
+						</button>
+						<button
+							type="button"
+							className={`${styles.actionBtn} ${styles.actionBtnMuted}`}
+							onClick={() => void plugin.focusQuestHubSection('dungeon')}
+						>
+							Open Dungeon sidebar
+						</button>
+					</div>
+
+					{!dungeonProgress.clearedForCycle && (
+						<p className={styles.empty}>
+							Gate is open for raids, or you have not claimed spoils yet this cycle.
+						</p>
+					)}
+				</>
+			)}
+
+			<p className={styles.footer}>{FOOTER_BY_TAB[activeTab]}</p>
 		</div>
 	);
 };

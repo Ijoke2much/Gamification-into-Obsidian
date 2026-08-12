@@ -24,6 +24,19 @@
     color: var(--go-text, #e0f2fe);
 }
 
+.rootClay {
+    font-family: var(
+        --go-font-ui,
+        "Nunito",
+        "Segoe UI",
+        "Avenir Next",
+        system-ui,
+        -apple-system,
+        sans-serif
+    );
+    color: var(--clay-text, #4a5568);
+}
+
 .framePixel {
     display: flex;
     flex-direction: column;
@@ -43,6 +56,19 @@
     width: 100%;
     box-sizing: border-box;
     padding: 20px 18px 22px !important;
+}
+
+.frameClay {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    box-sizing: border-box;
+    padding: 24px 18px 26px;
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    border-radius: var(--clay-radius-large, 34px);
+    background: var(--clay-gradient, linear-gradient(145deg, #f6f2ec, #efe8df));
+    box-shadow: var(--clay-shadow);
 }
 
 .portraitSection {
@@ -90,6 +116,36 @@
     image-rendering: auto;
 }
 
+.rootClay .portraitSection {
+    margin-bottom: 22px;
+}
+
+.rootClay .portraitSlot {
+    /* Larger rounded-square clay tile (not a circle) */
+    width: min(72vw, 220px);
+    height: min(72vw, 220px);
+    border-radius: 28px;
+    overflow: hidden;
+    padding: 0;
+    box-sizing: border-box;
+    background: #ffffff;
+    box-shadow:
+        8px 8px 24px rgba(140, 108, 255, 0.22),
+        -6px -6px 18px rgba(255, 255, 255, 0.65),
+        inset 3px 3px 6px rgba(255, 255, 255, 0.45),
+        inset -4px -4px 10px rgba(140, 108, 255, 0.12);
+}
+
+.rootClay .portraitImg {
+    width: 100%;
+    height: 100%;
+    border: none;
+    border-radius: 28px;
+    box-shadow: none;
+    image-rendering: auto;
+    object-fit: cover;
+}
+
 .portraitEditHint {
     position: absolute;
     right: 8px;
@@ -115,6 +171,14 @@
     color: var(--go-text-bright, #f0f9ff);
     background: rgba(7, 21, 39, 0.9);
     border: 1px solid var(--go-border, rgba(34, 200, 255, 0.55));
+}
+
+.rootClay .portraitEditHint {
+    color: var(--clay-text, #2e2e2e);
+    background: var(--clay-button-gradient, linear-gradient(180deg, #f7f4ef, #ece3da));
+    border: none;
+    border-radius: 18px;
+    box-shadow: var(--clay-shadow);
 }
 
 .portraitSlot:hover .portraitEditHint,
@@ -153,6 +217,17 @@
     color: var(--go-text-bright, #f0f9ff);
 }
 
+.rootClay .identity {
+    gap: 8px;
+}
+
+.rootClay .playerName {
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: 0;
+    color: var(--clay-text-strong, #2d3748);
+}
+
 .rankLine {
     display: flex;
     align-items: baseline;
@@ -171,6 +246,13 @@
     color: var(--go-muted, #9ec7df);
 }
 
+.rootClay .rankLine {
+    font-size: 0.92rem;
+    letter-spacing: 0.02em;
+    color: var(--clay-muted, #8a95a3);
+    text-transform: none;
+}
+
 .rankLabel {
     font-weight: 700;
     letter-spacing: 0.14em;
@@ -181,6 +263,12 @@
     color: var(--go-accent, #22c8ff);
 }
 
+.rootClay .rankLabel {
+    color: var(--clay-muted, #8a95a3);
+    letter-spacing: 0.04em;
+    font-weight: 700;
+}
+
 .rankValue {
     font-weight: 800;
     color: var(--pixel-highlight);
@@ -188,6 +276,10 @@
 
 .rootSystem .rankValue {
     color: var(--go-gold, #ffd83d);
+}
+
+.rootClay .rankValue {
+    color: var(--clay-accent-deep, #2ba8a3);
 }
 
 .rankDivider {
@@ -200,6 +292,34 @@
 
 .rootSystem .rankLevel {
     color: var(--go-text-bright, #f0f9ff);
+}
+
+.rootClay .rankLevel {
+    color: var(--clay-text-strong, #2d3748);
+}
+
+.streakLine {
+    margin: 6px 0 0;
+    text-align: center;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: #fbbf24;
+}
+
+.rootSystem .streakLine {
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--go-gold, #ffd83d);
+    text-shadow: 0 0 10px rgba(255, 216, 61, 0.35);
+}
+
+.rootClay .streakLine {
+    font-size: 0.82rem;
+    letter-spacing: 0.02em;
+    color: var(--clay-accent-deep, #2ba8a3);
+    text-shadow: none;
 }
 
 .masterClassLine {
@@ -219,6 +339,11 @@
     color: var(--go-muted, #9ec7df);
 }
 
+.rootClay .masterClassLine {
+    font-size: 0.82rem;
+    color: var(--clay-muted, #8a95a3);
+}
+
 .masterClassLabel {
     font-weight: 700;
     letter-spacing: 0.06em;
@@ -231,6 +356,14 @@
     font-size: 0.72rem;
 }
 
+.rootClay .masterClassLabel {
+    color: var(--clay-muted, #8a95a3);
+    letter-spacing: 0.03em;
+    text-transform: none;
+    font-size: 0.82rem;
+    font-weight: 700;
+}
+
 .masterClassName {
     font-weight: 800;
 }
@@ -241,6 +374,10 @@
 
 .rootSystem .masterClassName {
     color: var(--go-text-bright, #f0f9ff);
+}
+
+.rootClay .masterClassName {
+    color: var(--clay-text-strong, #2d3748);
 }
 
 .statsPanel {
@@ -263,6 +400,16 @@
     box-shadow:
         0 0 0 1px rgba(34, 200, 255, 0.08),
         inset 0 0 20px rgba(34, 200, 255, 0.04);
+}
+
+.rootClay .statsPanel {
+    border: none;
+    border-radius: var(--clay-radius, 22px);
+    background: #f3eee8;
+    box-shadow: var(--clay-recessed);
+    padding: 18px 16px 18px;
+    margin-top: 8px;
+    overflow: visible;
 }
 
 .masterLvBlock {
@@ -290,6 +437,22 @@
     color: var(--go-muted, #9ec7df);
 }
 
+.statLabelClay {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--clay-muted, #8a95a3);
+}
+
+.rootClay .statLabel {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: none;
+    color: var(--clay-muted, #8a95a3);
+}
+
 .statValue {
     font-size: 1.15rem;
     font-weight: 900;
@@ -301,6 +464,19 @@
 .rootSystem .statValue {
     font-size: 1.55rem;
     color: var(--go-gold, #ffd83d);
+}
+
+.rootClay .statValue {
+    font-size: 1.85rem;
+    font-weight: 800;
+    color: var(--clay-accent-deep, #2ba8a3);
+}
+
+.rootClay .cpSection {
+    gap: 4px;
+    padding-top: 4px;
+    overflow: visible;
+    padding-bottom: 6px;
 }
 
 .cpSection {
@@ -336,6 +512,16 @@
     opacity: 0.92;
 }
 
+.rootClay .description {
+    font-size: 0.82rem;
+    font-style: normal;
+    line-height: 1.45;
+    color: var(--clay-muted, #8a95a3);
+    opacity: 1;
+    margin-top: 12px;
+    padding: 0 4px;
+}
+
 .descriptionEmpty {
     opacity: 0.55;
 }
@@ -368,5 +554,38 @@
     .portraitImg {
         width: 190px;
         height: 190px;
+    }
+}
+
+@media (max-width: 768px) {
+    .framePixel,
+    .frameSystem,
+    .frameClay {
+        padding: 14px 8px 16px;
+        width: 100%;
+        box-sizing: border-box;
+    }
+
+    .portraitSlot,
+    .portraitImg {
+        width: min(56vw, 180px);
+        height: min(56vw, 180px);
+    }
+
+    .rootClay .portraitSlot {
+        width: min(64vw, 200px);
+        height: min(64vw, 200px);
+        border-radius: 28px;
+        padding: 0;
+    }
+
+    .rootClay .portraitImg {
+        width: 100%;
+        height: 100%;
+        border-radius: 28px;
+    }
+
+    .frameClay {
+        padding: 20px 14px 22px;
     }
 }

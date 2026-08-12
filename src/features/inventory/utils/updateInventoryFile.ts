@@ -43,6 +43,26 @@ function shopItemToShopLikeItem(item: ShopItem): ShopLikeItem {
 // Centralized inventory file path constant
 export const INVENTORY_FILE_PATH = 'Inventory.md';
 
+/** Deduped machine effect lines from shop-like item fields. */
+function collectEffectLines(shopLikeItem: ShopLikeItem): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  const push = (raw: string) => {
+    const line = String(raw).trim();
+    if (!line || seen.has(line)) return;
+    seen.add(line);
+    out.push(line);
+  };
+  if (Array.isArray(shopLikeItem.effects)) {
+    for (const eff of shopLikeItem.effects) push(String(eff));
+  }
+  const rawLines = (shopLikeItem as ShopLikeItem & { rawEffectLines?: string[] }).rawEffectLines;
+  if (Array.isArray(rawLines)) {
+    for (const raw of rawLines) push(String(raw));
+  }
+  return out;
+}
+
 function dispatchInventoryUpdatedEvent(): void {
   try {
     // @ts-ignore
@@ -150,12 +170,26 @@ export async function addOrIncrementInventoryItem(app: App, item: ShopItem | Sho
       // Replace the line with updated quantity
       const baseLine = line.replace(/ x\d+/, "").replace(/\s+$/, "");
       updatedLines.push(`${baseLine} x${newQty}`);
-      // Copy associated comments
+      // Copy associated comments; backfill machine effect lines if stack lacked them
+      const commentBlock: string[] = [];
       let j = i + 1;
       while (j < lines.length && lines[j].trim().startsWith("//")) {
-        updatedLines.push(lines[j]);
+        commentBlock.push(lines[j]);
         j++;
       }
+      const existingEffects = new Set(
+        commentBlock
+          .map((c) => c.match(/^\s*\/\/\s*effect:\s*(.+)$/i)?.[1]?.trim())
+          .filter((v): v is string => Boolean(v))
+      );
+      const incomingEffects = collectEffectLines(shopLikeItem);
+      for (const eff of incomingEffects) {
+        if (!existingEffects.has(eff)) {
+          commentBlock.push(`// effect:${eff}`);
+          existingEffects.add(eff);
+        }
+      }
+      updatedLines.push(...commentBlock);
       i = j - 1;
     } else {
       updatedLines.push(line);
@@ -171,16 +205,8 @@ export async function addOrIncrementInventoryItem(app: App, item: ShopItem | Sho
       newEntry += `\n// price:${shopLikeItem.price}`;
       newEntry += `\n// value:${sellValue}`;
     }
-    if (Array.isArray(shopLikeItem.effects)) {
-      for (const eff of shopLikeItem.effects!) {
-        newEntry += `\n// effect:${eff}`;
-      }
-    }
-    const rawLines = (shopLikeItem as ShopLikeItem & { rawEffectLines?: string[] }).rawEffectLines;
-    if (Array.isArray(rawLines) && rawLines.length) {
-      for (const raw of rawLines) {
-        newEntry += `\n// effect:${raw}`;
-      }
+    for (const eff of collectEffectLines(shopLikeItem)) {
+      newEntry += `\n// effect:${eff}`;
     }
     updatedLines.push(newEntry);
   }
@@ -376,6 +402,27 @@ export async function useItem(app: App, itemName: string): Promise<void> {
           // Ignore notice errors silently
         }
         appliedSomething = true;
+      }
+      continue;
+    }
+
+    // energy:+N (restore player energy stat)
+    const mEnergy = effectStr.match(/^energy:\+?(\d+)/);
+    if (mEnergy) {
+      const amount = parseInt(mEnergy[1], 10);
+      if (amount > 0) {
+        // Re-read so earlier effects in this Use don't get overwritten
+        const latest = (await readPlayerData(app.vault)) ?? player;
+        if (latest) {
+          const stats = { ...(latest.stats || {}) };
+          const cur = typeof stats.energy === 'number' ? stats.energy : 50;
+          stats.energy = Math.max(0, Math.min(100, cur + amount));
+          await updatePlayerData(app.vault, { ...latest, stats });
+          try { showGameNotice(`⚡ +${amount} Energy`, 2000); } catch {
+            // Ignore notice errors silently
+          }
+          appliedSomething = true;
+        }
       }
       continue;
     }

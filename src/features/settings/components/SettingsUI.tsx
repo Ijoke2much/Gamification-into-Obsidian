@@ -137,7 +137,7 @@ export const SettingsUI: React.FC<SettingsUIProps> = ({
   };
 
   const openGameModulesCategory = () => {
-    setSelectedGroup('advanced');
+    setSelectedGroup('gameplay');
     setSelectedCategory('game-modules');
     setViewMode('category');
   };
@@ -200,18 +200,25 @@ export const SettingsUI: React.FC<SettingsUIProps> = ({
     await saveSettingsSnapshot(settings);
   };
 
-  // Filter groups based on search
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+
+  const categoryMatchesSearch = (cat: { name: string; description: string; settings: string[] }) => {
+    if (!normalizedSearch) return true;
+    if (cat.name.toLowerCase().includes(normalizedSearch)) return true;
+    if (cat.description.toLowerCase().includes(normalizedSearch)) return true;
+    return cat.settings.some((key) => key.toLowerCase().includes(normalizedSearch));
+  };
+
+  // Filter groups based on search (name, description, categories, setting keys)
   const filteredGroups = useMemo(() => {
-    if (!searchTerm) return SETTINGS_GROUPS;
-    return SETTINGS_GROUPS.filter(group => 
-      group.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      group.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      group.categories.some(cat => 
-        cat.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        cat.description.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+    if (!normalizedSearch) return SETTINGS_GROUPS;
+    return SETTINGS_GROUPS.filter(
+      (group) =>
+        group.name.toLowerCase().includes(normalizedSearch) ||
+        group.description.toLowerCase().includes(normalizedSearch) ||
+        group.categories.some(categoryMatchesSearch)
     );
-  }, [searchTerm]);
+  }, [normalizedSearch]);
 
   // Get current group and category
   const currentGroup = selectedGroup 
@@ -222,10 +229,15 @@ export const SettingsUI: React.FC<SettingsUIProps> = ({
     ? currentGroup?.categories.find(cat => cat.id === selectedCategory)
     : null;
 
-  // Handle group selection
+  // Handle group selection (skip the category grid when there is only one)
   const handleGroupClick = (groupId: string) => {
+    const group = SETTINGS_GROUPS.find((g) => g.id === groupId);
     setSelectedGroup(groupId);
-    setSelectedCategory(null);
+    if (group && group.categories.length === 1) {
+      setSelectedCategory(group.categories[0].id);
+    } else {
+      setSelectedCategory(null);
+    }
     setViewMode('category');
   };
 
@@ -242,8 +254,12 @@ export const SettingsUI: React.FC<SettingsUIProps> = ({
     setViewMode('groups');
   };
 
-  // Go back to group categories view
+  // Go back to group categories view (or groups when the group has only one category)
   const goBackToGroupCategories = () => {
+    if (currentGroup && currentGroup.categories.length === 1) {
+      goBackToGroups();
+      return;
+    }
     setSelectedCategory(null);
     setViewMode('category');
   };
@@ -295,7 +311,10 @@ export const SettingsUI: React.FC<SettingsUIProps> = ({
         </div>
 
         <div className={styles.categoriesGrid}>
-          {currentGroup.categories.map((category) => (
+          {(normalizedSearch
+            ? currentGroup.categories.filter(categoryMatchesSearch)
+            : currentGroup.categories
+          ).map((category) => (
             <Card 
               key={category.id} 
               className={styles.categoryCard}
@@ -323,11 +342,13 @@ export const SettingsUI: React.FC<SettingsUIProps> = ({
   const renderCategorySettings = () => {
     if (!currentCategory || !currentGroup) return null;
 
+    const previewItems = showPreviews ? getSettingsPreview(currentCategory.id) : [];
+
     return (
       <div className={styles.categorySettings}>
         <div className={styles.categoryHeader}>
           <button className={styles.backButton} onClick={goBackToGroupCategories}>
-            ← Back to {currentGroup.name}
+            ← Back to {currentGroup.categories.length === 1 ? 'Groups' : currentGroup.name}
           </button>
           <h2 className={styles.categoryTitle}>
             {currentCategory.icon} {currentCategory.name}
@@ -335,11 +356,11 @@ export const SettingsUI: React.FC<SettingsUIProps> = ({
           <p className={styles.categoryDescription}>{currentCategory.description}</p>
           
           {/* Settings Preview */}
-          {showPreviews && (
+          {previewItems.length > 0 && (
             <div className={styles.settingsPreview}>
               <h4>Current Settings Preview</h4>
               <div className={styles.previewGrid}>
-                {getSettingsPreview(currentCategory.id)}
+                {previewItems}
               </div>
             </div>
           )}
@@ -387,18 +408,9 @@ export const SettingsUI: React.FC<SettingsUIProps> = ({
           {currentCategory.id === 'performance' && (
             <PerformanceSettingsSection settings={settings} onSettingChange={updateSetting} />
           )}
-          {currentCategory.id === 'advanced-config' && (
-            <AdvancedSettingsSection settings={settings} onSettingChange={updateSetting} />
-          )}
-          {currentCategory.id === 'theming' && (
-            <AppearanceSettings 
-              settings={settings} 
-              onSettingsChange={patchSettings}
-            />
-          )}
-          {currentCategory.id === 'internationalization' && (
-            <AppearanceSettings 
-              settings={settings} 
+          {currentCategory.id === 'appearance' && (
+            <AppearanceSettings
+              settings={settings}
               onSettingsChange={patchSettings}
             />
           )}
@@ -566,7 +578,7 @@ export const SettingsUI: React.FC<SettingsUIProps> = ({
         <div className={styles.searchContainer}>
           <input
             type="text"
-            placeholder="🔍 Search settings groups..."
+            placeholder="🔍 Search settings, categories, or keys…"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className={styles.searchInput}
@@ -887,6 +899,106 @@ const EnergySettingsSection: React.FC<{
         </label>
       </div>
     </Card>
+
+    <Card className={styles.settingsCard}>
+      <h3>🔧 Quest energy costs</h3>
+      <p className={styles.advancedNote}>
+        Fine-tune how much energy quests spend. Only change these if you want to rebalance difficulty.
+      </p>
+
+      <h4>Easy Quests</h4>
+      <div className={styles.settingGroup}>
+        <label>
+          Mental Cost:
+          <input
+            type="number"
+            min="0"
+            value={settings.questCostEasyMental ?? 5}
+            onChange={(e) => onSettingChange('questCostEasyMental', parseInt(e.target.value) || 0)}
+          />
+        </label>
+        <label>
+          Physical Cost:
+          <input
+            type="number"
+            min="0"
+            value={settings.questCostEasyPhysical ?? 2}
+            onChange={(e) => onSettingChange('questCostEasyPhysical', parseInt(e.target.value) || 0)}
+          />
+        </label>
+        <label>
+          Emotional Cost:
+          <input
+            type="number"
+            min="0"
+            value={settings.questCostEasyEmotional ?? 2}
+            onChange={(e) => onSettingChange('questCostEasyEmotional', parseInt(e.target.value) || 0)}
+          />
+        </label>
+      </div>
+
+      <h4>Medium Quests</h4>
+      <div className={styles.settingGroup}>
+        <label>
+          Mental Cost:
+          <input
+            type="number"
+            min="0"
+            value={settings.questCostMediumMental ?? 10}
+            onChange={(e) => onSettingChange('questCostMediumMental', parseInt(e.target.value) || 0)}
+          />
+        </label>
+        <label>
+          Physical Cost:
+          <input
+            type="number"
+            min="0"
+            value={settings.questCostMediumPhysical ?? 5}
+            onChange={(e) => onSettingChange('questCostMediumPhysical', parseInt(e.target.value) || 0)}
+          />
+        </label>
+        <label>
+          Emotional Cost:
+          <input
+            type="number"
+            min="0"
+            value={settings.questCostMediumEmotional ?? 5}
+            onChange={(e) => onSettingChange('questCostMediumEmotional', parseInt(e.target.value) || 0)}
+          />
+        </label>
+      </div>
+
+      <h4>Hard Quests</h4>
+      <div className={styles.settingGroup}>
+        <label>
+          Mental Cost:
+          <input
+            type="number"
+            min="0"
+            value={settings.questCostHardMental ?? 15}
+            onChange={(e) => onSettingChange('questCostHardMental', parseInt(e.target.value) || 0)}
+          />
+        </label>
+        <label>
+          Physical Cost:
+          <input
+            type="number"
+            min="0"
+            value={settings.questCostHardPhysical ?? 10}
+            onChange={(e) => onSettingChange('questCostHardPhysical', parseInt(e.target.value) || 0)}
+          />
+        </label>
+        <label>
+          Emotional Cost:
+          <input
+            type="number"
+            min="0"
+            value={settings.questCostHardEmotional ?? 8}
+            onChange={(e) => onSettingChange('questCostHardEmotional', parseInt(e.target.value) || 0)}
+          />
+        </label>
+      </div>
+    </Card>
   </div>
 );
 
@@ -1201,7 +1313,7 @@ const ShopSettingsSection: React.FC<{
       <h3>🛒 Shop System Settings</h3>
       <p className={styles.helperText} style={{ marginTop: 0, marginBottom: '16px' }}>
         To add or edit shop items (written to Shop.md), go to{' '}
-        <strong>Rewards &amp; Progression → Game data hub</strong> in these settings.
+        <strong>Economy &amp; Content → Game data hub</strong> in these settings.
       </p>
       <div className={styles.settingGroup}>
         <label className={styles.checkboxLabel}>
@@ -1598,7 +1710,7 @@ const PerformanceSettingsSection: React.FC<{
           Enable Beta Mode (debug buttons/logs)
         </label>
         <p className={styles.helperText} style={{ marginTop: 0 }}>
-          Analytics tab visibility is controlled under Advanced → Feature Modules.
+          Analytics tab visibility is controlled under Gameplay → Feature Modules.
         </p>
         <label className={styles.checkboxLabel}>
           <input
@@ -1985,115 +2097,6 @@ const FileSettingsSection: React.FC<{
         >
           ➕ Add Quest Location
         </button>
-      </div>
-    </Card>
-  </div>
-);
-
-const AdvancedSettingsSection: React.FC<{
-  settings: GamificationPluginSettings;
-  onSettingChange: (path: string, value: unknown) => void;
-}> = ({ settings, onSettingChange }) => (
-  <div className={styles.settingsSection}>
-    <Card className={styles.settingsCard}>
-      <h3>🔧 Advanced Configuration</h3>
-      <p className={styles.advancedNote}>
-        These are advanced settings for fine-tuning the energy and focus systems. 
-        Only modify these if you understand their impact on gameplay balance.
-      </p>
-      
-      <h4>Quest Energy Costs</h4>
-      <div className={styles.settingGroup}>
-        <h5>Easy Quests</h5>
-        <label>
-          Mental Cost:
-          <input
-            type="number"
-            min="0"
-            value={settings.questCostEasyMental ?? 5}
-            onChange={(e) => onSettingChange('questCostEasyMental', parseInt(e.target.value) || 0)}
-          />
-        </label>
-        <label>
-          Physical Cost:
-          <input
-            type="number"
-            min="0"
-            value={settings.questCostEasyPhysical ?? 2}
-            onChange={(e) => onSettingChange('questCostEasyPhysical', parseInt(e.target.value) || 0)}
-          />
-        </label>
-        <label>
-          Emotional Cost:
-          <input
-            type="number"
-            min="0"
-            value={settings.questCostEasyEmotional ?? 2}
-            onChange={(e) => onSettingChange('questCostEasyEmotional', parseInt(e.target.value) || 0)}
-          />
-        </label>
-      </div>
-
-      <div className={styles.settingGroup}>
-        <h5>Medium Quests</h5>
-        <label>
-          Mental Cost:
-          <input
-            type="number"
-            min="0"
-            value={settings.questCostMediumMental ?? 10}
-            onChange={(e) => onSettingChange('questCostMediumMental', parseInt(e.target.value) || 0)}
-          />
-        </label>
-        <label>
-          Physical Cost:
-          <input
-            type="number"
-            min="0"
-            value={settings.questCostMediumPhysical ?? 5}
-            onChange={(e) => onSettingChange('questCostMediumPhysical', parseInt(e.target.value) || 0)}
-          />
-        </label>
-        <label>
-          Emotional Cost:
-          <input
-            type="number"
-            min="0"
-            value={settings.questCostMediumEmotional ?? 5}
-            onChange={(e) => onSettingChange('questCostMediumEmotional', parseInt(e.target.value) || 0)}
-          />
-        </label>
-      </div>
-
-      <div className={styles.settingGroup}>
-        <h5>Hard Quests</h5>
-        <label>
-          Mental Cost:
-          <input
-            type="number"
-            min="0"
-            value={settings.questCostHardMental ?? 15}
-            onChange={(e) => onSettingChange('questCostHardMental', parseInt(e.target.value) || 0)}
-          />
-        </label>
-        <label>
-          Physical Cost:
-          <input
-            type="number"
-            min="0"
-            value={settings.questCostHardPhysical ?? 10}
-            onChange={(e) => onSettingChange('questCostHardPhysical', parseInt(e.target.value) || 0)}
-          />
-        </label>
-        <label>
-          Emotional Cost:
-          <input
-            type="number"
-            min="0"
-            value={settings.questCostHardEmotional ?? 8}
-            onChange={(e) => onSettingChange('questCostHardEmotional', parseInt(e.target.value) || 0)}
-          />
-        </label>
       </div>
     </Card>
   </div>

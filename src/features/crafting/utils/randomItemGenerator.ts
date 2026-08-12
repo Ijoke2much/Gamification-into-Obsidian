@@ -59,9 +59,10 @@ export class RandomItemGenerator {
                     activityDuration: 10
                 },
                 {
-                    type: 'currency',
-                    description: 'Instant energy boost',
-                    amount: 50
+                    type: 'stat_boost',
+                    description: 'Restore 25 energy',
+                    statType: 'energy',
+                    statValue: 25,
                 }
             ],
             weight: 15
@@ -283,8 +284,12 @@ export class RandomItemGenerator {
         return { canGenerate, availableMaterials };
     }
 
-    // Generate a random item from available materials
-    static async generateRandomItem(app: App, playerLevel: number = 1): Promise<GeneratedRandomItem | null> {
+    // Generate a random item from available materials (optional templateId forces that row)
+    static async generateRandomItem(
+        app: App,
+        playerLevel: number = 1,
+        templateId?: string
+    ): Promise<GeneratedRandomItem | null> {
         try {
             // Get available templates based on player level
             const availableTemplates = this.RANDOM_ITEM_TEMPLATES.filter(template =>
@@ -305,16 +310,23 @@ export class RandomItemGenerator {
                 return null;
             }
 
-            // Select template based on weights
-            const totalWeight = craftableTemplates.reduce((sum, template) => sum + template.weight, 0);
-            let random = Math.random() * totalWeight;
-
             let selectedTemplate: RandomItemTemplate | null = null;
-            for (const template of craftableTemplates) {
-                random -= template.weight;
-                if (random <= 0) {
-                    selectedTemplate = template;
-                    break;
+            if (templateId) {
+                selectedTemplate = craftableTemplates.find((t) => t.id === templateId) ?? null;
+                if (!selectedTemplate) {
+                    pixelNotice('Need more materials for that experiment', 2500);
+                    return null;
+                }
+            } else {
+                // Select template based on weights
+                const totalWeight = craftableTemplates.reduce((sum, template) => sum + template.weight, 0);
+                let random = Math.random() * totalWeight;
+                for (const template of craftableTemplates) {
+                    random -= template.weight;
+                    if (random <= 0) {
+                        selectedTemplate = template;
+                        break;
+                    }
                 }
             }
 
@@ -386,6 +398,13 @@ export class RandomItemGenerator {
                 break;
             case 'xp':
                 effects.push(`xp:+${item.effect.amount}`);
+                break;
+            case 'stat_boost':
+                if ((item.effect.statType || '').toLowerCase() === 'energy' && item.effect.statValue) {
+                    effects.push(`energy:+${item.effect.statValue}`);
+                } else if (item.effect.statType && item.effect.statValue != null) {
+                    effects.push(`gear:${item.effect.statType}:=${item.effect.statValue}`);
+                }
                 break;
             case 'crafting_bonus':
                 // Store as a special buff that crafting system can recognize

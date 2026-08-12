@@ -827,6 +827,32 @@
   text-align: center;
 }
 
+/* Mobile: Due today is the hero — bigger taps, trees stay below */
+.dueTodayPanel {
+  margin: 0 0 14px;
+  padding: 14px;
+  border: 2px solid rgba(34, 200, 255, 0.45);
+  border-radius: 2px;
+  background: rgba(8, 28, 54, 0.88);
+  box-shadow: 0 0 16px rgba(34, 200, 255, 0.18);
+}
+
+.mobileHabitsShell .quickCheckTitle {
+  letter-spacing: 0.1em;
+  color: #22c8ff;
+}
+
+.mobileHabitsShell .quickCheckItem {
+  min-height: 48px;
+  border-radius: 2px;
+  border: 1px solid rgba(34, 200, 255, 0.35);
+}
+
+.mobileHabitsShell .quickCheckBox {
+  width: 28px;
+  height: 28px;
+}
+
 /* Habits List */
 .habitsList {
   display: flex;
@@ -4665,31 +4691,18 @@
 }
 
 .container.pixelHabitsShell {
-  --pixel-bg: #1b1d2f;
-  --pixel-panel: #252742;
-  --pixel-panel-alt: #2e3152;
-  --pixel-border-dark: #0f1120;
-  --pixel-border-light: #5b61a2;
-  --pixel-accent: #8ecae6;
-  --pixel-highlight: #ffd166;
-  --pixel-text: #ecefff;
-  --pixel-muted: #bac2e3;
-  --pixel-shadow: 3px 3px 0 var(--pixel-border-dark);
-  --pixel-shadow-pressed: 1px 1px 0 var(--pixel-border-dark);
-  --pixel-card-radius: 0;
-
-  background: var(--pixel-bg) !important;
-  color: var(--pixel-text);
-  font-family: "Press Start 2P", "VT323", "Courier New", monospace;
+  background: var(--go-bg, var(--pixel-bg)) !important;
+  color: var(--go-text, var(--pixel-text));
+  font-family: var(--go-font-ui, "Press Start 2P", "VT323", "Courier New", monospace);
   font-size: 11px;
   line-height: 1.65;
-  border: 2px solid var(--pixel-border-dark);
-  box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light);
+  border: 2px solid var(--pixel-border-dark, #0f1120);
+  box-shadow: var(--go-shadow, var(--pixel-shadow)), inset 0 0 0 1px var(--go-border, var(--pixel-border-light));
   box-sizing: border-box;
 }
 
 .loading.pixelHabitsShell {
-  font-family: "Press Start 2P", "VT323", monospace;
+  font-family: var(--go-font-ui, "Press Start 2P", "VT323", monospace);
   font-size: 10px;
   color: var(--pixel-accent, #8ecae6);
   background: var(--pixel-bg, #1b1d2f);
@@ -4707,7 +4720,7 @@
 .container.pixelHabitsShell .header h2,
 .container.pixelHabitsShell .header p,
 .container.pixelHabitsShell .headerInfo {
-  font-family: "Press Start 2P", "VT323", monospace !important;
+  font-family: var(--go-font-ui, "Press Start 2P", "VT323", monospace) !important;
   text-shadow: 2px 2px 0 var(--pixel-border-dark) !important;
 }
 
@@ -4720,7 +4733,7 @@
 .container.pixelHabitsShell .addButton {
   border-radius: var(--pixel-card-radius) !important;
   border: 2px solid var(--pixel-border-dark) !important;
-  font-family: "Press Start 2P", monospace !important;
+  font-family: var(--go-font-ui, "Press Start 2P", monospace) !important;
   font-size: 8px !important;
   box-shadow: var(--pixel-shadow) !important;
   background: var(--pixel-panel) !important;
@@ -4730,7 +4743,7 @@
 .container.pixelHabitsShell .tabsRow .tab {
   border-radius: var(--pixel-card-radius) !important;
   border: 2px solid var(--pixel-border-dark) !important;
-  font-family: "Press Start 2P", monospace !important;
+  font-family: var(--go-font-ui, "Press Start 2P", monospace) !important;
   font-size: 7px !important;
   background: var(--pixel-panel-alt) !important;
   color: var(--pixel-muted) !important;
@@ -4751,8 +4764,8 @@
 }
 
 .container.pixelHabitsShell .quickCheckTitle {
-  color: var(--pixel-text) !important;
-  font-family: "Press Start 2P", "VT323", monospace !important;
+  color: var(--go-text, var(--pixel-text)) !important;
+  font-family: var(--go-font-ui, "Press Start 2P", "VT323", monospace) !important;
   font-size: 8px !important;
 }
 
@@ -4767,7 +4780,7 @@
 .container.pixelHabitsShell .quickCheckSkill {
   border-radius: var(--pixel-card-radius) !important;
   border: 2px solid var(--pixel-border-dark) !important;
-  font-family: "Press Start 2P", monospace !important;
+  font-family: var(--go-font-ui, "Press Start 2P", monospace) !important;
   font-size: 7px !important;
 }
 
@@ -4787,13 +4800,13 @@
   border-radius: var(--pixel-card-radius) !important;
   border: 2px solid var(--pixel-border-dark) !important;
   color: var(--pixel-accent) !important;
-  font-family: "Press Start 2P", monospace !important;
+  font-family: var(--go-font-ui, "Press Start 2P", monospace) !important;
   font-size: 8px !important;
 }
 
 .container.pixelHabitsShell .quickCheckName {
-  color: var(--pixel-text) !important;
-  font-family: "Press Start 2P", "VT323", monospace !important;
+  color: var(--go-text, var(--pixel-text)) !important;
+  font-family: var(--go-font-ui, "Press Start 2P", "VT323", monospace) !important;
   font-size: 9px !important;
 }
 
@@ -4825,16 +4838,16 @@
 }
 
 .container.pixelHabitsShell .habitName {
-  font-family: "Press Start 2P", "VT323", monospace !important;
+  font-family: var(--go-font-ui, "Press Start 2P", "VT323", monospace) !important;
   font-size: 12px !important;
   line-height: 1.35 !important;
-  color: var(--pixel-text) !important;
+  color: var(--go-text, var(--pixel-text)) !important;
 }
 
 .container.pixelHabitsShell .skillTag {
   border-radius: var(--pixel-card-radius) !important;
   border: 2px solid var(--pixel-border-dark) !important;
-  font-family: "Press Start 2P", monospace !important;
+  font-family: var(--go-font-ui, "Press Start 2P", monospace) !important;
   font-size: 9px !important;
 }
 
@@ -4843,7 +4856,7 @@
 .container.pixelHabitsShell .rewardBadge {
   border-radius: var(--pixel-card-radius) !important;
   border: 2px solid var(--pixel-border-dark) !important;
-  font-family: "Press Start 2P", monospace !important;
+  font-family: var(--go-font-ui, "Press Start 2P", monospace) !important;
   font-size: 8px !important;
 }
 
@@ -4853,7 +4866,7 @@
 .container.pixelHabitsShell .deleteButton {
   border-radius: var(--pixel-card-radius) !important;
   border: 2px solid var(--pixel-border-dark) !important;
-  font-family: "Press Start 2P", monospace !important;
+  font-family: var(--go-font-ui, "Press Start 2P", monospace) !important;
   font-size: 7px !important;
   box-shadow: var(--pixel-shadow-pressed) !important;
 }
@@ -4862,7 +4875,7 @@
   border-radius: var(--pixel-card-radius) !important;
   border: 2px solid var(--pixel-border-dark) !important;
   background: var(--pixel-panel-alt) !important;
-  font-family: "Press Start 2P", monospace !important;
+  font-family: var(--go-font-ui, "Press Start 2P", monospace) !important;
   font-size: inherit !important;
 }
 
@@ -4907,7 +4920,44 @@
 .container.pixelHabitsShell .emptyButton {
   border-radius: var(--pixel-card-radius) !important;
   border: 2px solid var(--pixel-border-dark) !important;
-  font-family: "Press Start 2P", monospace !important;
+  font-family: var(--go-font-ui, "Press Start 2P", monospace) !important;
   font-size: 8px !important;
   box-shadow: var(--pixel-shadow) !important;
+}
+
+/* System Hunter shell */
+:global([data-gamification-shell='system']) .container.pixelHabitsShell .header h2,
+:global([data-gamification-shell='system']) .container.pixelHabitsShell .headerInfo {
+  font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+  text-shadow: none !important;
+  letter-spacing: 0.1em;
+  color: var(--go-accent, #22c8ff) !important;
+}
+
+:global([data-gamification-shell='system']) .container.pixelHabitsShell .tabsRow .tabActive {
+  background: var(--go-card, rgba(18, 55, 96, 0.58)) !important;
+  color: var(--go-accent, #22c8ff) !important;
+  border-color: var(--go-accent, #22c8ff) !important;
+  box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16)) !important;
+}
+
+:global([data-gamification-shell='system']) .container.pixelHabitsShell .header,
+:global([data-gamification-shell='system']) .container.pixelHabitsShell .habitCard,
+:global([data-gamification-shell='system']) .container.pixelHabitsShell .quickCheckPanel,
+:global([data-gamification-shell='system']) .container.pixelHabitsShell .eventCard {
+  border-width: 1px !important;
+  border-color: var(--go-border, rgba(34, 200, 255, 0.42)) !important;
+  border-radius: var(--go-radius, 2px) !important;
+  box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16)) !important;
+}
+
+:global([data-gamification-shell='system']) .container.pixelHabitsShell .habitName {
+  font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+  font-size: 0.78rem !important;
+  color: var(--go-text-bright, #f0f9ff) !important;
+}
+
+:global([data-gamification-shell='system']) .container.pixelHabitsShell .addButton:hover,
+:global([data-gamification-shell='system']) .container.pixelHabitsShell .completeButton:hover {
+  transform: none !important;
 }

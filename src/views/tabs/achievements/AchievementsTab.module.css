@@ -1,25 +1,13 @@
 /* Pixel / RPG shell for Achievements tab */
 
 .pixelAchievementsShell {
-    --pixel-bg: #1b1d2f;
-    --pixel-panel: #252742;
-    --pixel-panel-alt: #2e3152;
-    --pixel-border-dark: #0f1120;
-    --pixel-border-light: #5b61a2;
-    --pixel-accent: #8ecae6;
-    --pixel-highlight: #ffd166;
-    --pixel-text: #ecefff;
-    --pixel-muted: #bac2e3;
-    --pixel-shadow: 3px 3px 0 var(--pixel-border-dark);
-    --pixel-shadow-pressed: 1px 1px 0 var(--pixel-border-dark);
-    --pixel-card-radius: 0;
     isolation: isolate;
 }
 
 .pixelAchievementsShell {
-    background: var(--pixel-bg) !important;
-    color: var(--pixel-text) !important;
-    font-family: "Press Start 2P", "VT323", "Courier New", monospace;
+    background: var(--go-bg, var(--pixel-bg)) !important;
+    color: var(--go-text, var(--pixel-text)) !important;
+    font-family: var(--go-font-ui, "Press Start 2P", "VT323", "Courier New", monospace);
     font-size: 11px;
     line-height: 1.6;
     border: 2px solid var(--pixel-border-dark);
@@ -31,7 +19,7 @@
     background: none !important;
     -webkit-text-fill-color: var(--pixel-highlight) !important;
     color: var(--pixel-highlight) !important;
-    font-family: "Press Start 2P", "VT323", monospace !important;
+    font-family: var(--go-font-ui, "Press Start 2P", "VT323", monospace) !important;
     font-size: 12px !important;
     text-shadow: 2px 2px 0 var(--pixel-border-dark) !important;
 }
@@ -39,7 +27,7 @@
 .pixelAchievementsShell button {
     border-radius: var(--pixel-card-radius) !important;
     border: 2px solid var(--pixel-border-dark) !important;
-    font-family: "Press Start 2P", monospace !important;
+    font-family: var(--go-font-ui, "Press Start 2P", monospace) !important;
     font-size: 7px !important;
     box-shadow: var(--pixel-shadow-pressed) !important;
 }
@@ -49,7 +37,7 @@
     border-radius: var(--pixel-card-radius) !important;
     border: 2px solid var(--pixel-border-dark) !important;
     background: var(--pixel-panel-alt) !important;
-    color: var(--pixel-text) !important;
+    color: var(--go-text, var(--pixel-text)) !important;
     font-family: "VT323", "Courier New", monospace !important;
     font-size: 14px !important;
 }
@@ -66,6 +54,37 @@
     min-height: 118px;
 }
 
+/* Mobile lite: flatter shell, touch-friendly show-more */
+.mobileAchievementsShell {
+    max-height: none !important;
+    border-width: 1px;
+}
+
+.mobileAchievementsShell [data-achievement-card] {
+    min-height: 44px;
+    margin-bottom: 6px;
+}
+
+.mobileShowMore {
+    display: block;
+    width: 100%;
+    margin: 12px 0 4px;
+    padding: 12px 14px !important;
+    min-height: 44px;
+    font-size: 10px !important;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #fff !important;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.mobileShowMore:active {
+    background: rgba(255, 255, 255, 0.14) !important;
+}
+
 /* ── Trophy gallery ── */
 
 .galleryHero {
@@ -78,7 +97,7 @@
 
 .galleryHeroTitle {
     margin: 0 0 4px;
-    font-family: "Press Start 2P", monospace;
+    font-family: var(--go-font-ui, "Press Start 2P", monospace);
     font-size: 11px;
     color: var(--pixel-highlight);
     text-shadow: 2px 2px 0 var(--pixel-border-dark);
@@ -108,7 +127,7 @@
 
 .tierChipLabel {
     display: block;
-    font-family: "Press Start 2P", monospace;
+    font-family: var(--go-font-ui, "Press Start 2P", monospace);
     font-size: 6px;
     text-transform: uppercase;
     margin-bottom: 4px;
@@ -118,7 +137,7 @@
 .tierChipCount {
     font-family: "VT323", monospace;
     font-size: 18px;
-    color: var(--pixel-text);
+    color: var(--go-text, var(--pixel-text));
 }
 
 .tierChipBronze { border-color: #8B4513; }
@@ -133,7 +152,7 @@
 
 .sectionLabel {
     margin: 0 0 8px;
-    font-family: "Press Start 2P", monospace;
+    font-family: var(--go-font-ui, "Press Start 2P", monospace);
     font-size: 8px;
     color: var(--pixel-accent);
     letter-spacing: 0.5px;
@@ -179,7 +198,7 @@
 .recentTitle {
     font-family: "VT323", monospace;
     font-size: 14px;
-    color: var(--pixel-text);
+    color: var(--go-text, var(--pixel-text));
     line-height: 1.2;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -190,7 +209,7 @@
     display: inline-block;
     margin-top: 4px;
     padding: 2px 6px;
-    font-family: "Press Start 2P", monospace;
+    font-family: var(--go-font-ui, "Press Start 2P", monospace);
     font-size: 6px;
     text-transform: uppercase;
     color: #fff;
@@ -256,7 +275,7 @@
 }
 
 .detailClose:hover {
-    color: var(--pixel-text);
+    color: var(--go-text, var(--pixel-text));
     background: var(--pixel-panel);
 }
 
@@ -269,7 +288,7 @@
 
 .detailTitle {
     margin: 0 0 8px;
-    font-family: "Press Start 2P", monospace;
+    font-family: var(--go-font-ui, "Press Start 2P", monospace);
     font-size: 10px;
     color: var(--pixel-highlight);
     text-align: center;
@@ -297,7 +316,7 @@
     padding-top: 12px;
     font-family: "VT323", monospace;
     font-size: 15px;
-    color: var(--pixel-text);
+    color: var(--go-text, var(--pixel-text));
 }
 
 .emptyGallery {
@@ -310,3 +329,41 @@
     margin-bottom: 14px;
 }
 
+
+/* System Hunter shell */
+:global([data-gamification-shell='system']) .shellRoot,
+:global([data-gamification-shell='system']) .pixelAchievementsShell {
+    border-width: 1px;
+    border-color: var(--go-border, rgba(34, 200, 255, 0.42));
+    border-radius: var(--go-radius, 2px);
+    box-shadow: var(--go-shadow, 0 0 22px rgba(34, 200, 255, 0.24));
+    font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+}
+
+:global([data-gamification-shell='system']) .galleryHeroTitle,
+:global([data-gamification-shell='system']) .sectionLabel,
+:global([data-gamification-shell='system']) .progressHeroTitle,
+:global([data-gamification-shell='system']) .pixelAchievementsShell h2 {
+    font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+    text-shadow: none !important;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--go-accent, #22c8ff) !important;
+    -webkit-text-fill-color: var(--go-accent, #22c8ff) !important;
+}
+
+:global([data-gamification-shell='system']) .galleryHero,
+:global([data-gamification-shell='system']) .showcaseBadge,
+:global([data-gamification-shell='system']) .recentBadge,
+:global([data-gamification-shell='system']) .detailPanel,
+:global([data-gamification-shell='system']) .progressHero {
+    border-width: 1px !important;
+    border-color: var(--go-border, rgba(34, 200, 255, 0.42)) !important;
+    border-radius: var(--go-radius, 2px) !important;
+    box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16)) !important;
+}
+
+:global([data-gamification-shell='system']) .showcaseBadge:hover,
+:global([data-gamification-shell='system']) .recentBadge:hover {
+    transform: none;
+}

@@ -872,9 +872,74 @@ button:has(.icon:only-child) {
 
 /* Mobile-optimized containers */
 .mobile-container {
-  padding: 16px !important;
+  padding: 4px !important;
   max-width: 100% !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
   overflow-x: hidden !important;
+}
+
+/* Clay theme — mint canvas (ChatGPT clay design system) */
+[data-gamification-visual-theme='clay'].gamification-player-shell,
+.workspace-leaf-content[data-type="gamified-player-tab"]:has([data-gamification-visual-theme='clay']),
+.workspace-leaf-content[data-type="gamified-player-tab"]:has([data-gamification-visual-theme='clay']) .view-content,
+.workspace-leaf-content[data-type="gamified-player-tab"]:has([data-gamification-visual-theme='clay']) .gamification-player-view-root {
+  background: var(--go-screen-bg, linear-gradient(180deg, #d7ece7, #c9e3de)) !important;
+  color: var(--clay-text, #2e2e2e);
+}
+
+@media (max-width: 768px), (pointer: coarse) {
+  .gamification-player-shell,
+  .gamification-player-shell .gamification-player-grid {
+    width: 100% !important;
+    max-width: none !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Let Obsidian's view leaf scroll — nested overflow traps break iOS touch scroll */
+  .workspace-leaf-content[data-type="gamified-player-tab"] {
+    overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch !important;
+  }
+
+  .workspace-leaf-content[data-type="gamified-player-tab"] .view-content,
+  .workspace-leaf-content[data-type="gamified-player-tab"] .gamification-player-view-root {
+    height: auto !important;
+    min-height: 100%;
+    overflow: visible !important;
+  }
+
+  .gamification-player-shell.gamification-container,
+  .gamification-player-shell .mobile-container {
+    /* Top inset clears Dynamic Island / status bar (Obsidian iOS often reports safe-area as 0) */
+    padding-top: max(54px, calc(8px + env(safe-area-inset-top, 0px))) !important;
+    padding-right: max(4px, env(safe-area-inset-right, 0px)) !important;
+    padding-bottom: max(4px, env(safe-area-inset-bottom, 0px)) !important;
+    padding-left: max(4px, env(safe-area-inset-left, 0px)) !important;
+    height: auto !important;
+    min-height: 0;
+    display: block !important;
+    overflow: visible !important;
+  }
+
+  .gamification-player-shell .tabContentMobile,
+  [data-gamification-mobile="true"] .tabContentMobile {
+    overflow: visible !important;
+    flex: none !important;
+    min-height: unset !important;
+    height: auto !important;
+    padding-bottom: calc(96px + env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  .gamification-energy-hud [class*="statRow"] {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .gamification-energy-hud [class*="statBar"] {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
 }
 
 /* Mobile-friendly cards */

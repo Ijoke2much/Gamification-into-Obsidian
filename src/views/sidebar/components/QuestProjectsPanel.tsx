@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { Quest } from '../../../features/quests/utils/taskParser';
 import {
 	buildProjectSummaries,
@@ -682,9 +683,11 @@ const CelebrationOverlay: React.FC<{
 	onDismiss: () => void;
 }> = ({ celebration, onDismiss }) => {
 	React.useEffect(() => {
-		const timer = window.setTimeout(onDismiss, 6000);
+		const timer = window.setTimeout(() => onDismiss(), 2800);
 		return () => window.clearTimeout(timer);
-	}, [onDismiss]);
+		// One timer per celebration open — don't reset when parent re-renders
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [celebration.title, celebration.rewards.xp, celebration.rewards.coins, celebration.rewards.cp]);
 
 	const { rewards } = celebration;
 	const rewardParts: string[] = [];
@@ -692,10 +695,33 @@ const CelebrationOverlay: React.FC<{
 	if (rewards.coins > 0) rewardParts.push(`🪙 +${rewards.coins}`);
 	if (rewards.cp > 0) rewardParts.push(`⭐ +${rewards.cp} CP`);
 
-	return (
-		<div className={hubStyles.celebrationOverlay} onClick={onDismiss} role="presentation">
-			<div className={hubStyles.celebrationCard}>
-				<div className={hubStyles.celebrationStars} aria-hidden="true">★ ★ ★</div>
+	return createPortal(
+		<div
+			className={hubStyles.celebrationOverlay}
+			onClick={onDismiss}
+			role="presentation"
+		>
+			<div
+				className={hubStyles.celebrationCard}
+				role="dialog"
+				aria-modal="true"
+				aria-label="Contract complete"
+				onClick={onDismiss}
+			>
+				<button
+					type="button"
+					className={hubStyles.celebrationClose}
+					aria-label="Close"
+					onClick={(e) => {
+						e.stopPropagation();
+						onDismiss();
+					}}
+				>
+					✕
+				</button>
+				<div className={hubStyles.celebrationStars} aria-hidden="true">
+					★ ★ ★
+				</div>
 				<div className={hubStyles.celebrationHeading}>CONTRACT COMPLETE</div>
 				<div className={hubStyles.celebrationTitle}>{celebration.title}</div>
 				{rewardParts.length > 0 && (
@@ -707,9 +733,12 @@ const CelebrationOverlay: React.FC<{
 						))}
 					</div>
 				)}
-				<div className={hubStyles.celebrationHint}>The guild thanks you, adventurer.</div>
+				<div className={hubStyles.celebrationHint}>
+					The guild thanks you, adventurer. Tap to close.
+				</div>
 			</div>
-		</div>
+		</div>,
+		document.body
 	);
 };
 

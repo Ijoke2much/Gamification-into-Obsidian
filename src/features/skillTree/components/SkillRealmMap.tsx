@@ -3,7 +3,10 @@ import {
 	SystemHeader,
 	SystemScaffold,
 } from '../../../shared/components/ui/system/SystemPanel';
+import { useMobileOptimizations } from '../../../shared/hooks/useMobileOptimizations';
 import styles from './SkillRealmMap.module.css';
+
+const MOBILE_SKILL_PAGE = 20;
 
 function normClass(c: string | undefined): string {
 	return (c ?? '').trim();
@@ -77,18 +80,26 @@ export const SkillRealmMap: React.FC<SkillRealmMapProps> = ({
 	masterClass,
 	onSkillSelect,
 }) => {
+	const { isMobile } = useMobileOptimizations();
 	const [searchQuery, setSearchQuery] = useState('');
 	const [activeClass, setActiveClass] = useState<string | null>(null);
 	const [selectedSkill, setSelectedSkill] = useState<SkillRealmSkill | null>(null);
+	const [mobileVisibleCount, setMobileVisibleCount] = useState(MOBILE_SKILL_PAGE);
 
-	const masterKey = masterClass?.name ? normKey(masterClass.name) : '';
+	/** Strip emoji / punctuation so "Jester 🎭" matches "Jester" */
+	const masterKey = masterClass?.name
+		? normKey(masterClass.name).replace(/[^\p{L}\p{N}\s_-]/gu, '').trim()
+		: '';
 
 	const classMasterMap = useMemo(() => {
 		const map = new Map<string, string>();
 		for (const v of vaultClasses) {
 			const n = normClass(v.name);
 			if (!n) continue;
-			map.set(normKey(n), normClass(v.masterClass));
+			const mc = normClass(v.masterClass)
+				.replace(/[^\p{L}\p{N}\s_-]/gu, '')
+				.trim();
+			map.set(normKey(n), mc);
 		}
 		return map;
 	}, [vaultClasses]);
@@ -97,7 +108,8 @@ export const SkillRealmMap: React.FC<SkillRealmMapProps> = ({
 		if (!masterKey) return true;
 		const mc = classMasterMap.get(normKey(className));
 		if (!mc) return true;
-		return normKey(mc) === masterKey;
+		const mcKey = normKey(mc);
+		return mcKey === masterKey || mcKey.includes(masterKey) || masterKey.includes(mcKey);
 	};
 
 	const classBrowserItems = useMemo((): VaultClassBrief[] => {
@@ -155,6 +167,15 @@ export const SkillRealmMap: React.FC<SkillRealmMapProps> = ({
 
 	const pathSkills = activeClass ? hubGrouped[activeClass] ?? [] : [];
 
+	useEffect(() => {
+		setMobileVisibleCount(MOBILE_SKILL_PAGE);
+	}, [activeClass, searchQuery]);
+
+	const visiblePathSkills = useMemo(() => {
+		if (!isMobile) return pathSkills;
+		return pathSkills.slice(0, mobileVisibleCount);
+	}, [isMobile, pathSkills, mobileVisibleCount]);
+
 	const pathMeta = useMemo(() => {
 		if (pathSkills.length === 0) {
 			return { pct: 0, progressed: 0, total: 0, cp: 0, required: 0 };
@@ -172,6 +193,7 @@ export const SkillRealmMap: React.FC<SkillRealmMapProps> = ({
 	}, [pathSkills]);
 
 	useEffect(() => {
+		if (isMobile) return; // phone opens codex sheet instead of side panel
 		if (pathSkills.length === 0) {
 			setSelectedSkill(null);
 			return;
@@ -180,9 +202,13 @@ export const SkillRealmMap: React.FC<SkillRealmMapProps> = ({
 			if (prev && pathSkills.some((s) => s.name === prev.name)) return prev;
 			return pathSkills[0];
 		});
-	}, [pathSkills, activeClass]);
+	}, [pathSkills, activeClass, isMobile]);
 
 	const handleSelectSkill = (skill: SkillRealmSkill) => {
+		if (isMobile) {
+			onSkillSelect?.(skill);
+			return;
+		}
 		setSelectedSkill(skill);
 		onSkillSelect?.(skill);
 	};
@@ -202,11 +228,15 @@ export const SkillRealmMap: React.FC<SkillRealmMapProps> = ({
 			: 0;
 
 	return (
-		<SystemScaffold className={styles.realmRoot} data-system-ui="skill-realm">
+		<SystemScaffold
+			className={`${styles.realmRoot}${isMobile ? ` ${styles.realmRootMobile}` : ''}`}
+			data-system-ui="skill-realm"
+			data-gamification-mobile={isMobile ? 'true' : 'false'}
+		>
 			<SystemHeader
 				icon="⚔"
 				label="SYSTEM: SKILL REALM"
-				title="Progress matrix"
+				title={isMobile ? 'Your skills' : 'Progress matrix'}
 			/>
 
 			<div className={styles.searchRow}>
@@ -251,8 +281,20 @@ export const SkillRealmMap: React.FC<SkillRealmMapProps> = ({
 
 			{classNames.length === 0 ? (
 				<div className={styles.emptyState}>
-					No skills found for this master class. Create skills under Manage / Create, or
-					clear search.
+					{skills.length === 0 ? (
+						<>
+							No skill notes found in the vault yet.
+							{isMobile
+								? ' Wait for iCloud to finish syncing SkillTree/, then close and reopen Skills.'
+								: ' Create skills under Manage / Create.'}
+						</>
+					) : (
+						<>
+							Found {skills.length} skill(s), but none match this master class
+							{masterClass?.name ? ` (${masterClass.name})` : ''}.
+							{searchQuery ? ' Clear search and try again.' : ''}
+						</>
+					)}
 				</div>
 			) : (
 				<>
@@ -336,8 +378,8 @@ export const SkillRealmMap: React.FC<SkillRealmMapProps> = ({
 							<h3 className={styles.sectionTitle}>Skill nodes</h3>
 
 							<div className={styles.pathScroll}>
-								{pathSkills.map((skill, idx) => {
-									const isSel = selectedSkill?.name === skill.name;
+								{visiblePathSkills.map((skill, idx) => {
+									const isSel = !isMobile && selectedSkill?.name === skill.name;
 									const locked =
 										skill.currentCP <= 0 &&
 										skill.progressToNext <= 0 &&
@@ -386,9 +428,21 @@ export const SkillRealmMap: React.FC<SkillRealmMapProps> = ({
 										</div>
 									);
 								})}
+								{isMobile && pathSkills.length > mobileVisibleCount && (
+									<button
+										type="button"
+										className={styles.mobileShowMore}
+										onClick={() =>
+											setMobileVisibleCount((n) => n + MOBILE_SKILL_PAGE)
+										}
+									>
+										Show more ({pathSkills.length - mobileVisibleCount} left)
+									</button>
+								)}
 							</div>
 						</div>
 
+						{!isMobile && (
 						<div className={styles.detailPanel}>
 							<span className={`${styles.corner} ${styles.cornerTL}`} aria-hidden />
 							<span className={`${styles.corner} ${styles.cornerTR}`} aria-hidden />
@@ -442,6 +496,7 @@ export const SkillRealmMap: React.FC<SkillRealmMapProps> = ({
 								</>
 							)}
 						</div>
+						)}
 					</div>
 				</>
 			)}

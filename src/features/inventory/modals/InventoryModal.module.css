@@ -150,6 +150,83 @@
   }
 }
 
+/* Solo Leveling / System Hunter shell — mobile full-bleed + desktop themed modal */
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--system),
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--mobile) {
+  /* Solo Leveling shell */
+  --inv-bg: linear-gradient(180deg, rgba(8, 28, 54, 0.98), rgba(2, 8, 18, 0.99)) !important;
+  --inv-panel: rgba(12, 40, 72, 0.88);
+  --inv-border: rgba(34, 200, 255, 0.42);
+  --inv-accent: #22c8ff;
+  --inv-text: #e0f2fe;
+  --go-font-ui: "Segoe UI", "Inter", system-ui, -apple-system, sans-serif;
+  background: var(--inv-bg) !important;
+  border: 1px solid var(--inv-border) !important;
+  box-shadow: 0 0 28px rgba(34, 200, 255, 0.18) !important;
+  font-family: var(--go-font-ui) !important;
+}
+
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--mobile) {
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  top: 0 !important;
+  left: 0 !important;
+  transform: none !important;
+  border-radius: 0 !important;
+  max-width: none !important;
+  max-height: none !important;
+  z-index: 100050 !important;
+  padding-top: env(safe-area-inset-top, 0px) !important;
+  padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+}
+
+/* Kill Press Start / VT323 inside system / mobile inventory */
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--system),
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--system) *:not(svg):not(path),
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--mobile),
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--mobile) *:not(svg):not(path) {
+  font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, -apple-system, sans-serif) !important;
+}
+
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--system .modal-title),
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--mobile .modal-title) {
+  /* SystemHeader inside content replaces this */
+  display: none !important;
+}
+
+/* Legacy / native close — kill hard (Obsidian X sits on the modal frame edge) */
+:global(.modal-container.gamify-inventory-modal-host > .modal-close-button),
+:global(.modal-container.gamify-inventory-modal-host .modal-close-button),
+:global(.modal-container:has(.gamify-inventory-modal) > .modal-close-button),
+:global(.modal-container .modal.gamify-inventory-modal .modal-close-button),
+:global(.modal-container .modal.gamify-inventory-modal > .modal-close-button),
+:global(.modal-container .modal.gamify-inventory-modal .gamify-close-btn) {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  position: absolute !important;
+  clip: rect(0, 0, 0, 0) !important;
+  border: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--mobile .modal-content) {
+  padding: 0 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 !important;
+  min-height: 0 !important;
+}
+
 @media (max-width: 768px) {
   :global(.modal-container .modal.gamify-inventory-modal) {
     width: 100vw !important;

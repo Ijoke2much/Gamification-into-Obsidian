@@ -27,13 +27,18 @@ import { getAppliedVisualTheme } from "../../../shared/utils/visualThemeManager"
 import { onSettingsUpdated } from "../../../shared/utils/settingsEvents";
 import type { VisualThemePresetId } from "../../../shared/themes/types";
 import { SystemFrame, SystemHeader, SystemScaffold } from "../../../shared/components/ui/system";
+import { useMobileOptimizations } from "../../../shared/hooks/useMobileOptimizations";
 
 interface Props {
     plugin: GamifiedObsidianPlugin;
     rebuildShopTab: () => void; // callback to refresh parent
     /** Passed from TabView so shop chrome tracks the active gameplay visual theme. */
     visualThemePreset?: VisualThemePresetId;
+    /** Skip vault coin read on first paint when TabView already has player data */
+    initialCoins?: number;
 }
+
+const MOBILE_PAGE_SIZE = 12;
 
 // Fixed category tabs with icons (transferred from Shop/Artifacts)
 const SHOP_CATEGORIES = [
@@ -70,13 +75,18 @@ function getCategoryColor(category: string): string {
 }
 
 // Typewriter effect hook - guards against undefined char to prevent "undefined" in output
-function useTypewriter(text: string, speed = 30) {
+function useTypewriter(text: string, speed = 30, instant = false) {
     const [displayed, setDisplayed] = useState("");
     const [isAnimating, setIsAnimating] = useState(false);
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
     const safeText = String(text ?? "").replace(/undefined/g, "");
 
     useEffect(() => {
+        if (instant) {
+            setDisplayed(safeText);
+            setIsAnimating(false);
+            return;
+        }
         setDisplayed("");
         setIsAnimating(true);
         let i = 0;
@@ -94,7 +104,7 @@ function useTypewriter(text: string, speed = 30) {
         return () => {
             if (timeoutRef.current) clearTimeout(timeoutRef.current);
         };
-    }, [safeText, speed]);
+    }, [safeText, speed, instant]);
 
     const revealAll = () => {
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -105,7 +115,13 @@ function useTypewriter(text: string, speed = 30) {
     return { displayed, isAnimating, revealAll };
 }
 
-export default function ShopTab({ plugin, rebuildShopTab, visualThemePreset: visualThemePresetProp }: Props) {
+export default function ShopTab({
+    plugin,
+    rebuildShopTab,
+    visualThemePreset: visualThemePresetProp,
+    initialCoins,
+}: Props) {
+    const { isMobile } = useMobileOptimizations();
     // Ensure currency display service is initialized for consistent labels
     currencyDisplay.initialize(plugin.settings);
     const currencyName = currencyDisplay.getCurrencyName();
@@ -120,6 +136,8 @@ export default function ShopTab({ plugin, rebuildShopTab, visualThemePreset: vis
     const [sortBy, setSortBy] = useState<string>("Price (Low → High)");
     const [customImagePath, setCustomImagePath] = useState<string | null>(null);
     const [themeRevision, setThemeRevision] = useState(0);
+    const [mobileVisibleCount, setMobileVisibleCount] = useState(MOBILE_PAGE_SIZE);
+    const itemsLoadedRef = useRef(false);
 
     useEffect(() => onSettingsUpdated(() => setThemeRevision((n) => n + 1)), []);
 
@@ -154,17 +172,20 @@ export default function ShopTab({ plugin, rebuildShopTab, visualThemePreset: vis
         : `gami-shop-tab ${shopStyles.shopLayout} ${shopStyles.shopRoot}`;
 
     const renderShopShell = (children: React.ReactNode, extraClass = "") => {
+        const mobileClass = isMobile ? shopStyles.mobileShopShell : "";
         const inner = (
             <div
-                className={[shopInnerClass, extraClass].filter(Boolean).join(" ")}
+                className={[shopInnerClass, extraClass, mobileClass].filter(Boolean).join(" ")}
                 {...shopShellAttrs}
-                {...(isSystemTheme ? { "data-shop-system-inner": "" as const } : {})}
+                data-gamification-mobile={isMobile ? "true" : "false"}
+                {...(isSystemTheme && !isMobile ? { "data-shop-system-inner": "" as const } : {})}
             >
                 {children}
             </div>
         );
 
-        if (!isSystemTheme) {
+        // Mobile: skip SystemScaffold/Frame (backdrop + drift) — keep flat content
+        if (!isSystemTheme || isMobile) {
             return inner;
         }
 
@@ -178,7 +199,9 @@ export default function ShopTab({ plugin, rebuildShopTab, visualThemePreset: vis
     };
 
     // Add coins state and fetchCoins function
-    const [coins, setCoins] = useState(0);
+    const [coins, setCoins] = useState(() =>
+        typeof initialCoins === "number" && Number.isFinite(initialCoins) ? initialCoins : 0
+    );
     const fetchCoins = async () => {
         const playerData = await readPlayerData(plugin.app.vault);
         setCoins(playerData?.coins ?? 0);
@@ -206,12 +229,18 @@ export default function ShopTab({ plugin, rebuildShopTab, visualThemePreset: vis
         displayed: animatedDialogue,
         isAnimating,
         revealAll,
-    } = useTypewriter(safeDialogue, 24);
+    } = useTypewriter(safeDialogue, 24, isMobile);
 
     const imagePath =
         customImagePath || plugin.settings.shopkeeperImagePath || "assets/shopkeeper.jpg";
 
     useEffect(() => {
+        // Mobile: skip vault binary → base64 shopkeeper (emoji fallback)
+        if (isMobile) {
+            setShopkeeperImg("");
+            setImgError(true);
+            return;
+        }
         async function loadShopkeeperImage() {
             setImgError(false);
             if (imagePath.startsWith("http")) {
@@ -251,27 +280,27 @@ export default function ShopTab({ plugin, rebuildShopTab, visualThemePreset: vis
             }
             return window.btoa(binary);
         }
-        loadShopkeeperImage();
-    }, [imagePath, plugin]);
+        void loadShopkeeperImage();
+    }, [imagePath, plugin, isMobile]);
 
     useEffect(() => {
-        loadItems();
+        void loadItems(false);
     }, []);
 
-    // Migration: clear corrupted dialogue overrides (e.g. "undefined", "elcooe") and reset to defaults
+    // Migration: clear corrupted dialogue once (avoid saveSettings thrash / iCloud churn on mobile)
     useEffect(() => {
+        if (isMobile) return;
         if (isDialogueCorrupted(plugin.settings.shopkeeperDialogueOverrides)) {
             plugin.settings.shopkeeperDialogueOverrides = {};
-            plugin.saveSettings();
+            void plugin.saveSettings();
             setDialogue(getResolvedGreeting());
         }
-    }, []);
+    }, [isMobile]);
 
     // Listen for shop data updates and refresh
     useEffect(() => {
         const handleShopDataUpdate = () => {
-            console.log("Shop data updated, reloading items...");
-            loadItems();
+            void loadItems(true);
         };
 
         document.addEventListener("shop-data-updated", handleShopDataUpdate);
@@ -284,17 +313,22 @@ export default function ShopTab({ plugin, rebuildShopTab, visualThemePreset: vis
         };
     }, []);
 
-    const loadItems = async () => {
-        setLoading(true);
+    const loadItems = async (soft = false) => {
+        // Soft refresh: keep showing current list (no full-screen loading flash)
+        if (!soft || !itemsLoadedRef.current) {
+            setLoading(true);
+        }
         try {
             const allItems = await getAllShopItems(plugin);
             setItems(allItems);
+            itemsLoadedRef.current = true;
         } catch (e) {
             console.error("Failed to load shop items", e);
             setItems([]);
         }
         setLoading(false);
-        await fetchCoins();
+        // Coins already seeded from TabView — refresh in background
+        void fetchCoins();
     };
 
     const openDebugDialogueModal = () => {
@@ -522,7 +556,17 @@ export default function ShopTab({ plugin, rebuildShopTab, visualThemePreset: vis
         return sorted;
     }, [items, categoryFilter, rarityFilter, sortBy]);
 
-    if (loading) {
+    const visibleItems = useMemo(() => {
+        if (!isMobile) return filteredSortedItems;
+        return filteredSortedItems.slice(0, mobileVisibleCount);
+    }, [filteredSortedItems, isMobile, mobileVisibleCount]);
+
+    // Reset page size when filters change
+    useEffect(() => {
+        setMobileVisibleCount(MOBILE_PAGE_SIZE);
+    }, [categoryFilter, rarityFilter, sortBy]);
+
+    if (loading && !itemsLoadedRef.current) {
         return renderShopShell("Loading shop...", shopStyles.shopLoading);
     }
 
@@ -549,8 +593,11 @@ export default function ShopTab({ plugin, rebuildShopTab, visualThemePreset: vis
                 </div>
             )}
 
+            {/* Desktop: shopkeeper + dialogue. Mobile: skip — was a major hitch on open. */}
+            {!isMobile && (
+            <>
             <div className={shopStyles.shopkeeperSection}>
-                {imgError ? (
+                {imgError || !shopkeeperImg ? (
                     <div className={shopStyles.shopkeeperFallback}>🧙‍♂️</div>
                 ) : (
                     <img src={shopkeeperImg} alt="Shopkeeper" />
@@ -602,6 +649,8 @@ export default function ShopTab({ plugin, rebuildShopTab, visualThemePreset: vis
                     ))}
                 </div>
             )}
+            </>
+            )}
 
             <div className={`gami-shop-category-tabs ${shopStyles.categoryTabs}`}>
                 {SHOP_CATEGORIES.map((cat) => (
@@ -647,17 +696,23 @@ export default function ShopTab({ plugin, rebuildShopTab, visualThemePreset: vis
                         Sorry, the shop is empty! Come back later for more items.
                     </div>
                     <div className={shopStyles.emptyHint}>
-                        To add or edit listings, open <strong>Gamification</strong> settings → <strong>Rewards &amp; Progression</strong> → <strong>Game data hub</strong>.
+                        To add or edit listings, open <strong>Gamification</strong> settings → <strong>Economy &amp; Content</strong> → <strong>Game data hub</strong>.
                     </div>
                 </div>
             ) : (
                 <div className="gami-shop-grid">
-                    {filteredSortedItems.map((item) => {
+                    {visibleItems.map((item) => {
                         const itemCategory = normalizeCategoryForFilter(item.category);
                         const categoryColor = getCategoryColor(itemCategory);
                         const rawEffects = getRawEffectLines(item);
                         const hasEffects = (item.effects && item.effects.length > 0) || (rawEffects && rawEffects.length > 0);
                         const isNew = item.tags?.some(t => t.toLowerCase() === "new") ?? false;
+                        const isFileOrUrlIcon =
+                            Boolean(item.icon) &&
+                            (Boolean(item.icon!.match(/^https?:\/\//)) ||
+                                Boolean(item.icon!.match(/\.(png|jpe?g|gif|svg)$/i)));
+                        // Mobile: never load remote/file icons (decode hitch)
+                        const showImgIcon = !isMobile && isFileOrUrlIcon;
                         return (
                             <div key={item.name} className="gami-shop-card">
                                 {isNew && (
@@ -670,12 +725,11 @@ export default function ShopTab({ plugin, rebuildShopTab, visualThemePreset: vis
                                     {itemCategory}
                                 </div>
                                 <div className={shopStyles.cardBody}>
-                                    {item.icon &&
-                                    (item.icon.match(/^https?:\/\//) || item.icon.match(/\.(png|jpe?g|gif|svg)$/i)) ? (
+                                    {showImgIcon ? (
                                         <div className={shopStyles.cardIconWrap}>
                                             <img src={item.icon} alt="" className={shopStyles.cardIconImg} />
                                         </div>
-                                    ) : item.icon ? (
+                                    ) : item.icon && !isFileOrUrlIcon ? (
                                         <div className={shopStyles.cardIconEmoji}>{item.icon}</div>
                                     ) : (
                                         <div className={shopStyles.cardIconPlaceholder}>🎁</div>
@@ -710,6 +764,15 @@ export default function ShopTab({ plugin, rebuildShopTab, visualThemePreset: vis
                         );
                     })}
                 </div>
+            )}
+            {isMobile && filteredSortedItems.length > mobileVisibleCount && (
+                <button
+                    type="button"
+                    className={shopStyles.mobileShowMore}
+                    onClick={() => setMobileVisibleCount((n) => n + MOBILE_PAGE_SIZE)}
+                >
+                    Show more ({filteredSortedItems.length - mobileVisibleCount} left)
+                </button>
             )}
         </>
     );

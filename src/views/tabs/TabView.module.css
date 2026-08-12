@@ -737,6 +737,31 @@
     flex-shrink: 0;
 }
 
+/* Phone: keep Player / Shop / Check-in below the Dynamic Island
+   (global !important also in tab-system-shell.css — this reinforces module path) */
+.container[data-gamification-mobile='true'] {
+    padding-top: max(59px, calc(12px + env(safe-area-inset-top, 0px))) !important;
+    padding-left: max(8px, env(safe-area-inset-left, 0px)) !important;
+    padding-right: max(8px, env(safe-area-inset-right, 0px)) !important;
+    box-sizing: border-box;
+}
+
+.container[data-gamification-mobile='true'] .tabNavBar {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    margin-top: 0;
+    padding: 6px 0 8px;
+    /* Opaque only — backdrop-filter blur freezes Obsidian iOS while scrolling */
+    background: var(--background-primary, #0a1628);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.container[data-gamification-mobile='true'] .checkInNavChip {
+    animation: none;
+}
+
 .tabRibbon {
     display: flex;
     flex: 1;

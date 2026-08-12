@@ -1,22 +1,30 @@
 import React, { useEffect, useState, useCallback } from 'react';
+import { isLikelyMobileDevice } from '../utils/deviceDetect';
 
 /**
- * Hook for mobile-specific optimizations and touch interactions
+ * Hook for mobile-specific optimizations and touch interactions.
+ *
+ * Important: `isMobile` means a real mobile/Obsidian-mobile client.
+ * Narrow desktop windows use `isCompactLayout` / `isSmallScreen` only —
+ * never force pixel theme or mobile-only chrome from width alone.
  */
 export const useMobileOptimizations = () => {
-    const [isMobile, setIsMobile] = useState(false);
+    const detectMobileDevice = () => isLikelyMobileDevice();
+
+    const detectCompactLayout = () =>
+        typeof window !== 'undefined' && window.innerWidth <= 768;
+
+    const [isMobile, setIsMobile] = useState(detectMobileDevice);
+    const [isCompactLayout, setIsCompactLayout] = useState(detectCompactLayout);
     const [isTouchDevice, setIsTouchDevice] = useState(false);
     const [isLandscape, setIsLandscape] = useState(false);
     const [screenSize, setScreenSize] = useState({ width: 0, height: 0 });
 
-    // Detect mobile device
+    // Detect real mobile device (UA / Obsidian body classes / iPad) — not viewport width
     useEffect(() => {
         const checkMobile = () => {
-            const userAgent = navigator.userAgent.toLowerCase();
-            const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
-            const isSmallScreen = window.innerWidth <= 768;
-
-            setIsMobile(isMobileDevice || isSmallScreen);
+            setIsMobile(detectMobileDevice());
+            setIsCompactLayout(detectCompactLayout());
         };
 
         checkMobile();
@@ -45,6 +53,7 @@ export const useMobileOptimizations = () => {
             const height = window.innerHeight;
             setScreenSize({ width, height });
             setIsLandscape(width > height);
+            setIsCompactLayout(width <= 768);
         };
 
         updateScreenInfo();
@@ -57,26 +66,26 @@ export const useMobileOptimizations = () => {
         };
     }, []);
 
-    // Optimize performance for mobile
+    // Optimize performance for mobile devices only (not narrow desktop).
+    // Inject once globally — many callers of this hook used to append duplicate <style> tags.
     useEffect(() => {
-        if (isMobile) {
-            // Disable complex animations on mobile for better performance
-            const style = document.createElement('style');
-            style.textContent = `
-                @media (max-width: 768px) {
-                    *, *::before, *::after {
-                        animation-duration: 0.01ms !important;
-                        animation-iteration-count: 1 !important;
-                        transition-duration: 0.01ms !important;
-                    }
-                }
-            `;
-            document.head.appendChild(style);
-
-            return () => {
-                document.head.removeChild(style);
-            };
-        }
+        if (!isMobile) return;
+        const ATTR = 'data-gamify-mobile-anim-nuke';
+        if (document.head.querySelector(`style[${ATTR}]`)) return;
+        const style = document.createElement('style');
+        style.setAttribute(ATTR, 'true');
+        // Ceremony / achievement hosts mount outside this subtree so light
+        // level-up + unlock toasts can still animate on mobile.
+        style.textContent = `
+            [data-gamification-mobile='true'] *:not([data-gamify-allow-motion]),
+            [data-gamification-mobile='true'] *:not([data-gamify-allow-motion])::before,
+            [data-gamification-mobile='true'] *:not([data-gamify-allow-motion])::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        `;
+        document.head.appendChild(style);
     }, [isMobile]);
 
     // Touch-friendly click handler
@@ -248,6 +257,7 @@ export const useMobileOptimizations = () => {
 
     return {
         isMobile,
+        isCompactLayout,
         isTouchDevice,
         isLandscape,
         screenSize,
@@ -261,7 +271,7 @@ export const useMobileOptimizations = () => {
         isMediumScreen: screenSize.width > 768 && screenSize.width <= 1024,
         isLargeScreen: screenSize.width > 1024,
 
-        // Mobile-specific classes
+        // Mobile-specific classes (apply only when isMobile is true)
         mobileClasses: {
             container: 'mobile-optimized mobile-container',
             card: 'mobile-card',

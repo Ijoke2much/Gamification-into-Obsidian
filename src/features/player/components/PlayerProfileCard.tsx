@@ -8,30 +8,51 @@ import { getRankFromLevel } from '../utils/playerRank';
 import { getAppliedVisualTheme } from '../../../shared/utils/visualThemeManager';
 import { onSettingsUpdated } from '../../../shared/utils/settingsEvents';
 import { useMasterClassProgress } from '../hooks/useMasterClassProgress';
+import {
+  getDailyActivityStreak,
+  recordDailyActivity,
+} from '../../../shared/utils/dailyActivityStreak';
 
 export interface PlayerProfileCardProps {
   playerData: PlayerData;
   plugin: GamifiedObsidianPlugin;
   openAvatarPicker: () => void;
+  /** Skip vault-wide class scans (mobile performance). */
+  lightweight?: boolean;
+  /** Show consecutive active-day streak (mobile Player tab). */
+  showActivityStreak?: boolean;
 }
 
 export const PlayerProfileCard: React.FC<PlayerProfileCardProps> = ({
   playerData,
   plugin,
   openAvatarPicker,
+  lightweight = false,
+  showActivityStreak = false,
 }) => {
   const [themeRevision, setThemeRevision] = useState(0);
+  const [activityStreak, setActivityStreak] = useState(0);
 
   useEffect(() => onSettingsUpdated(() => setThemeRevision((n) => n + 1)), []);
 
-  const systemUi = useMemo(
-    () => getAppliedVisualTheme().preset === 'system-hunter',
+  useEffect(() => {
+    if (!showActivityStreak) return;
+    // Opening Player counts as light activity for the streak day
+    recordDailyActivity();
+    setActivityStreak(getDailyActivityStreak());
+  }, [showActivityStreak, playerData?.level, playerData?.xp]);
+
+  const themePreset = useMemo(
+    () => getAppliedVisualTheme().preset,
     [themeRevision]
   );
+  const systemUi = themePreset === 'system-hunter';
+  const clayUi = themePreset === 'clay';
 
   const { classIcon, progress: masterClassProgress } = useMasterClassProgress(
     plugin,
-    playerData?.masterClass
+    playerData?.masterClass,
+    { lightweight }
   );
 
   if (!playerData) {
@@ -55,8 +76,11 @@ export const PlayerProfileCard: React.FC<PlayerProfileCardProps> = ({
       {systemUi ? (
         <SystemHeader label="STATUS" />
       ) : (
-        <p className={styles.statLabel} style={{ marginBottom: 4, letterSpacing: '0.2em' }}>
-          PROFILE
+        <p
+          className={`${styles.statLabel} ${clayUi ? styles.statLabelClay : ''}`}
+          style={{ marginBottom: 4, letterSpacing: '0.2em' }}
+        >
+          {clayUi ? 'STATUS' : 'PROFILE'}
         </p>
       )}
 
@@ -86,6 +110,15 @@ export const PlayerProfileCard: React.FC<PlayerProfileCardProps> = ({
           <span className={styles.rankLevel}>Lv.{playerData.level}</span>
         </div>
 
+        {showActivityStreak && activityStreak > 0 && (
+          <div
+            className={styles.streakLine}
+            aria-label={`${activityStreak} day${activityStreak === 1 ? '' : 's'} in a row`}
+          >
+            🔥 {activityStreak} day{activityStreak === 1 ? '' : 's'} in a row
+          </div>
+        )}
+
         <div className={styles.masterClassLine}>
           <span className={styles.masterClassLabel}>Master Class:</span>
           {classIcon && (
@@ -112,14 +145,14 @@ export const PlayerProfileCard: React.FC<PlayerProfileCardProps> = ({
               />
             ) : (
               <>
-                <span className={styles.statLabel}>CP</span>
+                {!clayUi && <span className={styles.statLabel}>CP</span>}
                 <ProgressBar
                   progress={masterPercent}
-                  height={16}
+                  height={clayUi ? 16 : 16}
                   variant="purple"
-                  labelPosition="center"
-                  appearance="pixel"
-                  label={`${masterCurrentCP}/${masterRequiredCP} CP`}
+                  labelPosition={clayUi ? 'below' : 'center'}
+                  appearance={clayUi ? 'clay' : 'pixel'}
+                  label={`${masterCurrentCP} / ${masterRequiredCP} CP`}
                 />
               </>
             )}
@@ -137,12 +170,17 @@ export const PlayerProfileCard: React.FC<PlayerProfileCardProps> = ({
 
   return (
     <div
-      className={[styles.root, systemUi ? styles.rootSystem : styles.rootPixel]
+      className={[
+        styles.root,
+        systemUi ? styles.rootSystem : clayUi ? styles.rootClay : styles.rootPixel,
+      ]
         .filter(Boolean)
         .join(' ')}
     >
       {systemUi ? (
         <SystemFrame className={styles.frameSystem}>{content}</SystemFrame>
+      ) : clayUi ? (
+        <div className={styles.frameClay}>{content}</div>
       ) : (
         <div className={styles.framePixel}>{content}</div>
       )}

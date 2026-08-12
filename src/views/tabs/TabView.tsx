@@ -270,13 +270,25 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
             setMobileHeavyReady(true);
             return;
         }
-        if (loading || !playerData) {
+        // Only warm heavy Player cards while that tab is visible
+        if (selectedTab !== 'player' || loading || !playerData) {
             setMobileHeavyReady(false);
             return;
         }
-        const id = window.setTimeout(() => setMobileHeavyReady(true), 100);
+        const idle =
+            typeof window !== 'undefined' && 'requestIdleCallback' in window
+                ? (window as Window & {
+                        requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => number;
+                        cancelIdleCallback: (id: number) => void;
+                  })
+                : null;
+        if (idle) {
+            const id = idle.requestIdleCallback(() => setMobileHeavyReady(true), { timeout: 900 });
+            return () => idle.cancelIdleCallback(id);
+        }
+        const id = window.setTimeout(() => setMobileHeavyReady(true), 800);
         return () => window.clearTimeout(id);
-    }, [isMobile, loading, playerData]);
+    }, [isMobile, loading, playerData, selectedTab]);
 
     // Simple mobile initialization — container class only (never body; avoids global touch side effects)
     useEffect(() => {
@@ -386,12 +398,18 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
         }
     }, [selectedTab, isMobile]);
 
-    // Shop / Crafting / Achievements: stay mounted after first visit for seamless tab switches
+    // Shop / Crafting / Achievements:
+    // Desktop keeps them mounted after first visit; mobile unmounts on leave (iOS freezes under keep-alive).
     useEffect(() => {
         if (selectedTab === 'shop') setHasMountedShop(true);
+        else if (isMobile) setHasMountedShop(false);
+
         if (selectedTab === 'crafting') setHasMountedCrafting(true);
+        else if (isMobile) setHasMountedCrafting(false);
+
         if (selectedTab === 'achievements') setHasMountedAchievements(true);
-    }, [selectedTab]);
+        else if (isMobile) setHasMountedAchievements(false);
+    }, [selectedTab, isMobile]);
 
     // Listen for tab switch requests from other components
     useEffect(() => {
@@ -1045,7 +1063,7 @@ ${testResults.join('\n')}`;
                 </div>
             ) : (
                 <>
-                    <div className={styles.tabNavBar}>
+                    <div className={`${styles.tabNavBar} gamify-tab-nav`}>
                         <div
                             ref={tabRibbonRef}
                             className={styles.tabRibbon}

@@ -81,6 +81,18 @@ class PlayerStore {
     this.initializeStore();
   }
 
+  /** Clears vault binding when the plugin unloads so re-enable starts fresh. */
+  public resetForPluginUnload(): void {
+    this.vault = null;
+    this.isInitialized = false;
+    this.data = null;
+  }
+
+  /** Synchronous read — no daily reset or disk I/O. */
+  public getSync(): PlayerData | null {
+    return this.data;
+  }
+
   public getVault(): Vault | null {
     return this.vault;
   }
@@ -165,10 +177,19 @@ class PlayerStore {
       let retries = 0;
       let data: PlayerData | null = null;
 
-      while (retries < 10 && !data) {
+      const isMobile =
+        typeof navigator !== 'undefined' &&
+        /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(
+          navigator.userAgent.toLowerCase()
+        );
+      const maxRetries = isMobile ? 2 : 10;
+
+      while (retries < maxRetries && !data) {
         if (retries > 0) {
-          const delay = Math.min(1000 * retries, 5000); // Progressive delay up to 5 seconds
-          console.log(`[PlayerStore] Retry ${retries}/10 - waiting ${delay}ms for vault to load files...`);
+          const delay = isMobile
+            ? Math.min(200 * retries, 400)
+            : Math.min(1000 * retries, 5000);
+          console.log(`[PlayerStore] Retry ${retries}/${maxRetries} - waiting ${delay}ms for vault to load files...`);
           await new Promise(resolve => setTimeout(resolve, delay));
         }
 
@@ -200,22 +221,45 @@ class PlayerStore {
       console.log('[PlayerStore] Player data loaded during initialization:', this.data);
       console.log('[PlayerStore] Stats data:', this.data?.stats);
 
-      await this.checkDailyReset();
-
-      this.emitChange({
-        type: 'data-updated',
-        payload: this.data,
-        timestamp: Date.now()
-      });
-
-      // Dispatch custom event for external listeners (like TabView)
-      document.dispatchEvent(new CustomEvent('player-data-updated', {
-        detail: {
+      if (isMobile) {
+        this.emitChange({
           type: 'data-updated',
           payload: this.data,
           timestamp: Date.now()
-        }
-      }));
+        });
+        document.dispatchEvent(new CustomEvent('player-data-updated', {
+          detail: {
+            type: 'data-updated',
+            payload: this.data,
+            timestamp: Date.now()
+          }
+        }));
+        void this.checkDailyReset().then(() => {
+          if (this.data) {
+            this.emitChange({
+              type: 'data-updated',
+              payload: this.data,
+              timestamp: Date.now()
+            });
+          }
+        });
+      } else {
+        await this.checkDailyReset();
+
+        this.emitChange({
+          type: 'data-updated',
+          payload: this.data,
+          timestamp: Date.now()
+        });
+
+        document.dispatchEvent(new CustomEvent('player-data-updated', {
+          detail: {
+            type: 'data-updated',
+            payload: this.data,
+            timestamp: Date.now()
+          }
+        }));
+      }
 
       console.log('[PlayerStore] Store initialization completed successfully');
     } catch (error) {
@@ -278,7 +322,16 @@ class PlayerStore {
     if (!this.data) {
       await this.initializeStore();
     }
-    await this.checkDailyReset();
+    const isMobileDevice =
+      typeof navigator !== 'undefined' &&
+      /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(
+        navigator.userAgent.toLowerCase()
+      );
+    if (isMobileDevice) {
+      void this.checkDailyReset();
+    } else {
+      await this.checkDailyReset();
+    }
     return this.data;
   }
 
