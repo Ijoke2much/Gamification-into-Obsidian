@@ -16,6 +16,7 @@ Use this after landing WIP on `cursor/game-data-hub`. Work top to bottom; don’
 
 ## Phase B — Finishing touches (only if broken after A)
 
+- [x] Skill Codex under Dynamic Island (iPhone 14 Pro Max) — added safe-area top padding to mobile modal shell
 - [ ] Quest create on mobile: skill dropdown loads (not stuck on "Loading skills...")
 - [ ] Skill Codex Create: can tap stats chips
 - [ ] Inbox: drag Today → Now sticks; empty Now accepts drop
