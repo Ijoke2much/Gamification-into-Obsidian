@@ -4,6 +4,7 @@ import {
 	clearVaultMarkdownFileCache,
 	resolveVaultMarkdownFile,
 } from '../../../shared/utils/resolveVaultMarkdownFile';
+import { modifyWithBackup } from '../../../shared/utils/vaultDataBackup';
 
 const RECIPE_CATEGORIES = [
 	'weapon',
@@ -322,7 +323,7 @@ export async function writeVaultRecipes(
 		...recipes.flatMap((r, idx) => (idx === 0 ? serializeRecipe(r) : ['', ...serializeRecipe(r)])),
 	].join('\n');
 
-	await plugin.app.vault.modify(file, body);
+	await modifyWithBackup(plugin.app.vault, file, body);
 }
 
 export async function upsertVaultRecipe(

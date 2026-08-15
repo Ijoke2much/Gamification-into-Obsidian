@@ -4,6 +4,7 @@ import {
 	clearVaultMarkdownFileCache,
 	resolveVaultMarkdownFile,
 } from '../../../shared/utils/resolveVaultMarkdownFile';
+import { modifyWithBackup } from '../../../shared/utils/vaultDataBackup';
 
 const MATERIAL_RARITIES = ['common', 'uncommon', 'rare', 'epic', 'legendary'] as const;
 const MATERIAL_CATEGORIES = ['herb', 'mineral', 'essence', 'crystal', 'organic', 'mystical', 'component'] as const;
@@ -223,7 +224,7 @@ export async function writeVaultMaterials(
 		...materials.flatMap((m, idx) => (idx === 0 ? serializeMaterial(m) : ['', ...serializeMaterial(m)])),
 	].join('\n');
 
-	await plugin.app.vault.modify(file, body);
+	await modifyWithBackup(plugin.app.vault, file, body);
 }
 
 export async function upsertVaultMaterial(

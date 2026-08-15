@@ -5,6 +5,7 @@ import { readPlayerData, updatePlayerData } from "../../player/utils/playerDataU
 import type { PlayerData, Artifact } from "../../../data/models/PlayerData";
 import { addBuff, addDebuff, parseDurationToMs, BuffKind } from "../../../shared/utils/buffEngine";
 import { EnhancedInventoryParser } from "./enhancedInventoryParser";
+import { modifyWithBackup } from "../../../shared/utils/vaultDataBackup";
 // Remove: import { InventoryItem } from "./InventoryParser";
 
 // --- Add a simple InventoryItem type and parser for now ---
@@ -210,7 +211,7 @@ export async function addOrIncrementInventoryItem(app: App, item: ShopItem | Sho
     }
     updatedLines.push(newEntry);
   }
-  await app.vault.modify(inventoryFile, updatedLines.join("\n"));
+  await modifyWithBackup(app.vault, inventoryFile, updatedLines.join("\n"));
   dispatchInventoryUpdatedEvent();
 }
 
@@ -267,7 +268,7 @@ export async function addItemToInventory(vault: Vault, item: InventoryItem, inve
     if (item.icon) newEntry += `\n// icon:${item.icon}`;
     updatedLines.push(newEntry);
   }
-  await vault.modify(inventoryFile, updatedLines.join("\n"));
+  await modifyWithBackup(vault, inventoryFile, updatedLines.join("\n"));
   dispatchInventoryUpdatedEvent();
 }
 
@@ -294,7 +295,7 @@ export async function removeItemFromInventory(vault: Vault, itemName: string, in
       updatedLines.push(line);
     }
   }
-  await vault.modify(inventoryFile, updatedLines.join("\n"));
+  await modifyWithBackup(vault, inventoryFile, updatedLines.join("\n"));
   dispatchInventoryUpdatedEvent();
 }
 
@@ -318,7 +319,7 @@ export async function writeInventory(vault: Vault, inventory: InventoryItem[], i
   }));
 
   const content = EnhancedInventoryParser.generateInventoryContent(enhancedItems);
-  await vault.modify(inventoryFile, content);
+  await modifyWithBackup(vault, inventoryFile, content);
   dispatchInventoryUpdatedEvent();
 }
 

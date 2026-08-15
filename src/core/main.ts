@@ -3,7 +3,12 @@ import "../shared/styles/system-hunter-shell.css";
 import "../shared/styles/tab-system-shell.css";
 import "../shared/styles/shop-system-hunter.css";
 import "../shared/styles/pixel-enclave.css";
-import { Plugin, App, PluginSettingTab, Setting } from "obsidian";
+import { Plugin, App, PluginSettingTab, Setting, FuzzySuggestModal } from "obsidian";
+import {
+	listAllDataBackups,
+	restoreDataBackup,
+	type DataBackupEntry,
+} from "../shared/utils/vaultDataBackup";
 import React from 'react';
 import { PlayerTab, PLAYER_TAB_VIEW_TYPE } from "../views/tabs/player/PlayerTab";
 import { StatsTab, STATS_TAB_VIEW_TYPE } from "../views/tabs/stats/StatsTab";
@@ -458,6 +463,32 @@ export default class GamifiedObsidianPlugin extends Plugin {
 					}
 				} catch (error) {
 					showGameNotice('❌ Level check failed', 3000);
+				}
+			},
+		});
+
+		this.addCommand({
+			id: 'restore-data-backup',
+			name: 'Restore data from backup (PlayerData / Inventory / Recipes / Materials)',
+			callback: async () => {
+				try {
+					const backups = await listAllDataBackups(this.app.vault);
+					if (backups.length === 0) {
+						showGameNotice('No data backups found yet — backups are created automatically before writes.', 4000);
+						return;
+					}
+					new RestoreBackupModal(this.app, backups, async (entry) => {
+						try {
+							await restoreDataBackup(this.app.vault, entry);
+							showGameNotice(`✅ Restored ${entry.sourcePath} from backup`, 4000);
+						} catch (err) {
+							console.error('Restore from backup failed:', err);
+							showGameNotice('❌ Restore failed — see console for details', 4000);
+						}
+					}).open();
+				} catch (err) {
+					console.error('Could not list backups:', err);
+					showGameNotice('❌ Could not list backups', 3000);
 				}
 			},
 		});
@@ -1953,3 +1984,27 @@ class GamificationSettingTab extends PluginSettingTab {
 
 // Inventory types and parsing are centralized under
 // `
+
+/** Fuzzy picker over automatic data backups (newest first). */
+class RestoreBackupModal extends FuzzySuggestModal<DataBackupEntry> {
+	constructor(
+		app: App,
+		private backups: DataBackupEntry[],
+		private onPick: (entry: DataBackupEntry) => void | Promise<void>
+	) {
+		super(app);
+		this.setPlaceholder('Pick a backup to restore (overwrites the current file)…');
+	}
+
+	getItems(): DataBackupEntry[] {
+		return this.backups;
+	}
+
+	getItemText(entry: DataBackupEntry): string {
+		return entry.label;
+	}
+
+	onChooseItem(entry: DataBackupEntry): void {
+		void this.onPick(entry);
+	}
+}
