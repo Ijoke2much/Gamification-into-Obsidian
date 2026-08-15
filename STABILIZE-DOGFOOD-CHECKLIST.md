@@ -17,9 +17,10 @@ Use this after landing WIP on `cursor/game-data-hub`. Work top to bottom; don’
 ## Phase B — Finishing touches (only if broken after A)
 
 - [x] Skill Codex under Dynamic Island (iPhone 14 Pro Max) — added safe-area top padding to mobile modal shell
+- [x] Command palette cleanup — removed debug/cheat commands (Give Item boosters, performance monitor/stats, legacy Advanced Quest Dashboard + analytics/sync/template notices, static status bar)
 - [ ] Quest create on mobile: skill dropdown loads (not stuck on "Loading skills...")
 - [ ] Skill Codex Create: can tap stats chips
-- [ ] Inbox: drag Today → Now sticks; empty Now accepts drop
+- [~] Inbox: drag Today → Now — known limitation on mobile (touch drag unreliable; use day picker / quest modal instead). Desktop drag works.
 - [ ] Week calendar: quick press opens that day’s plan
 - [ ] Capture action buttons readable (Today / Promote / ✕)
 - [ ] Inventory: one close control; Use item applies energy

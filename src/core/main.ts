@@ -3,7 +3,7 @@ import "../shared/styles/system-hunter-shell.css";
 import "../shared/styles/tab-system-shell.css";
 import "../shared/styles/shop-system-hunter.css";
 import "../shared/styles/pixel-enclave.css";
-import { Plugin, App, PluginSettingTab, Setting, Modal } from "obsidian";
+import { Plugin, App, PluginSettingTab, Setting } from "obsidian";
 import React from 'react';
 import { PlayerTab, PLAYER_TAB_VIEW_TYPE } from "../views/tabs/player/PlayerTab";
 import { StatsTab, STATS_TAB_VIEW_TYPE } from "../views/tabs/stats/StatsTab";
@@ -19,7 +19,6 @@ import { TaskTabView, GAMIFIED_TASK_TAB_VIEW_TYPE } from '../views/tabs/quests/T
 import { SidebarQuestBoardView, SIDEBAR_QUEST_VIEW_TYPE } from '../views/sidebar/SidebarQuestView';
 import { SidebarBossView, SIDEBAR_BOSS_VIEW_TYPE } from '../views/sidebar/SidebarBossView';
 import { BossView, BOSS_VIEW_TYPE } from '../views/tabs/boss/BossView';
-import { giveBuffPreset } from '../features/inventory/utils/updateInventoryFile';
 import { playerStore } from '../shared/state/playerStore';
 import { rewardService } from '../shared/services/rewardService';
 import { buffService } from '../shared/services/buffService';
@@ -60,15 +59,11 @@ export default class GamifiedObsidianPlugin extends Plugin {
 	private taskIntegrationService?: TaskIntegrationService;
 	public questSystem: QuestSystemIntegration | null = null;
 	public enhancedQuestSystem?: EnhancedQuestSystem;
-	private advancedQuestDashboard: unknown = null;
 	private performanceOptimizer?: PerformanceOptimizer;
 	private energyResetService?: EnergyResetService;
 	private energyNotificationService?: EnergyNotificationService;
 	private lastSavedModules: GamificationModules = { ...BALANCED_GAMEPLAY_MODULES };
 	private playerRibbonEl?: HTMLElement;
-
-	// Make AdvancedQuestModal available on the plugin instance
-	public AdvancedQuestModal = AdvancedQuestModal;
 
 	// Mobile detection and optimization methods
 	private detectMobileDevice(): boolean {
@@ -337,71 +332,8 @@ export default class GamifiedObsidianPlugin extends Plugin {
 			},
 		});
 
-		// Removed the Advanced Quest Dashboard ribbon since it should be accessed through buttons
-		// this.addRibbonIcon('target', 'Advanced Quest Dashboard', async (evt: MouseEvent) => {
-		// 	try {
-		// 		if (!this.questSystem) {
-		// 			pixelNotice('Advanced quest system not initialized');
-		// 			return;
-		// 		}
-		// 
-		// 		const modal = new AdvancedQuestModal(this.app, {
-		// 			questSystem: this.questSystem,
-		// 			onQuestUpdate: (quest) => {
-		// 				pixelNotice('Quest updated successfully');
-		// 			},
-		// 			onQuestCreate: (quest) => {
-		// 				pixelNotice('Quest created successfully');
-		// 			},
-		// 			onQuestDelete: (questId) => {
-		// 				pixelNotice('Quest deleted successfully');
-		// 			}
-		// 		});
-		// 
-		// 		modal.open();
-		// 	} catch (error) {
-		// 		pixelNotice('Failed to open advanced quest dashboard');
-		// 	}
-		// });
-
-		// Removed the Stats ribbon since stats are available in the sidebar
-		// this.addRibbonIcon("bar-chart", "Open Stats", () => {
-		// 	this.app.workspace.onLayoutReady(async () => {
-		// 		this.activateStatsTabView();
-		// 	});
-		// });
-
 		// Add settings tab
 		this.addSettingTab(new GamificationSettingTab(this.app, this));
-		// Commands: Give common buff presets
-		this.addCommand({
-			id: 'give-xp-booster-30m',
-			name: 'Give Item: XP Booster (30m)',
-			callback: async () => { await giveBuffPreset(this.app, 'xp_booster_30m', 1); }
-		});
-		this.addCommand({
-			id: 'give-cp-booster-30m',
-			name: 'Give Item: CP Booster (30m)',
-			callback: async () => { await giveBuffPreset(this.app, 'cp_booster_30m', 1); }
-		});
-		this.addCommand({
-			id: 'give-rewards-booster-1h',
-			name: 'Give Item: Rewards Booster (1h)',
-			callback: async () => { await giveBuffPreset(this.app, 'rewards_booster_1h', 1); }
-		});
-		this.addCommand({
-			id: 'give-trade-booster-1h',
-			name: 'Give Item: Trade Booster (1h)',
-			callback: async () => { await giveBuffPreset(this.app, 'trade_booster_1h', 1); }
-		});
-
-		// Register the TaskTab in the tab system (example pattern)
-		// this.addTab({
-		// 	id: 'task-tab',
-		// 	title: 'Tasks',
-		// 	icon: 'check-square', // or any icon you prefer
-		// 	component: TaskTab,
-		// });
 
 		this.registerView(
 			GAMIFIED_TASK_TAB_VIEW_TYPE,
@@ -530,53 +462,6 @@ export default class GamifiedObsidianPlugin extends Plugin {
 			},
 		});
 
-		// Add command to show performance monitor
-		this.addCommand({
-			id: 'show-performance-monitor',
-			name: 'Show Performance Monitor',
-			callback: () => {
-				// This will be handled by the TabView component
-				showGameNotice('🔧 Performance monitor available in the Player tab', 3000);
-			},
-		});
-
-		// Add command to get performance stats
-		this.addCommand({
-			id: 'get-performance-stats',
-			name: 'Get Performance Statistics',
-			callback: () => {
-				if (this.performanceOptimizer) {
-					this.performanceOptimizer.getStats();
-					showGameNotice('📊 Performance stats available in console', 3000);
-				} else {
-					showGameNotice('❌ Performance optimizer not initialized', 3000);
-				}
-			},
-		});
-
-		// Register Datacore Task Analytics View - Disabled for now
-		// if (this.settings.enableDatacoreIntegration) {
-		//	// this.registerView(
-		//	//	DATACORE_TASK_VIEW_TYPE,
-		//	//	(leaf) => new DatacoreTaskBoardView(leaf, this)
-		//	// );
-		//
-		//	this.addCommand({
-		//		id: 'open-datacore-task-analytics',
-		//		name: 'Open Task Analytics (Datacore)',
-		//		callback: () => {
-		//			this.app.workspace.onLayoutReady(async () => {
-		//				const leaf = this.app.workspace.getRightLeaf(false);
-		//				if (leaf) {
-		//					// leaf.setViewState({
-		//					//	type: DATACORE_TASK_VIEW_TYPE,
-		//					//	active: true,
-		//					// });
-		//				}
-		//			});
-		//		},
-		//	});
-		// }
 	}
 
 	async loadSettings() {
@@ -1097,109 +982,6 @@ export default class GamifiedObsidianPlugin extends Plugin {
 		}
 	}
 
-	private setupAdvancedQuestFeatures() {
-		// Removed ribbon icon - advanced quest dashboard should be accessed through buttons/commands
-		// this.addRibbonIcon('target', 'Advanced Quest Dashboard', async (evt: MouseEvent) => {
-		// 	await this.showAdvancedQuestDashboard();
-		// });
-
-		// Add advanced quest commands
-		this.addCommand({
-			id: 'show-advanced-quest-dashboard',
-			name: 'Show Advanced Quest Dashboard',
-			callback: async () => {
-				await this.showAdvancedQuestDashboard();
-			}
-		});
-
-		this.addCommand({
-			id: 'generate-quest-analytics',
-			name: 'Generate Quest Analytics',
-			callback: async () => {
-				await this.generateQuestAnalytics();
-			}
-		});
-
-		this.addCommand({
-			id: 'sync-quest-vaults',
-			name: 'Sync Quest Vaults',
-			callback: async () => {
-				await this.syncQuestVaults();
-			}
-		});
-
-		this.addCommand({
-			id: 'show-quest-templates',
-			name: 'Show Quest Templates',
-			callback: async () => {
-				await this.showQuestTemplates();
-			}
-		});
-
-		// Add status bar item for quest system status
-		this.addStatusBarItem().setText('🎯 Quest System Active');
-	}
-
-	private async showAdvancedQuestDashboard() {
-		try {
-			await import('../features/quests/components/AdvancedQuestDashboard');
-
-			const modal = new AdvancedQuestModal(this.app, {
-				questSystem: this.questSystem,
-				onQuestUpdate: () => {
-					// Handle quest updates
-				},
-				onQuestCreate: () => {
-					// Handle quest creation
-				},
-				onQuestDelete: () => {
-					// Handle quest deletion
-				}
-			});
-
-			modal.open();
-		} catch (error) {
-			showGameNotice('Failed to load advanced quest dashboard');
-		}
-	}
-
-	private async generateQuestAnalytics() {
-		try {
-			await QuestSystemIntegration.generateAnalytics();
-
-			// Show analytics in a modal or notification
-			const insights = QuestSystemIntegration.getAnalyticsInsights();
-			if (insights) {
-				showGameNotice(`Analytics generated! Completion rate: ${(insights.overview.completionRate * 100).toFixed(1)}%`);
-			}
-		} catch (error) {
-			showGameNotice('Failed to generate analytics');
-		}
-	}
-
-	private async syncQuestVaults() {
-		try {
-			await QuestSystemIntegration.syncWithVaults();
-			showGameNotice('Quest vaults synced successfully');
-		} catch (error) {
-			showGameNotice('Failed to sync quest vaults');
-		}
-	}
-
-	private async showQuestTemplates() {
-		try {
-			const suggestions = await QuestSystemIntegration.getTemplateSuggestions();
-
-			if (suggestions.length > 0) {
-				showGameNotice(`${suggestions.length} template suggestions available`);
-			} else {
-				showGameNotice('No template suggestions available');
-			}
-		} catch (error) {
-			showGameNotice('Failed to load template suggestions');
-		}
-	}
-
 	private async initializeServicesInBackground() {
 		try {
 			// Load plugin settings
@@ -1272,9 +1054,6 @@ export default class GamifiedObsidianPlugin extends Plugin {
 				QuestSystemIntegration.initializeQuestSystem(this.app)
 					.then((questSystem) => {
 						this.questSystem = questSystem;
-						if (QuestSystemIntegration.isAdvancedFeaturesEnabled()) {
-							this.setupAdvancedQuestFeatures();
-						}
 					})
 					.catch(() => {
 						// Advanced quest system is optional; fall back to basic quest features
@@ -2171,170 +1950,6 @@ class GamificationSettingTab extends PluginSettingTab {
 	}
 }
 
-// Advanced Quest Modal Component
-class AdvancedQuestModal extends Modal {
-	private questSystem: QuestSystemIntegration | null;
-	private onQuestUpdate?: () => void;
-	private onQuestCreate?: () => void;
-	private onQuestDelete?: (questId: string) => void;
-
-	constructor(app: App, options: {
-		questSystem: QuestSystemIntegration | null;
-		onQuestUpdate?: () => void;
-		onQuestCreate?: () => void;
-		onQuestDelete?: (questId: string) => void;
-	}) {
-		super(app);
-		this.questSystem = options.questSystem;
-		this.onQuestUpdate = options.onQuestUpdate;
-		this.onQuestCreate = options.onQuestCreate;
-		this.onQuestDelete = options.onQuestDelete;
-	}
-
-	onOpen() {
-		const { contentEl } = this;
-		contentEl.empty();
-
-		// Create a simple native HTML interface instead of React
-		this.createNativeDashboard(contentEl);
-	}
-
-	private createNativeDashboard(container: HTMLElement) {
-		// Create the dashboard container
-		const dashboardContainer = container.createDiv('advanced-quest-dashboard-container');
-		dashboardContainer.style.cssText = `
-			padding: 20px;
-			max-width: 800px;
-			margin: 0 auto;
-			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-		`;
-
-		// Header
-		const header = dashboardContainer.createDiv();
-		header.innerHTML = `
-			<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #4a9eff;">
-				<span style="font-size: 24px;">🎯</span>
-				<h2 style="margin: 0; color: #4a9eff; font-size: 24px;">Advanced Quest Dashboard</h2>
-			</div>
-		`;
-
-		// Status section
-		const statusSection = dashboardContainer.createDiv();
-		statusSection.innerHTML = `
-			<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; margin-bottom: 24px; color: white;">
-				<h3 style="margin: 0 0 16px 0; font-size: 18px;">System Status</h3>
-				<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
-					<div style="background: rgba(255,255,255,0.1); padding: 12px; border-radius: 8px;">
-						<div style="font-size: 14px; opacity: 0.8;">Total Quests</div>
-						<div style="font-size: 24px; font-weight: bold;">-</div>
-					</div>
-					<div style="background: rgba(255,255,255,0.1); padding: 12px; border-radius: 8px;">
-						<div style="font-size: 14px; opacity: 0.8;">Completed</div>
-						<div style="font-size: 24px; font-weight: bold;">-</div>
-					</div>
-					<div style="background: rgba(255,255,255,0.1); padding: 12px; border-radius: 8px;">
-						<div style="font-size: 14px; opacity: 0.8;">Active</div>
-						<div style="font-size: 24px; font-weight: bold;">-</div>
-					</div>
-				</div>
-			</div>
-		`;
-
-		// Features section
-		const featuresSection = dashboardContainer.createDiv();
-		featuresSection.innerHTML = `
-			<div style="margin-bottom: 24px;">
-				<h3 style="margin: 0 0 16px 0; color: #333;">Advanced Features</h3>
-				<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
-					<div style="background: #f8f9fa; padding: 16px; border-radius: 8px; border-left: 4px solid #4a9eff;">
-						<h4 style="margin: 0 0 8px 0; color: #4a9eff;">🚀 Performance Optimization</h4>
-						<p style="margin: 0; font-size: 14px; color: #666;">Incremental parsing and caching for large quest files</p>
-					</div>
-					<div style="background: #f8f9fa; padding: 16px; border-radius: 8px; border-left: 4px solid #28a745;">
-						<h4 style="margin: 0 0 8px 0; color: #28a745;">📋 Smart Templates</h4>
-						<p style="margin: 0; font-size: 14px; color: #666;">Context-aware quest templates and wizards</p>
-					</div>
-					<div style="background: #f8f9fa; padding: 16px; border-radius: 8px; border-left: 4px solid #ffc107;">
-						<h4 style="margin: 0 0 8px 0; color: #ffc107;">🔄 Cross-Vault Sharing</h4>
-						<p style="margin: 0; font-size: 14px; color: #666;">Share quests between different Obsidian vaults</p>
-					</div>
-					<div style="background: #f8f9fa; padding: 16px; border-radius: 8px; border-left: 4px solid #dc3545;">
-						<h4 style="margin: 0 0 8px 0; color: #dc3545;">🧠 Advanced Analytics</h4>
-						<p style="margin: 0; font-size: 14px; color: #666;">Deep insights and optimization recommendations</p>
-					</div>
-				</div>
-			</div>
-		`;
-
-		// Actions section
-		const actionsSection = dashboardContainer.createDiv();
-		actionsSection.innerHTML = `
-			<div style="margin-bottom: 24px;">
-				<h3 style="margin: 0 0 16px 0; color: #333;">Quick Actions</h3>
-				<div style="display: flex; gap: 12px; flex-wrap: wrap;">
-					<button id="generate-analytics" style="padding: 12px 20px; background: #4a9eff; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500;">
-						📊 Generate Analytics
-					</button>
-					<button id="sync-vaults" style="padding: 12px 20px; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500;">
-						🔄 Sync Vaults
-					</button>
-					<button id="show-templates" style="padding: 12px 20px; background: #ffc107; color: #333; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500;">
-						📋 Show Templates
-					</button>
-				</div>
-			</div>
-		`;
-
-		// Add event listeners
-		this.addDashboardEventListeners(dashboardContainer);
-	}
-
-	private addDashboardEventListeners(container: HTMLElement) {
-		// Generate Analytics button
-		const analyticsBtn = container.querySelector('#generate-analytics');
-		if (analyticsBtn) {
-			analyticsBtn.addEventListener('click', async () => {
-				try {
-					await QuestSystemIntegration.generateAnalytics();
-					showGameNotice('Analytics generated successfully!');
-				} catch (error) {
-					showGameNotice('Failed to generate analytics');
-				}
-			});
-		}
-
-		// Sync Vaults button
-		const syncBtn = container.querySelector('#sync-vaults');
-		if (syncBtn) {
-			syncBtn.addEventListener('click', async () => {
-				try {
-					await QuestSystemIntegration.syncWithVaults();
-					showGameNotice('Vaults synced successfully!');
-				} catch (error) {
-					showGameNotice('Failed to sync vaults');
-				}
-			});
-		}
-
-		// Show Templates button
-		const templatesBtn = container.querySelector('#show-templates');
-		if (templatesBtn) {
-			templatesBtn.addEventListener('click', async () => {
-				try {
-					const suggestions = await QuestSystemIntegration.getTemplateSuggestions();
-					showGameNotice(`Found ${suggestions.length} template suggestions`);
-				} catch (error) {
-					showGameNotice('Failed to get template suggestions');
-				}
-			});
-		}
-	}
-
-	onClose() {
-		const { contentEl } = this;
-		contentEl.empty();
-	}
-}
 
 // Inventory types and parsing are centralized under
 // `
