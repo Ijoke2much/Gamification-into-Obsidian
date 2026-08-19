@@ -430,7 +430,7 @@ export const SettingsUI: React.FC<SettingsUIProps> = ({
 
   // Get settings preview for a category
   const getSettingsPreview = (categoryId: string) => {
-    const previews: JSX.Element[] = [];
+    const previews: React.JSX.Element[] = [];
     
     switch (categoryId) {
       case 'currency':
