@@ -141,6 +141,14 @@ export async function prepareBossForNewRaid(app: App, boss: BossFileData): Promi
 	return resetBossStrikeTasks(app, fresh);
 }
 
+/** Thrown when a standalone boss fight is started without a Boss Key. */
+export class BossKeyRequiredError extends Error {
+	constructor() {
+		super('A Boss Key is required to challenge this boss. Win a dungeon raid to earn one.');
+		this.name = 'BossKeyRequiredError';
+	}
+}
+
 export interface StartBossFileRaidOptions {
 	/** Open straight to the victory claim screen (vault felled the boss out of battle). */
 	resumeClaim?: boolean;
@@ -184,6 +192,17 @@ export async function startBossFileRaid(
 	const boss = await readBoss(app, normalized);
 	if (!boss) {
 		throw new Error(`Boss note not found: ${normalized}`);
+	}
+
+	// Standalone boss fights cost a Boss Key (earned from dungeon raid wins).
+	// Dungeon gate raids (lockDungeon) stay free — they're the key *source*.
+	// Spent only after the boss note is validated; no refund once the raid starts.
+	if (!lockDungeon) {
+		const { consumeKey, BOSS_KEY_NAME } = await import('../../../shared/utils/keyItems');
+		const spent = await consumeKey(app, BOSS_KEY_NAME);
+		if (!spent) {
+			throw new BossKeyRequiredError();
+		}
 	}
 
 	await prepareBossForNewRaid(app, boss);

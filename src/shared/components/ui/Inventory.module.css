@@ -579,6 +579,19 @@
     margin-top: 8px;
 }
 
+/* Why some actions are hidden (materials craft, keys auto-spend, equipped gear locks) */
+.itemActionHint {
+    margin-top: 8px;
+    padding: 8px 10px;
+    border: 1px dashed rgba(34, 200, 255, 0.35);
+    border-radius: 2px;
+    background: rgba(10, 34, 60, 0.45);
+    color: #9fd4ea;
+    font-size: 11.5px;
+    line-height: 1.45;
+    letter-spacing: 0.02em;
+}
+
 .actionButton {
     flex: 1;
     display: flex;

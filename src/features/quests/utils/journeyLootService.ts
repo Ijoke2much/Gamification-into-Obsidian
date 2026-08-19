@@ -128,6 +128,8 @@ export interface DungeonRaidLoot {
 	materialNames: string[];
 	/** Skill/class names that received distributed CP from this raid. */
 	cpSkillTargets?: string[];
+	/** True when this raid win also dropped a Boss Key. */
+	bossKeyGranted?: boolean;
 }
 
 /** Raid spoils are richer than the field victory — a premium payout for the gate boss. */
@@ -172,6 +174,9 @@ export function buildDungeonRaidNotice(
 	}
 	if (loot.cpSkillTargets && loot.cpSkillTargets.length > 0) {
 		parts.push(`CP → ${loot.cpSkillTargets.join(', ')}`);
+	}
+	if (loot.bossKeyGranted) {
+		parts.push('🔑 +1 Boss Key');
 	}
 	return parts.join(' · ');
 }
@@ -230,6 +235,8 @@ export async function grantBossFileDungeonLoot(
 	const { materials } = await MaterialInventoryManager.addQuestMaterials(app, matDiff);
 	loot.materialNames = materials.map((m) => m.name);
 
+	loot.bossKeyGranted = await grantRaidBossKey(app);
+
 	return loot;
 }
 
@@ -250,7 +257,19 @@ export async function grantDungeonRaidLoot(
 		const matDiff = LOOT_TIER_MATERIAL_DIFFICULTY[raid.lootTier];
 		const { materials } = await MaterialInventoryManager.addQuestMaterials(app, matDiff);
 		loot.materialNames = materials.map((m) => m.name);
+		loot.bossKeyGranted = await grantRaidBossKey(app);
 	}
 
 	return loot;
+}
+
+/** Dungeon raid wins are the Boss Key source (capped — see BOSS_KEY_CAP). */
+async function grantRaidBossKey(app: App): Promise<boolean> {
+	try {
+		const { grantKey, BOSS_KEY_NAME } = await import('../../../shared/utils/keyItems');
+		return await grantKey(app, BOSS_KEY_NAME);
+	} catch (error) {
+		console.warn('[journeyLootService] Boss key grant failed:', error);
+		return false;
+	}
 }

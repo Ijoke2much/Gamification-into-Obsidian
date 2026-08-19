@@ -820,3 +820,145 @@
     text-transform: uppercase;
     cursor: pointer;
 }
+
+/* ── Lootbox redemption panel ──────────────────────────────────────────── */
+
+.lootboxPanel {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding: 16px 12px 24px;
+}
+
+.lootboxKeyCount {
+    align-self: stretch;
+    text-align: center;
+    padding: 8px 12px;
+    border: 1px solid rgba(249, 202, 36, 0.45);
+    border-radius: 2px;
+    background: rgba(60, 46, 8, 0.45);
+    color: #f9ca24;
+    font-size: 0.9rem;
+    letter-spacing: 0.05em;
+}
+
+.lootboxCard {
+    width: min(340px, 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 20px 16px;
+    border: 2px solid rgba(34, 200, 255, 0.45);
+    border-radius: 4px;
+    background: linear-gradient(180deg, rgba(14, 48, 86, 0.92), rgba(6, 22, 44, 0.96));
+    box-shadow: 0 0 18px rgba(34, 200, 255, 0.12);
+    text-align: center;
+}
+
+.lootboxShaking {
+    animation: lootboxShake 0.45s ease-in-out infinite;
+}
+
+@keyframes lootboxShake {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-2.5deg) scale(1.02); }
+    75% { transform: rotate(2.5deg) scale(1.02); }
+}
+
+.lootboxIcon {
+    font-size: 3.2rem;
+    line-height: 1;
+    filter: drop-shadow(0 0 10px rgba(249, 202, 36, 0.35));
+}
+
+.lootboxName {
+    font-weight: 700;
+    font-size: 1.05rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #baf0ff;
+}
+
+.lootboxDesc {
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: #9fd4ea;
+}
+
+.lootboxOpenBtn {
+    margin-top: 6px;
+    min-height: 44px;
+    padding: 10px 26px;
+    border: 2px solid rgba(249, 202, 36, 0.65);
+    border-radius: 2px;
+    background: linear-gradient(180deg, rgba(96, 72, 12, 0.9), rgba(52, 38, 6, 0.95));
+    color: #f9ca24;
+    font-weight: 700;
+    font-size: 0.9rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    cursor: pointer;
+}
+
+.lootboxOpenBtn:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+}
+
+.lootboxHint {
+    font-size: 0.75rem;
+    color: #7fa8bc;
+    font-style: italic;
+}
+
+.lootboxReveal {
+    width: min(340px, 100%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: 18px 16px;
+    border: 2px solid;
+    border-radius: 4px;
+    background: rgba(4, 16, 34, 0.92);
+    text-align: center;
+    animation: lootboxRevealPop 0.35s ease-out;
+}
+
+@keyframes lootboxRevealPop {
+    0% { transform: scale(0.7); opacity: 0; }
+    70% { transform: scale(1.06); }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+.lootboxRevealIcon {
+    font-size: 2.6rem;
+    line-height: 1;
+}
+
+.lootboxRevealName {
+    font-weight: 700;
+    font-size: 1rem;
+    letter-spacing: 0.05em;
+}
+
+.lootboxRevealRarity {
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    color: #9fd4ea;
+}
+
+.lootboxRevealDesc {
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: #cbe9ff;
+}
+
+.lootboxRevealFooter {
+    margin-top: 4px;
+    font-size: 0.72rem;
+    color: #7fa8bc;
+    font-style: italic;
+}

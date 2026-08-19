@@ -5,7 +5,8 @@ import {
     getRarityDisplayName,
 } from "../../../features/quests/utils/questRewardsSystem";
 import type { InventoryItem } from "../utils/updateInventoryFile";
-import { dropItem, useItem, equipItem, sellItem } from "../utils/updateInventoryFile";
+import { dropItem, useItem, equipItem, sellItem, computeSellValue } from "../utils/updateInventoryFile";
+import { getAllowedActions } from "../utils/itemActions";
 import type { ShopItemEffect } from "../../shop/utils/ShopParser";
 import { MaterialUtils } from "../../../shared/utils/materialUtils";
 import { EnhancedInventoryItem, InventoryFilter, InventorySortOptions, BulkOperation, InventoryState } from "../types/EnhancedInventoryTypes";
@@ -340,6 +341,25 @@ const InventoryModalContent: React.FC<InventoryModalContentProps> = ({ onClose }
         console.log('🔍 Looking for item:', selectedItem, 'Found:', foundItem);
         return foundItem;
     }, [selectedItem, inventory]);
+
+    // Per-type action gating: materials craft, gear equips, keys are auto-spent, etc.
+    const allowedActions = useMemo(
+        () => (selectedItemData ? getAllowedActions(selectedItemData) : null),
+        [selectedItemData]
+    );
+
+    // Sell price, always resolvable — most items never get a stored `value`,
+    // which left mobile selling blind. Falls back to the live computed price.
+    const displaySellValue = useMemo(() => {
+        if (!selectedItemData) return 0;
+        const stored = Number(selectedItemData.value ?? 0);
+        if (stored > 0) return stored;
+        return computeSellValue({
+            price: selectedItemData.price,
+            rarity: selectedItemData.rarity,
+            category: selectedItemData.category,
+        });
+    }, [selectedItemData]);
 
     useEffect(() => {
         setMobileVisibleCount(MOBILE_INV_PAGE);
@@ -1283,22 +1303,30 @@ const InventoryModalContent: React.FC<InventoryModalContentProps> = ({ onClose }
                             </div>
                         )}
 
-                        {/* Item Value (if available) */}
-                        {typeof selectedItemData.value === 'number' && (
+                        {/* Sell price — always shown for sellable items (was invisible on mobile) */}
+                        {allowedActions?.sell && (
                             <div className={inventoryStyles.detailItem}>
                                 <div className={inventoryStyles.detailLabel}>
                                     <span className={inventoryStyles.detailIcon}>💰</span>
-                                    Value (Sell Price)
+                                    Sell Price
                                 </div>
                                 <div className={inventoryStyles.detailValue}>
-                                    {currencySymbol} {selectedItemData.value} {currencyName.toLowerCase()}
+                                    {currencySymbol} {displaySellValue} {currencyName.toLowerCase()}
                                 </div>
                             </div>
                         )}
                     </div>
 
-                    {/* Action Buttons */}
+                    {/* Why some actions are hidden (material / key / equipped-gear guidance) */}
+                    {allowedActions?.hint && (
+                        <div className={inventoryStyles.itemActionHint}>
+                            {allowedActions.hint}
+                        </div>
+                    )}
+
+                    {/* Action Buttons — gated per item type */}
                     <div className={inventoryStyles.itemActions}>
+                        {allowedActions?.use && (
                         <button 
                             className={inventoryStyles.actionButton}
                             onClick={async () => {
@@ -1314,9 +1342,41 @@ const InventoryModalContent: React.FC<InventoryModalContentProps> = ({ onClose }
                             }}
                         >
                             <span>⚡</span>
-                            Use
+                            {allowedActions.useLabel}
                         </button>
-                        
+                        )}
+
+                        {allowedActions?.equip && (
+                        <button 
+                            className={inventoryStyles.actionButton}
+                            onClick={async () => {
+                                await equipItem(app, selectedItemData.name);
+                                await reloadInventory();
+                            }}
+                        >
+                            <span>🛡️</span>
+                            {selectedItemData.tags?.includes('equipped') ? 'Unequip' : 'Equip'}
+                        </button>
+                        )}
+
+                        {allowedActions?.sell && (
+                        <button 
+                            className={inventoryStyles.actionButton}
+                            onClick={async () => {
+                                const confirmMsg = `Sell ${selectedItemData.name} for ${displaySellValue} ${currencyName.toLowerCase()}?`;
+                                const confirmed = confirm(confirmMsg);
+                                if (!confirmed) return;
+                                await sellItem(app, selectedItemData.name);
+                                await reloadInventory();
+                                setSelectedItem(null);
+                            }}
+                        >
+                            <span>💰</span>
+                            Sell · {displaySellValue}
+                        </button>
+                        )}
+
+                        {allowedActions?.drop && (
                         <button 
                             className={inventoryStyles.actionButton}
                             onClick={async () => {
@@ -1328,35 +1388,7 @@ const InventoryModalContent: React.FC<InventoryModalContentProps> = ({ onClose }
                             <span>🗑️</span>
                             Drop
                         </button>
-
-                        <button 
-                            className={inventoryStyles.actionButton}
-                            onClick={async () => {
-                                await equipItem(app, selectedItemData.name);
-                                await reloadInventory();
-                            }}
-                        >
-                            <span>🛡️</span>
-                            {selectedItemData.tags?.includes('equipped') ? 'Unequip' : 'Equip'}
-                        </button>
-
-                        <button 
-                            className={inventoryStyles.actionButton}
-                            onClick={async () => {
-                                const saleValue = Math.max(0, Number(selectedItemData.value ?? 0));
-                                const confirmMsg = saleValue > 0
-                                  ? `Sell ${selectedItemData.name} for ${saleValue} ${currencyName.toLowerCase()}?`
-                                  : `Sell ${selectedItemData.name}?`;
-                                const confirmed = confirm(confirmMsg);
-                                if (!confirmed) return;
-                                await sellItem(app, selectedItemData.name);
-                                await reloadInventory();
-                                setSelectedItem(null);
-                            }}
-                        >
-                            <span>💰</span>
-                            Sell
-                        </button>
+                        )}
 
                         {!isMobile && (
                         <button 

@@ -237,6 +237,17 @@ export async function awardQuestRewards(
 					loot,
 					currencySymbol
 				);
+				// Every felled foe drops a Lootbox Key — spend it in the shop's Lootbox tab.
+				if (app) {
+					try {
+						const { grantKey, LOOTBOX_KEY_NAME } = await import('./keyItems');
+						if (await grantKey(app, LOOTBOX_KEY_NAME)) {
+							journeyVictoryNotice += ' · 🗝️ +1 Lootbox Key';
+						}
+					} catch (error) {
+						console.warn('[awardQuestRewards] Lootbox key grant failed:', error);
+					}
+				}
 			}
 		}
 	}

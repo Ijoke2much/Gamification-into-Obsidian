@@ -28,6 +28,8 @@ import { onSettingsUpdated } from "../../../shared/utils/settingsEvents";
 import type { VisualThemePresetId } from "../../../shared/themes/types";
 import { SystemFrame, SystemHeader, SystemScaffold } from "../../../shared/components/ui/system";
 import { useMobileOptimizations } from "../../../shared/hooks/useMobileOptimizations";
+import { getLootboxKeyCount, openLootbox, type LootboxReward } from "../utils/lootboxService";
+import { getRarityColor } from "../../quests/utils/questRewardsSystem";
 
 interface Props {
     plugin: GamifiedObsidianPlugin;
@@ -47,6 +49,7 @@ const SHOP_CATEGORIES = [
     { key: "Equipment", label: "Equipment", icon: "⚔️" },
     { key: "Artifacts", label: "Artifacts", icon: "🏺" },
     { key: "Weapons", label: "Weapons", icon: "🗡️" },
+    { key: "Lootboxes", label: "Lootboxes", icon: "🎁" },
     { key: "Misc", label: "Misc", icon: "📋" },
 ] as const;
 
@@ -70,6 +73,7 @@ function getCategoryColor(category: string): string {
         case "Equipment": return "#22c55e";   // green
         case "Artifacts": return "#a855f7";  // purple
         case "Weapons": return "#ef4444";    // red
+        case "Lootboxes": return "#f9ca24";  // gold
         default: return "#64748b";            // gray for Misc
     }
 }
@@ -666,6 +670,10 @@ export default function ShopTab({
                 ))}
             </div>
 
+            {categoryFilter === "Lootboxes" ? (
+                <LootboxPanel plugin={plugin} />
+            ) : (
+            <>
             <div className={shopStyles.filterRow}>
                 <select
                     className="gami-shop-select"
@@ -774,7 +782,113 @@ export default function ShopTab({
                     Show more ({filteredSortedItems.length - mobileVisibleCount} left)
                 </button>
             )}
+            </>
+            )}
         </>
+    );
+}
+
+/* ── Lootbox redemption counter ─────────────────────────────────────────────
+   Supply Caches aren't bought — they're opened with Lootbox Keys earned by
+   defeating journey foes. One key per cache, guaranteed drop. */
+function LootboxPanel({ plugin }: { plugin: GamifiedObsidianPlugin }) {
+    const [keys, setKeys] = useState<number | null>(null);
+    const [opening, setOpening] = useState(false);
+    const [reveal, setReveal] = useState<LootboxReward | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        void getLootboxKeyCount(plugin.app).then((n) => {
+            if (!cancelled) setKeys(n);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [plugin]);
+
+    const handleOpen = async () => {
+        if (opening) return;
+        setOpening(true);
+        setReveal(null);
+        try {
+            const result = await openLootbox(plugin.app);
+            if (!result.ok) {
+                pixelNotice(result.error ?? 'Could not open the cache.', 3500);
+                setKeys(result.keysLeft);
+                return;
+            }
+            setKeys(result.keysLeft);
+            // Small suspense beat before the reveal.
+            await new Promise((r) => window.setTimeout(r, 650));
+            setReveal(result.reward ?? null);
+            if (result.reward) {
+                pixelNotice(
+                    `🎁 ${result.reward.icon} ${result.reward.name} (${result.reward.rarity})`,
+                    3500
+                );
+            }
+        } catch (error) {
+            console.error('[LootboxPanel] open failed:', error);
+            pixelNotice('Something jammed the cache — try again.', 3000);
+        } finally {
+            setOpening(false);
+        }
+    };
+
+    const noKeys = (keys ?? 0) <= 0;
+
+    return (
+        <div className={shopStyles.lootboxPanel}>
+            <div className={shopStyles.lootboxKeyCount}>
+                🗝️ Lootbox Keys: <strong>{keys ?? '…'}</strong>
+            </div>
+
+            <div className={`${shopStyles.lootboxCard} ${opening ? shopStyles.lootboxShaking : ''}`}>
+                <div className={shopStyles.lootboxIcon}>🎁</div>
+                <div className={shopStyles.lootboxName}>Supply Cache</div>
+                <div className={shopStyles.lootboxDesc}>
+                    Sealed field spoils. Mostly crafting materials, sometimes a booster —
+                    rarely something special.
+                </div>
+                <button
+                    type="button"
+                    className={shopStyles.lootboxOpenBtn}
+                    disabled={noKeys || opening}
+                    onClick={() => void handleOpen()}
+                >
+                    {opening ? 'Opening…' : 'Open · 1 🗝️'}
+                </button>
+                {noKeys && keys !== null && (
+                    <div className={shopStyles.lootboxHint}>
+                        Defeat foes on your Journey to earn Lootbox Keys.
+                    </div>
+                )}
+            </div>
+
+            {reveal && (
+                <div
+                    className={shopStyles.lootboxReveal}
+                    style={{ borderColor: getRarityColor(reveal.rarity) }}
+                >
+                    <div className={shopStyles.lootboxRevealIcon}>{reveal.icon}</div>
+                    <div
+                        className={shopStyles.lootboxRevealName}
+                        style={{ color: getRarityColor(reveal.rarity) }}
+                    >
+                        {reveal.name}
+                    </div>
+                    <div className={shopStyles.lootboxRevealRarity}>
+                        ✦ {reveal.rarity.toUpperCase()} ✦
+                    </div>
+                    {reveal.description && (
+                        <div className={shopStyles.lootboxRevealDesc}>{reveal.description}</div>
+                    )}
+                    <div className={shopStyles.lootboxRevealFooter}>
+                        Added to your inventory{reveal.slot === 'artifact' ? ' — activate it when the moment is right.' : '.'}
+                    </div>
+                </div>
+            )}
+        </div>
     );
 }
 

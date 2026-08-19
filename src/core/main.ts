@@ -804,6 +804,11 @@ export default class GamifiedObsidianPlugin extends Plugin {
 				resumeClaim: detail.resumeClaim,
 			});
 		} catch (error) {
+			const { BossKeyRequiredError } = await import('../features/quests/utils/bossRaidService');
+			if (error instanceof BossKeyRequiredError) {
+				pixelNotice('🔑 A Boss Key is required. Win a dungeon raid on your Journey to earn one.', 4500);
+				return;
+			}
 			console.error('[openBossRaid] Failed to start boss raid', error);
 		}
 		this.pendingBossRaid = { path: detail.path, lockDungeon: detail.lockDungeon };
