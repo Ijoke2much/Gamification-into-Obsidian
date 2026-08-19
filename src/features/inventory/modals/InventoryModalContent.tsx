@@ -231,11 +231,12 @@ const InventoryModalContent: React.FC<InventoryModalContentProps> = ({ onClose }
             );
         }
 
-        // Material quality chip (desktop materials tab)
+        // Material quality chip (desktop materials tab) — must match the same
+        // rarity→quality mapping the chip counts use, not raw tag text.
         if (selectedCategory && selectedCategory !== "all") {
             const q = selectedCategory.toLowerCase();
-            filtered = filtered.filter(item =>
-                item.tags?.some(tag => String(tag).toLowerCase().includes(q))
+            filtered = filtered.filter(
+                item => MaterialUtils.getItemQuality(item).toLowerCase() === q
             );
         }
 
@@ -365,6 +366,14 @@ const InventoryModalContent: React.FC<InventoryModalContentProps> = ({ onClose }
         setMobileVisibleCount(MOBILE_INV_PAGE);
     }, [activeTab, selectedCategory, searchTerm, sortMethod, sortOrder]);
 
+    // Quality chips only exist on the Materials tab — a lingering selection
+    // would silently filter the other tabs down to nothing.
+    useEffect(() => {
+        if (activeTab !== "materials") {
+            setSelectedCategory("all");
+        }
+    }, [activeTab]);
+
     useEffect(() => {
         if (isMobile && viewMode !== "list") {
             setViewMode("list");
@@ -395,14 +404,13 @@ const InventoryModalContent: React.FC<InventoryModalContentProps> = ({ onClose }
     }
 
     const handleItemClick = (itemName: string) => {
-        console.log('🔍 Item clicked:', itemName);
-        setSelectedItem(itemName);
-        console.log('✅ Selected item set to:', itemName);
+        // Clicking the selected item again deselects it (desktop has no detail X).
+        setSelectedItem((prev) => (prev === itemName ? null : itemName));
     };
 
     return (
         <div
-            className={`${inventoryStyles.inventoryModalContent}${isMobile ? ` ${inventoryStyles.inventoryModalContentMobile}` : ""}${useSystemChrome && !isMobile ? ` ${inventoryStyles.inventoryModalContentSystem}` : ""}`}
+            className={`${inventoryStyles.inventoryModalContent}${isMobile ? ` ${inventoryStyles.inventoryModalContentMobile}` : ""}${useSystemChrome && !isMobile ? ` ${inventoryStyles.inventoryModalContentSystem}` : ""}${useSystemChrome && !isMobile && selectedItemData ? ` ${inventoryStyles.inventoryModalContentSystemSplit}` : ""}`}
             data-gamification-mobile={isMobile ? "true" : "false"}
             data-inventory-system={useSystemChrome ? "true" : "false"}
         >
@@ -413,8 +421,9 @@ const InventoryModalContent: React.FC<InventoryModalContentProps> = ({ onClose }
                         label="SYSTEM: INVENTORY"
                         title="Hunter storage"
                     />
-                    {/* Sole list-view close — hidden while item detail is open (detail owns the one X) */}
-                    {onClose && !selectedItemData ? (
+                    {/* The one inventory X. Mobile hides it while the bottom sheet is open
+                        (the sheet has its own); desktop keeps it always. */}
+                    {onClose && (!isMobile || !selectedItemData) ? (
                         <button
                             type="button"
                             className={inventoryStyles.mobileInvClose}
@@ -494,7 +503,9 @@ const InventoryModalContent: React.FC<InventoryModalContentProps> = ({ onClose }
                                     <button
                                         key={quality}
                                         className={inventoryStyles.qualityButton}
-                                        onClick={() => setSelectedCategory(quality)}
+                                        onClick={() =>
+                                            setSelectedCategory((prev) => (prev === quality ? "all" : quality))
+                                        }
                                         style={{
                                             background: selectedCategory === quality 
                                                 ? "rgba(69, 183, 209, 0.3)" 
@@ -1208,7 +1219,8 @@ const InventoryModalContent: React.FC<InventoryModalContentProps> = ({ onClose }
                             ✦ {getRarityDisplayName(selectedItemData.rarity || "common")} ✦
                         </div>
 
-                        {/* Sole X while detail is open — returns to list (list header owns inventory close) */}
+                        {/* Bottom-sheet dismiss — mobile only; desktop keeps the single header X */}
+                        {isMobile && (
                         <button
                             type="button"
                             className={inventoryStyles.closeItemButton}
@@ -1218,6 +1230,7 @@ const InventoryModalContent: React.FC<InventoryModalContentProps> = ({ onClose }
                         >
                             ✕
                         </button>
+                        )}
                     </div>
 
                     {/* Item Description */}

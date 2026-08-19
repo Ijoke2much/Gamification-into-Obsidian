@@ -114,16 +114,17 @@
 
 /* Quality Filter for Materials */
 .qualityFilter {
-    padding: 16px;
+    padding: 10px 16px;
     background: linear-gradient(90deg, rgba(69, 183, 209, 0.1) 0%, rgba(69, 183, 209, 0.05) 100%);
     border-bottom: 1px solid rgba(69, 183, 209, 0.2);
+    flex-shrink: 0;
 }
 
 .qualityTitle {
     color: #45B7D1;
     font-weight: 600;
-    font-size: 14px;
-    margin-bottom: 12px;
+    font-size: 13px;
+    margin-bottom: 8px;
     text-align: center;
 }
 
@@ -776,22 +777,28 @@
 }
 
 /* Materials Summary */
+/* One horizontal strip — three stacked rows squeezed the item grid out */
 .materialsSummary {
-    margin-top: 16px;
-    padding: 16px;
+    margin-top: 10px;
+    padding: 6px 10px;
     background: rgba(69, 183, 209, 0.1);
-    border-radius: 12px;
+    border-radius: 8px;
     border: 1px solid rgba(69, 183, 209, 0.2);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
 }
 
 .summaryItem {
     display: flex;
     align-items: center;
-    gap: 12px;
-    margin-bottom: 8px;
-    padding: 8px 12px;
+    gap: 8px;
+    flex: 1 1 auto;
+    justify-content: center;
+    margin-bottom: 0;
+    padding: 5px 10px;
     background: rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
+    border-radius: 6px;
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
@@ -2349,6 +2356,37 @@
         linear-gradient(180deg, rgba(8, 28, 54, 0.96), rgba(2, 8, 18, 0.98));
     color: #e0f2fe;
     font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, -apple-system, sans-serif) !important;
+}
+
+/* Desktop system theme: grid so the item detail docks on the RIGHT (the
+   column flex above stacked it under the list like the mobile sheet). */
+.inventoryModalContentSystem {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
+}
+
+.inventoryModalContentSystem .mobileSystemHeader {
+    grid-column: 1 / -1;
+    grid-row: 1;
+}
+
+.inventoryModalContentSystem .inventoryLeftPanel {
+    grid-column: 1;
+    grid-row: 2;
+    min-height: 0;
+}
+
+/* Second column appears only while an item is selected (class set in TSX). */
+.inventoryModalContentSystemSplit {
+    grid-template-columns: minmax(0, 1fr) clamp(300px, 34%, 400px);
+}
+
+.inventoryModalContentSystemSplit .itemDetailsPanel {
+    grid-column: 2;
+    grid-row: 2;
+    min-height: 0;
+    max-height: none;
 }
 
 .inventoryModalContentSystem,
