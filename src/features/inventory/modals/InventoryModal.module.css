@@ -197,15 +197,21 @@
   display: none !important;
 }
 
-/* Native Obsidian X — hide (do not rely on JS remove; Modal restores the node). */
+/* Native Obsidian X (.modal-header-button on current builds, .modal-close-button on older). */
 :global(.modal.gamify-inventory-modal > .modal-close-button),
 :global(.modal.gamify-inventory-modal .modal-close-button),
-:global(.modal.gamify-inventory-modal .modal-close-btn),
+:global(.modal.gamify-inventory-modal > .modal-header-button),
+:global(.modal.gamify-inventory-modal .modal-header-button),
 :global(.gamify-inventory-modal-host > .modal-close-button),
 :global(.gamify-inventory-modal-host .modal-close-button),
+:global(.gamify-inventory-modal-host > .modal-header-button),
+:global(.gamify-inventory-modal-host .modal-header-button),
 :global(.modal-container:has(.gamify-inventory-modal) > .modal-close-button),
+:global(.modal-container:has(.gamify-inventory-modal) > .modal-header-button),
 :global(.modal-container .modal.gamify-inventory-modal .modal-close-button),
 :global(.modal-container .modal.gamify-inventory-modal > .modal-close-button),
+:global(.modal-container .modal.gamify-inventory-modal .modal-header-button),
+:global(.modal-container .modal.gamify-inventory-modal > .modal-header-button),
 :global(.modal-container .modal.gamify-inventory-modal .gamify-close-btn) {
   display: none !important;
   visibility: hidden !important;

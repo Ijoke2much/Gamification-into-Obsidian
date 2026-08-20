@@ -59,12 +59,16 @@ export class InventoryModalClass extends Modal {
 		style.textContent = `
 .modal.gamify-inventory-modal > .modal-close-button,
 .modal.gamify-inventory-modal .modal-close-button,
-.modal.gamify-inventory-modal .modal-close-btn,
+.modal.gamify-inventory-modal > .modal-header-button,
+.modal.gamify-inventory-modal .modal-header-button,
 .gamify-inventory-modal-host > .modal-close-button,
 .gamify-inventory-modal-host .modal-close-button,
-.gamify-inventory-modal-host .modal-close-btn,
+.gamify-inventory-modal-host > .modal-header-button,
+.gamify-inventory-modal-host .modal-header-button,
 .modal-container:has(.gamify-inventory-modal) > .modal-close-button,
-.modal-container:has(.gamify-inventory-modal) .modal-close-button {
+.modal-container:has(.gamify-inventory-modal) .modal-close-button,
+.modal-container:has(.gamify-inventory-modal) > .modal-header-button,
+.modal-container:has(.gamify-inventory-modal) .modal-header-button {
   display: none !important;
   visibility: hidden !important;
   opacity: 0 !important;
@@ -103,7 +107,7 @@ export class InventoryModalClass extends Modal {
 		};
 
 		const CLOSE_SELECTORS =
-			".modal-close-button, .modal-close-btn, .clickable-icon.modal-close-button";
+			".modal-close-button, .modal-close-btn, .modal-header-button, .clickable-icon.modal-header-button";
 
 		hide((this as unknown as { closeButtonEl?: HTMLElement }).closeButtonEl);
 		this.modalEl?.querySelectorAll(CLOSE_SELECTORS).forEach(hide);
