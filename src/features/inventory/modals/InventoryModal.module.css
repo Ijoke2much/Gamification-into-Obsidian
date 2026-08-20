@@ -197,9 +197,12 @@
   display: none !important;
 }
 
-/* Legacy / native close — kill hard (Obsidian X sits on the modal frame edge) */
-:global(.modal-container.gamify-inventory-modal-host > .modal-close-button),
-:global(.modal-container.gamify-inventory-modal-host .modal-close-button),
+/* Native Obsidian X — hide (do not rely on JS remove; Modal restores the node). */
+:global(.modal.gamify-inventory-modal > .modal-close-button),
+:global(.modal.gamify-inventory-modal .modal-close-button),
+:global(.modal.gamify-inventory-modal .modal-close-btn),
+:global(.gamify-inventory-modal-host > .modal-close-button),
+:global(.gamify-inventory-modal-host .modal-close-button),
 :global(.modal-container:has(.gamify-inventory-modal) > .modal-close-button),
 :global(.modal-container .modal.gamify-inventory-modal .modal-close-button),
 :global(.modal-container .modal.gamify-inventory-modal > .modal-close-button),

@@ -57,12 +57,14 @@ export class InventoryModalClass extends Modal {
 		const style = document.createElement("style");
 		style.setAttribute("data-gamify-inventory-close-kill", "true");
 		style.textContent = `
-.modal-container.gamify-inventory-modal-host > .modal-close-button,
-.modal-container.gamify-inventory-modal-host .modal-close-button,
-.modal-container.gamify-inventory-modal-host .modal-close-btn,
-.modal-container.gamify-inventory-modal-host [aria-label="Close"],
-.modal-container:has(.gamify-inventory-modal) .modal-close-button,
-.modal-container:has(.gamify-inventory-modal) .modal-close-btn {
+.modal.gamify-inventory-modal > .modal-close-button,
+.modal.gamify-inventory-modal .modal-close-button,
+.modal.gamify-inventory-modal .modal-close-btn,
+.gamify-inventory-modal-host > .modal-close-button,
+.gamify-inventory-modal-host .modal-close-button,
+.gamify-inventory-modal-host .modal-close-btn,
+.modal-container:has(.gamify-inventory-modal) > .modal-close-button,
+.modal-container:has(.gamify-inventory-modal) .modal-close-button {
   display: none !important;
   visibility: hidden !important;
   opacity: 0 !important;
@@ -78,50 +80,34 @@ export class InventoryModalClass extends Modal {
 		this.closeStyleEl = style;
 	}
 
-	/** Remove Obsidian / legacy X nodes — React System header owns the single close. */
+	/**
+	 * Hide Obsidian's native frame X. Do not remove() it — the Modal class
+	 * holds closeButtonEl and will re-insert a deleted node, which is why
+	 * the tiny corner X kept coming back.
+	 */
 	private hideNativeCloseButtons() {
-		const modal = this.modalEl;
-		if (!modal) return;
+		this.containerEl?.classList.add("gamify-inventory-modal-host");
+		this.modalEl?.classList.add("gamify-inventory-modal");
 
-		const kill = (el: Element) => {
+		const hide = (el: Element | null | undefined) => {
+			if (!el) return;
 			const html = el as HTMLElement;
+			// Never touch the plugin's own header close.
+			if (html.closest("[data-inventory-modal]")) return;
 			html.style.setProperty("display", "none", "important");
 			html.style.setProperty("visibility", "hidden", "important");
 			html.style.setProperty("opacity", "0", "important");
 			html.style.setProperty("pointer-events", "none", "important");
 			html.setAttribute("aria-hidden", "true");
-			html.remove();
+			html.setAttribute("tabindex", "-1");
 		};
 
-		// Anything close-shaped Obsidian may render, in any build's markup
 		const CLOSE_SELECTORS =
-			'.modal-close-button, .modal-close-btn, [aria-label="Close"], .gamify-close-btn';
+			".modal-close-button, .modal-close-btn, .clickable-icon.modal-close-button";
 
-		// Obsidian places this on the modal; remove so it cannot reappear over the frame
-		modal.querySelectorAll(CLOSE_SELECTORS).forEach(kill);
-
-		// Sweep container (some Obsidian builds nest close outside .modal)
-		const container = modal.closest(".modal-container") ?? modal.parentElement;
-		if (container) {
-			container.classList.add("gamify-inventory-modal-host");
-			container.querySelectorAll(CLOSE_SELECTORS).forEach(kill);
-		}
-
-		// Belt and braces: document-level sweep scoped to whichever container
-		// holds our modal — the parentElement assumption misses some layouts.
-		document.querySelectorAll(".modal-container").forEach((mc) => {
-			if (!mc.querySelector(".gamify-inventory-modal")) return;
-			mc.classList.add("gamify-inventory-modal-host");
-			mc.querySelectorAll(CLOSE_SELECTORS).forEach((el) => {
-				// Never kill our own React close button
-				if ((el as HTMLElement).closest("[data-inventory-modal]")) return;
-				kill(el);
-			});
-		});
-
-		// Some builds expose a close button handle on Modal
-		const closeBtn = (this as unknown as { closeButtonEl?: HTMLElement }).closeButtonEl;
-		if (closeBtn) kill(closeBtn);
+		hide((this as unknown as { closeButtonEl?: HTMLElement }).closeButtonEl);
+		this.modalEl?.querySelectorAll(CLOSE_SELECTORS).forEach(hide);
+		this.containerEl?.querySelectorAll(CLOSE_SELECTORS).forEach(hide);
 	}
 
 	private setupDragFunctionality() {
@@ -201,6 +187,7 @@ export class InventoryModalClass extends Modal {
 
 		// Mark this modal for targeted CSS without using :has()
 		this.modalEl.classList.add("gamify-inventory-modal");
+		this.containerEl.classList.add("gamify-inventory-modal-host");
 		this.modalEl.parentElement?.classList.add("gamify-inventory-modal-host");
 		this.ensureCloseKillStyle();
 		const onMobile = isLikelyMobileDevice();
@@ -241,14 +228,14 @@ export class InventoryModalClass extends Modal {
 		window.setTimeout(() => this.hideNativeCloseButtons(), 0);
 		window.setTimeout(() => this.hideNativeCloseButtons(), 120);
 
-		// Obsidian sometimes re-injects .modal-close-button after open — keep it gone
+		// Re-hide if Obsidian re-inserts the native X. Hiding (not removing)
+		// avoids a remove/restore loop that used to disable this observer.
 		this.closeWatcher?.disconnect();
 		this.closeWatcher = new MutationObserver(() => this.hideNativeCloseButtons());
-		this.closeWatcher.observe(this.modalEl, { childList: true, subtree: true });
-		const parent = this.modalEl.parentElement;
-		if (parent) {
-			this.closeWatcher.observe(parent, { childList: true });
-		}
+		// Direct children only — native X is a frame sibling of .modal / .modal-content,
+		// not inside the React tree. Observing subtree would refire on every inventory render.
+		this.closeWatcher.observe(this.modalEl, { childList: true });
+		this.closeWatcher.observe(this.containerEl, { childList: true });
 
 		// Drag chrome is desktop-only (conflicts with touch scroll on phone)
 		if (!onMobile) {
@@ -269,6 +256,7 @@ export class InventoryModalClass extends Modal {
 			"gamify-inventory-modal--mobile",
 			"gamify-inventory-modal--system"
 		);
+		this.containerEl.classList.remove("gamify-inventory-modal-host");
 		this.modalEl.parentElement?.classList.remove("gamify-inventory-modal-host");
 		this.modalEl.removeAttribute("data-gamification-mobile");
 		this.modalEl.removeAttribute("data-inventory-system");
