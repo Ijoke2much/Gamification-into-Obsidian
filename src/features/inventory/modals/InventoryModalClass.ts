@@ -58,7 +58,11 @@ export class InventoryModalClass extends Modal {
 		style.setAttribute("data-gamify-inventory-close-kill", "true");
 		style.textContent = `
 .modal-container.gamify-inventory-modal-host > .modal-close-button,
-.modal-container.gamify-inventory-modal-host .modal-close-button {
+.modal-container.gamify-inventory-modal-host .modal-close-button,
+.modal-container.gamify-inventory-modal-host .modal-close-btn,
+.modal-container.gamify-inventory-modal-host [aria-label="Close"],
+.modal-container:has(.gamify-inventory-modal) .modal-close-button,
+.modal-container:has(.gamify-inventory-modal) .modal-close-btn {
   display: none !important;
   visibility: hidden !important;
   opacity: 0 !important;
@@ -89,21 +93,35 @@ export class InventoryModalClass extends Modal {
 			html.remove();
 		};
 
+		// Anything close-shaped Obsidian may render, in any build's markup
+		const CLOSE_SELECTORS =
+			'.modal-close-button, .modal-close-btn, [aria-label="Close"], .gamify-close-btn';
+
 		// Obsidian places this on the modal; remove so it cannot reappear over the frame
-		modal.querySelectorAll(".modal-close-button").forEach(kill);
+		modal.querySelectorAll(CLOSE_SELECTORS).forEach(kill);
 
 		// Sweep container (some Obsidian builds nest close outside .modal)
-		const container = modal.parentElement;
-		if (container?.classList.contains("modal-container")) {
+		const container = modal.closest(".modal-container") ?? modal.parentElement;
+		if (container) {
 			container.classList.add("gamify-inventory-modal-host");
-			container.querySelectorAll(".modal-close-button").forEach(kill);
+			container.querySelectorAll(CLOSE_SELECTORS).forEach(kill);
 		}
+
+		// Belt and braces: document-level sweep scoped to whichever container
+		// holds our modal — the parentElement assumption misses some layouts.
+		document.querySelectorAll(".modal-container").forEach((mc) => {
+			if (!mc.querySelector(".gamify-inventory-modal")) return;
+			mc.classList.add("gamify-inventory-modal-host");
+			mc.querySelectorAll(CLOSE_SELECTORS).forEach((el) => {
+				// Never kill our own React close button
+				if ((el as HTMLElement).closest("[data-inventory-modal]")) return;
+				kill(el);
+			});
+		});
 
 		// Some builds expose a close button handle on Modal
 		const closeBtn = (this as unknown as { closeButtonEl?: HTMLElement }).closeButtonEl;
 		if (closeBtn) kill(closeBtn);
-
-		modal.querySelectorAll(".gamify-close-btn").forEach(kill);
 	}
 
 	private setupDragFunctionality() {
