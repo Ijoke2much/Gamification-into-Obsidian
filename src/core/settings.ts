@@ -268,6 +268,14 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
         settings: ['tutorialSettings', 'onboarding']
       },
       {
+        id: 'data-backup',
+        name: 'Backup & Restore',
+        icon: '💾',
+        description: 'Snapshot plugin settings and restore game data files',
+        color: '#0EA5E9',
+        settings: ['backup', 'restore', 'export', 'import', 'data.json']
+      },
+      {
         id: 'reset',
         name: 'Reset & Management',
         icon: '🔄',

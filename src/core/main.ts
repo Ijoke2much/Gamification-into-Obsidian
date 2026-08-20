@@ -493,6 +493,35 @@ export default class GamifiedObsidianPlugin extends Plugin {
 			},
 		});
 
+		this.addCommand({
+			id: 'restore-settings-backup',
+			name: 'Restore plugin settings from backup',
+			callback: async () => {
+				try {
+					const { listSettingsBackups, restoreSettingsBackup, backupPluginSettings } = await import('../shared/utils/settingsBackup');
+					const backups = await listSettingsBackups(this.app.vault);
+					if (backups.length === 0) {
+						showGameNotice('No settings backups yet — use Settings → Backup & Restore, or save settings once.', 4000);
+						return;
+					}
+					new RestoreSettingsBackupModal(this.app, backups, async (entry) => {
+						try {
+							await backupPluginSettings(this.app.vault, this.settings, { force: true });
+							await restoreSettingsBackup(this, entry.backupPath);
+							await this.loadSettings();
+							showGameNotice('Settings restored. Disable → enable the plugin if theme or modules look stale.', 5000);
+						} catch (err) {
+							console.error('Settings restore failed:', err);
+							showGameNotice('❌ Settings restore failed', 4000);
+						}
+					}).open();
+				} catch (err) {
+					console.error(err);
+					showGameNotice('❌ Could not list settings backups', 3000);
+				}
+			},
+		});
+
 	}
 
 	async loadSettings() {
@@ -536,6 +565,13 @@ export default class GamifiedObsidianPlugin extends Plugin {
 			...BALANCED_GAMEPLAY_MODULES,
 			...(this.settings.modules ?? {}),
 		};
+
+		try {
+			const { backupSettingsBeforeSave } = await import('../shared/utils/settingsBackup');
+			await backupSettingsBeforeSave(this);
+		} catch {
+			/* auto-backup is best-effort */
+		}
 
 		await this.saveData(this.settings);
 
@@ -2010,6 +2046,29 @@ class RestoreBackupModal extends FuzzySuggestModal<DataBackupEntry> {
 	}
 
 	onChooseItem(entry: DataBackupEntry): void {
+		void this.onPick(entry);
+	}
+}
+
+class RestoreSettingsBackupModal extends FuzzySuggestModal<{ backupPath: string; label: string }> {
+	constructor(
+		app: App,
+		private backups: { backupPath: string; label: string }[],
+		private onPick: (entry: { backupPath: string; label: string }) => void | Promise<void>
+	) {
+		super(app);
+		this.setPlaceholder('Pick a settings snapshot to restore…');
+	}
+
+	getItems() {
+		return this.backups;
+	}
+
+	getItemText(entry: { backupPath: string; label: string }): string {
+		return entry.label;
+	}
+
+	onChooseItem(entry: { backupPath: string; label: string }): void {
 		void this.onPick(entry);
 	}
 }

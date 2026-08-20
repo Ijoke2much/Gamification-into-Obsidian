@@ -25,6 +25,7 @@ import { TFile, TFolder } from 'obsidian';
 import type GamifiedObsidianPlugin from '../../../core/main';
 import styles from './SettingsUI.module.css';
 import { GameDataHubPanel } from './GameDataHubPanel';
+import { DataBackupPanel } from './DataBackupPanel';
 import { GameplayOnboardingModal } from './GameplayOnboardingModal';
 import { areSettingsEqual } from '../../../shared/utils/settingsSnapshot';
 import type { GameplayProfile } from '../../../core/settings';
@@ -398,6 +399,24 @@ export const SettingsUI: React.FC<SettingsUIProps> = ({
               <div className={styles.settingsSection}>
                 <Card className={styles.settingsCard}>
                   <p>Reload this settings panel from the Gamification plugin to use the Game data hub.</p>
+                </Card>
+              </div>
+            )
+          )}
+          {currentCategory.id === 'data-backup' && (
+            plugin ? (
+              <DataBackupPanel
+                plugin={plugin}
+                onSettingsApplied={() => {
+                  setSettings(plugin.settings);
+                  setSavedSettings(plugin.settings);
+                  onSettingsChange(plugin.settings);
+                }}
+              />
+            ) : (
+              <div className={styles.settingsSection}>
+                <Card className={styles.settingsCard}>
+                  <p>Reload this settings panel from the Gamification plugin to manage backups.</p>
                 </Card>
               </div>
             )
