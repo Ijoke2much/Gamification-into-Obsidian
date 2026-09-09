@@ -1091,6 +1091,74 @@
   isolation: isolate;
 }
 
+.claySidebarQuestShell {
+  isolation: isolate;
+}
+
+.container.claySidebarQuestShell {
+  padding: 12px;
+  gap: 12px;
+  background: transparent;
+  color: var(--clay-text, #3a342c);
+  font-family: var(--go-font-ui, "Nunito", "Segoe UI", system-ui, sans-serif);
+  font-size: 13px;
+  line-height: 1.45;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  box-sizing: border-box;
+}
+
+.container.claySidebarQuestShell .panelTitle {
+  font-family: inherit;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--clay-text-strong, #2c2722);
+  text-shadow: none;
+}
+
+.container.claySidebarQuestShell .section {
+  border: none;
+  border-radius: var(--clay-radius, 24px);
+  background: var(--clay-gradient);
+  box-shadow: var(--clay-shadow);
+}
+
+.container.claySidebarQuestShell .sectionTitle {
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--clay-accent-deep, #3fa39a);
+  text-shadow: none;
+  letter-spacing: 0.06em;
+}
+
+.container.claySidebarQuestShell .timelineNowBtn,
+.container.claySidebarQuestShell .calendarCollapseBtn,
+.container.claySidebarQuestShell .filterSelect {
+  border: none;
+  border-radius: 16px;
+  background: var(--clay-button-gradient);
+  color: var(--clay-text, #3a342c);
+  font-family: inherit;
+  box-shadow: var(--clay-shadow);
+}
+
+.container.claySidebarQuestShell .timelineTrack,
+.container.claySidebarQuestShell .calendarSection {
+  border: none;
+  border-radius: var(--clay-radius, 24px);
+  background: var(--clay-gradient);
+  box-shadow: var(--clay-shadow);
+}
+
+.container.claySidebarQuestShell .inboxItem {
+  border: none;
+  border-radius: 16px;
+  background: var(--clay-surface-2, #efe6d8);
+  box-shadow: var(--clay-recessed-soft);
+}
+
 /* Pixel / RPG shell — tokens from visualThemeManager (Classic preset by default) */
 .container.pixelSidebarQuestShell {
   padding: 10px;

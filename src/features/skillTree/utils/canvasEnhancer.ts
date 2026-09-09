@@ -3,6 +3,12 @@
 
 import { Vault, TFile } from 'obsidian';
 import { getAllSkills, SkillMetadata } from '../../../shared/utils/skillDiscovery';
+import {
+    ensureSkillTreeSkeleton,
+    HUNTER_MASTER_PATH,
+    resolveExistingMasterPath,
+    SKILL_TREE_CANVAS_PATH,
+} from './ensureSkillTreeSkeleton';
 
 export interface CanvasNode {
     id: string;
@@ -163,6 +169,11 @@ export class CanvasEnhancer {
      * Create initial canvas structure if none exists
      */
     private static async createInitialCanvas(vault: Vault): Promise<void> {
+        await ensureSkillTreeSkeleton(vault);
+        if (vault.getAbstractFileByPath(SKILL_TREE_CANVAS_PATH)) {
+            return;
+        }
+
         const skillsData = await this.gatherSkillData(vault);
 
         const initialCanvas: { nodes: CanvasNode[]; edges: CanvasEdge[] } = {
@@ -173,11 +184,10 @@ export class CanvasEnhancer {
         let nodeId = 1;
         let currentY = 50;
 
-        // Create Master Class node (always at top)
         const masterNode: CanvasNode = {
             id: `node-${nodeId++}`,
             type: 'file',
-            file: 'SkillTree/Master-Class/Jester 🎭.md',
+            file: resolveExistingMasterPath(vault) ?? HUNTER_MASTER_PATH,
             x: 400,
             y: currentY,
             width: this.NODE_SIZES.master.width,

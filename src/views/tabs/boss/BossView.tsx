@@ -21,7 +21,7 @@ export class BossView extends ItemView {
 	}
 
 	getDisplayText(): string {
-		return "Boss Battle";
+		return "Dungeon";
 	}
 
 	getIcon(): string {

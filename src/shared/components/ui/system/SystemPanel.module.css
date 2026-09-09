@@ -555,9 +555,19 @@
 }
 
 .resourceBarEXP {
-	--resource-fill: var(--go-exp-progress-fill, #ffffff);
-	--resource-fill-strong: var(--go-exp-progress-fill-strong, #d7e7ff);
-	--resource-glow: var(--go-exp-progress-glow, rgba(255, 255, 255, 0.42));
+	--resource-fill: #ffffff;
+	--resource-fill-strong: #ffffff;
+	--resource-glow: rgba(255, 255, 255, 0.5);
+}
+
+.resourceBarEXP .resourceBarIcon {
+	color: inherit;
+	filter: drop-shadow(0 0 6px rgba(143, 217, 168, 0.45));
+}
+
+.resourceBarEXP .resourceBarIconCol {
+	justify-content: flex-end;
+	padding-bottom: 2px;
 }
 
 .resourceBarIconCol {

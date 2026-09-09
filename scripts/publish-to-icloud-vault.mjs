@@ -46,7 +46,14 @@ console.log('   Version:', manifest.version);
 
 copyFile('manifest.json');
 copyFile('main.js');
-copyFile('main.css');
+copyFile('styles.css');
+
+const bratOnly = process.env.GAMIFICATION_BRAT_ONLY === '1';
+if (bratOnly) {
+	console.log('\n✅ BRAT-like install (3 files only; sprites inlined in main.js).');
+	console.log('   Enable the plugin in that vault, then disable → enable if it was already on.\n');
+	process.exit(0);
+}
 
 const assetsSrc = join(pluginRoot, 'assets');
 const assetsDest = join(icloudPlugin, 'assets');

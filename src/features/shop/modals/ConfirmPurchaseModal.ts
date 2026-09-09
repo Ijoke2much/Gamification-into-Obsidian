@@ -1,5 +1,6 @@
 import { App, Modal, Setting } from "obsidian";
 import type { ShopItem } from "src/features/shop/utils/ShopParser";
+import { resolveItemDisplayIcon } from "../../../shared/utils/pixelSprites";
 
 export class ConfirmPurchaseModal extends Modal {
 	item: ShopItem;
@@ -16,17 +17,17 @@ export class ConfirmPurchaseModal extends Modal {
 		contentEl.empty();
 		contentEl.createEl("h2", { text: `Buy ${this.item.name}?` });
 
-		if (this.item.icon) {
-			if (this.item.icon.startsWith("http")) {
-				const img = contentEl.createEl("img");
-				img.src = this.item.icon;
-				img.style.width = "48px";
-				img.style.height = "48px";
-				img.style.display = "block";
-				img.style.margin = "0 auto 8px auto";
-			} else {
-				contentEl.createEl("div", { text: this.item.icon, cls: "shop-item-emoji" });
-			}
+		const display = resolveItemDisplayIcon(this.item, "", this.app);
+		if (display.kind === "img") {
+			const img = contentEl.createEl("img");
+			img.src = display.src;
+			img.style.width = "48px";
+			img.style.height = "48px";
+			img.style.imageRendering = "pixelated";
+			img.style.display = "block";
+			img.style.margin = "0 auto 8px auto";
+		} else if (display.text) {
+			contentEl.createEl("div", { text: display.text, cls: "shop-item-emoji" });
 		}
 
 		contentEl.createEl("div", { text: `Price: ${this.item.price} coins`, cls: "shop-item-price" });

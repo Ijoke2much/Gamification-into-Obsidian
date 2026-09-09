@@ -19,6 +19,7 @@ export interface TodayRunStripProps {
 	variant?: 'mobile' | 'desktop';
 	/** Quiet tip when pane is narrow (no button) */
 	showWidenTip?: boolean;
+	clayUi?: boolean;
 }
 
 function formatNextUpTime(quest: Quest): string | null {
@@ -50,6 +51,7 @@ export const TodayRunStrip: React.FC<TodayRunStripProps> = ({
 	energyMax = 100,
 	variant = 'mobile',
 	showWidenTip = false,
+	clayUi = false,
 }) => {
 	const nextTime = nextUp ? formatNextUpTime(nextUp) : null;
 	const hasEnergy =
@@ -64,7 +66,7 @@ export const TodayRunStrip: React.FC<TodayRunStripProps> = ({
 
 	return (
 		<section
-			className={`${styles.strip} ${isDesktop ? styles.stripDesktop : ''}`}
+			className={`${styles.strip} ${isDesktop ? styles.stripDesktop : ''} ${clayUi ? styles.stripClay : ''}`}
 			data-today-run-strip
 			aria-label="Today's run"
 		>
@@ -91,14 +93,29 @@ export const TodayRunStrip: React.FC<TodayRunStripProps> = ({
 								⚡ Energy <strong>{Math.round(energyCurrent!)}</strong>/{energyMax}
 							</span>
 							<div className={styles.batteryWrap}>
-								<BatteryProgressBar
-									percent={energyPct}
-									segments={12}
-									width={batteryWidth}
-									height={batteryHeight}
-									statType="energy"
-									pixel={false}
-								/>
+								{clayUi ? (
+									<div
+										className={styles.clayEnergyTrack}
+										role="meter"
+										aria-valuemin={0}
+										aria-valuemax={energyMax}
+										aria-valuenow={Math.round(energyCurrent!)}
+									>
+										<span
+											className={styles.clayEnergyFill}
+											style={{ width: `${energyPct}%` }}
+										/>
+									</div>
+								) : (
+									<BatteryProgressBar
+										percent={energyPct}
+										segments={12}
+										width={batteryWidth}
+										height={batteryHeight}
+										statType="energy"
+										pixel={false}
+									/>
+								)}
 							</div>
 						</div>
 					)}

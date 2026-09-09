@@ -2,8 +2,7 @@ import { normalizePath, TFile, TFolder, type App } from 'obsidian';
 import type { GamificationPluginSettings } from '../../../core/settings';
 import {
 	getConfiguredListQuestPaths,
-	getTaskNoteFolder,
-	isPerNoteMode,
+	getSharedTaskNoteFolders,
 	type QuestLoadSettings,
 } from './questNoteService';
 import { getCaptureFilePath } from './captureService';
@@ -29,8 +28,8 @@ function collectMarkdownInFolder(folder: TFolder): string[] {
 export function getTaskNotesFolder(settings: QuestLoadSettings & Pick<GamificationPluginSettings, 'taskNotesFolder'>): string {
 	const custom = settings.taskNotesFolder?.trim();
 	if (custom) return normalizePath(custom);
-	if (isPerNoteMode(settings)) return getTaskNoteFolder(settings);
-	return '';
+	const folders = getSharedTaskNoteFolders(settings);
+	return folders[0] || '';
 }
 
 /** List-file paths plus optional per-note / TaskNotes folders and extra watch paths. */
@@ -40,13 +39,8 @@ export function getQuestWatchListPaths(settings: WatchSettings): string[] {
 	const capturePath = getCaptureFilePath(settings as GamificationPluginSettings);
 	paths.delete(capturePath);
 
-	if (isPerNoteMode(settings)) {
-		paths.add(getTaskNoteFolder(settings));
-	}
-
-	if (settings.taskNotesCompatibility !== false) {
-		const tnFolder = getTaskNotesFolder(settings);
-		if (tnFolder) paths.add(tnFolder);
+	for (const folder of getSharedTaskNoteFolders(settings)) {
+		paths.add(folder);
 	}
 
 	for (const raw of settings.externalWatchPaths ?? []) {

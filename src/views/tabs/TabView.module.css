@@ -753,9 +753,12 @@
     margin-top: 0;
     padding: 6px 0 8px;
     /* Opaque only — backdrop-filter blur freezes Obsidian iOS while scrolling */
-    background: var(--background-primary, #0a1628);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
+}
+
+:global(html:not([data-gamification-visual-theme='clay'])) .container[data-gamification-mobile='true'] .tabNavBar {
+    background: var(--background-primary, #0a1628);
 }
 
 .container[data-gamification-mobile='true'] .checkInNavChip {
@@ -984,13 +987,17 @@
 /* ─── Clay theme: ChatGPT design-system chrome ─── */
 :global([data-gamification-visual-theme='clay'].gamification-player-shell),
 :global([data-gamification-visual-theme='clay'] .gamification-player-shell) {
-    background: var(--go-screen-bg, linear-gradient(180deg, #d7ece7, #c9e3de)) !important;
-    color: var(--clay-text, #2e2e2e);
+    background: var(--go-screen-bg, linear-gradient(180deg, #f4efe6, #e8dfd2)) !important;
+    background-color: var(--clay-bg, #efe8dc) !important;
+    color: var(--clay-text, #3a342c);
+    min-height: 100%;
 }
 
 [data-gamification-visual-theme='clay'] .container {
-    background: transparent;
+    background: var(--go-screen-bg, linear-gradient(180deg, #f4efe6, #e8dfd2));
+    background-color: var(--clay-bg, #efe8dc);
     color: var(--clay-text, #2e2e2e);
+    min-height: 100%;
 }
 
 [data-gamification-visual-theme='clay'] .debugRow {
@@ -1044,7 +1051,7 @@
     margin: 8px 0 14px;
     padding: 6px;
     border-radius: var(--clay-radius, 22px);
-    background: var(--clay-gradient, linear-gradient(145deg, #f6f2ec, #efe8df));
+    background: var(--clay-gradient, linear-gradient(145deg, #f6f2ec, #efe8df)) !important;
     border: 1px solid rgba(255, 255, 255, 0.45);
     box-shadow: var(--clay-shadow);
 }

@@ -1,6 +1,7 @@
 import { Vault, TFile } from "obsidian";
 const matter = require("gray-matter");
-import { PlayerData, DEFAULT_PLAYER } from "../../../data/models/PlayerData";
+import { PlayerData, DEFAULT_PLAYER, createStarterPlayerData } from "../../../data/models/PlayerData";
+import { dreamFromFrontmatter } from "../../../data/models/DreamPlayer";
 import { readYamlFrontmatter, sanitizeForYaml } from "../../../shared/utils/progressUpdater";
 import { isLikelyMobileDevice } from "../../../shared/utils/deviceDetect";
 
@@ -16,6 +17,21 @@ let writeLock = false;
 let queuedData: PlayerData | null = null;
 let debounceTimer: number | null = null;
 const DEBOUNCE_MS = 500;
+type PlayerWriteWaiter = { resolve: () => void; reject: (error: unknown) => void };
+let writeWaiters: PlayerWriteWaiter[] = [];
+
+function findExistingMasterClassName(vault: Vault): string | null {
+  const found = vault.getMarkdownFiles().find((file) => {
+    if (!file.path.startsWith("SkillTree/Master-Class/")) return false;
+    if (!file.path.endsWith(".md")) return false;
+    if (file.path.includes("/Class/")) return false;
+    if (file.path.includes("/Skills/")) return false;
+    if (file.path.includes("/Stats/")) return false;
+    if (file.path.includes("/Stat/")) return false;
+    return true;
+  });
+  return found?.basename.replace(/\s*🎭\s*$/, "").trim() || null;
+}
 
 async function ensureBackupDir(vault: Vault) {
   const dir = vault.getAbstractFileByPath(BACKUP_DIR);
@@ -149,6 +165,7 @@ function parsePlayerDataFromMarkdown(content: string): PlayerData | null {
     failureDebtXP: Number(data.failureDebtXP ?? 0),
     failureDebtCoins: Number(data.failureDebtCoins ?? 0),
     questReputation: Number(data.questReputation ?? 0),
+    dream: dreamFromFrontmatter(data as Record<string, unknown>),
     lastDailyReset: String(data.lastDailyReset || new Date().toISOString()),
   };
 }
@@ -318,7 +335,10 @@ export async function readPlayerData(vault: Vault): Promise<PlayerData | null> {
         }
       }
 
-      const initialFrontmatter = sanitizeForYaml({ ...DEFAULT_PLAYER }) as Record<string, unknown>;
+      const starter = createStarterPlayerData();
+      const existingMaster = findExistingMasterClassName(vault);
+      if (existingMaster) starter.masterClass = existingMaster;
+      const initialFrontmatter = sanitizeForYaml(starter) as Record<string, unknown>;
       const initialContent = matter.stringify("\n## Player Profile\n\nThis file is managed by the Gamification plugin.", initialFrontmatter);
 
       try {
@@ -374,11 +394,11 @@ export async function readPlayerData(vault: Vault): Promise<PlayerData | null> {
             const restoredContent = await vault.read(tfile);
             const { data } = matter(restoredContent);
             const playerData: PlayerData = {
-              name: String(data.name ?? 'The Tester'),
-              avatar: String(data.avatar ?? 'assets/sonic.png'),
-              rank: String(data.rank ?? 'E'),
-              masterClass: String(data.masterClass ?? 'Jester'),
-              description: String(data.description ?? 'A player'),
+              name: String(data.name ?? DEFAULT_PLAYER.name),
+              avatar: String(data.avatar ?? DEFAULT_PLAYER.avatar),
+              rank: String(data.rank ?? DEFAULT_PLAYER.rank),
+              masterClass: String(data.masterClass ?? DEFAULT_PLAYER.masterClass),
+              description: String(data.description ?? DEFAULT_PLAYER.description),
               level: Number(data.level ?? 1),
               xp: Number(data.xp ?? 0),
               xpRequired: Number(data.xpRequired ?? 100),
@@ -399,6 +419,7 @@ export async function readPlayerData(vault: Vault): Promise<PlayerData | null> {
               totalBossVictories: Number(data.totalBossVictories ?? 0),
               unlockedSkills: Array.isArray(data.unlockedSkills) ? data.unlockedSkills as string[] : [],
               achievements: Array.isArray(data.achievements) ? data.achievements as string[] : [],
+              dream: dreamFromFrontmatter(data as Record<string, unknown>),
               lastDailyReset: String(data.lastDailyReset || new Date().toISOString()),
             };
             Object.keys(data).forEach(key => {
@@ -475,6 +496,8 @@ export async function readPlayerData(vault: Vault): Promise<PlayerData | null> {
       // Achievement system
       achievements: Array.isArray(data.achievements) ? data.achievements as string[] : [],
 
+      dream: dreamFromFrontmatter(data as Record<string, unknown>),
+
       // System properties
       lastDailyReset: String(data.lastDailyReset || new Date().toISOString()),
     };
@@ -518,10 +541,50 @@ export async function readPlayerData(vault: Vault): Promise<PlayerData | null> {
   }
 }
 
+async function flushQueuedPlayerData(vault: Vault, file: TFile): Promise<void> {
+  while (queuedData) {
+    if (writeLock) {
+      await new Promise((r) => setTimeout(r, 40));
+      continue;
+    }
+    const snapshot = queuedData;
+    writeLock = true;
+    try {
+      const content = await vault.read(file);
+      const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(
+        navigator.userAgent.toLowerCase()
+      );
+      let updated: string;
+      if (!content || content.trim().length === 0) {
+        updated = createPlayerDataContent(snapshot);
+      } else if (isMobile) {
+        updated = updateYamlContent(content, snapshot);
+      } else {
+        const parsed = matter(content);
+        const merged = { ...parsed.data, ...snapshot } as Record<string, unknown>;
+        const sanitized = sanitizeForYaml(merged) as Record<string, unknown>;
+        updated = matter.stringify(parsed.content, sanitized);
+      }
+      let attempts = 0;
+      while (true) {
+        try {
+          await performWrite(vault, file, updated);
+          break;
+        } catch (e) {
+          if (++attempts > 2) throw e;
+          await new Promise((r) => setTimeout(r, 250 * attempts));
+        }
+      }
+      if (queuedData === snapshot) queuedData = null;
+    } finally {
+      writeLock = false;
+    }
+  }
+}
+
 // Writes updated PlayerData to PlayerData.md (updates YAML frontmatter, preserves rest of file)
 export async function updatePlayerData(vault: Vault, newData: PlayerData): Promise<void> {
   const filePath = "SkillTree/PlayerData.md";
-  // SAFEGUARD
   if (!newData.name || newData.level === undefined || newData.xp === undefined) {
     throw new Error('Cannot save PlayerData: critical fields missing');
   }
@@ -530,44 +593,19 @@ export async function updatePlayerData(vault: Vault, newData: PlayerData): Promi
     throw new Error(`[updatePlayerData] File exists but not accessible: ${filePath}`);
   }
 
-  // Queue latest data and debounce
-  queuedData = { ...newData, schemaVersion: SCHEMA_VERSION } as any;
+  queuedData = { ...newData, schemaVersion: SCHEMA_VERSION } as PlayerData & { schemaVersion: number };
   if (debounceTimer) window.clearTimeout(debounceTimer);
 
-  await new Promise<void>((resolve) => {
-    debounceTimer = window.setTimeout(async () => {
-      if (writeLock) { resolve(); return; }
-      writeLock = true;
-      try {
-        const content = await vault.read(file);
-        const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent.toLowerCase());
-        let updated: string;
-        if (!content || content.trim().length === 0) {
-          updated = createPlayerDataContent(queuedData!);
-        } else if (isMobile) {
-          updated = updateYamlContent(content, queuedData!);
-        } else {
-          const parsed = matter(content);
-          const merged = { ...parsed.data, ...queuedData } as Record<string, unknown>;
-          const sanitized = sanitizeForYaml(merged) as Record<string, unknown>;
-          updated = matter.stringify(parsed.content, sanitized);
-        }
-        // retries
-        let attempts = 0;
-        while (true) {
-          try {
-            await performWrite(vault, file, updated);
-            break;
-          } catch (e) {
-            if (++attempts > 2) throw e;
-            await new Promise(r => setTimeout(r, 250 * attempts));
-          }
-        }
-      } finally {
-        writeLock = false;
-        queuedData = null;
-        resolve();
-      }
+  await new Promise<void>((resolve, reject) => {
+    writeWaiters.push({ resolve, reject });
+    debounceTimer = window.setTimeout(() => {
+      debounceTimer = null;
+      const waiters = writeWaiters;
+      writeWaiters = [];
+      flushQueuedPlayerData(vault, file).then(
+        () => waiters.forEach((w) => w.resolve()),
+        (error) => waiters.forEach((w) => w.reject(error))
+      );
     }, DEBOUNCE_MS);
   });
 }
@@ -688,6 +726,9 @@ function createPlayerDataContent(data: PlayerData): string {
   }
   yamlLines.push(`consecutiveBossWins: ${data.consecutiveBossWins || 0}`);
   yamlLines.push(`totalBossVictories: ${data.totalBossVictories || 0}`);
+  yamlLines.push(`dreamHp: ${data.dream?.hp == null ? '' : data.dream.hp}`);
+  yamlLines.push(`dreamLastOutcome: ${serializeYamlValue(data.dream?.lastOutcome || '')}`);
+  yamlLines.push(`dreamLastBossName: ${serializeYamlValue(data.dream?.lastBossName || '')}`);
 
   // Add skill system fields
   if (data.unlockedSkills && data.unlockedSkills.length > 0) {
@@ -830,6 +871,9 @@ function updateYamlContent(content: string, newData: PlayerData): string {
   }
   updatedYaml.push(`consecutiveBossWins: ${newData.consecutiveBossWins || 0}`);
   updatedYaml.push(`totalBossVictories: ${newData.totalBossVictories || 0}`);
+  updatedYaml.push(`dreamHp: ${newData.dream?.hp == null ? '' : newData.dream.hp}`);
+  updatedYaml.push(`dreamLastOutcome: ${serializeYamlValue(newData.dream?.lastOutcome || '')}`);
+  updatedYaml.push(`dreamLastBossName: ${serializeYamlValue(newData.dream?.lastBossName || '')}`);
 
   // Add skill system fields
   if (newData.unlockedSkills && newData.unlockedSkills.length > 0) {

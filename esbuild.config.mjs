@@ -2,6 +2,7 @@ import esbuild from "esbuild";
 import cssModulesPlugin from "esbuild-css-modules-plugin";
 import process from "process";
 import builtins from "builtin-modules";
+import { copyFileSync, existsSync } from "fs";
 import { execSync } from "child_process";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
@@ -55,13 +56,13 @@ const context = await esbuild.context({
 	legalComments: 'none',
 	mainFields: ['module', 'main'],
 	resolveExtensions: ['.tsx', '.ts', '.jsx', '.js', '.json'],
-	// PNG/JPG are NOT inlined — ship under assets/ and load via getPluginAssetUrl()
+	// Inline images so BRAT / Community Plugin installs (main.js + styles.css) still have sprites.
 	loader: {
-		'.png': 'file',
-		'.jpg': 'file',
-		'.jpeg': 'file',
-		'.gif': 'file',
-		'.svg': 'file',
+		'.png': 'dataurl',
+		'.jpg': 'dataurl',
+		'.jpeg': 'dataurl',
+		'.gif': 'dataurl',
+		'.svg': 'dataurl',
 	},
 	plugins: [
 		cssModulesPlugin({
@@ -69,6 +70,17 @@ const context = await esbuild.context({
 			localsConvention: 'camelCase',
 			generateScopedName: prod ? '[hash:base64:5]' : '[name]__[local]'
 		}),
+		{
+			name: 'copy-obsidian-styles',
+			setup(build) {
+				build.onEnd(() => {
+					const css = join(rootDir, 'main.css');
+					if (existsSync(css)) {
+						copyFileSync(css, join(rootDir, 'styles.css'));
+					}
+				});
+			}
+		},
 		{
 			name: 'performance-optimizer',
 			setup(build) {
@@ -86,8 +98,8 @@ const context = await esbuild.context({
 });
 
 if (prod) {
-	await context.rebuild();
 	execSync('node scripts/copy-plugin-assets.mjs', { cwd: rootDir, stdio: 'inherit' });
+	await context.rebuild();
 	execSync('node scripts/verify-plugin-build.mjs', { cwd: rootDir, stdio: 'inherit' });
 	console.log("✅ Production build completed successfully!");
 	process.exit(0);

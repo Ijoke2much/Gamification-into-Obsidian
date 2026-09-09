@@ -5,6 +5,19 @@ import InventoryModal from "./InventoryModal";
 import { isLikelyMobileDevice } from "../../../shared/utils/deviceDetect";
 import { getAppliedVisualTheme } from "../../../shared/utils/visualThemeManager";
 
+function isClayTheme(): boolean {
+	try {
+		const applied = getAppliedVisualTheme();
+		if (applied.preset === "clay") return true;
+	} catch {
+		/* ignore */
+	}
+	if (typeof document !== "undefined") {
+		return document.documentElement.getAttribute("data-gamification-visual-theme") === "clay";
+	}
+	return false;
+}
+
 function isSystemHunterTheme(): boolean {
 	try {
 		const applied = getAppliedVisualTheme();
@@ -195,9 +208,23 @@ export class InventoryModalClass extends Modal {
 		this.modalEl.parentElement?.classList.add("gamify-inventory-modal-host");
 		this.ensureCloseKillStyle();
 		const onMobile = isLikelyMobileDevice();
-		const systemTheme = isSystemHunterTheme();
+		const clayTheme = isClayTheme();
+		const systemTheme = !clayTheme && isSystemHunterTheme();
 
-		if (onMobile) {
+		if (clayTheme) {
+			this.modalEl.classList.add("gamify-inventory-modal--clay");
+			this.modalEl.classList.remove(
+				"gamify-inventory-modal--pixel",
+				"gamify-inventory-modal--system"
+			);
+			this.modalEl.setAttribute("data-clay-shell", "inventory");
+			this.modalEl.removeAttribute("data-inventory-system");
+			this.modalEl.removeAttribute("data-pixel-shell");
+			if (onMobile) {
+				this.modalEl.classList.add("gamify-inventory-modal--mobile");
+				this.modalEl.setAttribute("data-gamification-mobile", "true");
+			}
+		} else if (onMobile) {
 			// Solo Leveling / System Hunter chrome — never attach --pixel on phone
 			this.modalEl.classList.add(
 				"gamify-inventory-modal--mobile",
@@ -205,7 +232,6 @@ export class InventoryModalClass extends Modal {
 			);
 			this.modalEl.setAttribute("data-gamification-mobile", "true");
 		} else if (systemTheme) {
-			// Desktop Solo Leveling: same system shell as mobile (not pixel RPG)
 			this.modalEl.classList.add("gamify-inventory-modal--system");
 			this.modalEl.classList.remove("gamify-inventory-modal--pixel");
 		} else {
@@ -213,9 +239,9 @@ export class InventoryModalClass extends Modal {
 			this.modalEl.classList.remove("gamify-inventory-modal--system");
 		}
 
-		if (systemTheme || onMobile) {
+		if (!clayTheme && (systemTheme || onMobile)) {
 			this.modalEl.setAttribute("data-inventory-system", "true");
-		} else {
+		} else if (!clayTheme) {
 			this.modalEl.removeAttribute("data-inventory-system");
 		}
 

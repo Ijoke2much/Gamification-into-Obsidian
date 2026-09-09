@@ -19,9 +19,11 @@ import {
 } from '../utils/completionLedger';
 import {
 	buildQuestFromTaskNotesContent,
-	detectTaskNotesStatusCompletion,
-	isGamifiedTaskContent,
-	isTaskNotesContent,
+	detectSharedNoteCompletion,
+	isSharedTaskNoteContent,
+	noteCompletionKey,
+	applySharedNoteCompletion,
+	hydrateQuestRewardsFromNote,
 } from '../utils/taskNotesAdapter';
 import {
 	cacheAllWatchedFiles,
@@ -105,45 +107,63 @@ export class QuestCompletionTracker {
 		const settings = this.getSettings();
 		const completions: Array<{ key: string; quest: Quest; title: string; lineNumber: number }> = [];
 
-		const oldLines = oldContent.split('\n');
-		const newLines = newContent.split('\n');
-
-		for (let i = 0; i < Math.max(oldLines.length, newLines.length); i++) {
-			const oldLine = oldLines[i] || '';
-			const newLine = newLines[i] || '';
-
-			if (!this.isInlineTaskCompletion(oldLine, newLine)) continue;
-
-			const lineNumber = i + 1;
-			const key = buildCompletionKey(filePath, lineNumber);
-			if (await isCompletionRewarded(this.app, key)) continue;
-
-			const quest = this.buildQuestFromLine(newLine, filePath, lineNumber);
-			if (!quest) continue;
-
-			completions.push({ key, quest, title: quest.title, lineNumber });
-		}
-
 		if (
 			settings.taskNotesCompatibility !== false &&
-			detectTaskNotesStatusCompletion(oldContent, newContent)
+			isSharedTaskNoteContent(newContent) &&
+			detectSharedNoteCompletion(oldContent, newContent)
 		) {
-			const key = buildCompletionKey(filePath, undefined, 'status');
-			if (!(await isCompletionRewarded(this.app, key))) {
-				const eligible =
-					isGamifiedTaskContent(newContent) ||
-					isTaskNotesContent(newContent);
-				if (eligible) {
-					const quest = buildQuestFromTaskNotesContent(newContent, filePath);
-					if (quest) {
-						completions.push({ key, quest, title: quest.title, lineNumber: quest.lineNumber ?? 1 });
-					}
+			const key = noteCompletionKey(filePath);
+			const legacyStatusKey = buildCompletionKey(filePath, undefined, 'status');
+			const already =
+				(await isCompletionRewarded(this.app, key)) ||
+				(await isCompletionRewarded(this.app, legacyStatusKey));
+			if (!already) {
+				const quest = buildQuestFromTaskNotesContent(newContent, filePath);
+				if (quest) {
+					completions.push({
+						key,
+						quest,
+						title: quest.title,
+						lineNumber: quest.lineNumber ?? 1,
+					});
 				}
+			}
+		} else {
+			const oldLines = oldContent.split('\n');
+			const newLines = newContent.split('\n');
+
+			for (let i = 0; i < Math.max(oldLines.length, newLines.length); i++) {
+				const oldLine = oldLines[i] || '';
+				const newLine = newLines[i] || '';
+
+				if (!this.isInlineTaskCompletion(oldLine, newLine)) continue;
+
+				const lineNumber = i + 1;
+				const key = buildCompletionKey(filePath, lineNumber);
+				if (await isCompletionRewarded(this.app, key)) continue;
+
+				const quest = this.buildQuestFromLine(newLine, filePath, lineNumber);
+				if (!quest) continue;
+
+				completions.push({ key, quest, title: quest.title, lineNumber });
 			}
 		}
 
 		for (const item of completions) {
 			await this.processQuestCompletion(item.quest, item.key, item.title, filePath, item.lineNumber);
+		}
+
+		if (completions.length > 0 && isSharedTaskNoteContent(newContent)) {
+			const synced = applySharedNoteCompletion(newContent, true);
+			if (synced !== newContent) {
+				const file = this.app.vault.getAbstractFileByPath(filePath);
+				if (file instanceof TFile) {
+					this.fileContentsCache.set(filePath, synced);
+					await this.app.vault.modify(file, synced);
+				}
+			}
+			await markCompletionRewarded(this.app, noteCompletionKey(filePath));
+			await markCompletionRewarded(this.app, buildCompletionKey(filePath, undefined, 'status'));
 		}
 	}
 
@@ -200,7 +220,22 @@ export class QuestCompletionTracker {
 			console.log(`[QuestTracker] Quest completed: "${title}" in ${filePath}:${lineNumber}`);
 
 			const settings = this.getSettings();
-			const rewardResult = await awardQuestRewards(this.app.vault, quest, settings, this.app);
+			const file = this.app.vault.getAbstractFileByPath(filePath);
+			let rewardedQuest = quest;
+			if (file instanceof TFile) {
+				const content = await this.app.vault.read(file);
+				const line =
+					typeof quest.lineNumber === 'number' && quest.lineNumber > 0
+						? content.split('\n')[quest.lineNumber - 1]
+						: undefined;
+				rewardedQuest = hydrateQuestRewardsFromNote(quest, {
+					app: this.app,
+					file,
+					content,
+					taskLine: line,
+				});
+			}
+			const rewardResult = await awardQuestRewards(this.app.vault, rewardedQuest, settings, this.app);
 
 			await markCompletionRewarded(this.app, ledgerKey);
 
@@ -210,13 +245,13 @@ export class QuestCompletionTracker {
 			await achievementEventService.processGameEvent({
 				type: 'quest_completed',
 				data: {
-					questData: { title, xp: quest.xp, difficulty: quest.difficulty, completion: 100 },
+					questData: { title, xp: rewardedQuest.xp, difficulty: rewardedQuest.difficulty, completion: 100 },
 				},
 				timestamp: new Date(),
 			});
 			await achievementEventService.processGameEvent({
 				type: 'task_completed',
-				data: { taskData: { title, difficulty: quest.difficulty } },
+				data: { taskData: { title, difficulty: rewardedQuest.difficulty } },
 				timestamp: new Date(),
 			});
 
@@ -274,7 +309,7 @@ export class QuestCompletionTracker {
 	}
 
 	private extractXP(taskLine: string): number {
-		const xpMatch = taskLine.match(/✨(\d+)/);
+		const xpMatch = taskLine.match(/✨\uFE0F?(\d+)/u);
 		if (xpMatch) return parseInt(xpMatch[1], 10);
 		if (taskLine.includes('🔥')) return 100;
 		if (taskLine.includes('🌱')) return 25;
@@ -282,7 +317,7 @@ export class QuestCompletionTracker {
 	}
 
 	private extractCP(taskLine: string): number {
-		const cpMatch = taskLine.match(/⭐(\d+)/);
+		const cpMatch = taskLine.match(/⭐\uFE0F?(\d+)/u) || taskLine.match(/🧠(\d+)/);
 		if (cpMatch) return parseInt(cpMatch[1], 10);
 		return 0;
 	}

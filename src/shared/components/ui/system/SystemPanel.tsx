@@ -202,13 +202,44 @@ const ResourceCrystalIcon = () => (
 	</svg>
 );
 
+/** Up-arrow XP mark (mint shaft + cream XP), sized for the System HUD. */
+const ResourceXpArrowIcon = () => (
+	<svg viewBox="0 0 32 32" width="22" height="22" aria-hidden="true">
+		<path d="M7.2 13.2 16 3.6l8.8 9.6H20.4v3.2h-8.8v-3.2H7.2z" fill="#8fd9a8" />
+		<path d="M16 3.6 24.8 13.2H20.4v3.2h-4.4V3.6z" fill="#6fc090" />
+		<rect x="11.6" y="22.2" width="8.8" height="6.2" rx="1.1" fill="#8fd9a8" />
+		<rect x="16" y="22.2" width="4.4" height="6.2" rx="1.1" fill="#6fc090" />
+		<text
+			x="16"
+			y="21.1"
+			textAnchor="middle"
+			fill="#e8d6b0"
+			fontSize="7.2"
+			fontWeight="800"
+			fontFamily="ui-sans-serif, system-ui, sans-serif"
+			letterSpacing="0.4"
+		>
+			XP
+		</text>
+		<path fill="#e8d6b0" d="M5.4 17.2 6.6 19l-1.8.6 1.8.6-1.2 1.8.2-2 1.8-.4-1.8-.4z" />
+		<path fill="#e8d6b0" d="M25.2 21.4 26.6 23.4l-2.2.6 2.2.6-1.4 2 .2-2.2 2.2-.4-2.2-.4z" />
+		<rect x="4.2" y="23.4" width="2.2" height="0.7" rx="0.3" fill="#8fd9a8" />
+		<rect x="4.95" y="22.65" width="0.7" height="2.2" rx="0.3" fill="#8fd9a8" />
+		<rect x="26.4" y="8.6" width="2.6" height="0.8" rx="0.35" fill="#e8d6b0" />
+		<rect x="27.3" y="7.7" width="0.8" height="2.6" rx="0.35" fill="#e8d6b0" />
+		<circle cx="8.4" cy="9.4" r="0.85" fill="#8fd9a8" />
+		<circle cx="24.6" cy="16.2" r="0.7" fill="#e8d6b0" />
+		<circle cx="22.8" cy="28.2" r="0.65" fill="#8fd9a8" />
+	</svg>
+);
+
 export type SystemResourceIcon = 'hp' | 'mp' | 'cp' | 'exp';
 
 const RESOURCE_ICONS: Record<SystemResourceIcon, React.FC> = {
 	hp: ResourcePlusIcon,
 	mp: ResourceFlaskIcon,
 	cp: ResourceCrystalIcon,
-	exp: ResourcePlusIcon,
+	exp: ResourceXpArrowIcon,
 };
 
 export const SystemResourceBar: React.FC<{

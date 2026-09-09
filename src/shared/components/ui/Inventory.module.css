@@ -21,6 +21,7 @@
     min-width: 0;
     min-height: 0;
     flex: 1;
+    overflow: hidden;
 }
 
 .inventoryLeftPanelSplit {
@@ -48,6 +49,134 @@
     align-items: center;
 }
 
+.kitDressing {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 12px 16px;
+    border-bottom: 1px solid var(--go-border, rgba(34, 200, 255, 0.28));
+    background:
+        radial-gradient(circle at 50% 0%, rgba(34, 200, 255, 0.1), transparent 62%),
+        rgba(8, 28, 54, 0.45);
+    flex-shrink: 0;
+}
+
+.kitModeRow {
+    display: flex;
+    gap: 0;
+    border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42));
+    background: rgba(4, 14, 28, 0.7);
+}
+
+.kitModeButton {
+    padding: 7px 18px;
+    border: none;
+    background: transparent;
+    color: var(--go-muted, #9ec7df);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.kitModeActive {
+    color: var(--go-text-bright, #f0f9ff);
+    background: var(--go-accent-soft, rgba(34, 200, 255, 0.18));
+    box-shadow: inset 0 0 0 1px var(--go-border-strong, rgba(34, 200, 255, 0.7));
+}
+
+.kitHint {
+    margin: 0;
+    font-size: 11px;
+    color: var(--go-muted, #9ec7df);
+    text-align: center;
+    max-width: 280px;
+    line-height: 1.4;
+}
+
+.kitMain {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    flex: 1;
+    overflow: hidden;
+}
+
+.kitStage {
+    display: grid;
+    grid-template-columns: 1fr;
+    min-height: 0;
+    min-width: 0;
+    border-bottom: 1px solid var(--go-border, rgba(34, 200, 255, 0.28));
+}
+
+.inventoryLeftPanelKit {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto minmax(0, 1fr);
+    min-height: 0;
+}
+
+.inventoryLeftPanelKit .tabNavigation {
+    grid-column: 1;
+    grid-row: 1;
+}
+
+.inventoryLeftPanelKit .kitStage {
+    grid-column: 1;
+    grid-row: 2;
+    max-height: min(58vh, 480px);
+    overflow: auto;
+}
+
+.inventoryLeftPanelKit .kitDressing {
+    border-bottom: none;
+}
+
+.inventoryLeftPanelKit .kitMain {
+    grid-column: 1;
+    grid-row: 3;
+}
+
+@media (min-width: 1100px) {
+    .kitStage {
+        grid-template-columns: minmax(0, max-content) minmax(240px, 1fr);
+        max-height: none;
+        overflow: hidden;
+    }
+
+    .inventoryLeftPanelKit .kitStage {
+        max-height: none;
+        overflow: hidden;
+    }
+
+    .inventoryLeftPanelKit .kitDressing {
+        border-right: 1px solid var(--go-border, rgba(34, 200, 255, 0.28));
+        max-height: none;
+        overflow: auto;
+    }
+}
+
+@media (min-width: 1200px) {
+    .inventoryLeftPanelKit {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto auto minmax(0, 1fr);
+    }
+
+    .inventoryLeftPanelKit .tabNavigation {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .inventoryLeftPanelKit .kitMain {
+        grid-column: 1;
+        grid-row: 3;
+    }
+}
+
 .tabButton {
     display: flex;
     align-items: center;
@@ -66,6 +195,92 @@
     flex-shrink: 0;
     justify-content: center;
     position: relative;
+}
+
+.tabRefresh {
+    margin-left: auto;
+}
+
+/* System Hunter: even square tabs, refresh as a square icon — not pills on an island */
+.inventoryModalContentSystem .tabNavigation {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr) 44px;
+    gap: 8px;
+    padding: 10px 12px;
+    background: rgba(4, 16, 32, 0.55);
+    border-bottom: 1px solid var(--go-border, rgba(34, 200, 255, 0.28));
+}
+
+.inventoryModalContentSystem .tabButton {
+    min-width: min-content;
+    width: 100%;
+    min-height: 42px;
+    padding: 8px 10px;
+    border-radius: 2px;
+    border: 1px solid var(--go-border, rgba(34, 200, 255, 0.28));
+    background: rgba(12, 40, 72, 0.65);
+    color: #e0f2fe !important;
+    -webkit-text-fill-color: #e0f2fe !important;
+    font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+    font-size: 13px !important;
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    box-shadow: none;
+    white-space: nowrap;
+    overflow: visible;
+}
+
+.inventoryModalContentSystem .tabButton:hover {
+    background: var(--go-accent-soft, rgba(34, 200, 255, 0.16));
+    border-color: var(--go-border-strong, rgba(34, 200, 255, 0.7));
+    box-shadow: 0 0 12px rgba(34, 200, 255, 0.18);
+}
+
+.inventoryModalContentSystem .tabButton.activeTab {
+    color: #f0f9ff !important;
+    -webkit-text-fill-color: #f0f9ff !important;
+    border-color: var(--go-accent, #22c8ff);
+    background: linear-gradient(180deg, rgba(40, 90, 140, 0.75), rgba(12, 40, 72, 0.9));
+    box-shadow: 0 0 14px rgba(34, 200, 255, 0.28);
+}
+
+.inventoryModalContentSystem .tabRefresh {
+    margin-left: 0;
+    width: 44px;
+    min-width: 44px;
+    padding: 8px;
+}
+
+.inventoryModalContentSystem .tabIcon {
+    flex-shrink: 0;
+    font-size: 16px !important;
+    line-height: 1;
+    filter: none;
+}
+
+.inventoryModalContentSystem .tabBadge {
+    top: 2px;
+    right: 4px;
+    width: 16px;
+    height: 16px;
+    font-size: 9px;
+    border-radius: 2px;
+    border: 1px solid rgba(4, 16, 32, 0.9);
+    background: var(--go-danger, #ff6b6b);
+}
+
+.inventoryModalContentSystem .quantityBadge {
+    border-radius: 2px;
+    width: auto;
+    min-width: 22px;
+    height: 20px;
+    padding: 0 6px;
+    background: rgba(34, 200, 255, 0.2);
+    border: 1px solid rgba(34, 200, 255, 0.45);
+    color: #c8f0ff;
+    box-shadow: none;
 }
 
 .tabButton:hover {
@@ -334,6 +549,17 @@
     margin-bottom: 8px;
     filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
     transition: transform 0.3s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.itemIconImg {
+    width: 32px;
+    height: 32px;
+    object-fit: contain;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
 }
 
 .inventorySlot:hover .itemIcon {
@@ -377,15 +603,18 @@
     border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-/* Rarity Indicators */
+/* Rarity Indicators — thin bar, not an empty circle */
 .rarityIndicator {
     position: absolute;
-    bottom: 8px;
-    left: 8px;
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    box-shadow: 0 0 8px currentColor;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 3px;
+    border-radius: 0;
+    box-shadow: none;
+    background: currentColor;
+    opacity: 0.85;
 }
 
 /* ========================================
@@ -477,6 +706,11 @@
     z-index: 1;
 }
 
+.selectedItemIcon .itemIconImg {
+    width: 56px;
+    height: 56px;
+}
+
 @keyframes float {
 
     0%,
@@ -489,14 +723,36 @@
     }
 }
 
+.selectedItemNameRow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
 .selectedItemName {
     font-size: 24px;
     font-weight: 800;
     color: #e0e6f7;
-    margin-bottom: 12px;
+    margin-bottom: 0;
     line-height: 1.2;
     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
     letter-spacing: 0.5px;
+}
+
+.favoriteStar {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    padding: 0;
+    border-radius: 2px;
+    border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42));
+    background: rgba(8, 28, 54, 0.85);
+    color: #ffd83d;
+    font-size: 16px;
+    cursor: pointer;
+    line-height: 1;
 }
 
 .selectedItemRarity {
@@ -573,10 +829,11 @@
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
-/* Action Buttons */
+/* Action Buttons — Equip full width, Sell | Drop on the next row */
 .itemActions {
-    display: flex;
-    gap: 12px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
     margin-top: 8px;
 }
 
@@ -594,55 +851,61 @@
 }
 
 .actionButton {
-    flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    padding: 12px 16px;
-    background: linear-gradient(135deg, rgba(142, 202, 230, 0.2) 0%, rgba(33, 158, 188, 0.1) 100%);
-    border: 2px solid rgba(142, 202, 230, 0.3);
-    border-radius: 12px;
-    color: #8ecae6;
-    font-weight: 600;
-    font-size: 14px;
+    min-width: 0;
+    min-height: 44px;
+    padding: 10px 12px;
+    background: rgba(12, 40, 72, 0.65);
+    border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42));
+    border-radius: 2px;
+    color: #c8f0ff;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
     cursor: pointer;
     transition: background 0.2s ease, border-color 0.2s ease;
     backdrop-filter: none;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
+    white-space: nowrap;
+    box-shadow: none;
 }
 
 .actionButton::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: left 0.5s;
+    display: none;
 }
 
 .actionButton:hover::before {
-    left: 100%;
+    display: none;
 }
 
 .actionButton:hover {
-    background: linear-gradient(135deg, rgba(142, 202, 230, 0.3) 0%, rgba(33, 158, 188, 0.15) 100%);
-    border-color: #8ecae6;
-    transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(142, 202, 230, 0.4);
+    background: var(--go-accent-soft, rgba(34, 200, 255, 0.16));
+    border-color: var(--go-border-strong, rgba(34, 200, 255, 0.7));
+    transform: none;
+    box-shadow: 0 0 12px rgba(34, 200, 255, 0.18);
 }
 
 .actionButton:active {
-    transform: translateY(0px);
-    box-shadow: 0 4px 15px rgba(142, 202, 230, 0.3);
+    transform: none;
+    box-shadow: 0 0 10px rgba(34, 200, 255, 0.16);
+}
+
+.actionPrimary {
+    grid-column: 1 / -1;
+    background: linear-gradient(180deg, rgba(40, 90, 140, 0.75), rgba(12, 40, 72, 0.9));
+    border-color: var(--go-accent, #22c8ff);
+    color: #f0f9ff;
+    box-shadow: 0 0 14px rgba(34, 200, 255, 0.28);
 }
 
 .actionButton span {
     font-size: 16px;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    filter: none;
 }
 
 /* Item Lore Section */
@@ -760,20 +1023,20 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-/* Material Category Display */
+/* Kind chip (materials, gear, artifacts) */
 .materialCategory {
     position: absolute;
     bottom: 8px;
     right: 8px;
-    background: rgba(69, 183, 209, 0.8);
-    color: white;
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 10px;
-    font-weight: 600;
+    background: var(--go-accent-soft, rgba(34, 200, 255, 0.22));
+    color: var(--go-text-bright, #f0f9ff);
+    padding: 3px 7px;
+    border-radius: 2px;
+    font-size: 9px;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    letter-spacing: 0.06em;
+    border: 1px solid var(--go-border, rgba(34, 200, 255, 0.45));
 }
 
 /* Materials Summary */
@@ -887,7 +1150,7 @@
     }
 
     .itemActions {
-        flex-direction: column;
+        grid-template-columns: 1fr;
     }
 
     .actionButton {
@@ -927,29 +1190,30 @@
 }
 
 .filterToggle {
-    background: linear-gradient(135deg, #4c1d95, #6b21a8);
-    border: 1px solid rgba(139, 92, 246, 0.3);
-    color: #e0e6f7;
+    background: var(--go-card-soft, rgba(8, 28, 54, 0.72));
+    border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42));
+    color: var(--go-text, #e0f2fe);
     padding: 8px 16px;
-    border-radius: 8px;
+    border-radius: 2px;
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: border-color 0.2s ease, background 0.2s ease;
     display: flex;
     align-items: center;
     gap: 8px;
 }
 
 .filterToggle:hover {
-    background: linear-gradient(135deg, #5b21b6, #7c3aed);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.2);
+    background: var(--go-accent-soft, rgba(34, 200, 255, 0.18));
+    border-color: var(--go-border-strong, rgba(34, 200, 255, 0.8));
+    box-shadow: 0 0 12px rgba(34, 200, 255, 0.16);
 }
 
 .filterToggle.active {
-    background: linear-gradient(135deg, #6b21a8, #8b5cf6);
-    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+    background: var(--go-accent-soft, rgba(34, 200, 255, 0.22));
+    border-color: var(--go-border-strong, rgba(34, 200, 255, 0.9));
+    box-shadow: 0 0 12px rgba(34, 200, 255, 0.22);
 }
 
 .filterOptions {
@@ -1735,7 +1999,7 @@
     }
 
     .itemActions {
-        flex-direction: column;
+        grid-template-columns: 1fr;
         gap: 8px;
         margin-top: 12px;
     }
@@ -2375,11 +2639,13 @@
     grid-column: 1;
     grid-row: 2;
     min-height: 0;
+    min-width: 0;
+    overflow: hidden;
 }
 
 /* Second column appears only while an item is selected (class set in TSX). */
 .inventoryModalContentSystemSplit {
-    grid-template-columns: minmax(0, 1fr) clamp(300px, 34%, 400px);
+    grid-template-columns: minmax(0, 1fr) clamp(320px, 36%, 420px);
 }
 
 .inventoryModalContentSystemSplit .itemDetailsPanel {
@@ -2387,6 +2653,106 @@
     grid-row: 2;
     min-height: 0;
     max-height: none;
+}
+
+.inventoryModalContentSystem .itemDetailsPanel {
+    gap: 12px;
+    padding: 16px;
+    border-left: 1px solid var(--go-border, rgba(34, 200, 255, 0.28));
+    background: rgba(4, 14, 28, 0.55);
+}
+
+.inventoryModalContentSystem .selectedItemHeader {
+    border-radius: 2px;
+    border: 1px solid var(--go-border, rgba(34, 200, 255, 0.28));
+    background: rgba(8, 28, 54, 0.72);
+    padding: 16px;
+}
+
+.inventoryModalContentSystem .selectedItemIcon {
+    border-radius: 2px;
+    min-height: 64px;
+    font-size: 48px;
+}
+
+.inventoryModalContentSystem .selectedItemName {
+    font-size: 16px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-shadow: none;
+    color: #e0f2fe;
+}
+
+.inventoryModalContentSystem .selectedItemRarity {
+    border-radius: 2px;
+    font-size: 11px;
+    padding: 4px 10px;
+}
+
+.inventoryModalContentSystem .itemDescription,
+.inventoryModalContentSystem .detailItem,
+.inventoryModalContentSystem .itemLore {
+    border-radius: 2px;
+    background: rgba(8, 24, 46, 0.55);
+    border: 1px solid var(--go-border, rgba(34, 200, 255, 0.22));
+    box-shadow: none;
+}
+
+.inventoryModalContentSystem .itemLore {
+    min-height: 0;
+    border-style: dashed;
+    padding: 12px;
+}
+
+.inventoryModalContentSystem .detailItem:hover {
+    transform: none;
+}
+
+.inventoryModalContentSystem .itemActions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.inventoryModalContentSystem .actionButton {
+    border-radius: 2px;
+    border: 1px solid rgba(34, 200, 255, 0.45);
+    background: rgba(34, 200, 255, 0.1);
+    color: #c8f0ff !important;
+    -webkit-text-fill-color: #c8f0ff !important;
+    font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+    font-size: 12px !important;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    box-shadow: none;
+    transform: none;
+}
+
+.inventoryModalContentSystem .actionButton::before {
+    display: none;
+}
+
+.inventoryModalContentSystem .actionButton:hover {
+    transform: none;
+    background: rgba(34, 200, 255, 0.2);
+    border-color: #22c8ff;
+    box-shadow: 0 0 12px rgba(34, 200, 255, 0.22);
+}
+
+.inventoryModalContentSystem .actionPrimary {
+    background: rgba(34, 200, 255, 0.22);
+    border-color: #22c8ff;
+    color: #f0f9ff !important;
+    -webkit-text-fill-color: #f0f9ff !important;
+}
+
+.inventoryModalContentSystem .inventorySlot {
+    border-radius: 2px;
+}
+
+.inventoryModalContentSystem .searchBar {
+    border-radius: 2px;
 }
 
 .inventoryModalContentSystem,
@@ -2708,6 +3074,10 @@
     padding-top: 12px;
     padding-bottom: 4px;
     background: linear-gradient(180deg, transparent, rgba(4, 16, 34, 0.95) 18%);
+}
+
+.itemDetailsPanelMobile .actionPrimary {
+    grid-column: 1 / -1;
 }
 
 .itemDetailsPanelMobile .actionButton {

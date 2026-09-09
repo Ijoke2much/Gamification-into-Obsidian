@@ -202,6 +202,7 @@ export function generateMarkdownTask({
   energyCost,
   activityProfile,
   project,
+  customTags,
   metadataStyle = "emoji",
 }: {
   title: string;
@@ -221,6 +222,7 @@ export function generateMarkdownTask({
   energyCost?: number;
   activityProfile?: string;
   project?: string;
+  customTags?: string[];
   metadataStyle?: "emoji" | "tags";
 }): string {
   if (metadataStyle === 'emoji') {
@@ -285,6 +287,10 @@ export function generateMarkdownTask({
     const ap = normalizeActivityProfileId(activityProfile);
     if (ap !== 'generic') {
       taskLine += ` #activity/${ap}`;
+    }
+    for (const tag of customTags ?? []) {
+      const slug = normalizeCustomTag(tag);
+      if (slug) taskLine += ` #${slug}`;
     }
 
     // Add custom rewards as metadata comment if present
@@ -449,6 +455,69 @@ export interface Quest {
   battle_weapon?: string;
 }
 
+/** Skill names from `skills:` metadata and `#skill/...` tags. */
+export function getQuestSkillNames(quest: Pick<Quest, 'skills' | 'tags'>): string[] {
+  const names: string[] = [];
+  if (Array.isArray(quest.skills)) names.push(...quest.skills);
+  for (const tag of quest.tags || []) {
+    const raw = String(tag).replace(/^#/, '');
+    const match = raw.match(/^skill\/(.+)/i);
+    if (match?.[1]) names.push(match[1].replace(/-/g, ' '));
+  }
+  return [...new Set(names.map((name) => name.trim()).filter(Boolean))];
+}
+
+const SYSTEM_QUEST_TAGS = new Set(['gamified-task', 'capture']);
+const SYSTEM_QUEST_TAG_PREFIXES = [
+  'skill/',
+  'activity/',
+  'class/',
+  'priority/',
+  'difficulty/',
+  'today/',
+  'status/',
+  'now/',
+  'project/',
+];
+
+export function isSystemQuestTag(tag: string): boolean {
+  const normalized = tag.replace(/^#/, '').toLowerCase();
+  if (!normalized || SYSTEM_QUEST_TAGS.has(normalized)) return true;
+  return SYSTEM_QUEST_TAG_PREFIXES.some((prefix) => normalized.startsWith(prefix));
+}
+
+export function normalizeCustomTag(raw: string): string | null {
+  const slug = raw
+    .replace(/^#/, '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+  if (!slug || isSystemQuestTag(slug)) return null;
+  return slug;
+}
+
+export function getQuestCustomTags(quest: Pick<Quest, 'tags'>): string[] {
+  return [...new Set(
+    (quest.tags ?? [])
+      .map((tag) => tag.replace(/^#/, '').trim())
+      .filter((tag) => tag && !isSystemQuestTag(tag))
+  )];
+}
+
+export function applyCustomTagsToLine(line: string, tags: string[]): string {
+  const cleaned = line
+    .replace(/#([\w/-]+)/g, (full, raw: string) => (isSystemQuestTag(raw) ? full : ''))
+    .replace(/[ \t]{2,}/g, ' ')
+    .trimEnd();
+  const extras = [...new Set(tags.map((tag) => normalizeCustomTag(tag)).filter(Boolean))]
+    .map((tag) => `#${tag}`)
+    .join(' ');
+  return extras ? `${cleaned} ${extras}` : cleaned;
+}
+
 /** Stable id for vault list rows — unique per file line even when titles repeat. */
 export function buildQuestStableId(filePath: string, lineNumber: number, title?: string): string {
 	const path = filePath.trim();
@@ -509,7 +578,7 @@ export function parseQuestsFromMarkdown(md: string): Quest[] {
     const line = lines[i];
     if (line.trim().startsWith("- [")) {
       // --- Main quest line: match #gamified-task, inline, curly, pipe, and tags ---
-      const mainMatch = line.match(/- \[( |x)\] (.+?) #gamified-task(.*)/);
+      const mainMatch = line.match(/- \[( |x|X)\] (.+?) #gamified-task(.*)/);
       if (mainMatch) {
         const questHeaderLineNumber = i + 1;
         const [, checked, titleRaw, afterTask] = mainMatch;
@@ -632,8 +701,8 @@ export function parseQuestsFromMarkdown(md: string): Quest[] {
           .trim();
 
         // --- Extract quest data ---
-        const xp = parseInt(String(getField('xp') || '0'));
-        const cp = parseInt(String(getField('cp') || '0')); // Add CP parsing
+        const xp = parseInt(String(getField('xp') || getField('exp') || '0'));
+        const cp = parseInt(String(getField('cp') || getField('class-points') || '0'));
         const className = String(getField('class') || '');
         const stats = String(getField('stats') || '').split(',').map((s: string) => s.trim()).filter(Boolean);
         const priority = String(getField('priority') || '');
@@ -641,7 +710,17 @@ export function parseQuestsFromMarkdown(md: string): Quest[] {
         const due = String(getField('due') || '');
         const scheduled = String(getField('scheduled') || '');
         const recur = String(getField('recur') || getField('recurrence') || '');
-        const skills = String(getField('skills') || '').split(',').map((s: string) => s.trim()).filter(Boolean);
+        const skillsFromField = String(getField('skills') || getField('skill') || '')
+          .split(',')
+          .map((s: string) => s.trim())
+          .filter(Boolean);
+        const skillsFromTags = tagArr
+          .map((tag) => {
+            const match = String(tag).replace(/^#/, '').match(/^skill\/(.+)/i);
+            return match?.[1] ? match[1].replace(/-/g, ' ').trim() : '';
+          })
+          .filter(Boolean);
+        const skills = [...new Set([...skillsFromField, ...skillsFromTags])];
 
         const description = String(getField('description') || '');
         const rawBanner = String(getField('banner') || '');
@@ -741,7 +820,7 @@ export function parseQuestsFromMarkdown(md: string): Quest[] {
           bannerAlign: bannerAlign || undefined,
           timelineTheme,
           subtasks,
-          completed: checked === 'x',
+          completed: checked.toLowerCase() === 'x',
           completedAt:
             completedAtDate && !Number.isNaN(completedAtDate.getTime())
               ? completedAtDate
@@ -859,7 +938,9 @@ function parseEmojiMetadata(line: string): Record<string, string> {
   // Improved regex to handle Unicode properly and avoid conflicts
   // Exclude date emoji since we already handled it
   // Note: ⚖️ is handled separately below as it's a combined character
-  const emojiRegex = /([🛫🔺⏫🔼🔽⏬🔁✨🪙⭐🔥🌱🛠️])\s*(\[[^\]]+\]|[^\s]+)/gu; // handle combined emoji separately
+  // Emojis that always carry a value. Standalone markers (priority 🔼, difficulty ⚖️,
+  // and 🛠️ skills) are parsed separately so they cannot swallow the next token.
+  const emojiRegex = /([🛫🔁✨🪙⭐])\uFE0F?\s*(\[[^\]]+\]|[^\s]+)/gu;
   let match;
   while ((match = emojiRegex.exec(lineWithoutBanner)) !== null) {
     const emoji = match[1];
@@ -950,15 +1031,14 @@ function parseEmojiMetadata(line: string): Record<string, string> {
     result['difficulty'] = 'easy';
   }
 
-  // --- Extract skill from 🛠️SkillName pattern if present ---
-  // Make sure we don't capture text that belongs to other emojis
-  const skillEmojiRegex = /🛠️\s*([\w\s-]+?)(?=\s*[🔁📅✨⭐🪙🔥⚖️🌱⏱️🖼️🛠️]|$)/;
-  const skillMatch = line.match(skillEmojiRegex);
-  if (skillMatch) {
-    // Only add if not already present
-    if (!result["skills"]) {
-      result["skills"] = skillMatch[1].trim();
+  // --- Extract skill from 🛠️[Stamina] or 🛠️Stamina ---
+  const skillMatch = lineWithoutBanner.match(/🛠️\s*(\[[^\]]+\]|[^\s]+)/u);
+  if (skillMatch?.[1]) {
+    let value = skillMatch[1].trim();
+    if (value.startsWith('[') && value.endsWith(']')) {
+      value = value.slice(1, -1);
     }
+    if (value) result['skills'] = value;
   }
 
   // Note: Stats are now automatically updated by skills, so no manual stats parsing needed

@@ -1,12 +1,14 @@
 .rewardDisplay {
-    background: linear-gradient(135deg, #4CAF50, #45a049);
-    border-radius: 12px;
-    padding: 20px;
-    margin: 15px 0;
-    box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
-    transition: all 0.3s ease;
+    background: var(--pomo-reward-bg, var(--go-panel, var(--background-secondary)));
+    border: 1px solid var(--pomo-reward-border, var(--go-border, var(--background-modifier-border)));
+    border-radius: var(--pomo-reward-radius, 10px);
+    padding: 12px 14px;
+    margin: 0;
+    box-shadow: var(--pomo-reward-shadow, none);
+    color: var(--pomo-reward-text, var(--go-text, var(--text-normal)));
+    transition: opacity 0.2s ease, transform 0.2s ease;
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(8px);
 }
 
 .rewardDisplay.visible {
@@ -15,45 +17,38 @@
 }
 
 .rewardsHeading {
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    color: rgba(255, 255, 255, 0.95);
-    margin-bottom: 12px;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--pomo-reward-muted, var(--go-muted, var(--text-muted)));
+    margin-bottom: 10px;
 }
 
 .rewardGrid {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 8px;
 }
 
 .rewardItem {
     display: flex;
     align-items: center;
-    gap: 12px;
-    padding: 10px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    backdrop-filter: blur(10px);
-    transition: all 0.2s ease;
+    gap: 10px;
+    padding: 8px 10px;
+    background: var(--pomo-reward-item-bg, var(--go-panel-strong, rgba(255, 255, 255, 0.06)));
+    border: 1px solid var(--pomo-reward-item-border, var(--pomo-reward-border, transparent));
+    border-radius: var(--pomo-reward-item-radius, 8px);
 }
 
 .rewardItemLoot {
     align-items: flex-start;
 }
 
-.rewardItem:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: translateX(5px);
-}
-
 .rewardIcon {
-    font-size: 24px;
-    min-width: 30px;
+    font-size: 18px;
+    min-width: 24px;
     text-align: center;
-    animation: pulse 2s infinite;
 }
 
 .rewardItemLoot .rewardIcon {
@@ -61,10 +56,9 @@
 }
 
 .rewardValue {
-    font-size: 20px;
-    font-weight: bold;
-    color: #fff;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--pomo-reward-text, var(--go-text, var(--text-normal)));
     flex: 1;
 }
 
@@ -77,10 +71,9 @@
 }
 
 .lootValue {
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 700;
-    color: #fff;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    color: var(--pomo-reward-text, var(--go-text, var(--text-normal)));
     line-height: 1.35;
     word-break: break-word;
 }
@@ -101,10 +94,10 @@
 }
 
 .rewardLabel {
-    font-size: 14px;
-    color: rgba(255, 255, 255, 0.9);
-    font-weight: 500;
-    min-width: 72px;
+    font-size: 12px;
+    color: var(--pomo-reward-muted, var(--go-muted, var(--text-muted)));
+    font-weight: 600;
+    min-width: 64px;
     text-align: right;
     flex-shrink: 0;
 }
@@ -113,64 +106,48 @@
     align-self: center;
 }
 
-/* Quality styles */
 .fresh {
-    background: linear-gradient(45deg, #4CAF50, #66BB6A);
-    color: white;
+    background: color-mix(in srgb, var(--go-success, #4caf50) 80%, transparent);
+    color: var(--pomo-reward-text, #fff);
 }
 
 .normal {
-    background: linear-gradient(45deg, #2196F3, #42A5F5);
-    color: white;
+    background: color-mix(in srgb, var(--go-accent, #2196f3) 70%, transparent);
+    color: var(--pomo-reward-text, #fff);
 }
 
 .refined {
-    background: linear-gradient(45deg, #9C27B0, #BA68C8);
-    color: white;
+    background: color-mix(in srgb, var(--go-accent, #9c27b0) 55%, #7b5ea7);
+    color: var(--pomo-reward-text, #fff);
 }
 
 .masterwork {
-    background: linear-gradient(45deg, #FF9800, #FFB74D);
-    color: white;
+    background: color-mix(in srgb, var(--pixel-highlight, #ff9800) 80%, transparent);
+    color: var(--pomo-reward-text, #fff);
 }
 
 .dried {
-    background: linear-gradient(45deg, #795548, #A1887F);
-    color: white;
+    background: rgba(120, 90, 70, 0.55);
+    color: var(--pomo-reward-text, #fff);
 }
 
-/* Animations */
-@keyframes pulse {
-
-    0%,
-    100% {
-        transform: scale(1);
-    }
-
-    50% {
-        transform: scale(1.1);
-    }
-}
-
-/* Mobile responsiveness */
 @media (max-width: 768px) {
     .rewardDisplay {
-        padding: 15px;
-        margin: 10px 0;
+        padding: 10px 12px;
     }
 
     .rewardItem {
-        padding: 8px;
+        padding: 7px 8px;
         gap: 8px;
     }
 
     .rewardIcon {
-        font-size: 20px;
-        min-width: 25px;
+        font-size: 16px;
+        min-width: 22px;
     }
 
     .rewardValue {
-        font-size: 18px;
+        font-size: 15px;
     }
 
     .lootValue {
@@ -178,22 +155,7 @@
     }
 
     .rewardLabel {
-        font-size: 12px;
-        min-width: 64px;
-    }
-}
-
-/* Dark theme adjustments */
-@media (prefers-color-scheme: dark) {
-    .rewardDisplay {
-        box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
-    }
-
-    .rewardItem {
-        background: rgba(255, 255, 255, 0.08);
-    }
-
-    .rewardItem:hover {
-        background: rgba(255, 255, 255, 0.15);
+        font-size: 11px;
+        min-width: 52px;
     }
 }

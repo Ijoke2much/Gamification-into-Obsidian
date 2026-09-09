@@ -47,7 +47,7 @@ export const GameplayOnboardingModal: React.FC<GameplayOnboardingModalProps> = (
         Choose your experience
       </h2>
       <p className={styles.onboardingLead}>
-        Pick a starting profile. You can change tabs, penalties, and modules anytime under{' '}
+        New vaults start on Clay with quieter notices. Pick a profile — you can change tabs, penalties, and modules anytime under{' '}
         <strong>Gameplay → Feature Modules</strong>.
       </p>
 

@@ -1,0 +1,302 @@
+/**
+ * Clay shell — cream claymorphism over quest hub / pixel leftovers.
+ * Beats hardcoded Solo navy + cyan (!important) on calendar and HUD.
+ * Pixel enclaves (dungeon combat) stay untouched.
+ */
+
+html[data-gamification-visual-theme='clay'] [data-gamification-plugin],
+html[data-gamification-visual-theme='clay'] [data-gamification-theme-root],
+html[data-gamification-visual-theme='clay'] [data-clay-shell] {
+	font-family: var(--go-font-ui, "Nunito", "Segoe UI", system-ui, sans-serif);
+	color: var(--clay-text, #3a342c);
+	-webkit-font-smoothing: antialiased;
+	image-rendering: auto;
+	text-shadow: none;
+}
+
+/*
+ * Paint the Obsidian leaf cream. Dark type on --background-primary (often #0a1628)
+ * reads as an empty black screen when only inner [data-clay-shell] was cream.
+ */
+html[data-gamification-visual-theme='clay'] .workspace-leaf-content[data-type='gamified-player-tab'] > .view-content,
+html[data-gamification-visual-theme='clay'] .workspace-leaf-content[data-type='sidebar-quest-view'] > .view-content,
+html[data-gamification-visual-theme='clay'] .workspace-leaf-content[data-type='gamified-task-tab-view'] > .view-content,
+html[data-gamification-visual-theme='clay'] .workspace-leaf-content[data-type='gamified-stats-tab'] > .view-content,
+html[data-gamification-visual-theme='clay'] .gamification-player-view-root,
+html[data-gamification-visual-theme='clay'] .gamification-player-shell,
+html[data-gamification-visual-theme='clay'] [data-gamification-plugin],
+html[data-gamification-visual-theme='clay'] [data-clay-shell='player'] {
+	background: var(--go-screen-bg, linear-gradient(180deg, #f4efe6, #e8dfd2)) !important;
+	background-color: var(--clay-bg, #efe8dc) !important;
+	color: var(--clay-text, #3a342c) !important;
+	min-height: 100%;
+	border: none !important;
+	border-radius: 0 !important;
+	box-shadow: none !important;
+}
+
+html[data-gamification-visual-theme='clay'] [data-clay-shell]:not([data-clay-shell='player']) {
+	background: var(--go-screen-bg, linear-gradient(180deg, #f4efe6, #e8dfd2)) !important;
+	border: none !important;
+	border-radius: var(--clay-radius, 24px) !important;
+	box-shadow: none !important;
+}
+
+html[data-gamification-visual-theme='clay'] .gamification-player-shell[data-gamification-mobile='true'] .gamify-tab-nav,
+html[data-gamification-visual-theme='clay'] .gamification-player-shell.mobile-container .gamify-tab-nav {
+	background: var(--clay-bg, #efe8dc) !important;
+	color: var(--clay-text, #3a342c) !important;
+}
+
+html[data-gamification-visual-theme='clay'] [data-gamification-pixel-enclave] {
+	font-family: "Press Start 2P", "VT323", "Courier New", monospace;
+}
+
+/* Hub nav — recessed cream track, pressed teal pill */
+html[data-gamification-visual-theme='clay'] [data-quest-hub-nav] {
+	gap: 8px !important;
+	padding: 8px !important;
+	margin-bottom: 12px !important;
+	border-radius: var(--clay-radius, 24px) !important;
+	background: var(--clay-surface-2, #efe6d8) !important;
+	box-shadow: var(--clay-recessed) !important;
+	border: none !important;
+}
+
+html[data-gamification-visual-theme='clay'] [data-quest-hub-nav] button {
+	border: none !important;
+	border-radius: 18px !important;
+	background: transparent !important;
+	color: var(--clay-text-light, #8a8278) !important;
+	box-shadow: none !important;
+	font-family: inherit !important;
+	font-weight: 700 !important;
+	font-size: 11px !important;
+	letter-spacing: 0.02em !important;
+	text-transform: none !important;
+	min-height: 56px !important;
+}
+
+html[data-gamification-visual-theme='clay'] [data-quest-hub-nav] button[aria-current='page'] {
+	background: var(--clay-accent-gradient, linear-gradient(180deg, #6ac9c1, #4aa8a0)) !important;
+	color: #fff !important;
+	box-shadow: var(--clay-pressed) !important;
+}
+
+/* Today's Run — raised cream card, not navy HUD */
+html[data-gamification-visual-theme='clay'] [data-today-run-strip] {
+	border: none !important;
+	border-radius: var(--clay-radius, 24px) !important;
+	background: var(--clay-gradient, linear-gradient(145deg, #fbf8f2, #efe6d8)) !important;
+	box-shadow: var(--clay-shadow) !important;
+	color: var(--clay-text, #3a342c) !important;
+	padding: 16px 16px 18px !important;
+}
+
+html[data-gamification-visual-theme='clay'] [data-today-run-strip] [class*='eyebrow'] {
+	color: var(--clay-accent-deep, #3fa39a) !important;
+	letter-spacing: 0.08em !important;
+	text-shadow: none !important;
+}
+
+html[data-gamification-visual-theme='clay'] [data-today-run-strip] [class*='dateLabel'] {
+	color: var(--clay-text-strong, #2c2722) !important;
+}
+
+html[data-gamification-visual-theme='clay'] [data-today-run-strip] [class*='nowBtn'],
+html[data-gamification-visual-theme='clay'] [data-today-run-strip] [class*='focusBtn'],
+html[data-gamification-visual-theme='clay'] [data-today-run-strip] [class*='countChip'] {
+	border: none !important;
+	border-radius: 18px !important;
+	background: var(--clay-button-gradient, linear-gradient(180deg, #fbf8f2, #ece3d6)) !important;
+	color: var(--clay-text, #3a342c) !important;
+	box-shadow: var(--clay-shadow) !important;
+	font-family: inherit !important;
+}
+
+html[data-gamification-visual-theme='clay'] [data-today-run-strip] [class*='nextUpWell'],
+html[data-gamification-visual-theme='clay'] [data-today-run-strip] [class*='nextUpCard'] {
+	border: none !important;
+	border-radius: 18px !important;
+	background: var(--clay-surface-2, #efe6d8) !important;
+	box-shadow: var(--clay-recessed) !important;
+	color: var(--clay-text, #3a342c) !important;
+}
+
+html[data-gamification-visual-theme='clay'] [data-today-run-strip] [class*='energyLabel'],
+html[data-gamification-visual-theme='clay'] [data-today-run-strip] [class*='nextUpLabel'],
+html[data-gamification-visual-theme='clay'] [data-today-run-strip] [class*='clearState'] {
+	color: var(--clay-text-light, #8a8278) !important;
+}
+
+/* Calendar — cream board over Solo navy */
+html[data-gamification-visual-theme='clay'] [data-quest-calendar] {
+	border: none !important;
+	border-radius: var(--clay-radius, 24px) !important;
+	background: var(--clay-gradient, linear-gradient(145deg, #fbf8f2, #efe6d8)) !important;
+	box-shadow: var(--clay-shadow) !important;
+	color: var(--clay-text, #3a342c) !important;
+	font-family: var(--go-font-ui, "Nunito", "Segoe UI", system-ui, sans-serif) !important;
+}
+
+html[data-gamification-visual-theme='clay'] [data-quest-calendar] [class*='title'],
+html[data-gamification-visual-theme='clay'] [data-quest-calendar] [class*='range'] {
+	color: var(--clay-text, #3a342c) !important;
+	text-shadow: none !important;
+}
+
+html[data-gamification-visual-theme='clay'] [data-quest-calendar] [class*='navBtn'],
+html[data-gamification-visual-theme='clay'] [data-quest-calendar] [class*='todayBtn'],
+html[data-gamification-visual-theme='clay'] [data-quest-calendar] [class*='viewBtn'],
+html[data-gamification-visual-theme='clay'] [data-quest-calendar] [class*='openDayBtn'] {
+	border: none !important;
+	border-radius: 16px !important;
+	background: var(--clay-button-gradient, linear-gradient(180deg, #fbf8f2, #ece3d6)) !important;
+	color: var(--clay-text, #3a342c) !important;
+	box-shadow: var(--clay-shadow) !important;
+	text-shadow: none !important;
+}
+
+html[data-gamification-visual-theme='clay'] [data-quest-calendar] [class*='viewBtn'][aria-pressed='true'],
+html[data-gamification-visual-theme='clay'] [data-quest-calendar] [class*='viewBtnActive'] {
+	background: var(--clay-accent-gradient, linear-gradient(180deg, #6ac9c1, #4aa8a0)) !important;
+	color: #fff !important;
+	box-shadow: var(--clay-pressed) !important;
+}
+
+html[data-gamification-visual-theme='clay'] [data-quest-calendar] [class*='monthWeekdays'],
+html[data-gamification-visual-theme='clay'] [data-quest-calendar] [class*='weekday'] {
+	color: var(--clay-text-light, #8a8278) !important;
+}
+
+html[data-gamification-visual-theme='clay'] [data-quest-calendar] [data-quest-day] {
+	color: var(--clay-text, #3a342c) !important;
+	background: transparent !important;
+	border: none !important;
+	box-shadow: none !important;
+}
+
+html[data-gamification-visual-theme='clay'] [data-quest-calendar] [data-quest-day] [class*='dayNum'] {
+	color: var(--clay-text, #3a342c) !important;
+}
+
+html[data-gamification-visual-theme='clay'] [data-quest-calendar] [data-quest-day][class*='dayToday'] [class*='dayNumWrap'] {
+	background: var(--clay-accent-gradient, linear-gradient(180deg, #6ac9c1, #4aa8a0)) !important;
+	box-shadow: var(--clay-pressed) !important;
+}
+
+html[data-gamification-visual-theme='clay'] [data-quest-calendar] [data-quest-day][class*='dayToday'] [class*='dayNum'] {
+	color: #fff !important;
+}
+
+html[data-gamification-visual-theme='clay'] [data-quest-calendar] [data-quest-day][class*='daySelected'] [class*='dayNumWrap'] {
+	background: var(--clay-surface, #f7f3ec) !important;
+	box-shadow: var(--clay-shadow) !important;
+}
+
+html[data-gamification-visual-theme='clay'] [data-quest-calendar] [class*='openDayBtn'] {
+	width: 100% !important;
+	border-radius: 999px !important;
+	margin-top: 8px !important;
+	font-weight: 800 !important;
+	color: var(--clay-accent-deep, #3fa39a) !important;
+}
+
+/* Capture inbox */
+html[data-gamification-visual-theme='clay'] [data-capture-inbox] {
+	border: none !important;
+	border-radius: var(--clay-radius, 24px) !important;
+	background: var(--clay-gradient, linear-gradient(145deg, #fbf8f2, #efe6d8)) !important;
+	box-shadow: var(--clay-shadow) !important;
+	color: var(--clay-text, #3a342c) !important;
+}
+
+html[data-gamification-visual-theme='clay'] [data-capture-inbox] [class*='title'],
+html[data-gamification-visual-theme='clay'] [data-capture-inbox] [class*='count'] {
+	color: var(--clay-text, #3a342c) !important;
+	text-transform: none !important;
+	letter-spacing: 0.02em !important;
+}
+
+html[data-gamification-visual-theme='clay'] [data-capture-inbox] [class*='collapseBtn'],
+html[data-gamification-visual-theme='clay'] [data-capture-inbox] [class*='actionBtn'] {
+	border: none !important;
+	border-radius: 14px !important;
+	background: var(--clay-button-gradient, linear-gradient(180deg, #fbf8f2, #ece3d6)) !important;
+	color: var(--clay-text, #3a342c) !important;
+	box-shadow: var(--clay-shadow) !important;
+}
+
+html[data-gamification-visual-theme='clay'] [data-capture-inbox] [class*='row'] {
+	border: none !important;
+	border-radius: 16px !important;
+	background: var(--clay-surface-2, #efe6d8) !important;
+	box-shadow: var(--clay-recessed-soft) !important;
+}
+
+/* Mission titles (Day Plan) */
+html[data-gamification-visual-theme='clay'] [data-mission-title] [class*='title'],
+html[data-gamification-visual-theme='clay'] [data-mission-title] [class*='icon'] {
+	color: var(--clay-accent-deep, #3fa39a) !important;
+	text-shadow: none !important;
+	filter: none !important;
+	letter-spacing: 0.06em !important;
+}
+
+html[data-gamification-visual-theme='clay'] [data-mission-title] [class*='rule'] {
+	background: rgba(166, 154, 138, 0.22) !important;
+}
+
+html[data-gamification-visual-theme='clay'] [data-mission-title] [class*='badge'] {
+	border: none !important;
+	border-radius: 999px !important;
+	background: var(--clay-surface-2, #efe6d8) !important;
+	color: var(--clay-text, #3a342c) !important;
+	box-shadow: var(--clay-recessed-soft) !important;
+}
+
+/* Add Quest / Brain Dump */
+html[data-gamification-visual-theme='clay'] [data-clay-shell] [class*='addButton'],
+html[data-gamification-visual-theme='clay'] [data-clay-shell] [class*='captureButton'] {
+	border: none !important;
+	border-radius: 999px !important;
+	background: var(--clay-button-gradient, linear-gradient(180deg, #fbf8f2, #ece3d6)) !important;
+	color: var(--clay-accent-deep, #3fa39a) !important;
+	box-shadow: var(--clay-shadow) !important;
+	font-family: inherit !important;
+	font-weight: 800 !important;
+	letter-spacing: 0 !important;
+	text-transform: none !important;
+}
+
+html[data-gamification-visual-theme='clay'] [data-clay-shell] [class*='captureButton'] {
+	color: #b56b7a !important;
+}
+
+html[data-gamification-visual-theme='clay'] [data-clay-shell] [class*='addButton']:hover,
+html[data-gamification-visual-theme='clay'] [data-clay-shell] [class*='captureButton']:hover {
+	transform: translateY(-2px);
+	box-shadow: var(--clay-shadow-hover) !important;
+}
+
+html[data-gamification-visual-theme='clay'] [data-clay-shell] [class*='addButton']:active,
+html[data-gamification-visual-theme='clay'] [data-clay-shell] [class*='captureButton']:active {
+	transform: translateY(1px);
+	box-shadow: var(--clay-pressed) !important;
+}
+
+/* Hunter portrait — beat Solo square + cyan brackets from styles.css */
+html[data-gamification-visual-theme='clay'] button.gamifyHunterPortrait {
+	border: none !important;
+	border-radius: 28px !important;
+	padding: 10px !important;
+	background: var(--clay-gradient, linear-gradient(145deg, #fbf8f2, #efe6d8)) !important;
+	box-shadow: var(--clay-shadow) !important;
+}
+
+html[data-gamification-visual-theme='clay'] img.gamifyHunterFace {
+	border-radius: 20px !important;
+	object-fit: cover !important;
+	background: #f7f3ec !important;
+	image-rendering: auto !important;
+}

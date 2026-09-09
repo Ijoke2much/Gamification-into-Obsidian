@@ -1,7 +1,7 @@
 {
 	"name": "gamified-obsidian-plugin",
-	"version": "1.0.0",
-	"description": "Gamify your Obsidian vault with quests, achievements, boss battles, and RPG-style progression",
+	"version": "1.0.0-beta.3",
+	"description": "Quests, focus encounters, and RPG progression on top of your vault notes",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
@@ -9,10 +9,13 @@
 		"build:sync": "npm run build && npm run publish:icloud",
 		"build:verify": "node scripts/verify-plugin-build.mjs",
 		"assets:copy": "node scripts/copy-plugin-assets.mjs",
+		"assets:sprites": "node scripts/generate-pixel-sprites.mjs",
 		"publish:icloud": "node scripts/publish-to-icloud-vault.mjs",
+		"publish:brat-like": "GAMIFICATION_BRAT_ONLY=1 node scripts/publish-to-icloud-vault.mjs",
 		"build:analyze": "npm run build && node scripts/analyze-bundle.mjs",
 		"verify-dialogue": "node scripts/verify-shopkeeper-dialogue.js",
 		"analyze": "node scripts/analyze-bundle.mjs",
+		"test:persistence": "node scripts/test-quest-complete-line.mjs && node scripts/test-property-rewards.mjs && node scripts/test-completion-notice.mjs && node scripts/test-player-write-queue.mjs && node scripts/test-phase4-notices.mjs",
 		"preview:pixel-boss": "node scripts/open-pixel-preview.js",
 		"preview:pixel-boss:serve": "npx --yes serve preview -l 4177",
 		"preview:journey": "node scripts/open-journey-preview.js",

@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
 	SystemHeader,
+	SystemResourceBar,
 	SystemScaffold,
 } from '../../../shared/components/ui/system/SystemPanel';
 import { useMobileOptimizations } from '../../../shared/hooks/useMobileOptimizations';
@@ -217,16 +218,6 @@ export const SkillRealmMap: React.FC<SkillRealmMapProps> = ({
 		(c) => c.name === activeClass
 	);
 
-	const masterPct =
-		masterClass?.requiredCP && masterClass.requiredCP > 0
-			? Math.round(
-					Math.min(
-						100,
-						((masterClass.currentCP ?? 0) / masterClass.requiredCP) * 100
-					)
-				)
-			: 0;
-
 	return (
 		<SystemScaffold
 			className={`${styles.realmRoot}${isMobile ? ` ${styles.realmRootMobile}` : ''}`}
@@ -259,16 +250,17 @@ export const SkillRealmMap: React.FC<SkillRealmMapProps> = ({
 							<p className={styles.masterKicker}>Master class</p>
 							<p className={styles.masterName}>{masterClass.name}</p>
 							<p className={styles.masterSub}>
-								Master Lv {masterClass.level ?? 1} ·{' '}
-								{masterClass.currentCP ?? 0}/{masterClass.requiredCP ?? '—'} CP
+								Master Lv {masterClass.level ?? 1}
 							</p>
 						</div>
 					</div>
 					{masterClass.requiredCP ? (
-						<div className={styles.masterExpTrack} aria-hidden="true">
-							<div
-								className={styles.masterExpFill}
-								style={{ width: `${masterPct}%` }}
+						<div className={styles.masterCpBar}>
+							<SystemResourceBar
+								label="CP"
+								icon="cp"
+								current={masterClass.currentCP ?? 0}
+								max={masterClass.requiredCP}
 							/>
 						</div>
 					) : null}

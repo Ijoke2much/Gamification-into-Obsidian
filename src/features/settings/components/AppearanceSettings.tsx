@@ -96,8 +96,8 @@ export const AppearanceSettings: React.FC<AppearanceSettingsProps> = ({
   return (
     <div className="appearance-settings">
       <div className="settings-header">
-        <h2>🎨 Appearance & Localization</h2>
-        <p>Customize the look and feel of your gamification experience</p>
+        <h2>Appearance</h2>
+        <p>Clay, Classic, or System Hunter. Ceremony controls rank-up chrome, not quest toasts.</p>
       </div>
 
       <div className="settings-tabs">
@@ -105,13 +105,13 @@ export const AppearanceSettings: React.FC<AppearanceSettingsProps> = ({
           className={`tab-button ${activeTab === 'theming' ? 'active' : ''}`}
           onClick={() => setActiveTab('theming')}
         >
-          🎨 Theming
+          Theming
         </button>
         <button
           className={`tab-button ${activeTab === 'i18n' ? 'active' : ''}`}
           onClick={() => setActiveTab('i18n')}
         >
-          🌍 Internationalization
+          Language
         </button>
       </div>
 
@@ -120,7 +120,7 @@ export const AppearanceSettings: React.FC<AppearanceSettingsProps> = ({
           <div className="settings-section">
             <h3>Gameplay Visual Theme</h3>
             <p className="settings-section-hint">
-              Classic keeps the original look. Solo Leveling styles Player, Quests, Journey, and notices (Dungeon stays pixel). Clay is a soft-card preview on the Player tab first — other tabs stay Classic-like until expanded.
+              Clay is the default: cream cards, recessed tracks, matte teal. Classic is the original pixel board. System Hunter restyles Player, Quests, Journey, and notices (focus combat stays pixel).
             </p>
             <div className="palette-grid palette-grid-visual-themes">
               {visualThemePresets.map((preset) => {
@@ -237,79 +237,85 @@ export const AppearanceSettings: React.FC<AppearanceSettingsProps> = ({
             </div>
           </div>
 
-          <div className="settings-section">
-            <h3>Theme Mode</h3>
-            <div className="theme-mode-options">
-              <label className="radio-option">
-                <input
-                  type="radio"
-                  name="themeMode"
-                  value="auto"
-                  checked={settings.theming?.mode === 'auto'}
-                  onChange={(e) => handleThemingChange('mode', e.target.value)}
-                />
-                <span>Auto (Follow Obsidian)</span>
-              </label>
-              <label className="radio-option">
-                <input
-                  type="radio"
-                  name="themeMode"
-                  value="light"
-                  checked={settings.theming?.mode === 'light'}
-                  onChange={(e) => handleThemingChange('mode', e.target.value)}
-                />
-                <span>Light Mode</span>
-              </label>
-              <label className="radio-option">
-                <input
-                  type="radio"
-                  name="themeMode"
-                  value="dark"
-                  checked={settings.theming?.mode === 'dark'}
-                  onChange={(e) => handleThemingChange('mode', e.target.value)}
-                />
-                <span>Dark Mode</span>
-              </label>
+          <details className="legacy-theming-details">
+            <summary>Advanced (older color palettes)</summary>
+            <p className="settings-section-hint">
+              These options come from the older accent/palette system. Visual Theme above is what skins the plugin.
+            </p>
+            <div className="settings-section">
+              <h3>Theme Mode</h3>
+              <div className="theme-mode-options">
+                <label className="radio-option">
+                  <input
+                    type="radio"
+                    name="themeMode"
+                    value="auto"
+                    checked={settings.theming?.mode === 'auto'}
+                    onChange={(e) => handleThemingChange('mode', e.target.value)}
+                  />
+                  <span>Auto (Follow Obsidian)</span>
+                </label>
+                <label className="radio-option">
+                  <input
+                    type="radio"
+                    name="themeMode"
+                    value="light"
+                    checked={settings.theming?.mode === 'light'}
+                    onChange={(e) => handleThemingChange('mode', e.target.value)}
+                  />
+                  <span>Light Mode</span>
+                </label>
+                <label className="radio-option">
+                  <input
+                    type="radio"
+                    name="themeMode"
+                    value="dark"
+                    checked={settings.theming?.mode === 'dark'}
+                    onChange={(e) => handleThemingChange('mode', e.target.value)}
+                  />
+                  <span>Dark Mode</span>
+                </label>
+              </div>
             </div>
-          </div>
 
-          <div className="settings-section">
-            <h3>Accent Color</h3>
-            <div className="color-picker-container">
-              <input
-                type="color"
-                value={settings.theming?.accentColor || '#667eea'}
-                onChange={(e) => handleThemingChange('accentColor', e.target.value)}
-                className="color-picker"
-              />
-              <span className="color-value">{settings.theming?.accentColor || '#667eea'}</span>
+            <div className="settings-section">
+              <h3>Accent Color</h3>
+              <div className="color-picker-container">
+                <input
+                  type="color"
+                  value={settings.theming?.accentColor || '#667eea'}
+                  onChange={(e) => handleThemingChange('accentColor', e.target.value)}
+                  className="color-picker"
+                />
+                <span className="color-value">{settings.theming?.accentColor || '#667eea'}</span>
+              </div>
             </div>
-          </div>
 
-          <div className="settings-section">
-            <h3>Color Palette</h3>
-            <div className="palette-grid">
-              {availablePalettes.map((palette) => (
-                <div
-                  key={palette.name}
-                  className={`palette-option ${settings.theming?.colorPalette === palette.name.toLowerCase() ? 'selected' : ''}`}
-                  onClick={() => handleThemingChange('colorPalette', palette.name.toLowerCase())}
-                >
-                  <div className="palette-preview">
-                    <div className="color-swatch" style={{ backgroundColor: palette.colors.primary }}></div>
-                    <div className="color-swatch" style={{ backgroundColor: palette.colors.secondary }}></div>
-                    <div className="color-swatch" style={{ backgroundColor: palette.colors.success }}></div>
-                    <div className="color-swatch" style={{ backgroundColor: palette.colors.warning }}></div>
-                    <div className="color-swatch" style={{ backgroundColor: palette.colors.error }}></div>
+            <div className="settings-section">
+              <h3>Color Palette</h3>
+              <div className="palette-grid">
+                {availablePalettes.map((palette) => (
+                  <div
+                    key={palette.name}
+                    className={`palette-option ${settings.theming?.colorPalette === palette.name.toLowerCase() ? 'selected' : ''}`}
+                    onClick={() => handleThemingChange('colorPalette', palette.name.toLowerCase())}
+                  >
+                    <div className="palette-preview">
+                      <div className="color-swatch" style={{ backgroundColor: palette.colors.primary }}></div>
+                      <div className="color-swatch" style={{ backgroundColor: palette.colors.secondary }}></div>
+                      <div className="color-swatch" style={{ backgroundColor: palette.colors.success }}></div>
+                      <div className="color-swatch" style={{ backgroundColor: palette.colors.warning }}></div>
+                      <div className="color-swatch" style={{ backgroundColor: palette.colors.error }}></div>
+                    </div>
+                    <div className="palette-info">
+                      <div className="palette-name">{palette.name}</div>
+                      <div className="palette-description">{palette.description}</div>
+                    </div>
                   </div>
-                  <div className="palette-info">
-                    <div className="palette-name">{palette.name}</div>
-                    <div className="palette-description">{palette.description}</div>
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
+          </details>
 
           <div className="settings-section">
             <h3>Accessibility</h3>

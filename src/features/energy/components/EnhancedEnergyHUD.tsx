@@ -31,7 +31,7 @@ interface EnhancedEnergyHUDProps {
     showRecommendations?: boolean;
     compact?: boolean;
     autoRefresh?: boolean;
-    variant?: 'default' | 'pixel' | 'system';
+    variant?: 'default' | 'pixel' | 'system' | 'clay';
     visibleStats?: WellbeingStatKey[];
     hudTitle?: string;
     /** When provided, skips an extra playerStore.get() on mount. */
@@ -126,15 +126,16 @@ export const EnhancedEnergyHUD: React.FC<EnhancedEnergyHUDProps> = ({
         }
     };
 
+    const clayHud = variant === 'clay';
     const hudRootClass = [
         'gamification-energy-hud',
         styles.energyHUD,
-        styles.pixelSkin,
+        clayHud ? styles.claySkin : styles.pixelSkin,
         isMobile ? styles.mobileLayout : '',
         className,
     ].filter(Boolean).join(' ');
     // Always batteries — do not switch to SystemResourceBar for any theme/device.
-    const batteryPixel = true;
+    const batteryPixel = !clayHud;
     const useSystemBars = false;
 
     if (!playerData?.stats) {
@@ -319,7 +320,7 @@ export const EnhancedEnergyHUD: React.FC<EnhancedEnergyHUDProps> = ({
         ] as const).filter((item) => showStat(item.key));
 
         return (
-            <div className={`${styles.energyHUD} ${styles.compact} ${variant === 'pixel' ? styles.pixelSkin : ''} ${className}`.trim()}>
+            <div className={`${styles.energyHUD} ${styles.compact} ${variant === 'clay' ? styles.claySkin : styles.pixelSkin} ${className}`.trim()}>
                 <div className={styles.compactStats}>
                     {compactStatDefs.map((item) => (
                     <div

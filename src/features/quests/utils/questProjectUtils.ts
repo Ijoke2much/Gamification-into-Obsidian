@@ -1,4 +1,5 @@
 import type { Quest } from './taskParser';
+import { applyCustomTagsToLine } from './taskParser';
 import type { App } from 'obsidian';
 import { normalizePath, TFile } from 'obsidian';
 import type { SkillMetadata } from '../../../shared/utils/skillDiscovery';
@@ -126,6 +127,15 @@ export function findQuestLineIndex(lines: string[], quest: Quest): number {
 	const projectSlug = getQuestProjectSlug(quest);
 	const titleRe = questTitleLineRegex(title);
 
+	// Prefer the scanned line when it still matches — duplicate titles otherwise
+	// complete the first copy in the file.
+	if (typeof quest.lineNumber === 'number' && quest.lineNumber > 0) {
+		const idx = quest.lineNumber - 1;
+		if (idx >= 0 && idx < lines.length && lineMatchesQuestTitle(lines[idx], quest)) {
+			return idx;
+		}
+	}
+
 	if (titleRe) {
 		const titleMatches: number[] = [];
 		for (let i = 0; i < lines.length; i++) {
@@ -211,6 +221,26 @@ export async function appendWaypointChecklistItem(
 
 	const insertAt = findSubtaskInsertIndex(lines, questLineIndex);
 	lines.splice(insertAt, 0, `  - [ ] ${trimmed}`);
+	await app.vault.modify(file, lines.join('\n'));
+}
+
+/** Replace user hashtags on a quest line without touching system tags. */
+export async function updateQuestCustomTags(
+	app: App,
+	quest: Quest,
+	tags: string[]
+): Promise<void> {
+	const path = normalizePath(quest.filePath || '');
+	if (!path) throw new Error('Quest has no file path');
+
+	const file = app.vault.getAbstractFileByPath(path);
+	if (!(file instanceof TFile)) throw new Error(`Quest file not found: ${path}`);
+
+	const lines = (await app.vault.read(file)).split('\n');
+	const questLineIndex = findQuestLineIndex(lines, quest);
+	if (questLineIndex === -1) throw new Error(`Quest line not found in ${path}`);
+
+	lines[questLineIndex] = applyCustomTagsToLine(lines[questLineIndex], tags);
 	await app.vault.modify(file, lines.join('\n'));
 }
 

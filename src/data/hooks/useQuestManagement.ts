@@ -1,20 +1,20 @@
 import { useState, useEffect, useCallback } from 'react';
 import type GamifiedObsidianPlugin from '../../core/main';
-import {
-    appendCompletedDate,
-    Quest,
-    parseQuestsFromMarkdown,
-    removeCompletedDate,
-} from '../../features/quests/utils/taskParser';
+import { Quest } from '../../features/quests/utils/taskParser';
 import { TFile } from 'obsidian';
-import { awardQuestRewards, emitQuestCompletionFeedback, undoBossFileQuestCompletion, undoJourneyQuestCompletion } from '../../shared/utils/questCompletionPipeline';
-import { buildCompletionKey, markCompletionRewarded } from '../../features/quests/utils/completionLedger';
+import { emitQuestCompletionFeedback, type QuestRewardResult } from '../../shared/utils/questCompletionPipeline';
 import { pixelNotice } from '../../shared/utils/noticeUtils';
 import {
 	isPerNoteMode,
 	loadAllQuests,
 	registerQuestVaultWatchers,
 } from '../../features/quests/utils/questNoteService';
+import {
+	describeQuestPersistFailure,
+	describeQuestUncompleteFailure,
+	persistQuestCompletion,
+	persistQuestUncomplete,
+} from '../../features/quests/utils/questPersistence';
 
 export interface QuestFilters {
     search: string;
@@ -266,103 +266,61 @@ export const useQuestManagement = (plugin: GamifiedObsidianPlugin) => {
     const handleCompleteQuest = useCallback(async (questId: string) => {
         try {
             const quest = quests.find((q: Quest) => q.id === questId || q.title === questId);
-            if (!quest || !quest.filePath) return;
+            if (!quest) return;
 
-            const file = plugin.app.vault.getAbstractFileByPath(quest.filePath);
-            if (!(file instanceof TFile)) return;
-
-            const content = await plugin.app.vault.read(file);
-            const lines = content.split('\n');
-
-            const questLineIndex = lines.findIndex((line: string) =>
-                line.includes(quest.title) && line.includes('#gamified-task')
-            );
-
-            if (questLineIndex !== -1) {
-                const lineNumber = quest.lineNumber ?? questLineIndex + 1;
-                await markCompletionRewarded(
-                    plugin.app,
-                    buildCompletionKey(quest.filePath, lineNumber)
-                );
-                lines[questLineIndex] = appendCompletedDate(
-                    lines[questLineIndex].replace('- [ ]', '- [x]')
-                );
-                await plugin.app.vault.modify(file, lines.join('\n'));
-
-                const rewardResult = await awardQuestRewards(plugin.app.vault, quest, plugin.settings, plugin.app);
-                emitQuestCompletionFeedback(rewardResult, plugin.settings);
-
-                // Optimistically update in-memory quests and cache instead of
-                // re-parsing every quest file from disk.
+            const result = await persistQuestCompletion(plugin.app, quest, true, plugin.settings);
+            if (result.changed) {
+                emitQuestCompletionFeedback(result as QuestRewardResult, plugin.settings);
                 setQuests(prev => {
                     const updated = prev.map(q =>
                         (q.id === quest.id || q.title === quest.title)
                             ? { ...q, completed: true }
                             : q
                     );
-
                     questCache = updated;
                     questCacheTime = Date.now();
-
                     return updated;
                 });
+            } else if (result.failureReason) {
+                pixelNotice(describeQuestPersistFailure(result.failureReason, quest, 'complete'), 4000);
             }
         } catch (err) {
             console.error('Failed to complete quest:', err);
             pixelNotice('Failed to complete quest', undefined, 'high');
         }
-    }, [quests, plugin.app.vault]);
+    }, [quests, plugin.app, plugin.settings]);
 
     const handleUncompleteQuest = useCallback(async (questId: string) => {
         try {
             const quest = quests.find((q: Quest) => q.id === questId || q.title === questId);
-            if (!quest || !quest.filePath) return;
+            if (!quest) return;
 
-            const file = plugin.app.vault.getAbstractFileByPath(quest.filePath);
-            if (!(file instanceof TFile)) return;
-
-            const content = await plugin.app.vault.read(file);
-            const lines = content.split('\n');
-
-            const questLineIndex = lines.findIndex((line: string) =>
-                line.includes(quest.title) && line.includes('#gamified-task')
-            );
-
-            if (questLineIndex !== -1) {
-                lines[questLineIndex] = removeCompletedDate(
-                    lines[questLineIndex].replace('- [x]', '- [ ]')
-                );
-                await plugin.app.vault.modify(file, lines.join('\n'));
-
-                const journeyUndo = undoJourneyQuestCompletion(quest);
-                if (journeyUndo.reverted && journeyUndo.damage > 0) {
-                    pixelNotice(`Journey +${journeyUndo.damage} HP restored`, 2800);
+            const result = await persistQuestUncomplete(plugin.app, quest);
+            if (result.changed) {
+                if (result.journeyHpRestored && result.journeyHpRestored > 0) {
+                    pixelNotice(`Journey +${result.journeyHpRestored} HP restored`, 2800);
                 }
-
-                const bossUndo = await undoBossFileQuestCompletion(plugin.app, quest);
-                if (bossUndo.reverted && bossUndo.hpRestored > 0) {
-                    pixelNotice(`Gate raid +${bossUndo.hpRestored} boss HP restored`, 2800);
+                if (result.bossRaidHpRestored && result.bossRaidHpRestored > 0) {
+                    pixelNotice(`Gate raid +${result.bossRaidHpRestored} boss HP restored`, 2800);
                 }
-
-                // Optimistically flip completion state in memory and cache.
                 setQuests(prev => {
                     const updated = prev.map(q =>
                         (q.id === quest.id || q.title === quest.title)
                             ? { ...q, completed: false }
                             : q
                     );
-
                     questCache = updated;
                     questCacheTime = Date.now();
-
                     return updated;
                 });
+            } else if (result.failureReason) {
+                pixelNotice(describeQuestUncompleteFailure(result.failureReason, quest), 4000);
             }
         } catch (err) {
             console.error('Failed to uncomplete quest:', err);
             pixelNotice('Failed to uncomplete quest');
         }
-    }, [quests, plugin.app.vault]);
+    }, [quests, plugin.app]);
 
     const handleToggleFavorite = useCallback(async (questId: string) => {
         console.log('Toggle favorite:', questId);

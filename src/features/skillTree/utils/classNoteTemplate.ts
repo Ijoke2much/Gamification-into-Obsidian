@@ -21,7 +21,7 @@ function yamlEscape(value: string): string {
 
 function fallbackClassDashboardBody(vars: ClassNoteTemplateVars): string {
     const name = vars.name.trim();
-    const master = (vars.masterClass || 'Jester').trim() || 'Jester';
+    const master = (vars.masterClass || 'Hunter').trim() || 'Hunter';
     const icon = (vars.icon || '').trim() || '❖';
     const tagline = (vars.tagline || '').trim();
     const iconImage = (vars.iconImage || '').trim();
@@ -71,7 +71,7 @@ export async function buildClassNoteFromTemplate(
     vars: ClassNoteTemplateVars
 ): Promise<string> {
     const name = vars.name.trim();
-    const master = (vars.masterClass || 'Jester').trim() || 'Jester';
+    const master = (vars.masterClass || 'Hunter').trim() || 'Hunter';
     const icon = (vars.icon || '').trim() || '❖';
     const tagline = (vars.tagline || '').trim();
     const iconImage = (vars.iconImage || '').trim();

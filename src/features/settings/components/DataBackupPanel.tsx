@@ -4,10 +4,11 @@ import { pixelNotice } from '../../../shared/utils/noticeUtils';
 import { Card } from '../../../shared/components/ui/Card';
 import {
 	backupPluginSettings,
-	exportSettingsToVault,
+	exportSettingsSnapshot,
 	importSettingsFromJson,
 	listSettingsBackups,
 	restoreSettingsBackup,
+	serializeSettings,
 	type SettingsBackupEntry,
 } from '../../../shared/utils/settingsBackup';
 import {
@@ -30,12 +31,16 @@ export const DataBackupPanel: React.FC<Props> = ({ plugin, onSettingsApplied }) 
 	const fileInputRef = useRef<HTMLInputElement>(null);
 
 	const refresh = useCallback(async () => {
-		const [s, d] = await Promise.all([
-			listSettingsBackups(plugin.app.vault),
-			listAllDataBackups(plugin.app.vault),
-		]);
-		setSettingsBackups(s);
-		setDataBackups(d);
+		try {
+			const [s, d] = await Promise.all([
+				listSettingsBackups(plugin),
+				listAllDataBackups(plugin.app.vault),
+			]);
+			setSettingsBackups(s);
+			setDataBackups(d);
+		} catch (error) {
+			console.error(error);
+		}
 	}, [plugin]);
 
 	useEffect(() => {
@@ -50,10 +55,15 @@ export const DataBackupPanel: React.FC<Props> = ({ plugin, onSettingsApplied }) 
 
 	const handleBackupNow = async () => {
 		setBusy(true);
+		pixelNotice('Saving settings snapshot…', 1500);
 		try {
-			const ok = await backupPluginSettings(plugin.app.vault, plugin.settings, { force: true });
+			await new Promise((resolve) => window.setTimeout(resolve, 0));
+			const ok = await backupPluginSettings(plugin, plugin.settings, { force: true });
 			pixelNotice(ok ? 'Settings snapshot saved.' : 'Could not save a settings snapshot.', 3000);
 			await refresh();
+		} catch (error) {
+			console.error(error);
+			pixelNotice('Settings backup failed — see console.', 4000);
 		} finally {
 			setBusy(false);
 		}
@@ -68,7 +78,7 @@ export const DataBackupPanel: React.FC<Props> = ({ plugin, onSettingsApplied }) 
 		setBusy(true);
 		setConfirmRestore(null);
 		try {
-			await backupPluginSettings(plugin.app.vault, plugin.settings, { force: true });
+			await backupPluginSettings(plugin, plugin.settings, { force: true });
 			await restoreSettingsBackup(plugin, path);
 			await afterSettingsRestore();
 			await refresh();
@@ -83,9 +93,9 @@ export const DataBackupPanel: React.FC<Props> = ({ plugin, onSettingsApplied }) 
 	const handleExport = async () => {
 		setBusy(true);
 		try {
-			const path = await exportSettingsToVault(plugin.app.vault, plugin.settings);
+			const path = await exportSettingsSnapshot(plugin, plugin.settings);
 			try {
-				await navigator.clipboard.writeText(JSON.stringify(plugin.settings, null, 2));
+				await navigator.clipboard.writeText(serializeSettings(plugin.settings));
 				pixelNotice(`Exported to ${path} (also copied JSON to clipboard).`, 4500);
 			} catch {
 				pixelNotice(`Exported settings to ${path}.`, 4000);
@@ -103,7 +113,7 @@ export const DataBackupPanel: React.FC<Props> = ({ plugin, onSettingsApplied }) 
 		setBusy(true);
 		try {
 			const raw = await file.text();
-			await backupPluginSettings(plugin.app.vault, plugin.settings, { force: true });
+			await backupPluginSettings(plugin, plugin.settings, { force: true });
 			await importSettingsFromJson(plugin, raw);
 			await afterSettingsRestore();
 			await refresh();
@@ -142,8 +152,9 @@ export const DataBackupPanel: React.FC<Props> = ({ plugin, onSettingsApplied }) 
 			<Card className={styles.settingsCard}>
 				<h3>💾 Plugin settings</h3>
 				<p className={styles.settingDescription}>
-					Snapshots of plugin options (theme, modules, HUD, currency…). Separate from
-					Inventory / PlayerData. Last 5 copies; saving settings also snapshots at most once a minute.
+					Snapshots of plugin options (theme, modules, HUD, currency…). Stored under
+					.obsidian/gamification-setting-backups — not in the plugin folder and not as vault
+					notes. Last 5 copies; saving settings also snapshots at most once a minute.
 				</p>
 				<div className={styles.resetButtonGroup} style={{ marginTop: 12, flexDirection: 'row', flexWrap: 'wrap' }}>
 					<button type="button" className={styles.resetButton} disabled={busy} onClick={() => void handleBackupNow()}>

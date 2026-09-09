@@ -270,7 +270,7 @@ export class SidebarBossView extends ItemView {
 	}
 
 	getDisplayText() {
-		return "Boss System";
+		return "Boss analytics";
 	}
 
 	getIcon() {

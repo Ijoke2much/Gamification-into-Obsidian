@@ -300,7 +300,7 @@ export async function getAllClasses(vault: Vault): Promise<ClassMetadata[]> {
         name,
         masterClass:
           String(data.masterClass ?? data.MasterClass ?? data.master ?? '').trim() ||
-          'Jester',
+          'Hunter',
         level: data.level || 1,
         currentCP: data.currentCP || 0,
         requiredCP: data.requiredCP || 100,

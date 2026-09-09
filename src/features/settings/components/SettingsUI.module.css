@@ -1171,8 +1171,8 @@
 
 .onboardingChoices {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 14px;
+    grid-template-columns: 1fr;
+    gap: 12px;
     margin-bottom: 20px;
 }
 
@@ -1181,14 +1181,23 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
+    justify-content: flex-start;
     gap: 6px;
+    width: 100%;
+    height: auto !important;
+    min-height: unset !important;
     padding: 16px;
+    padding-right: 108px;
+    box-sizing: border-box;
     border-radius: 14px;
     border: 1px solid var(--background-modifier-border);
     background: var(--background-secondary);
     color: var(--text-normal);
     cursor: pointer;
     text-align: left;
+    white-space: normal !important;
+    overflow: visible;
+    line-height: 1.4;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -1212,9 +1221,11 @@
 }
 
 .onboardingChoiceDesc {
+    display: block;
     font-size: 0.9rem;
     color: var(--text-muted);
     line-height: 1.4;
+    white-space: normal;
 }
 
 .onboardingRecommendedBadge {

@@ -156,7 +156,10 @@ body.is-ios .workspace-leaf-content[data-type='gamified-player-tab'] > .view-con
 	top: 0 !important;
 	z-index: 30 !important;
 	margin-top: 0 !important;
-	background: var(--background-primary, #0a1628) !important;
 	backdrop-filter: none !important;
 	-webkit-backdrop-filter: none !important;
+}
+
+html:not([data-gamification-visual-theme='clay']) .gamification-player-shell[data-gamification-mobile='true'] .gamify-tab-nav {
+	background: var(--background-primary, #0a1628) !important;
 }

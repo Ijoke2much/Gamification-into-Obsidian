@@ -1098,3 +1098,70 @@
     color: var(--text-on-accent);
     border: none;
 }
+
+/* Clay — molded cream HUD (Player tab). No pixel font, no navy slab. */
+.energyHUD.claySkin {
+    font-family: var(--go-font-ui, "Nunito", "Segoe UI", system-ui, sans-serif);
+    background: var(--clay-gradient, linear-gradient(145deg, #fbf8f2, #efe6d8));
+    border: none;
+    border-radius: var(--clay-radius, 24px);
+    box-shadow: var(--clay-shadow);
+    color: var(--clay-text, #3a342c);
+    margin: 0;
+    padding: 18px 16px 20px;
+    image-rendering: auto;
+}
+
+.energyHUD.claySkin:hover {
+    transform: none;
+    box-shadow: var(--clay-shadow-hover, var(--clay-shadow));
+}
+
+.energyHUD.claySkin .header {
+    border-bottom: none;
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+}
+
+.energyHUD.claySkin .headerMeta {
+    border-top: none;
+    padding-top: 0;
+    margin-top: 0;
+}
+
+.energyHUD.claySkin .title {
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    text-transform: none;
+    color: var(--clay-text-strong, #2c2722);
+}
+
+.energyHUD.claySkin .trend,
+.energyHUD.claySkin .lastUpdate,
+.energyHUD.claySkin .statName {
+    font-family: inherit;
+    color: var(--clay-muted, #8a8278);
+}
+
+.energyHUD.claySkin .statValue {
+    font-family: inherit;
+    color: var(--clay-accent-deep, #3fa39a);
+}
+
+.energyHUD.claySkin .recommendationCard,
+.energyHUD.claySkin .startButton,
+.energyHUD.claySkin .customizeButton,
+.energyHUD.claySkin .quickAction {
+    border: none;
+    border-radius: 16px;
+    background: var(--clay-button-gradient, linear-gradient(180deg, #fbf8f2, #ece3d6));
+    box-shadow: var(--clay-shadow);
+    color: var(--clay-text, #3a342c);
+    font-family: inherit;
+}
+
+.energyHUD.compact.claySkin {
+    padding: 12px 14px;
+}

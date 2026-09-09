@@ -1,6 +1,7 @@
 import React from "react";
 import type { QuestTimelineTheme } from "../../utils/taskParser";
 import styles from "../QuestModal.module.css";
+import { DurationWheelPicker } from "./DurationWheelPicker";
 
 interface QuestModalAdvancedOptionsProps {
     showAdvancedOptions: boolean;
@@ -364,20 +365,9 @@ export const QuestModalAdvancedOptions: React.FC<QuestModalAdvancedOptionsProps>
                                     }}>
                                         Estimated Duration (Optional)
                                     </label>
-                                    <input
-                                        type="text"
+                                    <DurationWheelPicker
                                         value={estimatedMinutes}
-                                        onChange={(e) => setEstimatedMinutes(e.target.value)}
-                                        placeholder="e.g., 30, 45m, 1h30m"
-                                        style={{
-                                            width: "100%",
-                                            padding: 12,
-                                            borderRadius: 8,
-                                            border: "1px solid var(--background-modifier-border)",
-                                            backgroundColor: "var(--background-primary)",
-                                            color: "var(--text-normal)",
-                                            fontSize: 14,
-                                        }}
+                                        onChange={setEstimatedMinutes}
                                     />
                                 </div>
                             </div>

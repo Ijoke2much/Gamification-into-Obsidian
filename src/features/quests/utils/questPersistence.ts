@@ -1,7 +1,6 @@
 import type { App } from 'obsidian';
 import { TFile } from 'obsidian';
 import type { Quest } from './taskParser';
-import { appendCompletedDate, removeCompletedDate } from './taskParser';
 import { findQuestLineIndex } from './questProjectUtils';
 import {
 	awardQuestRewards,
@@ -10,6 +9,19 @@ import {
 	type QuestRewardSettings,
 } from '../../../shared/utils/questCompletionPipeline';
 import { buildCompletionKey, markCompletionRewarded } from './completionLedger';
+import {
+	applySharedNoteCompletion,
+	findPrimaryTaskLineIndex,
+	hydrateQuestRewardsFromNote,
+	isSingleQuestNoteContent,
+	isStatusDone,
+	isTaskLineDone,
+	isTaskLineOpen,
+	markTaskLineComplete,
+	markTaskLineOpen,
+	noteCompletionKey,
+	parseTaskNotesFrontmatter,
+} from './taskNotesAdapter';
 
 export type QuestPersistAction = 'complete' | 'turn_in' | 'abandon';
 
@@ -77,25 +89,58 @@ export async function persistQuestCompletion(
 	}
 
 	const content = await app.vault.read(file);
+	const sharedNote = isSingleQuestNoteContent(content);
+	const fm = parseTaskNotesFrontmatter(content);
 	const lines = content.split('\n');
-	const index = findQuestLineIndex(lines, quest);
-	if (index === -1) {
+	let index = findQuestLineIndex(lines, quest);
+	if (index === -1 && sharedNote) index = findPrimaryTaskLineIndex(lines, true);
+
+	if (index === -1 && !sharedNote) {
 		return { ...EMPTY_RESULT, failureReason: 'line_not_found' };
 	}
-	if (lines[index].includes('- [x]')) {
+
+	const lineDone = index >= 0 && isTaskLineDone(lines[index]);
+	const statusDone = sharedNote && isStatusDone(fm?.status);
+	if (lineDone || statusDone) {
+		if (sharedNote) {
+			const synced = applySharedNoteCompletion(content, true);
+			if (synced !== content) {
+				await app.vault.modify(file, synced);
+				return { changed: true, awardedXP: 0, awardedCP: 0, awardedCoins: 0 };
+			}
+		}
 		return { ...EMPTY_RESULT, failureReason: 'already_completed' };
 	}
 
-	lines[index] = appendCompletedDate(lines[index].replace('- [ ]', '- [x]'));
-	const lineNumber = quest.lineNumber ?? index + 1;
+	let next = content;
+	if (sharedNote) {
+		next = applySharedNoteCompletion(content, true);
+	} else {
+		if (index < 0) {
+			return { ...EMPTY_RESULT, failureReason: 'line_not_found' };
+		}
+		lines[index] = markTaskLineComplete(lines[index]);
+		next = lines.join('\n');
+	}
+	const lineNumber = quest.lineNumber ?? (index >= 0 ? index + 1 : 1);
+	await app.vault.modify(file, next);
 	await markCompletionRewarded(app, buildCompletionKey(path, lineNumber));
-	await app.vault.modify(file, lines.join('\n'));
+	if (sharedNote) {
+		await markCompletionRewarded(app, noteCompletionKey(path));
+	}
 
 	if (!awardRewards) {
 		return { changed: true, awardedXP: 0, awardedCP: 0, awardedCoins: 0 };
 	}
 
-	const result = await awardQuestRewards(app.vault, quest, rewardSettings, app);
+	const taskLine = index >= 0 ? (content.split('\n')[index] ?? lines[index]) : undefined;
+	const rewardedQuest = hydrateQuestRewardsFromNote(quest, {
+		app,
+		file,
+		content,
+		taskLine,
+	});
+	const result = await awardQuestRewards(app.vault, rewardedQuest, rewardSettings, app);
 	return { changed: true, ...result };
 }
 
@@ -136,17 +181,32 @@ export async function persistQuestUncomplete(
 	}
 
 	const content = await app.vault.read(file);
+	const sharedNote = isSingleQuestNoteContent(content);
+	const fm = parseTaskNotesFrontmatter(content);
 	const lines = content.split('\n');
-	const index = findQuestLineIndex(lines, quest);
-	if (index === -1) {
+	let index = findQuestLineIndex(lines, quest);
+	if (index === -1 && sharedNote) index = findPrimaryTaskLineIndex(lines);
+
+	if (index === -1 && !sharedNote) {
 		return { changed: false, failureReason: 'line_not_found' };
 	}
-	if (lines[index].includes('- [ ]')) {
+
+	const lineOpen = index >= 0 && isTaskLineOpen(lines[index]);
+	const statusOpen = !sharedNote || !isStatusDone(fm?.status);
+	const lineNotDone = index === -1 || lineOpen;
+	if (lineNotDone && statusOpen) {
 		return { changed: false, failureReason: 'already_open' };
 	}
 
-	lines[index] = removeCompletedDate(lines[index].replace('- [x]', '- [ ]'));
-	await app.vault.modify(file, lines.join('\n'));
+	if (sharedNote) {
+		await app.vault.modify(file, applySharedNoteCompletion(content, false));
+	} else {
+		if (index < 0) {
+			return { changed: false, failureReason: 'line_not_found' };
+		}
+		lines[index] = markTaskLineOpen(lines[index]);
+		await app.vault.modify(file, lines.join('\n'));
+	}
 
 	const journeyUndo = undoJourneyQuestCompletion(quest);
 	const bossUndo = await undoBossFileQuestCompletion(app, quest);

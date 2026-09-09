@@ -17,7 +17,20 @@ export {
     unequipGearSlot,
     getEquippedGearItems,
     calculateGearBonuses,
-    parseGearEffect
+    parseGearEffect,
+    parseHunterKit,
+    generateHunterKitContent,
+    readHunterKit,
+    writeHunterKit,
+    inferGearSlot,
+    getHunterKitItems,
+    kitItemNames,
+    syncKitEquippedTags,
+    equipInventoryItemToLoadoutSlot,
+    unequipLoadoutSlot,
+    GEAR_SLOT_ICONS,
+    LOADOUT_SLOTS,
+    LOADOUT_SLOT_LABELS,
 } from './utils/gearFile';
 
 // Enhanced Types
@@ -38,7 +51,11 @@ export type {
     GearSlotState,
     EquippedGearItem,
     GearLoadout,
-    GearBonuses
+    GearBonuses,
+    HunterKit,
+    BattleLoadout,
+    LoadoutSlot,
+    EquippedLoadoutItem,
 } from './utils/gearFile';
 
 // Existing exports for compatibility

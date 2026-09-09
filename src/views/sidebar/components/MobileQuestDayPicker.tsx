@@ -312,6 +312,7 @@ export const MobileQuestDayPicker: React.FC<MobileQuestDayPickerProps> = ({
 			type="button"
 			role="listitem"
 			data-week-day={day.iso}
+			data-quest-day
 			className={[
 				styles.day,
 				day.isSelected ? styles.daySelected : '',
@@ -412,7 +413,7 @@ export const MobileQuestDayPicker: React.FC<MobileQuestDayPickerProps> = ({
 	};
 
 	return (
-		<section className={styles.wrap} aria-label="Quest calendar">
+		<section className={styles.wrap} data-quest-calendar aria-label="Quest calendar">
 			<div className={styles.header}>
 				<button
 					type="button"

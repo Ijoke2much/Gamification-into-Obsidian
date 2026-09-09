@@ -14,7 +14,7 @@ import { pixelNotice } from '../../../shared/utils/noticeUtils';
 import { getPluginSettingsFromApp, isFailureDebtEnabled } from '../../../shared/utils/gameplayConfig';
 import { resolveEnergyHudConfig } from '../../../shared/utils/energyHudConfig';
 import type { QuestTimelineTheme } from './taskParser';
-import { appendCompletedDate, QUEST_TIMELINE_THEMES } from './taskParser';
+import { appendCompletedDate, normalizeCustomTag, QUEST_TIMELINE_THEMES } from './taskParser';
 
 // Priority and difficulty options
 export const PRIORITY_OPTIONS = ["Lowest", "Low", "Medium", "High", "Highest"];
@@ -107,6 +107,8 @@ export function generateMarkdownTask({
     activityProfile,
     /** Link to a guild contract (`[project:: Name]`). */
     project,
+    /** User labels only — not `#skill/`, `#activity/`, or `#gamified-task`. */
+    customTags,
     metadataStyle = "emoji",
 }: {
     title: string;
@@ -129,6 +131,7 @@ export function generateMarkdownTask({
     energyCost?: number;
     activityProfile?: string;
     project?: string;
+    customTags?: string[];
     metadataStyle?: "emoji" | "tags";
 }): string {
     const sanitizedDifficulty = sanitizeForClassName(difficulty);
@@ -256,6 +259,14 @@ export function generateMarkdownTask({
     const ap = normalizeActivityProfileId(activityProfile);
     if (ap !== "generic") {
         md += ` #activity/${ap}`;
+    }
+    for (const skillName of skills) {
+        const slug = skillName.trim().replace(/\s+/g, "-");
+        if (slug) md += ` #skill/${slug}`;
+    }
+    for (const tag of customTags ?? []) {
+        const slug = normalizeCustomTag(tag);
+        if (slug) md += ` #${slug}`;
     }
     if (
         timelineTheme &&

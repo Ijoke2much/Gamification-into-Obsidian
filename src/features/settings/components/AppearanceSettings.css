@@ -627,3 +627,17 @@
         text-align: center;
     }
 }
+
+.legacy-theming-details {
+    margin: 8px 0 24px;
+    padding: 12px 16px 8px;
+    border-radius: 16px;
+    background: var(--surface-color, #f3f4f6);
+}
+
+.legacy-theming-details summary {
+    cursor: pointer;
+    font-weight: 600;
+    color: var(--text-color, #1f2937);
+    margin-bottom: 8px;
+}

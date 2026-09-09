@@ -103,3 +103,26 @@
     border-color: var(--go-accent, #4fc3f7) !important;
     box-shadow: 0 0 24px var(--go-shadow, rgba(34, 211, 238, 0.28)) !important;
 }
+
+html[data-gamification-visual-theme='clay'] .notice-container .notice:has(.gamification-pixel-notice),
+html[data-gamification-visual-theme='clay'] .notice-container .notice:has(.gamification-system-notice) {
+    background: var(--clay-gradient, linear-gradient(145deg, #fbf8f2, #efe6d8)) !important;
+    border: none !important;
+    border-radius: 20px !important;
+    box-shadow: var(--clay-shadow) !important;
+}
+
+html[data-gamification-visual-theme='clay'] .notice-container .notice .gamification-pixel-notice,
+html[data-gamification-visual-theme='clay'] .notice-container .notice .gamification-system-notice {
+    background: transparent !important;
+    color: var(--clay-text, #3a342c) !important;
+    font-family: var(--go-font-ui, "Nunito", "Segoe UI", system-ui, sans-serif) !important;
+    text-shadow: none !important;
+    letter-spacing: 0.01em !important;
+}
+
+html[data-gamification-visual-theme='clay'] .notice-container .notice .gamification-system-notice::before {
+    content: "Complete" !important;
+    letter-spacing: 0.08em !important;
+    color: var(--clay-accent-deep, #3fa39a) !important;
+}

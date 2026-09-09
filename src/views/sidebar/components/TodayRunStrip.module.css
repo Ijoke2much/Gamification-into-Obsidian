@@ -361,3 +361,24 @@ button.focusBtn:active {
 :global([data-pixel-shell='quests']) .countChip {
 	border-radius: 0;
 }
+
+.stripClay {
+	border: none;
+}
+
+.clayEnergyTrack {
+	width: 100%;
+	height: 18px;
+	border-radius: 999px;
+	background: var(--clay-surface-2, #efe6d8);
+	box-shadow: var(--clay-recessed);
+	overflow: hidden;
+}
+
+.clayEnergyFill {
+	display: block;
+	height: 100%;
+	border-radius: 999px;
+	background: var(--clay-progress-gradient, linear-gradient(90deg, #7ad4cc, #3fa39a));
+	box-shadow: inset 0 1px 2px rgba(255, 255, 255, 0.45);
+}

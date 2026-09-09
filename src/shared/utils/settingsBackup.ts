@@ -1,4 +1,3 @@
-import type { Vault } from 'obsidian';
 import type GamifiedObsidianPlugin from '../../core/main';
 import {
 	BALANCED_GAMEPLAY_MODULES,
@@ -8,19 +7,34 @@ import {
 import { migrateVisualThemeSettings } from './visualThemeManager';
 
 /**
- * Plugin settings snapshots (data.json), kept separate from Inventory /
- * PlayerData backups. Hidden folder so search/graph stay clean.
+ * Settings snapshots live in `.obsidian/gamification-setting-backups/`
+ * (config dir), never in the plugin package folder and never as vault notes.
  */
 
-const SETTINGS_BACKUP_DIR = '.gamification-backups/settings';
+const SETTINGS_BACKUP_DIR_NAME = 'gamification-setting-backups';
 const MAX_SETTINGS_BACKUPS = 5;
 const MIN_SETTINGS_BACKUP_INTERVAL_MS = 60_000;
+const SETTINGS_KEYS = Object.keys(DEFAULT_SETTINGS);
 
 let lastSettingsBackupAt = 0;
 
 export interface SettingsBackupEntry {
 	backupPath: string;
 	label: string;
+}
+
+function configDir(plugin: GamifiedObsidianPlugin): string {
+	return plugin.app.vault.configDir || '.obsidian';
+}
+
+function settingsBackupDir(plugin: GamifiedObsidianPlugin): string {
+	return `${configDir(plugin)}/${SETTINGS_BACKUP_DIR_NAME}`;
+}
+
+/** Leftover snapshots from the plugin-folder write that froze Obsidian. */
+function legacyPluginBackupDir(plugin: GamifiedObsidianPlugin): string {
+	const pluginDir = plugin.manifest.dir || `${configDir(plugin)}/plugins/Gamification-into-Obsidian`;
+	return `${pluginDir}/setting-backups`;
 }
 
 function timestamp(): string {
@@ -37,8 +51,57 @@ function labelFor(fileName: string): string {
 	return `Settings — ${when}`;
 }
 
-function serializeSettings(payload: unknown): string {
-	return `${JSON.stringify(payload ?? {}, null, 2)}\n`;
+function yieldToUi(): Promise<void> {
+	return new Promise((resolve) => window.setTimeout(resolve, 0));
+}
+
+function isHostObject(value: object): boolean {
+	if (typeof Window !== 'undefined' && value instanceof Window) return true;
+	if (typeof Node !== 'undefined' && value instanceof Node) return true;
+	const name = value.constructor?.name ?? '';
+	return (
+		name === 'App' ||
+		name === 'Vault' ||
+		name === 'Plugin' ||
+		name === 'Workspace' ||
+		name === 'MetadataCache' ||
+		name === 'FileSystemAdapter'
+	);
+}
+
+/** Only known setting keys, then a safe stringify (no plugin/app graph). */
+export function serializeSettings(payload: unknown): string {
+	const src =
+		payload && typeof payload === 'object' && !Array.isArray(payload)
+			? (payload as Record<string, unknown>)
+			: {};
+	const picked: Record<string, unknown> = {};
+	for (const key of SETTINGS_KEYS) {
+		if (Object.prototype.hasOwnProperty.call(src, key)) {
+			picked[key] = src[key];
+		}
+	}
+
+	const seen = new WeakSet<object>();
+	try {
+		return `${JSON.stringify(
+			picked,
+			(_key, value: unknown) => {
+				if (typeof value === 'function' || typeof value === 'symbol') return undefined;
+				if (typeof value === 'bigint') return value.toString();
+				if (value && typeof value === 'object') {
+					if (isHostObject(value)) return undefined;
+					if (seen.has(value)) return undefined;
+					seen.add(value);
+				}
+				return value;
+			},
+			2
+		)}\n`;
+	} catch (error) {
+		console.warn('Gamification: settings serialize failed:', error);
+		return '{}\n';
+	}
 }
 
 function parseSettingsJson(raw: string): Record<string, unknown> {
@@ -66,24 +129,26 @@ export function hydrateSettings(loaded: Record<string, unknown> | null | undefin
 	return settings;
 }
 
-async function ensureDir(vault: Vault, dir: string): Promise<void> {
-	const adapter = vault.adapter;
-	if (!(await adapter.exists('.gamification-backups'))) {
-		await adapter.mkdir('.gamification-backups');
-	}
+async function ensureBackupDir(plugin: GamifiedObsidianPlugin): Promise<string> {
+	const dir = settingsBackupDir(plugin);
+	const adapter = plugin.app.vault.adapter;
 	if (!(await adapter.exists(dir))) {
-		await adapter.mkdir(dir);
+		try {
+			await adapter.mkdir(dir);
+		} catch {
+			/* exists or adapter cannot mkdir */
+		}
 	}
+	return dir;
 }
 
-export async function listSettingsBackups(vault: Vault): Promise<SettingsBackupEntry[]> {
-	const adapter = vault.adapter;
+async function listJsonInDir(plugin: GamifiedObsidianPlugin, dir: string): Promise<SettingsBackupEntry[]> {
+	const adapter = plugin.app.vault.adapter;
 	try {
-		if (!(await adapter.exists(SETTINGS_BACKUP_DIR))) return [];
-		const listing = await adapter.list(SETTINGS_BACKUP_DIR);
+		if (!(await adapter.exists(dir))) return [];
+		const listing = await adapter.list(dir);
 		return listing.files
 			.filter((p) => p.endsWith('.json'))
-			.sort((a, b) => b.localeCompare(a))
 			.map((backupPath) => ({
 				backupPath,
 				label: labelFor(backupPath.split('/').pop() ?? ''),
@@ -93,9 +158,17 @@ export async function listSettingsBackups(vault: Vault): Promise<SettingsBackupE
 	}
 }
 
+export async function listSettingsBackups(plugin: GamifiedObsidianPlugin): Promise<SettingsBackupEntry[]> {
+	const [current, legacy] = await Promise.all([
+		listJsonInDir(plugin, settingsBackupDir(plugin)),
+		listJsonInDir(plugin, legacyPluginBackupDir(plugin)),
+	]);
+	return [...current, ...legacy].sort((a, b) => b.backupPath.localeCompare(a.backupPath));
+}
+
 /** Snapshot the given settings object. `force` skips the 60s throttle (manual backup). */
 export async function backupPluginSettings(
-	vault: Vault,
+	plugin: GamifiedObsidianPlugin,
 	payload: unknown,
 	opts?: { force?: boolean }
 ): Promise<boolean> {
@@ -104,19 +177,21 @@ export async function backupPluginSettings(
 		if (!opts?.force && now - lastSettingsBackupAt < MIN_SETTINGS_BACKUP_INTERVAL_MS) {
 			return false;
 		}
+		await yieldToUi();
 		const json = serializeSettings(payload);
 		if (!json.trim() || json.trim() === '{}') return false;
 
-		await ensureDir(vault, SETTINGS_BACKUP_DIR);
-		await vault.adapter.write(`${SETTINGS_BACKUP_DIR}/${timestamp()}.json`, json);
+		const dir = await ensureBackupDir(plugin);
+		await yieldToUi();
+		await plugin.app.vault.adapter.write(`${dir}/${timestamp()}.json`, json);
 		lastSettingsBackupAt = now;
 
-		const listing = await vault.adapter.list(SETTINGS_BACKUP_DIR);
+		const listing = await plugin.app.vault.adapter.list(dir);
 		const files = [...listing.files].filter((p) => p.endsWith('.json')).sort();
 		while (files.length > MAX_SETTINGS_BACKUPS) {
 			const oldest = files.shift();
 			if (oldest) {
-				try { await vault.adapter.remove(oldest); } catch { /* ignore */ }
+				try { await plugin.app.vault.adapter.remove(oldest); } catch { /* ignore */ }
 			}
 		}
 		return true;
@@ -130,7 +205,7 @@ export async function backupPluginSettings(
 export async function backupSettingsBeforeSave(plugin: GamifiedObsidianPlugin): Promise<void> {
 	try {
 		const onDisk = await plugin.loadData();
-		await backupPluginSettings(plugin.app.vault, onDisk ?? plugin.settings);
+		await backupPluginSettings(plugin, onDisk ?? plugin.settings);
 	} catch (error) {
 		console.warn('Gamification: settings auto-backup skipped:', error);
 	}
@@ -150,14 +225,19 @@ export async function restoreSettingsBackup(
 	await plugin.saveData(next);
 }
 
-export async function exportSettingsToVault(
-	vault: Vault,
+export async function exportSettingsSnapshot(
+	plugin: GamifiedObsidianPlugin,
 	payload: unknown
 ): Promise<string> {
-	const path = 'Gamification-settings-export.json';
-	await vault.adapter.write(path, serializeSettings(payload));
+	const dir = await ensureBackupDir(plugin);
+	const path = `${dir}/setting-export.json`;
+	await yieldToUi();
+	await plugin.app.vault.adapter.write(path, serializeSettings(payload));
 	return path;
 }
+
+/** @deprecated Use exportSettingsSnapshot */
+export const exportSettingsToPluginFolder = exportSettingsSnapshot;
 
 export async function importSettingsFromJson(
 	plugin: GamifiedObsidianPlugin,

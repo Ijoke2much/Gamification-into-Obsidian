@@ -197,6 +197,30 @@
   display: none !important;
 }
 
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--clay) {
+  --inv-bg: var(--go-screen-bg, linear-gradient(180deg, #f4efe6, #e8dfd2)) !important;
+  --inv-panel: var(--clay-surface, #f7f3ec);
+  --inv-border: rgba(255, 255, 255, 0.55);
+  --inv-accent: #5bb8b0;
+  --inv-text: #3a342c;
+  --go-font-ui: "Nunito", "Segoe UI", "Avenir Next", system-ui, -apple-system, sans-serif;
+  background: var(--inv-bg) !important;
+  border: none !important;
+  border-radius: var(--clay-radius, 24px) !important;
+  box-shadow: var(--clay-shadow) !important;
+  font-family: var(--go-font-ui) !important;
+  color: var(--inv-text) !important;
+}
+
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--clay),
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--clay) *:not(svg):not(path) {
+  font-family: var(--go-font-ui, "Nunito", "Segoe UI", system-ui, sans-serif) !important;
+}
+
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--clay .modal-title) {
+  display: none !important;
+}
+
 /* Native Obsidian X (.modal-header-button on current builds, .modal-close-button on older). */
 :global(.modal.gamify-inventory-modal > .modal-close-button),
 :global(.modal.gamify-inventory-modal .modal-close-button),

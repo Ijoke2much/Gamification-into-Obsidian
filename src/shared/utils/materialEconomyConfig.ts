@@ -38,6 +38,18 @@ export function normalizeQuestDifficulty(difficulty: string | undefined): QuestD
 	return 'default';
 }
 
+export function stepDownQuestDifficulty(
+	difficulty: string | undefined,
+	steps: number
+): QuestDifficultyKey {
+	const key = normalizeQuestDifficulty(difficulty);
+	if (steps <= 0) return key;
+	const order: QuestDifficultyKey[] = ['easy', 'medium', 'hard', 'epic', 'legendary'];
+	const idx = order.indexOf(key);
+	if (idx === -1) return 'easy';
+	return order[Math.max(0, idx - Math.floor(steps))];
+}
+
 export function rollChance(chance: number): boolean {
 	if (chance >= 1) return true;
 	if (chance <= 0) return false;

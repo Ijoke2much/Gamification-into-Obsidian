@@ -39,6 +39,6 @@ export interface ResolvedVisualTheme {
 }
 
 export const DEFAULT_VISUAL_THEME_SETTINGS: VisualThemeSettings = {
-	preset: 'classic',
+	preset: 'clay',
 	ceremonyLevel: 'minimal',
 };

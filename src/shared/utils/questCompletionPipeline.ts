@@ -47,7 +47,7 @@ import {
 } from "../services/ceremonyService";
 import { recordDailyActivity } from "./dailyActivityStreak";
 import { MaterialInventoryManager } from "../services/materialInventoryManager";
-import { showGameNotice } from "./noticeUtils";
+import { applyDreamBattleOnQuestComplete } from "../../features/player/utils/dreamBattleTick";
 
 export interface QuestRewardSettings {
 	currencyName?: string;
@@ -81,6 +81,10 @@ export interface QuestRewardResult {
 	bossRaidPendingVictory?: boolean;
 	/** Crafting materials granted (chance-based). */
 	materialsGranted?: { name: string; icon: string }[];
+	/** Dream survival tick — flavor only; never blocks completion. */
+	dreamNotice?: string;
+	dreamOutcome?: 'survived' | 'wrecked';
+	dreamLootDown?: number;
 }
 
 /** Default stamina cost when a quest has no `energyCost` in metadata. */
@@ -197,25 +201,26 @@ export async function awardQuestRewards(
 	let journeyVictoryLoot: JourneyVictoryLoot | undefined;
 	let journeyVictoryNotice: string | undefined;
 	let materialsGranted: { name: string; icon: string }[] | undefined;
+	let dreamTick: Awaited<ReturnType<typeof applyDreamBattleOnQuestComplete>> = null;
+
+	if (app) {
+		dreamTick = await applyDreamBattleOnQuestComplete(app, settings as { bookOfEasy?: boolean } | null);
+	}
 
 	// Live crafting inventory — chance-based mats on the main quest path
 	if (app) {
 		try {
 			const difficulty = String(quest.difficulty || 'medium');
-			const matResult = await MaterialInventoryManager.addQuestMaterials(app, difficulty);
+			const matResult = await MaterialInventoryManager.addQuestMaterials(
+				app,
+				difficulty,
+				dreamTick?.lootStepsDown ?? 0
+			);
 			if (matResult.materials.length > 0) {
 				materialsGranted = matResult.materials.map((m) => ({
 					name: m.name,
 					icon: m.icon,
 				}));
-				const summary = matResult.materials
-					.map((m) => `${m.icon} ${m.name}`)
-					.join(', ');
-				try {
-					showGameNotice(`📦 Materials: ${summary}`, 2500);
-				} catch {
-					/* ignore */
-				}
 			}
 		} catch (error) {
 			console.warn('[awardQuestRewards] Material grant failed:', error);
@@ -281,6 +286,13 @@ export async function awardQuestRewards(
 				}
 			: {}),
 		...(materialsGranted?.length ? { materialsGranted } : {}),
+		...(dreamTick
+			? {
+					dreamNotice: dreamTick.notice,
+					dreamOutcome: dreamTick.outcome,
+					dreamLootDown: dreamTick.lootStepsDown,
+				}
+			: {}),
 	};
 }
 
@@ -323,10 +335,42 @@ export async function applyTacticalBattleBonuses(bonusXP: number, bonusCoins: nu
 	if (c > 0) await playerStore.addCoins(c);
 }
 
+/** Extra flavor that belongs on the same toast as XP — not a second notice. */
+export function appendQuestCompletionFlavor(
+	lines: string[],
+	result: QuestRewardResult
+): void {
+	if (result.materialsGranted?.length) {
+		const summary = result.materialsGranted
+			.map((m) => `${m.icon} ${m.name}`)
+			.join(', ');
+		lines.push(`📦 ${summary}`);
+	}
+	if (result.journeyDamage != null && !result.journeyDefeated) {
+		if (result.journeyGrazed) {
+			lines.push(`Journey graze −${result.journeyDamage} HP`);
+		} else {
+			const hp =
+				result.journeyHpPercent != null ? ` · foe ${result.journeyHpPercent}%` : '';
+			lines.push(`Journey −${result.journeyDamage} HP${hp}`);
+		}
+	}
+	if (result.bossRaidDamage != null && !result.bossRaidDefeated) {
+		const label = result.bossRaidBossName || 'Gate boss';
+		if (result.bossRaidGrazed) {
+			lines.push(`Raid graze −${result.bossRaidDamage} HP vs ${label}`);
+		} else {
+			const hp =
+				result.bossRaidHpPercent != null ? ` · ${result.bossRaidHpPercent}%` : '';
+			lines.push(`Raid −${result.bossRaidDamage} HP vs ${label}${hp}`);
+		}
+	}
+}
+
 /**
  * Build the standard "Quest Complete!" notice string.
  *
- * Example:  ✅ Quest Complete! +50 XP, +10 CP, 🪙10 Boogers
+ * Example:  ✅ QUEST COMPLETE!\n+50 XP · +10 CP · 🪙10 Coins
  */
 export function buildCompletionNoticeText(
 	result: QuestRewardResult,
@@ -341,6 +385,10 @@ export function buildCompletionNoticeText(
 	if (result.wellbeingLine) {
 		lines.push(result.wellbeingLine);
 	}
+	if (result.dreamNotice) {
+		lines.push(result.dreamNotice);
+	}
+	appendQuestCompletionFlavor(lines, result);
 	return lines.join('\n');
 }
 
@@ -351,9 +399,9 @@ export function emitQuestCompletionFeedback(
 	result: QuestRewardResult,
 	settings?: Partial<GamificationPluginSettings> | QuestRewardSettings
 ): void {
-	if (result.journeyDamage != null) {
+	if (result.journeyDefeated && result.journeyDamage != null) {
 		notifyJourneyHit(result.journeyDamage, {
-			defeated: result.journeyDefeated,
+			defeated: true,
 			grazed: result.journeyGrazed,
 			hpPercentAfter: result.journeyHpPercent,
 		});
@@ -364,9 +412,9 @@ export function emitQuestCompletionFeedback(
 	if (result.journeyVictoryNotice) {
 		notifyJourneyVictory(result.journeyVictoryNotice);
 	}
-	if (result.bossRaidDamage != null) {
+	if (result.bossRaidDefeated && result.bossRaidDamage != null) {
 		notifyBossRaidHit(result.bossRaidDamage, {
-			defeated: result.bossRaidDefeated,
+			defeated: true,
 			grazed: result.bossRaidGrazed,
 			hpPercentAfter: result.bossRaidHpPercent,
 			bossName: result.bossRaidBossName,

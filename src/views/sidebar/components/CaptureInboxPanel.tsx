@@ -29,9 +29,9 @@ interface CaptureInboxPanelProps {
 
 export const CaptureInboxPanel: React.FC<CaptureInboxPanelProps> = ({
 	captures,
-	tagPresets,
-	activeTag,
-	onTagChange,
+	tagPresets: _tagPresets,
+	activeTag: _activeTag,
+	onTagChange: _onTagChange,
 	collapsed,
 	onToggleCollapse,
 	onPromote,
@@ -42,27 +42,13 @@ export const CaptureInboxPanel: React.FC<CaptureInboxPanelProps> = ({
 	onToggleShowAll,
 	lite = false,
 }) => {
-	const filtered = useMemo(() => {
-		if (lite || activeTag === 'all') return captures;
-		return captures.filter((quest) => (quest.tags ?? []).includes(activeTag));
-	}, [captures, activeTag, lite]);
+	const filtered = useMemo(() => captures, [captures]);
 
 	const visible = showAll ? filtered : filtered.slice(0, PAGE_SIZE);
 	const hiddenCount = Math.max(0, filtered.length - PAGE_SIZE);
 
-	const filterTags = useMemo(() => {
-		const fromCaptures = new Set<string>();
-		for (const quest of captures) {
-			for (const tag of quest.tags ?? []) {
-				if (!HIDDEN_TAGS.has(tag)) fromCaptures.add(tag);
-			}
-		}
-		const merged = new Set([...tagPresets, ...fromCaptures]);
-		return Array.from(merged).sort();
-	}, [captures, tagPresets]);
-
 	return (
-		<section className={`${styles.section} ${lite ? styles.sectionLite : ''}`}>
+		<section className={`${styles.section} ${lite ? styles.sectionLite : ''}`} data-capture-inbox>
 			<div className={styles.header}>
 				<div className={styles.title}>
 					{lite ? 'Brain dumps' : 'Capture Inbox'}{' '}
@@ -81,28 +67,6 @@ export const CaptureInboxPanel: React.FC<CaptureInboxPanelProps> = ({
 
 			{!collapsed && (
 				<>
-					{!lite && (
-					<div className={styles.tagRow}>
-						<button
-							type="button"
-							className={`${styles.tagChip} ${activeTag === 'all' ? styles.tagChipActive : ''}`}
-							onClick={() => onTagChange('all')}
-						>
-							All
-						</button>
-						{filterTags.map((tag) => (
-							<button
-								key={tag}
-								type="button"
-								className={`${styles.tagChip} ${activeTag === tag ? styles.tagChipActive : ''}`}
-								onClick={() => onTagChange(tag)}
-							>
-								#{tag}
-							</button>
-						))}
-					</div>
-					)}
-
 					{filtered.length === 0 ? (
 						<div className={styles.empty}>
 							{captures.length === 0

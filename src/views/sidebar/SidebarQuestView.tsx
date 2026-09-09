@@ -32,6 +32,10 @@ import { pixelNotice } from '../../shared/utils/noticeUtils';
 import { onSettingsUpdated } from '../../shared/utils/settingsEvents';
 import { getAppliedVisualTheme } from '../../shared/utils/visualThemeManager';
 import {
+	isBossBattlesEnabled,
+	journeyDungeonHubEnabled,
+} from '../../shared/utils/gameplayConfig';
+import {
 	getQuestProjectSlug,
 	isRegularTaskQuest,
 	parseQuestHubSection,
@@ -133,6 +137,20 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 		() => getAppliedVisualTheme(),
 		[visualThemeRevision]
 	);
+	const showProjectsHub = isBossBattlesEnabled(plugin.settings);
+	const showJourneyDungeon = journeyDungeonHubEnabled(plugin.settings);
+
+	useEffect(() => {
+		if (
+			(hubSection === 'journey' || hubSection === 'dungeon') &&
+			!showJourneyDungeon
+		) {
+			setHubSection('tasks');
+		}
+		if (hubSection === 'projects' && !showProjectsHub) {
+			setHubSection('tasks');
+		}
+	}, [hubSection, showJourneyDungeon, showProjectsHub]);
 
 	useEffect(() => onSettingsUpdated(() => setVisualThemeRevision((n) => n + 1)), []);
 
@@ -710,7 +728,7 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 		try {
 			const ok = await promoteCaptureToTodayInbox(app, plugin.settings, quest);
 			if (ok) {
-				pixelNotice("Added to today's inbox", 2000);
+				pixelNotice("Added to today's inbox", 2000, 'low');
 				await loadCapturesList();
 				await loadQuests();
 			}
@@ -730,7 +748,7 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 		try {
 			const removed = await removeCaptureLine(app, plugin.settings, quest);
 			if (removed) {
-				pixelNotice('Capture dismissed', 1500);
+				pixelNotice('Capture dismissed', 1500, 'low');
 				await loadCapturesList();
 			}
 		} catch (error) {
@@ -756,7 +774,7 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 	const handleContinueOnTasks = (projectSlug: string, projectTitle: string) => {
 		setProjectFilter({ slug: projectSlug, title: projectTitle });
 		setHubSection('tasks');
-		pixelNotice(`🗡️ Showing tasks for: ${projectTitle}`);
+		pixelNotice(`🗡️ Showing tasks for: ${projectTitle}`, 2500, 'low');
 	};
 
 	const handleOpenContract = async (project: ProjectSummary) => {
@@ -822,7 +840,7 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 		try {
 			await appendWaypointChecklistItem(app, waypoint, stepTitle);
 			await loadQuests();
-			pixelNotice(`✓ Checklist item added to "${waypoint.title}"`, 2500);
+			pixelNotice(`✓ Checklist item added to "${waypoint.title}"`, 2500, 'low');
 			return true;
 		} catch (error) {
 			console.error('Failed to add checklist item:', error);
@@ -838,7 +856,7 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 		try {
 			await appendProjectStep(app, plugin.settings, project, stepTitle, contractSkills);
 			await loadQuests();
-			pixelNotice(`🗺️ New waypoint: ${stepTitle}`, 2500);
+			pixelNotice(`🗺️ New waypoint: ${stepTitle}`, 2500, 'low');
 			return true;
 		} catch (error) {
 			console.error('Failed to add project waypoint:', error);
@@ -966,7 +984,7 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 			}
 
 			await loadQuests();
-			pixelNotice(`📜 New contract posted: ${title}`, 3500);
+			pixelNotice(`📜 New contract posted: ${title}`, 3500, 'low');
 			return slugifyProjectId(title);
 		} catch (error) {
 			console.error("Failed to create contract:", error);
@@ -1058,7 +1076,7 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 			const result = await persistQuestUncomplete(app, quest);
 			await loadQuests();
 			if (result.changed) {
-				pixelNotice(`Reopened "${getQuestDisplayTitle(quest)}"`, 2500);
+				pixelNotice(`Reopened "${getQuestDisplayTitle(quest)}"`, 2500, 'low');
 				if (result.journeyHpRestored != null && result.journeyHpRestored > 0) {
 					pixelNotice(`Journey +${result.journeyHpRestored} HP restored`, 2800);
 				}
@@ -1140,7 +1158,7 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 			if (targetGroup === "now" && isMobile && !dayPlanExpanded) {
 				setDayPlanExpanded(true);
 			}
-			pixelNotice(`Moved "${questName}" to ${groupTitle(targetGroup)}`, 2500);
+			pixelNotice(`Moved "${questName}" to ${groupTitle(targetGroup)}`, 2500, 'low');
 		} catch (error) {
 			console.error("Failed to move quest between inbox groups:", error);
 			const message =
@@ -1192,7 +1210,7 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 			await persistQuestDueDateTime(app, quest, targetIso, todayISO);
 			await loadQuests();
 			const label = targetDate.toLocaleDateString([], { month: "short", day: "numeric" });
-			pixelNotice(`Moved "${getQuestDisplayTitle(quest)}" to ${label}`, 2500);
+			pixelNotice(`Moved "${getQuestDisplayTitle(quest)}" to ${label}`, 2500, 'low');
 		} catch (error) {
 			console.error("Failed to move quest from timeline:", error);
 			pixelNotice("Could not move quest. Please try again.", 3500);
@@ -1210,7 +1228,7 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 			const dueIso = `${toISODate(base)}T${hh}:${mm}`;
 			await persistQuestDueDateTime(app, quest, dueIso, todayISO);
 			await loadQuests();
-			pixelNotice(`Snoozed +${minutes}m → ${hh}:${mm}`, 2200);
+			pixelNotice(`Snoozed +${minutes}m → ${hh}:${mm}`, 2200, 'low');
 		} catch (error) {
 			console.error("Failed to snooze quest from timeline:", error);
 			pixelNotice("Could not snooze quest. Please try again.", 3500);
@@ -1219,7 +1237,7 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 
 	const handleStartFocus = (quest: Quest) => {
 		launchPomodoroForQuest(plugin, quest, { mountDelayMs: isMobile ? 650 : 500 });
-		pixelNotice(`⏱ Focus: ${getQuestDisplayTitle(quest)}`, 2000);
+		pixelNotice(`⏱ Focus: ${getQuestDisplayTitle(quest)}`, 2000, 'low');
 	};
 
 	const scrollTimelineToNow = (behavior: ScrollBehavior = "smooth") => {
@@ -1240,19 +1258,22 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 		window.setTimeout(() => scrollTimelineToNow("smooth"), isMobile ? 80 : 0);
 	};
 
+	const isClayTheme = appliedVisualTheme.preset === 'clay';
+
 	return (
 		<>
 			{/* Lite on mobile so Quests can still show level-up without heavy rank UI */}
 			<CeremonyHost lite={isMobile} />
 		<div
 			ref={boardRootRef}
-			className={`${styles.container} ${styles.pixelSidebarQuestShell}${isMobile ? ` ${styles.mobileTodayRun}` : ` ${styles.desktopMissionBoard}`}`}
+			className={`${styles.container} ${isClayTheme ? styles.claySidebarQuestShell : styles.pixelSidebarQuestShell}${isMobile ? ` ${styles.mobileTodayRun}` : ` ${styles.desktopMissionBoard}`}`}
 			data-gamification-theme-root
 			data-gamification-visual-theme={appliedVisualTheme.preset}
 			data-gamification-shell={appliedVisualTheme.shell}
 			data-gamification-mobile={isMobile ? 'true' : 'false'}
 			data-quests-density={isMobile ? 'narrow' : questsDensity}
-			data-pixel-shell="quests"
+			data-pixel-shell={isClayTheme ? undefined : 'quests'}
+			data-clay-shell={isClayTheme ? 'quests' : undefined}
 		>
 			<div className={styles.panelHeader}>
 				<h2 className={styles.panelTitle}>Quests</h2>
@@ -1261,7 +1282,10 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 			<QuestHubNav
 				active={hubSection}
 				onChange={setHubSection}
-				pixelShell={appliedVisualTheme.preset !== 'system-hunter'}
+				pixelShell={appliedVisualTheme.preset === 'classic'}
+				clayShell={isClayTheme}
+				showProjects={showProjectsHub}
+				showJourneyDungeon={showJourneyDungeon}
 			/>
 			{hubSection === 'tasks' && (
 				<>
@@ -1276,6 +1300,7 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 				energyCurrent={currentEnergy}
 				variant={isMobile ? 'mobile' : 'desktop'}
 				showWidenTip={!isMobile && questsDensity === 'narrow'}
+				clayUi={isClayTheme}
 			/>
 			{isMobile && (
 				<div className={styles.mobileFilterRow} role="group" aria-label="Today filters">
@@ -1636,7 +1661,7 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 				</>
 			)}
 
-			{hubSection === 'projects' && (
+			{hubSection === 'projects' && showProjectsHub && (
 				<QuestProjectsPanel
 					allQuests={allQuests}
 					onQuestClick={openDetails}
@@ -1657,11 +1682,11 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 				/>
 			)}
 
-			{hubSection === 'journey' && (
+			{hubSection === 'journey' && showJourneyDungeon && (
 				<QuestJourneyPanel plugin={plugin} />
 			)}
 
-			{hubSection === 'dungeon' && (
+			{hubSection === 'dungeon' && showJourneyDungeon && (
 				<QuestDungeonPanel plugin={plugin} />
 			)}
 
@@ -2527,7 +2552,7 @@ export class SidebarQuestBoardView extends ItemView {
 	}
 
 	getDisplayText() {
-		return "Sidebar Quest Board";
+		return "Quest board";
 	}
 
 	async onOpen() {

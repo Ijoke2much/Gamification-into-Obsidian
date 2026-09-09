@@ -6,6 +6,7 @@
 import { cpSync, mkdirSync, existsSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
+import { execSync } from 'child_process';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const assetsRoot = join(root, 'assets');
@@ -23,4 +24,6 @@ if (existsSync(treesSrc)) {
 	}
 }
 
-console.log('✅ Plugin assets copied to assets/ (including assets/trees/)');
+execSync('node scripts/generate-pixel-sprites.mjs', { cwd: root, stdio: 'inherit' });
+
+console.log('✅ Plugin assets copied to assets/ (including assets/trees/ and assets/sprites/)');

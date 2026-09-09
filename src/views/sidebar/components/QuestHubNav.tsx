@@ -13,14 +13,32 @@ interface QuestHubNavProps {
 	active: QuestHubSection;
 	onChange: (section: QuestHubSection) => void;
 	pixelShell?: boolean;
+	clayShell?: boolean;
+	showProjects?: boolean;
+	showJourneyDungeon?: boolean;
 }
 
-export const QuestHubNav: React.FC<QuestHubNavProps> = ({ active, onChange, pixelShell }) => (
+export const QuestHubNav: React.FC<QuestHubNavProps> = ({
+	active,
+	onChange,
+	pixelShell,
+	clayShell,
+	showProjects = true,
+	showJourneyDungeon = true,
+}) => {
+	const sections = SECTIONS.filter((section) => {
+		if (section.id === 'projects') return showProjects;
+		if (section.id === 'journey' || section.id === 'dungeon') return showJourneyDungeon;
+		return true;
+	});
+
+	return (
 	<nav
-		className={`${hubStyles.hubNav} ${pixelShell ? hubStyles.hubNavPixel : ''}`}
+		className={`${hubStyles.hubNav} ${pixelShell ? hubStyles.hubNavPixel : ''} ${clayShell ? hubStyles.hubNavClay : ''}`}
+		data-quest-hub-nav
 		aria-label="Quest hub"
 	>
-		{SECTIONS.map(({ id, label, icon }) => (
+		{sections.map(({ id, label, icon }) => (
 			<button
 				key={id}
 				type="button"
@@ -35,4 +53,5 @@ export const QuestHubNav: React.FC<QuestHubNavProps> = ({ active, onChange, pixe
 			</button>
 		))}
 	</nav>
-);
+	);
+};

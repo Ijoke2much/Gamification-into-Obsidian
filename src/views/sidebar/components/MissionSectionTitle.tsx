@@ -19,7 +19,7 @@ export const MissionSectionTitle: React.FC<MissionSectionTitleProps> = ({
 	actions,
 	className = '',
 }) => (
-	<div className={`${styles.wrap} ${className}`.trim()}>
+	<div className={`${styles.wrap} ${className}`.trim()} data-mission-title>
 		<div className={styles.row}>
 			<div className={styles.left}>
 				{icon != null && icon !== '' && (

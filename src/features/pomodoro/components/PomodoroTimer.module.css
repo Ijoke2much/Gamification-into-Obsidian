@@ -1,3 +1,31 @@
+.sessionLive .statsPanel,
+.sessionLive .energySection,
+.sessionLive .sessionTypesSection,
+.sessionLive .questAttachmentSection,
+.sessionLive .enhancedQuestCard,
+.sessionLive .timerSection {
+    display: none !important;
+}
+
+.arenaControls {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.arenaControls button {
+    padding: 6px 12px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #efe6d8;
+    background: rgba(7, 6, 10, 0.85);
+    border: 1px solid rgba(232, 200, 160, 0.35);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
 /* Timer Card */
 .timerCard {
     padding: 2rem;
@@ -8,6 +36,49 @@
     max-width: 400px;
     width: 100%;
     margin: 0 auto;
+}
+
+.timerCard:has(.encounterMount) {
+    max-width: min(920px, 100%);
+    padding: 0.55rem;
+    background: #07060a;
+    border: 1px solid rgba(168, 42, 58, 0.4);
+    box-shadow: 0 0 24px rgba(80, 8, 24, 0.22);
+}
+
+.timerCard:has(.encounterMount) .timerTitle {
+    display: none;
+}
+
+.timerCard:has(.encounterMount) .controls button {
+    background: transparent !important;
+    box-shadow: none !important;
+    border: 1px solid rgba(34, 200, 255, 0.35) !important;
+    color: var(--go-text, #e8e0d4) !important;
+}
+
+.timerCard:has(.encounterMount) .btnStart {
+    color: var(--go-accent, #22c8ff) !important;
+}
+
+.timerCard:has(.encounterMount) .btnPause {
+    border-color: rgba(232, 184, 74, 0.55) !important;
+    color: #e8b84a !important;
+    background: transparent !important;
+}
+
+.timerCard:has(.encounterMount) .btnReset {
+    border-color: rgba(194, 56, 72, 0.7) !important;
+    color: #ffb4b4 !important;
+}
+
+.timerCard:has(.encounterMount) .btnSkip {
+    border-color: rgba(155, 126, 220, 0.55) !important;
+    color: #d2c4f0 !important;
+}
+
+.encounterMount {
+    width: 100%;
 }
 
 /* Timer Title */
@@ -564,7 +635,7 @@
 
 .energyLevel {
     height: 100%;
-    background: linear-gradient(90deg, #ff4444, #ffaa00, #44ff44);
+    background: var(--go-accent, #22c8ff);
     border-radius: 10px;
     transition: width 0.3s ease;
     position: relative;
@@ -660,13 +731,14 @@
    ======================================== */
 
 .enhancedQuestCard {
-    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0.05) 100%);
-    border-radius: 12px;
-    padding: 20px;
+    background: var(--go-panel, var(--pixel-panel, var(--background-secondary)));
+    border-radius: var(--pixel-card-radius, 12px);
+    padding: 16px;
     margin-bottom: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(10px);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--go-border, var(--pixel-border-dark, rgba(255, 255, 255, 0.2)));
+    box-shadow: none;
+    backdrop-filter: none;
+    color: var(--go-text, var(--text-normal));
 }
 
 .questHeaderEnhanced {
@@ -701,11 +773,10 @@
 }
 
 .questTitleEnhanced {
-    font-size: 1.3rem;
+    font-size: 1.15rem;
     font-weight: bold;
-    color: #fff;
+    color: var(--go-text, var(--text-normal));
     margin: 0 0 8px 0;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
 .questMeta {
@@ -797,15 +868,15 @@
 .questProgressSection {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: stretch;
     gap: 8px;
 }
 
 .progressTextEnhanced {
-    color: #fff;
+    color: var(--go-text, var(--text-normal));
     font-weight: bold;
     font-size: 0.9rem;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    text-shadow: none;
 }
 
 .questDescription {
@@ -833,11 +904,49 @@
 }
 
 .questRewards {
-    margin: 20px 0;
-    padding: 0;
-    background: none;
-    border: none;
-    border-radius: 0;
+    margin: 16px 0 12px;
+    padding: 14px;
+    background: var(--go-panel-strong, var(--pixel-panel-alt, rgba(142, 202, 230, 0.1)));
+    border-radius: var(--pixel-card-radius, 12px);
+    border: 1px solid var(--go-border, var(--pixel-border-dark, rgba(142, 202, 230, 0.2)));
+}
+
+.rewardStripLabel {
+    margin: 0 0 10px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--go-muted, var(--pixel-accent, var(--text-muted)));
+}
+
+.rewardStrip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.rewardChip {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    padding: 6px 10px;
+    background: var(--go-panel, var(--pixel-panel, rgba(0, 0, 0, 0.28)));
+    border: 1px solid var(--go-border, var(--pixel-border-dark, rgba(255, 255, 255, 0.12)));
+    border-radius: var(--go-radius, var(--pixel-card-radius, 8px));
+    color: var(--go-text, var(--text-normal));
+}
+
+.rewardChipValue {
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+
+.rewardChipKind {
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--go-muted, var(--text-muted));
 }
 
 .questTimedRewardBonus {
@@ -1000,24 +1109,24 @@
 }
 
 .detachBtnEnhanced {
-    background: linear-gradient(45deg, #ff6b6b, #ee5a24);
-    color: white;
-    border: none;
+    background: transparent;
+    color: var(--go-danger, #ff6b6b);
+    border: 1px solid var(--go-danger, #ff6b6b);
     padding: 12px 20px;
     border-radius: 8px;
     cursor: pointer;
     font-weight: bold;
     font-size: 0.9rem;
-    transition: all 0.3s ease;
+    transition: background 0.15s ease;
     width: 100%;
-    margin-top: 15px;
-    box-shadow: 0 4px 12px rgba(238, 90, 36, 0.3);
+    margin-top: 0;
+    box-shadow: none;
 }
 
 .detachBtnEnhanced:hover {
-    background: linear-gradient(45deg, #ee5a24, #ff6b6b);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(238, 90, 36, 0.4);
+    background: color-mix(in srgb, var(--go-danger, #ff6b6b) 16%, transparent);
+    transform: none;
+    box-shadow: none;
 }
 
 /* Sidebar View (350px width) - Most restrictive first */
@@ -1923,7 +2032,7 @@ screen and (max-width: 600px) {
 
     .questRewards {
         margin: 10px 0 !important;
-        padding: 0 !important;
+        padding: 10px !important;
     }
 
     .rewardsLabel {
@@ -2124,7 +2233,7 @@ screen and (max-width: 600px) {
 .pomodoroContainer.compact .questRewards,
 .pomodoroContainer[data-compact="true"] .questRewards {
     margin: 10px 0 !important;
-    padding: 0 !important;
+    padding: 10px !important;
 }
 
 .pomodoroContainer.compact .rewardsList,
@@ -2209,20 +2318,18 @@ subtasks CSS
 
 .completeQuestBtn {
     flex: 1;
-    background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
-    color: white;
-    border: none;
+    background: var(--go-accent, var(--pixel-accent, #4fc3f7));
+    color: var(--go-text-on-accent, #0b1220);
+    border: 1px solid var(--go-border-strong, var(--pixel-border-dark, transparent));
     padding: 12px 20px;
     border-radius: 8px;
     font-weight: bold;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .completeQuestBtn:hover {
-    background: linear-gradient(135deg, #218838 0%, #1ba085 100%);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+    filter: brightness(1.08);
 }
 
 /* Compact styles */
@@ -2270,27 +2377,28 @@ subtasks CSS
 }
 
 .completeQuestBtn {
-    background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
-    color: white;
-    border: none;
+    background: var(--go-accent, var(--pixel-accent, #4fc3f7));
+    color: var(--go-text-on-accent, #0b1220);
+    border: 1px solid var(--go-border-strong, var(--pixel-border-dark, transparent));
     border-radius: 10px;
     padding: 12px 20px;
     font-size: 1rem;
     font-weight: bold;
     cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
+    transition: filter 0.15s ease;
+    box-shadow: none;
 }
 
 .completeQuestBtn:hover {
-    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4);
+    filter: brightness(1.08);
+    transform: none;
+    box-shadow: none;
 }
 
 .completeQuestBtn:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 10px rgba(34, 197, 94, 0.3);
+    filter: brightness(0.95);
+    transform: none;
+    box-shadow: none;
 }
 
 .subtaskItemEnhanced {
@@ -2718,16 +2826,16 @@ Break Activities CSS
 .questProgressSection {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: stretch;
     gap: 8px;
     margin: 16px 0;
 }
 
 .progressTextEnhanced {
-    color: #fff;
+    color: var(--go-text, var(--text-normal));
     font-weight: bold;
     font-size: 0.9rem;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    text-shadow: none;
 }
 
 /* ========================================
@@ -2744,27 +2852,28 @@ Break Activities CSS
 }
 
 .completeQuestBtn {
-    background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
-    color: white;
-    border: none;
+    background: var(--go-accent, var(--pixel-accent, #4fc3f7));
+    color: var(--go-text-on-accent, #0b1220);
+    border: 1px solid var(--go-border-strong, var(--pixel-border-dark, transparent));
     border-radius: 10px;
     padding: 12px 20px;
     font-size: 1rem;
     font-weight: bold;
     cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
+    transition: filter 0.15s ease;
+    box-shadow: none;
 }
 
 .completeQuestBtn:hover {
-    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4);
+    filter: brightness(1.08);
+    transform: none;
+    box-shadow: none;
 }
 
 .completeQuestBtn:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 10px rgba(34, 197, 94, 0.3);
+    filter: brightness(0.95);
+    transform: none;
+    box-shadow: none;
 }
 
 /* ========================================
@@ -2924,16 +3033,12 @@ Break Activities CSS
 }
 
 .questRewards {
-    margin: 20px 0;
-    padding: 0;
-    background: none;
-    border: none;
-    border-radius: 0;
+    margin: 16px 0 12px;
 }
 
 .rewardsLabel {
     font-size: 14px;
-    color: rgba(76, 175, 80, 0.8);
+    color: var(--go-muted, var(--text-muted));
     margin-bottom: 12px;
     font-weight: 600;
 }
@@ -3054,22 +3159,23 @@ Break Activities CSS
 }
 
 .detachBtnEnhanced {
-    background: linear-gradient(135deg, #ff6b6b, #ee5a24);
-    color: white;
-    border: none;
+    background: transparent;
+    color: var(--go-danger, #ff6b6b);
+    border: 1px solid var(--go-danger, #ff6b6b);
     padding: 12px 24px;
     border-radius: 8px;
     font-size: 14px;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.3s ease;
-    margin-top: 16px;
+    transition: background 0.15s ease;
+    margin-top: 0;
     width: 100%;
 }
 
 .detachBtnEnhanced:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+    background: color-mix(in srgb, var(--go-danger, #ff6b6b) 16%, transparent);
+    transform: none;
+    box-shadow: none;
 }
 
 .notificationsContainer {
@@ -3235,185 +3341,37 @@ Break Activities CSS
 .questProgressSection {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 16px;
+    align-items: stretch;
+    gap: 12px;
     margin: 16px 0;
-    padding: 16px;
-    background: rgba(142, 202, 230, 0.1);
-    border-radius: 12px;
-    border: 1px solid rgba(142, 202, 230, 0.2);
+    padding: 14px;
+    background: var(--go-panel-strong, var(--pixel-panel-alt, rgba(142, 202, 230, 0.1)));
+    border-radius: var(--pixel-card-radius, 12px);
+    border: 1px solid var(--go-border, var(--pixel-border-dark, rgba(142, 202, 230, 0.2)));
 }
 
-/* Circular Progress Bar - Epic RPG/Video Game Style */
-.circularProgressContainer {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin: 12px 0;
-    position: relative;
-}
-
-.circularProgress {
-    position: relative;
-    width: 90px;
-    height: 90px;
-    border-radius: 50%;
-    background: radial-gradient(circle, #2d3748 0%, #1a202c 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow:
-        inset 0 0 30px rgba(0, 0, 0, 0.4),
-        0 8px 25px rgba(0, 0, 0, 0.6),
-        0 0 0 2px #4a5568,
-        0 0 0 4px #2d3748;
-    border: 3px solid #4a5568;
-    position: relative;
-    overflow: hidden;
-}
-
-.circularProgress::before {
-    content: '';
-    position: absolute;
-    top: -2px;
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    background: linear-gradient(45deg, #ffd700, #ff6b6b, #4fc3f7, #9c27b0, #ffd700);
-    border-radius: 50%;
-    z-index: -1;
-    animation: borderGlow 3s linear infinite;
-    background-size: 400% 400%;
-}
-
-.circularProgressFill {
-    position: absolute;
-    top: 0;
-    left: 0;
+.questProgressTrack {
     width: 100%;
+    height: 10px;
+    overflow: hidden;
+    background: var(--go-panel, var(--pixel-bg, rgba(0, 0, 0, 0.35)));
+    border: 1px solid var(--go-border, var(--pixel-border-dark, rgba(255, 255, 255, 0.12)));
+    border-radius: 999px;
+}
+
+.questProgressFill {
+    display: block;
     height: 100%;
-    border-radius: 50%;
-    transition: all 1s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    clip-path: polygon(50% 0%, 100% 0%, 100% 100%, 50% 100%);
-    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.6));
-}
-
-/* Epic RPG Color Transitions with Glow Effects */
-.circularProgressFill[style*="rotate(0deg)"] {
-    background: conic-gradient(from 0deg, #ff4757 0deg, #ff4757 360deg);
-    box-shadow: 0 0 20px rgba(255, 71, 87, 0.8);
-}
-
-.circularProgressFill[style*="rotate(36deg)"] {
-    background: conic-gradient(from 0deg, #ff4757 0deg, #ffa502 36deg, #ffa502 360deg);
-    box-shadow: 0 0 20px rgba(255, 165, 2, 0.8);
-}
-
-.circularProgressFill[style*="rotate(72deg)"] {
-    background: conic-gradient(from 0deg, #ff4757 0deg, #ffa502 72deg, #ffa502 360deg);
-    box-shadow: 0 0 20px rgba(255, 165, 2, 0.8);
-}
-
-.circularProgressFill[style*="rotate(108deg)"] {
-    background: conic-gradient(from 0deg, #ff4757 0deg, #ffa502 108deg, #00d2d3 360deg);
-    box-shadow: 0 0 20px rgba(0, 210, 211, 0.8);
-}
-
-.circularProgressFill[style*="rotate(144deg)"] {
-    background: conic-gradient(from 0deg, #ff4757 0deg, #ffa502 144deg, #00d2d3 360deg);
-    box-shadow: 0 0 20px rgba(0, 210, 211, 0.8);
-}
-
-.circularProgressFill[style*="rotate(180deg)"] {
-    background: conic-gradient(from 0deg, #ff4757 0deg, #ffa502 180deg, #00d2d3 360deg);
-    box-shadow: 0 0 20px rgba(0, 210, 211, 0.8);
-}
-
-.circularProgressFill[style*="rotate(216deg)"] {
-    background: conic-gradient(from 0deg, #ff4757 0deg, #ffa502 216deg, #5f27cd 360deg);
-    box-shadow: 0 0 20px rgba(95, 39, 205, 0.8);
-}
-
-.circularProgressFill[style*="rotate(252deg)"] {
-    background: conic-gradient(from 0deg, #ff4757 0deg, #ffa502 252deg, #5f27cd 360deg);
-    box-shadow: 0 0 20px rgba(95, 39, 205, 0.8);
-}
-
-.circularProgressFill[style*="rotate(288deg)"] {
-    background: conic-gradient(from 0deg, #ff4757 0deg, #ffa502 288deg, #5f27cd 360deg);
-    box-shadow: 0 0 20px rgba(95, 39, 205, 0.8);
-}
-
-.circularProgressFill[style*="rotate(324deg)"] {
-    background: conic-gradient(from 0deg, #ff4757 0deg, #ffa502 324deg, #5f27cd 360deg);
-    box-shadow: 0 0 20px rgba(95, 39, 205, 0.8);
-}
-
-.circularProgressFill[style*="rotate(360deg)"] {
-    background: conic-gradient(from 0deg, #ff4757 0deg, #ffa502 360deg, #5f27cd 360deg);
-    box-shadow: 0 0 20px rgba(95, 39, 205, 0.8);
-}
-
-.circularProgressText {
-    position: relative;
-    z-index: 2;
-    font-size: 14px;
-    font-weight: 800;
-    color: #ffffff;
-    text-shadow:
-        0 0 10px rgba(255, 255, 255, 0.8),
-        0 2px 4px rgba(0, 0, 0, 0.8);
-    background: radial-gradient(circle, rgba(45, 55, 72, 0.95) 0%, rgba(26, 32, 44, 0.95) 100%);
-    border-radius: 50%;
-    width: 55px;
-    height: 55px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    backdrop-filter: blur(4px);
-    border: 2px solid #4a5568;
-    box-shadow:
-        inset 0 0 15px rgba(255, 255, 255, 0.1),
-        0 4px 15px rgba(0, 0, 0, 0.4);
-}
-
-/* Animated border glow effect */
-@keyframes borderGlow {
-    0% {
-        background-position: 0% 50%;
-    }
-
-    50% {
-        background-position: 100% 50%;
-    }
-
-    100% {
-        background-position: 0% 50%;
-    }
-}
-
-/* Progress completion celebration effect */
-.circularProgressFill[style*="rotate(360deg)"] {
-    animation: completionPulse 2s ease-in-out infinite;
-}
-
-@keyframes completionPulse {
-
-    0%,
-    100% {
-        transform: scale(1);
-    }
-
-    50% {
-        transform: scale(1.05);
-    }
+    min-width: 0;
+    background: var(--go-accent, var(--pixel-accent, #22c8ff));
+    border-radius: inherit;
+    transition: width 0.35s ease;
 }
 
 .progressTextEnhanced {
-    color: #fff;
+    color: var(--go-text, var(--text-normal));
     font-weight: bold;
     font-size: 0.9rem;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 /* Quest Actions */
@@ -3427,27 +3385,28 @@ Break Activities CSS
 }
 
 .completeQuestBtn {
-    background: linear-gradient(135deg, #4ade80 0%, #22c55e 100%);
-    color: white;
-    border: none;
+    background: var(--go-accent, var(--pixel-accent, #4fc3f7));
+    color: var(--go-text-on-accent, #0b1220);
+    border: 1px solid var(--go-border-strong, var(--pixel-border-dark, transparent));
     border-radius: 10px;
     padding: 12px 20px;
     font-size: 1rem;
     font-weight: bold;
     cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(34, 197, 94, 0.3);
+    transition: filter 0.15s ease;
+    box-shadow: none;
 }
 
 .completeQuestBtn:hover {
-    background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(34, 197, 94, 0.4);
+    filter: brightness(1.08);
+    transform: none;
+    box-shadow: none;
 }
 
 .completeQuestBtn:active {
-    transform: translateY(0);
-    box-shadow: 0 2px 10px rgba(34, 197, 94, 0.3);
+    filter: brightness(0.95);
+    transform: none;
+    box-shadow: none;
 }
 
 /* ========================================
@@ -3505,6 +3464,15 @@ Break Activities CSS
     --pixel-ring-work: #5ce1e6;
     --pixel-ring-break: #7ed957;
     --pixel-ring-track: #2f3558;
+    --pomo-reward-bg: var(--pixel-panel-alt);
+    --pomo-reward-item-bg: var(--pixel-panel);
+    --pomo-reward-border: var(--pixel-border-dark);
+    --pomo-reward-item-border: var(--pixel-border-dark);
+    --pomo-reward-text: var(--go-text, var(--pixel-text));
+    --pomo-reward-muted: var(--pixel-muted);
+    --pomo-reward-radius: var(--pixel-card-radius);
+    --pomo-reward-item-radius: var(--pixel-card-radius);
+    --pomo-reward-shadow: var(--pixel-shadow-pressed);
 
     font-family: var(--go-font-ui, "Press Start 2P", "VT323", "Courier New", monospace);
     font-size: 11px;
@@ -3584,6 +3552,31 @@ Break Activities CSS
     padding: 1.25rem;
 }
 
+.pomodoroContainer.pixelPomodoroShell .timerCard:has(.encounterMount) {
+    max-width: min(920px, 100%);
+    padding: 0.55rem;
+    background: #07060a;
+    border-color: rgba(168, 42, 58, 0.55);
+    box-shadow: 0 0 24px rgba(80, 8, 24, 0.28);
+}
+
+.pomodoroContainer.pixelPomodoroShell .timerCard:has(.encounterMount) .controls button {
+    background: transparent !important;
+    box-shadow: none !important;
+    border: 1px solid rgba(232, 200, 160, 0.28) !important;
+    color: #efe6d8 !important;
+}
+
+.pomodoroContainer.pixelPomodoroShell .timerCard:has(.encounterMount) .btnPause {
+    border-color: rgba(232, 184, 74, 0.55) !important;
+    color: #e8b84a !important;
+}
+
+.pomodoroContainer.pixelPomodoroShell .timerCard:has(.encounterMount) .btnReset {
+    border-color: rgba(194, 56, 72, 0.7) !important;
+    color: #ffb4b4 !important;
+}
+
 .pomodoroContainer.pixelPomodoroShell .timerTitle {
     font-family: var(--go-font-ui, "Press Start 2P", "VT323", monospace);
     font-size: 10px;
@@ -3645,8 +3638,8 @@ Break Activities CSS
 }
 
 .pomodoroContainer.pixelPomodoroShell .btnPause {
-    background: var(--pixel-highlight);
-    color: var(--pixel-border-dark);
+    background: var(--pixel-panel-alt);
+    color: var(--pixel-highlight, #ffd36a);
 }
 
 .pomodoroContainer.pixelPomodoroShell .btnReset {
@@ -3676,7 +3669,7 @@ Break Activities CSS
 
 .pomodoroContainer.pixelPomodoroShell .energyLevel {
     border-radius: var(--pixel-card-radius);
-    background: linear-gradient(90deg, #ff6b6b, var(--pixel-highlight), var(--pixel-ring-break));
+    background: var(--pixel-accent);
     box-shadow: none;
 }
 
@@ -3871,13 +3864,38 @@ Break Activities CSS
 }
 
 .pomodoroContainer.pixelPomodoroShell .questRewards {
-    border: none;
-    background: transparent;
-    box-shadow: none;
-    padding: 0;
+    border: 2px solid var(--pixel-border-dark);
+    background: var(--pixel-panel-alt);
+    box-shadow: var(--pixel-shadow-pressed);
+    padding: 12px;
     margin: 12px 0;
     font-family: "VT323", monospace;
     font-size: 14px;
+}
+
+.pomodoroContainer.pixelPomodoroShell .rewardStripLabel {
+    font-family: var(--go-font-ui, "Press Start 2P", monospace);
+    font-size: 8px;
+    color: var(--pixel-highlight, #ffd36a);
+}
+
+.pomodoroContainer.pixelPomodoroShell .rewardChip {
+    border: 2px solid var(--pixel-border-dark);
+    background: var(--pixel-panel);
+    border-radius: var(--pixel-card-radius);
+}
+
+.pomodoroContainer.pixelPomodoroShell .questProgressTrack {
+    height: 12px;
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: var(--pixel-card-radius);
+    background: var(--pixel-bg);
+    box-shadow: var(--pixel-shadow-pressed);
+}
+
+.pomodoroContainer.pixelPomodoroShell .questProgressFill {
+    background: var(--pixel-accent);
+    border-radius: 0;
 }
 
 .pomodoroContainer.pixelPomodoroShell .questTimedRewardBonus {
@@ -3897,8 +3915,20 @@ Break Activities CSS
 }
 
 .pomodoroContainer.pixelPomodoroShell .completeQuestBtn {
+    background: var(--pixel-accent) !important;
+    color: var(--pixel-bg, #1a1c2c) !important;
     border-radius: var(--pixel-card-radius);
-    border: 2px solid var(--pixel-border-dark);
+    border: 2px solid var(--pixel-border-dark) !important;
+    box-shadow: var(--pixel-shadow);
+    font-family: var(--go-font-ui, "Press Start 2P", monospace);
+    font-size: 8px;
+}
+
+.pomodoroContainer.pixelPomodoroShell .detachBtnEnhanced {
+    background: var(--pixel-panel-alt) !important;
+    color: var(--pixel-highlight, #ffd36a) !important;
+    border-radius: var(--pixel-card-radius);
+    border: 2px solid var(--pixel-border-dark) !important;
     box-shadow: var(--pixel-shadow);
     font-family: var(--go-font-ui, "Press Start 2P", monospace);
     font-size: 8px;
@@ -3918,14 +3948,6 @@ Break Activities CSS
     font-size: 14px;
 }
 
-.pomodoroContainer.pixelPomodoroShell .detachBtnEnhanced {
-    border-radius: var(--pixel-card-radius);
-    border: 2px solid var(--pixel-border-dark);
-    box-shadow: var(--pixel-shadow);
-    font-family: var(--go-font-ui, "Press Start 2P", monospace);
-    font-size: 8px;
-}
-
 .pomodoroContainer.pixelPomodoroShell .progressTextEnhanced {
     font-family: "VT323", monospace;
     font-size: 16px;
@@ -3933,30 +3955,19 @@ Break Activities CSS
     text-shadow: none;
 }
 
-.pomodoroContainer.pixelPomodoroShell .circularProgress {
-    border-radius: 50%;
-    border: 3px solid var(--pixel-border-dark);
-    box-shadow: var(--pixel-shadow), inset 0 0 0 2px var(--pixel-panel-alt);
-    background: radial-gradient(circle, var(--pixel-panel-alt) 0%, var(--pixel-bg) 100%);
+
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell {
+    --pomo-reward-bg: rgba(4, 16, 32, 0.88);
+    --pomo-reward-item-bg: rgba(8, 24, 48, 0.9);
+    --pomo-reward-border: var(--go-border, rgba(34, 200, 255, 0.35));
+    --pomo-reward-item-border: var(--go-border, rgba(34, 200, 255, 0.28));
+    --pomo-reward-text: var(--go-text, #e0f2fe);
+    --pomo-reward-muted: var(--go-muted, #9ec7df);
+    --pomo-reward-radius: 2px;
+    --pomo-reward-item-radius: 2px;
+    --pomo-reward-shadow: none;
 }
 
-.pomodoroContainer.pixelPomodoroShell .circularProgress::before {
-    display: none;
-}
-
-.pomodoroContainer.pixelPomodoroShell .circularProgressFill {
-    filter: none;
-}
-
-.pomodoroContainer.pixelPomodoroShell .circularProgressText {
-    border-radius: var(--pixel-card-radius);
-    background: var(--pixel-panel);
-    border: 2px solid var(--pixel-border-dark);
-    text-shadow: 1px 1px 0 var(--pixel-border-dark);
-    box-shadow: inset 1px 1px 0 var(--pixel-border-light);
-}
-
-/* System Hunter shell */
 :global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .timerTitle,
 :global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .sessionTypesSection h3,
 :global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .questAttachmentSection h3 {
@@ -3987,6 +3998,13 @@ Break Activities CSS
     box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16)) !important;
 }
 
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .timerCard:has(.encounterMount) {
+    max-width: min(920px, 100%) !important;
+    background: #07060a !important;
+    border-color: rgba(168, 42, 58, 0.5) !important;
+    box-shadow: 0 0 24px rgba(80, 8, 24, 0.28) !important;
+}
+
 :global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .sessionTypeCard.active {
     border-color: var(--go-accent, #22c8ff) !important;
     box-shadow: var(--go-shadow, 0 0 22px rgba(34, 200, 255, 0.24)) !important;
@@ -4003,8 +4021,54 @@ Break Activities CSS
 }
 
 :global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .btnPause {
-    background: color-mix(in srgb, var(--go-gold, #ffd83d) 22%, transparent);
+    background: transparent;
     color: var(--go-gold, #ffd83d);
+    border: 1px solid color-mix(in srgb, var(--go-gold, #ffd83d) 45%, transparent);
+}
+
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .enhancedQuestCard,
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .questRewards,
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .questProgressSection {
+    border-width: 1px !important;
+    border-color: var(--go-border, rgba(34, 200, 255, 0.42)) !important;
+    border-radius: var(--go-radius, 2px) !important;
+    box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16)) !important;
+}
+
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .questProgressFill {
+    background: var(--go-accent, #22c8ff);
+}
+
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .rewardChip {
+    background: var(--go-card-soft, rgba(8, 28, 54, 0.72));
+    border: 1px solid var(--go-border, rgba(34, 200, 255, 0.28));
+    border-radius: var(--go-radius, 2px);
+}
+
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .completeQuestBtn {
+    background: var(--go-card-soft, rgba(8, 28, 54, 0.72)) !important;
+    color: var(--go-accent, #22c8ff) !important;
+    border: 1px solid var(--go-accent, #22c8ff) !important;
+    border-radius: var(--go-radius, 2px) !important;
+    font-family: inherit !important;
+    font-size: 12px !important;
+    box-shadow: none !important;
+}
+
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .detachBtnEnhanced,
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .questActions .attachBtn {
+    background: transparent !important;
+    color: var(--go-text, #e0f2fe) !important;
+    border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42)) !important;
+    border-radius: var(--go-radius, 2px) !important;
+    font-family: inherit !important;
+    font-size: 12px !important;
+    box-shadow: none !important;
+}
+
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .detachBtnEnhanced {
+    color: var(--go-danger, #ff6b6b) !important;
+    border-color: var(--go-danger, #ff6b6b) !important;
 }
 
 /* ========================================
@@ -4016,6 +4080,15 @@ Break Activities CSS
     --clay-ring-work: #4fcfc6;
     --clay-ring-break: #63d86d;
     --clay-ring-track: #dcd6cf;
+    --pomo-reward-bg: var(--clay-gradient, linear-gradient(145deg, #f6f2ec, #efe8df));
+    --pomo-reward-item-bg: #f3eee8;
+    --pomo-reward-border: rgba(255, 255, 255, 0.45);
+    --pomo-reward-item-border: transparent;
+    --pomo-reward-text: var(--clay-text, #2e2e2e);
+    --pomo-reward-muted: var(--clay-text-light, #676767);
+    --pomo-reward-radius: var(--clay-radius, 22px);
+    --pomo-reward-item-radius: 16px;
+    --pomo-reward-shadow: var(--clay-recessed);
 
     font-family: var(--go-font-ui, "Nunito", "Segoe UI", "Avenir Next", system-ui, sans-serif);
     font-size: 13px;
@@ -4107,6 +4180,15 @@ Break Activities CSS
     overflow: visible;
 }
 
+.pomodoroContainer.clayPomodoroShell .timerCard:has(.encounterMount) {
+    max-width: min(920px, 100%);
+    overflow: hidden;
+    background: #07060a;
+    border: 1px solid rgba(168, 42, 58, 0.45);
+    box-shadow: 0 0 24px rgba(80, 8, 24, 0.22);
+    padding: 0.55rem;
+}
+
 .circleWrapperClay {
     width: 236px;
     height: 236px;
@@ -4176,14 +4258,28 @@ Break Activities CSS
     color: #2e2a3f !important;
 }
 
-.pomodoroContainer.clayPomodoroShell .circularProgressText {
-    border-radius: 50%;
-    background: var(--clay-gradient, linear-gradient(145deg, #f6f2ec, #efe8df));
+.pomodoroContainer.clayPomodoroShell .questProgressTrack {
+    background: #ece8e2;
+    border: none;
+    box-shadow:
+        inset 0 2px 4px rgba(255, 255, 255, 0.85),
+        inset 0 -2px 5px rgba(0, 0, 0, 0.08);
+}
+
+.pomodoroContainer.clayPomodoroShell .questProgressFill {
+    background: var(--clay-accent-deep, #2ba8a3);
+}
+
+.pomodoroContainer.clayPomodoroShell .rewardChip {
+    background: rgba(255, 255, 255, 0.55);
     border: 1px solid rgba(255, 255, 255, 0.45);
     box-shadow: var(--clay-shadow);
-    text-shadow: none;
-    color: var(--clay-accent-deep, #2ba8a3);
-    font-weight: 800;
+    color: var(--clay-text, #2e2e2e);
+}
+
+.pomodoroContainer.clayPomodoroShell .rewardStripLabel,
+.pomodoroContainer.clayPomodoroShell .rewardChipKind {
+    color: var(--clay-text-light, #676767);
 }
 
 .pomodoroContainer.clayPomodoroShell .controls {
@@ -4290,4 +4386,52 @@ Break Activities CSS
 .pomodoroContainer.clayPomodoroShell .hyperfocusActive {
     background: var(--clay-accent-gradient, linear-gradient(180deg, #6ad7d4, #53c6c2));
     color: #fff;
+}
+
+.pomodoroContainer.clayPomodoroShell .enhancedQuestCard,
+.pomodoroContainer.clayPomodoroShell .questRewards,
+.pomodoroContainer.clayPomodoroShell .questProgressSection,
+.pomodoroContainer.clayPomodoroShell .questDescription,
+.pomodoroContainer.clayPomodoroShell .timedQuestIndicator,
+.pomodoroContainer.clayPomodoroShell .subtasksContainerEnhanced {
+    background: var(--clay-gradient, linear-gradient(145deg, #f6f2ec, #efe8df));
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    border-radius: var(--clay-radius, 22px);
+    box-shadow: var(--clay-shadow);
+    backdrop-filter: none;
+}
+
+.pomodoroContainer.clayPomodoroShell .questTitleEnhanced,
+.pomodoroContainer.clayPomodoroShell .progressTextEnhanced,
+.pomodoroContainer.clayPomodoroShell .descriptionText,
+.pomodoroContainer.clayPomodoroShell .subtaskTextEnhanced {
+    color: var(--clay-text, #2e2e2e);
+    text-shadow: none;
+}
+
+.pomodoroContainer.clayPomodoroShell .questActions .attachBtn,
+.pomodoroContainer.clayPomodoroShell .completeQuestBtn,
+.pomodoroContainer.clayPomodoroShell .detachBtnEnhanced {
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    border: none !important;
+    border-radius: 18px !important;
+    padding: 12px 18px;
+    box-shadow: var(--clay-shadow) !important;
+}
+
+.pomodoroContainer.clayPomodoroShell .questActions .attachBtn {
+    background: var(--clay-button-gradient, linear-gradient(180deg, #f7f4ef, #ece3da)) !important;
+    color: var(--clay-text, #2e2e2e) !important;
+}
+
+.pomodoroContainer.clayPomodoroShell .completeQuestBtn {
+    background: var(--clay-accent-gradient, linear-gradient(180deg, #6ad7d4, #53c6c2)) !important;
+    color: #fff !important;
+}
+
+.pomodoroContainer.clayPomodoroShell .detachBtnEnhanced {
+    background: var(--clay-button-gradient, linear-gradient(180deg, #f7f4ef, #ece3da)) !important;
+    color: var(--clay-text, #2e2e2e) !important;
 }

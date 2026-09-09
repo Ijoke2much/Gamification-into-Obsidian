@@ -1,5 +1,8 @@
 // This file stores real data of the player class
 
+import type { DreamPlayerState } from './DreamPlayer';
+import { DEFAULT_DREAM_STATE } from './DreamPlayer';
+
 // import { ceil, floor, pow } from "mathjs";
 
 export interface Buff {
@@ -80,6 +83,9 @@ export interface PlayerData {
 	consecutiveBossWins?: number;
 	totalBossVictories?: number;
 
+	/** Dream Player combat sheet (HP / last raid outcome). ATK/DEF are derived. */
+	dream?: DreamPlayerState;
+
 	// Skill system
 	unlockedSkills?: string[];
 
@@ -97,12 +103,30 @@ export interface PlayerData {
 	vault?: import('obsidian').Vault; // Will be set by the plugin when loading player data
 }
 
+export const DEFAULT_PLAYER_NAME = "Player";
+export const DEFAULT_PLAYER_DESCRIPTION =
+	"Define your passion... explain your purpose and inspiration";
+
+export const STARTER_MASTER_CLASSES = [
+	"Wanderer",
+	"Seeker",
+	"Shade",
+	"Nomad",
+	"Wraith",
+	"Acolyte",
+] as const;
+
+export function pickStarterMasterClass(): string {
+	const i = Math.floor(Math.random() * STARTER_MASTER_CLASSES.length);
+	return STARTER_MASTER_CLASSES[i] ?? "Wanderer";
+}
+
 export const DEFAULT_PLAYER: PlayerData = {
-	name: "The Tester",
-	avatar: "assets/sonic.png",
+	name: DEFAULT_PLAYER_NAME,
+	avatar: "",
 	rank: "E",
-	masterClass: "Jester",
-	description: "The Jester class is an individual who has not yet found their true potential. With great care and precision can become anything. Traits, master of few.",
+	masterClass: "Wanderer",
+	description: DEFAULT_PLAYER_DESCRIPTION,
 	level: 1,
 	xp: 0,
 	xpRequired: 100,
@@ -118,15 +142,25 @@ export const DEFAULT_PLAYER: PlayerData = {
 		stress: 20       // Start with low stress
 	},
 	activeArtifacts: [],
+	dream: { ...DEFAULT_DREAM_STATE },
 	lastDailyReset: new Date().toISOString()
 };
+
+export function createStarterPlayerData(): PlayerData {
+	return {
+		...DEFAULT_PLAYER,
+		masterClass: pickStarterMasterClass(),
+		dream: { ...DEFAULT_DREAM_STATE },
+		lastDailyReset: new Date().toISOString(),
+	};
+}
 
 export class Player {
 	data: PlayerData;
 	private saveCallback?: () => void;
 
 	constructor() {
-		this.data = { ...DEFAULT_PLAYER };
+		this.data = createStarterPlayerData();
 	}
 
 	setSaveCallback(cb: () => void) {
@@ -226,12 +260,12 @@ export class Player {
 
 	static fromJSON(json: Partial<PlayerData>): Player {
 		const player = new Player();
-		player.data = { ...DEFAULT_PLAYER, ...json };
+		player.data = { ...createStarterPlayerData(), ...json };
 		return player;
 	}
 
 	reset() {
-		this.data = { ...DEFAULT_PLAYER };
+		this.data = createStarterPlayerData();
 		this.triggerSave();
 	}
 }

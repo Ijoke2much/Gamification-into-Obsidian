@@ -1,7 +1,7 @@
 import React from "react";
 import styles from "./ProgressBar.module.css";
 
-export type ProgressBarVariant = "green" | "purple" | "orange" | "teal";
+export type ProgressBarVariant = "green" | "purple" | "orange" | "teal" | "ivory";
 
 interface ProgressBarProps {
 	progress: number; // 0 to 100
@@ -57,17 +57,19 @@ export const ProgressBar: React.FC<ProgressBarProps> = ({
 		const clayHeight = Math.min(Math.max(height, 12), 16);
 		const fillWidth = pct <= 0 ? 0 : Math.max(pct, 8);
 		const fillClass =
-			variant === "purple"
-				? styles.clayFillPurple
-				: variant === "orange"
-					? styles.clayFillOrange
-					: variant === "teal"
-						? styles.clayFillTeal
-						: styles.clayFillGreen;
+			variant === "ivory"
+				? styles.clayFillIvory
+				: variant === "purple"
+					? styles.clayFillPurple
+					: variant === "orange"
+						? styles.clayFillOrange
+						: variant === "teal"
+							? styles.clayFillTeal
+							: styles.clayFillGreen;
 
 		const bar = (
 			<div
-				className={styles.clayTrack}
+				className={`${styles.clayTrack} ${variant === "ivory" ? styles.clayTrackIvory : ""}`}
 				style={{ "--pb-height": `${clayHeight}px` } as React.CSSProperties}
 			>
 				{fillWidth > 0 && (

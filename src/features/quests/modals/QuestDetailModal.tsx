@@ -2,8 +2,14 @@ import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { TFile } from 'obsidian';
 import type { Quest } from '../utils/taskParser';
+import { getQuestSkillNames, getQuestCustomTags, normalizeCustomTag } from '../utils/taskParser';
+import { updateQuestCustomTags } from '../utils/questProjectUtils';
+import { pixelNotice } from '../../../shared/utils/noticeUtils';
 import type GamificationObsidianPlugin from '../../../core/main';
 import { formatRecur, parseEstimatedMinutes, formatMinutesHuman } from '../utils/questDisplayUtils';
+import { formatActivityProfileLabel, normalizeActivityProfileId } from '../../../shared/utils/questWellbeingProfiles';
+import { currencyDisplay } from '../../../shared/services/currencyDisplayService';
+import { isPerNoteQuestFile } from '../utils/questNoteService';
 import styles from './QuestDetailModal.module.css';
 
 interface QuestDetailModalProps {
@@ -44,6 +50,11 @@ export const QuestDetailModal: React.FC<QuestDetailModalProps> = ({
   
   // Local state for optimistic subtask updates
   const [localSubtasks, setLocalSubtasks] = useState<Array<{ text: string; completed?: boolean }> | null>(null);
+  const [localCustomTags, setLocalCustomTags] = useState<string[]>(() =>
+    quest ? getQuestCustomTags(quest) : []
+  );
+  const [tagDraft, setTagDraft] = useState('');
+  const [savingTags, setSavingTags] = useState(false);
   const questIdRef = useRef<string | null>(null);
   // Keep a ref to the quest so we can use it even if prop becomes null temporarily
   const questRef = useRef<Quest | null>(null);
@@ -70,6 +81,8 @@ export const QuestDetailModal: React.FC<QuestDetailModalProps> = ({
         } else {
           setLocalSubtasks(null);
         }
+        setLocalCustomTags(getQuestCustomTags(currentQuest));
+        setTagDraft('');
         questIdRef.current = currentQuestId;
       } else if (currentQuest.subtasks && localSubtasks) {
         // Same quest - preserve optimistic updates
@@ -227,13 +240,49 @@ export const QuestDetailModal: React.FC<QuestDetailModalProps> = ({
   };
 
   const dueInfo = getDueDateInfo();
+  const displayTags = localCustomTags;
+
+  const persistCustomTags = async (next: string[]) => {
+    if (savingTags) return;
+    setSavingTags(true);
+    setLocalCustomTags(next);
+    try {
+      await updateQuestCustomTags(plugin.app, displayQuest, next);
+    } catch (error) {
+      pixelNotice(error instanceof Error ? error.message : 'Could not save tags');
+      setLocalCustomTags(getQuestCustomTags(displayQuest));
+    } finally {
+      setSavingTags(false);
+    }
+  };
+
+  const addCustomTag = () => {
+    const slug = normalizeCustomTag(tagDraft);
+    if (!slug) {
+      if (tagDraft.trim()) pixelNotice('That tag is reserved or invalid');
+      setTagDraft('');
+      return;
+    }
+    if (displayTags.includes(slug)) {
+      setTagDraft('');
+      return;
+    }
+    setTagDraft('');
+    void persistCustomTags([...displayTags, slug]);
+  };
   const estimatedMinutes = parseEstimatedMinutes(displayQuest.estimatedTime);
   const recurLabel = formatRecur(displayQuest.recur);
+  const skillNames = getQuestSkillNames(displayQuest);
+  const currencyName = plugin.settings?.currencyName?.trim() || currencyDisplay.getCurrencyName();
+  const activityLabel = displayQuest.activityProfile
+    ? formatActivityProfileLabel(normalizeActivityProfileId(displayQuest.activityProfile))
+    : null;
   const bannerAlign = displayQuest.bannerAlign || 'center';
   const bannerPosition =
     bannerAlign === 'top' ? 'center top' :
     bannerAlign === 'bottom' ? 'center bottom' :
     'center center';
+  const canOpenTaskNote = isPerNoteQuestFile(displayQuest.filePath, plugin.settings);
 
   // Use local subtasks if available, otherwise use quest subtasks
   const displaySubtasks = localSubtasks || displayQuest.subtasks || [];
@@ -387,9 +436,74 @@ export const QuestDetailModal: React.FC<QuestDetailModalProps> = ({
                   {displayQuest.xp && <span className={styles.reward}>XP: {displayQuest.xp}</span>}
                   {displayQuest.cp && <span className={styles.reward}>CP: {displayQuest.cp}</span>}
                   {typeof displayQuest.coins === 'number' && displayQuest.coins > 0 && (
-                    <span className={styles.reward}>Currency: {displayQuest.coins}</span>
+                    <span className={styles.reward}>{currencyName}: {displayQuest.coins}</span>
                   )}
                 </span>
+              </div>
+            )}
+
+            {skillNames.length > 0 && (
+              <div className={styles.infoItem}>
+                <span className={styles.infoLabel}>⚔️ Skills</span>
+                <span className={styles.infoValue}>
+                  {skillNames.map((skill) => (
+                    <span key={skill} className={styles.skillTag}>{skill}</span>
+                  ))}
+                </span>
+              </div>
+            )}
+
+            <div className={styles.infoItem}>
+              <span className={styles.infoLabel}>🏷️ Tags</span>
+              <span className={styles.infoValue}>
+                <div className={styles.tagEditor}>
+                  {displayTags.map((tag) => (
+                    <span key={tag} className={styles.skillTag}>
+                      #{tag}
+                      <button
+                        type="button"
+                        className={styles.tagRemove}
+                        onClick={() => void persistCustomTags(displayTags.filter((t) => t !== tag))}
+                        aria-label={`Remove tag ${tag}`}
+                        disabled={savingTags}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                  <input
+                    type="text"
+                    className={styles.tagInput}
+                    value={tagDraft}
+                    disabled={savingTags}
+                    placeholder="Add tag"
+                    aria-label="Add custom tag"
+                    onChange={(e) => setTagDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addCustomTag();
+                      }
+                    }}
+                    onBlur={() => {
+                      if (tagDraft.trim()) addCustomTag();
+                    }}
+                  />
+                </div>
+              </span>
+            </div>
+
+            {displayQuest.className && (
+              <div className={styles.infoItem}>
+                <span className={styles.infoLabel}>🛡️ Class</span>
+                <span className={styles.infoValue}>{displayQuest.className}</span>
+              </div>
+            )}
+
+            {activityLabel && activityLabel !== 'Generic task' && (
+              <div className={styles.infoItem}>
+                <span className={styles.infoLabel}>🧠 Activity</span>
+                <span className={styles.infoValue}>{activityLabel}</span>
               </div>
             )}
 
@@ -397,17 +511,6 @@ export const QuestDetailModal: React.FC<QuestDetailModalProps> = ({
               <div className={styles.infoItem}>
                 <span className={styles.infoLabel}>🔄 Recurrence</span>
                 <span className={styles.infoValue}>{recurLabel}</span>
-              </div>
-            )}
-
-            {displayQuest.skills && displayQuest.skills.length > 0 && (
-              <div className={styles.infoItem}>
-                <span className={styles.infoLabel}>🎯 Skills</span>
-                <span className={styles.infoValue}>
-                  {displayQuest.skills.map((skill, idx) => (
-                    <span key={idx} className={styles.skillTag}>{skill}</span>
-                  ))}
-                </span>
               </div>
             )}
           </div>
@@ -484,6 +587,26 @@ export const QuestDetailModal: React.FC<QuestDetailModalProps> = ({
         {/* Sticky Footer with Actions */}
         <div className={styles.modalFooter}>
           <div className={styles.actionButtons}>
+            {canOpenTaskNote && (
+              <button
+                className={`${styles.actionButton} ${styles.openPageButton}`}
+                onClick={() => {
+                  const path = displayQuest.filePath?.trim();
+                  if (!path) return;
+                  const file = plugin.app.vault.getAbstractFileByPath(path);
+                  if (!(file instanceof TFile)) {
+                    pixelNotice(`Note not found: ${path}`);
+                    return;
+                  }
+                  void plugin.app.workspace.getLeaf(false).openFile(file);
+                  onClose();
+                }}
+                title="Open this task note in the editor"
+                type="button"
+              >
+                📄 Open page
+              </button>
+            )}
             {onEdit && (
               <button
                 className={`${styles.actionButton} ${styles.editButton}`}

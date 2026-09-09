@@ -1,11 +1,10 @@
 {
 	"id": "Gamification-into-Obsidian",
-	"name": "Gamified Obsidian Plugin",
-	"version": "1.0.0",
+	"name": "Gamified Obsidian",
+	"version": "1.0.0-beta.3",
 	"main": "main.js",
-	"css": "main.css",
 	"minAppVersion": "0.15.0",
-	"description": "Gamify your Obsidian vault with quests, achievements, boss battles, and RPG-style progression.",
+	"description": "Quests, focus encounters, and RPG progression on top of your vault notes.",
 	"author": "IJoke2much",
 	"authorUrl": "https://github.com/nilesloverso",
 	"isDesktopOnly": false

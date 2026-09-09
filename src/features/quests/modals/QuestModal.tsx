@@ -34,7 +34,35 @@ import {
     QuestModalAdvancedOptions 
 } from "./components";
 import type { Quest, QuestTimelineTheme } from "../utils/taskParser";
-import { normalizeQuestTimelineTheme } from "../utils/taskParser";
+import { getQuestSkillNames, getQuestCustomTags, normalizeQuestTimelineTheme } from "../utils/taskParser";
+
+function questEditKey(quest: Quest): string {
+    return `${quest.id}|${quest.filePath ?? ""}|${quest.lineNumber ?? ""}|${quest.title}`;
+}
+
+function normalizeSkillKey(value: string): string {
+    return value.toLowerCase().replace(/[-_]+/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function stubSkillFromQuest(name: string, quest: Quest): SkillMetadata {
+    return {
+        name,
+        class: quest.className || "",
+        classPath: "",
+        masterClass: "",
+        masterClassPath: "",
+        stats: {},
+        filePath: "",
+    };
+}
+
+function matchQuestSkills(quest: Quest, catalog: SkillMetadata[]): SkillMetadata[] {
+    return getQuestSkillNames(quest).map((name) => {
+        const key = normalizeSkillKey(name);
+        const found = catalog.find((skill) => normalizeSkillKey(skill.name) === key);
+        return found || stubSkillFromQuest(name, quest);
+    });
+}
 
 export interface QuestModalProps {
     isOpen: boolean;
@@ -75,7 +103,9 @@ export const QuestModal: React.FC<QuestModalProps> = ({
     // State initialization
     const [title, setTitle] = useState(mode === "edit" && quest ? quest.title : (prefill?.title || ""));
     const [description, setDescription] = useState(mode === "edit" && quest ? quest.description || "" : (prefill?.description || ""));
-    const [skills, setSkills] = useState<SkillMetadata[]>([]);
+    const [skills, setSkills] = useState<SkillMetadata[]>(() =>
+        mode === "edit" && quest ? matchQuestSkills(quest, []) : []
+    );
     const [allSkills, setAllSkills] = useState<SkillMetadata[]>([]);
     const [skillsLoading, setSkillsLoading] = useState(true);
     const [selectedSkill, setSelectedSkill] = useState<string>("");
@@ -156,10 +186,21 @@ export const QuestModal: React.FC<QuestModalProps> = ({
     const [newSubtaskDescription, setNewSubtaskDescription] = useState("");
 
     /** Parsed from quest when editing; undefined means “use default stamina cost” (see getQuestEnergyCost). */
-    const [energyCost, setEnergyCost] = useState<number | undefined>(undefined);
-    const [activityProfile, setActivityProfile] = useState<ActivityProfileId>("generic");
+    const [energyCost, setEnergyCost] = useState<number | undefined>(() =>
+        mode === "edit" && typeof quest?.energyCost === "number" && quest.energyCost > 0
+            ? quest.energyCost
+            : undefined
+    );
+    const [activityProfile, setActivityProfile] = useState<ActivityProfileId>(() =>
+        mode === "edit" && quest?.activityProfile
+            ? normalizeActivityProfileId(quest.activityProfile)
+            : "generic"
+    );
     const [attachedContract, setAttachedContract] = useState(
         mode === "edit" && quest?.project ? quest.project : defaultContract || ""
+    );
+    const [customTags, setCustomTags] = useState<string[]>(() =>
+        mode === "edit" && quest ? getQuestCustomTags(quest) : []
     );
 
     useEffect(() => {
@@ -179,10 +220,18 @@ export const QuestModal: React.FC<QuestModalProps> = ({
      * so we keep the initial useState (edit: saved values, create: first random roll).
      */
     const lastRewardTierRef = useRef<{ priority: string; difficulty: string } | null>(null);
+    const skipNextRewardRollRef = useRef(false);
+    const hydratedQuestKeyRef = useRef<string | null>(null);
 
     useEffect(() => {
         if (!isOpen) {
             lastRewardTierRef.current = null;
+            hydratedQuestKeyRef.current = null;
+            return;
+        }
+        if (skipNextRewardRollRef.current) {
+            lastRewardTierRef.current = { priority, difficulty };
+            skipNextRewardRollRef.current = false;
             return;
         }
         if (lastRewardTierRef.current === null) {
@@ -199,27 +248,6 @@ export const QuestModal: React.FC<QuestModalProps> = ({
         }
         lastRewardTierRef.current = { priority, difficulty };
     }, [isOpen, priority, difficulty]);
-
-    useEffect(() => {
-        if (!isOpen) return;
-        if (mode === "edit" && quest) {
-            if (typeof quest.energyCost === "number" && quest.energyCost > 0) {
-                setEnergyCost(quest.energyCost);
-            } else {
-                setEnergyCost(undefined);
-            }
-            setActivityProfile(
-                quest.activityProfile
-                    ? normalizeActivityProfileId(quest.activityProfile)
-                    : "generic"
-            );
-            setTimelineTheme(normalizeQuestTimelineTheme(quest.timelineTheme));
-        } else {
-            setEnergyCost(undefined);
-            setActivityProfile("generic");
-            setTimelineTheme(undefined);
-        }
-    }, [isOpen, mode, quest]);
     
     // Reward customization (for future use)
     // const [customRewards, setCustomRewards] = useState<Array<{ name: string; quantity: number; item?: QuestRewardItem }>>([]);
@@ -241,13 +269,78 @@ export const QuestModal: React.FC<QuestModalProps> = ({
     const [questGiverCollapsed] = useState(true);
     
     // Advanced options state
-    const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
+    const [showAdvancedOptions, setShowAdvancedOptions] = useState(
+        mode === "edit" && Boolean(
+            quest?.due ||
+            quest?.recur ||
+            quest?.estimatedTime ||
+            quest?.description ||
+            quest?.banner ||
+            (quest?.subtasks && quest.subtasks.length > 0)
+        )
+    );
     const [activeAdvancedTab, setActiveAdvancedTab] = useState<'details' | 'customization' | 'features'>('details');
     const [questGiverImagePath, setQuestGiverImagePath] = useState(plugin.settings.questGiverImagePath || "assets/questgiver.jpg");
+
+    useEffect(() => {
+        if (!isOpen) return;
+        if (mode !== "edit" || !quest) return;
+
+        const key = questEditKey(quest);
+        if (hydratedQuestKeyRef.current === key) return;
+        hydratedQuestKeyRef.current = key;
+        skipNextRewardRollRef.current = true;
+
+        setTitle(quest.title || "");
+        setDescription(quest.description || "");
+        setPriority(quest.priority || "Medium");
+        setDifficulty(quest.difficulty || "Medium");
+        setXp(quest.xp || 0);
+        setCp(quest.cp || 0);
+        setBanner(quest.banner || "");
+        setBannerAlign(quest.bannerAlign || "center");
+        setTimelineTheme(normalizeQuestTimelineTheme(quest.timelineTheme));
+        setDue(quest.due ? (quest.due.includes("T") ? quest.due.split("T")[0] : quest.due) : "");
+        setRecur(quest.recur || "");
+        setEstimatedMinutes(normalizeEstimatedMinutes(quest.estimatedTime || ""));
+        setScheduleTime(
+            quest.due?.includes("T") ? quest.due.split("T")[1]?.substring(0, 5) || "" : ""
+        );
+        setSubtasks(quest.subtasks || []);
+        setAttachedContract(quest.project || "");
+        if (typeof quest.energyCost === "number" && quest.energyCost > 0) {
+            setEnergyCost(quest.energyCost);
+        } else {
+            setEnergyCost(undefined);
+        }
+        setActivityProfile(
+            quest.activityProfile
+                ? normalizeActivityProfileId(quest.activityProfile)
+                : "generic"
+        );
+        setSkills(matchQuestSkills(quest, allSkills));
+        setCustomTags(getQuestCustomTags(quest));
+        lastRewardTierRef.current = {
+            priority: quest.priority || "Medium",
+            difficulty: quest.difficulty || "Medium",
+        };
+
+        const hasAdvanced = Boolean(
+            quest.due ||
+            quest.recur ||
+            quest.estimatedTime ||
+            quest.description ||
+            quest.banner ||
+            (quest.subtasks && quest.subtasks.length > 0)
+        );
+        if (hasAdvanced) setShowAdvancedOptions(true);
+    }, [isOpen, mode, quest]);
 
     // Quest save location state (where the quest markdown will be written)
     const defaultQuestFilePath = plugin.settings.defaultQuestFilePath || "GamifiedTasks.md";
     const questSaveLocations = plugin.settings.questSaveLocations ?? [];
+    const perNoteMode = isPerNoteMode(plugin.settings);
+    const taskNoteFolder = getTaskNoteFolder(plugin.settings);
     const [saveLocationId, setSaveLocationId] = useState<string>("default");
     const [customFilePath, setCustomFilePath] = useState<string>("");
 
@@ -281,11 +374,8 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                 setAllSkills(discoveredSkills);
 
                 // If editing, populate skills from quest
-                if (mode === "edit" && quest && quest.skills) {
-                    const questSkills = discoveredSkills.filter((skill: SkillMetadata) =>
-                        quest.skills!.includes(skill.name)
-                    );
-                    setSkills(questSkills);
+                if (mode === "edit" && quest) {
+                    setSkills(matchQuestSkills(quest, discoveredSkills));
                 }
             } catch (error) {
                 console.error("Error loading skills:", error);
@@ -309,16 +399,20 @@ export const QuestModal: React.FC<QuestModalProps> = ({
             setSelectedSkill("");
             return;
         }
-        
+
         const skill = allSkills.find(s => s.name === skillName);
-        if (skill && !skills.some(s => s.name === skillName)) {
-            setSkills([...skills, skill]);
-            setSelectedSkill(""); // Only reset after successful addition
+        if (!skill) return;
+
+        const key = normalizeSkillKey(skillName);
+        if (skills.some(s => normalizeSkillKey(s.name) === key)) {
+            setSkills(skills.map(s => (normalizeSkillKey(s.name) === key ? skill : s)));
+            setSelectedSkill("");
+            return;
         }
-        // Don't reset if skill already exists - let user see their selection
+        setSkills([...skills, skill]);
+        setSelectedSkill("");
     };
 
-    // Handle skill removal
     const handleSkillRemoval = (skillName: string) => {
         setSkills(skills.filter(s => s.name !== skillName));
     };
@@ -485,6 +579,7 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                             bannerAlign,
                             timelineTheme,
                             project: attachedContract.trim() || undefined,
+                            customTags,
                         }
                     );
 
@@ -538,6 +633,7 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                     energyCost: resolvedStamina,
                     activityProfile: activityProfile === "generic" ? undefined : activityProfile,
                     project: attachedContract.trim() || undefined,
+                    customTags,
                 };
 
                 const markdownTask = generateMarkdownTask(newQuest);
@@ -675,6 +771,8 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                     enhancedCustomRewards: enhancedCustomRewards.length > 0 ? enhancedCustomRewards : undefined,
                     energyCost: resolvedStamina,
                     activityProfile: activityProfile === "generic" ? undefined : activityProfile,
+                    project: attachedContract.trim() || undefined,
+                    customTags,
                 };
 
                 const markdownTask = generateMarkdownTask(updatedQuest);
@@ -750,7 +848,8 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                             </div>
                         )}
 
-                        {/* Save Location Selector (where to write the quest in your vault) */}
+                        {/* Save Location Selector (create only — edits stay in the quest's file) */}
+                        {mode === "create" ? (
                         <div className={styles.saveLocationSection}>
                             <div className={styles.saveLocationHeader}>
                                 <span className={styles.saveLocationTitle}>
@@ -764,14 +863,16 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                                 style={{ marginBottom: 8 }}
                             >
                                 <option value="default">
-                                    Default quest note ({defaultQuestFilePath})
+                                    {perNoteMode
+                                        ? `New task note in ${taskNoteFolder}/`
+                                        : `Default list file (${defaultQuestFilePath})`}
                                 </option>
                                 {questSaveLocations.map((loc) => (
                                     <option key={loc.id} value={loc.id}>
-                                        {loc.label} — {loc.filePath}
+                                        {loc.label} — {loc.filePath} (list file)
                                     </option>
                                 ))}
-                                <option value="custom">Custom file path…</option>
+                                <option value="custom">Custom list file path…</option>
                             </select>
                             {saveLocationId === "custom" && (
                                 <input
@@ -782,14 +883,26 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                                     className={styles.customPathInput}
                                 />
                             )}
-                            {!isMobile && (
-                                <div className={styles.saveLocationHint}>
-                                    {isPerNoteMode(plugin.settings) && saveLocationId === "default"
-                                        ? `Default save creates a new note in ${getTaskNoteFolder(plugin.settings)}. Pick another location to append to a list file instead.`
-                                        : "Choose a saved location or type a custom note path. New quests will be appended to that file."}
-                                </div>
-                            )}
+                            <div className={styles.saveLocationHint}>
+                                {perNoteMode && saveLocationId === "default"
+                                    ? `Creates one markdown note per quest in ${taskNoteFolder} (TaskNotes / TaskForge). Other locations still append a line to a list file.`
+                                    : perNoteMode
+                                      ? "This location appends a checkbox line to a list file. Choose “New task note” above for a single TaskNotes page."
+                                      : "Choose a saved location or type a custom note path. New quests will be appended as a line in that file. Switch Settings → Quest storage mode to “One task per note” to create a separate note per quest."}
+                            </div>
                         </div>
+                        ) : (
+                        <div className={styles.saveLocationSection}>
+                            <div className={styles.saveLocationHeader}>
+                                <span className={styles.saveLocationTitle}>
+                                    <span>📁 Editing quest file</span>
+                                </span>
+                            </div>
+                            <div className={styles.saveLocationHint}>
+                                {quest?.filePath || defaultQuestFilePath}
+                            </div>
+                        </div>
+                        )}
 
                         <QuestModalForm
                             title={title}
@@ -834,6 +947,8 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                             openContracts={openContracts}
                             attachedContract={attachedContract}
                             setAttachedContract={setAttachedContract}
+                            customTags={customTags}
+                            setCustomTags={setCustomTags}
                         />
 
                         <QuestModalAdvancedOptions
@@ -879,6 +994,7 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                             onSubmit={handleSubmit}
                             isSubmitting={isSubmitting}
                             isMobile={isMobile}
+                            canSubmit={Boolean(title.trim()) && skills.length > 0}
                         />
                     </div>
                 </form>

@@ -1,30 +1,20 @@
 import { App, Modal, Platform } from 'obsidian';
 import type { GamificationPluginSettings } from '../../../core/settings';
 import { pixelNotice } from '../../../shared/utils/noticeUtils';
-import {
-	appendCaptureLine,
-	getCaptureTagPresets,
-	loadRememberedCaptureTag,
-	rememberCaptureTag,
-} from '../utils/captureService';
+import { appendCaptureLine } from '../utils/captureService';
 import styles from './QuickCaptureModal.module.css';
 
 export class QuickCaptureModal extends Modal {
 	private settings: GamificationPluginSettings;
-	private selectedTag: string | undefined;
 	private inputEl: HTMLInputElement | null = null;
 	private descriptionEl: HTMLTextAreaElement | null = null;
 	private descriptionWrap: HTMLElement | null = null;
-	private tagButtons: HTMLButtonElement[] = [];
 	private onMobile = false;
 
 	constructor(app: App, settings: GamificationPluginSettings) {
 		super(app);
 		this.settings = settings;
 		this.onMobile = Platform.isMobile || Platform.isPhone || Platform.isTablet;
-		if (settings.captureRememberLastTag !== false) {
-			this.selectedTag = loadRememberedCaptureTag();
-		}
 	}
 
 	onOpen() {
@@ -40,7 +30,7 @@ export class QuickCaptureModal extends Modal {
 		const wrapper = contentEl.createDiv({ cls: styles.modalWrapper });
 
 		const header = wrapper.createEl('div', { cls: styles.modalHeader });
-		header.setText('System: Brain Dump');
+		header.setText('Brain Dump');
 
 		if (!this.onMobile) {
 			wrapper.createEl('p', {
@@ -104,32 +94,7 @@ export class QuickCaptureModal extends Modal {
 			}
 		}
 
-		const tagSection = wrapper.createDiv();
-		tagSection.createEl('h3', { text: 'Tag (optional)', cls: styles.sectionTitle });
-		const tagGrid = tagSection.createDiv({ cls: styles.tagGrid });
-
-		const presets = getCaptureTagPresets(this.settings);
-		this.tagButtons = presets.map((tag) => {
-			const btn = tagGrid.createEl('button', {
-				type: 'button',
-				text: `#${tag}`,
-				cls: styles.tagChip,
-			});
-			btn.onclick = () => this.toggleTag(tag, btn);
-			if (this.selectedTag === tag) {
-				btn.addClass(styles.tagChipActive);
-			}
-			return btn;
-		});
-
 		const buttonRow = wrapper.createDiv({ cls: styles.buttonRow });
-
-		const doneBtn = buttonRow.createEl('button', {
-			type: 'button',
-			text: 'Done',
-			cls: styles.primaryBtn,
-		});
-		doneBtn.onclick = () => void this.handleDone(true);
 
 		const continueBtn = buttonRow.createEl('button', {
 			type: 'button',
@@ -137,6 +102,13 @@ export class QuickCaptureModal extends Modal {
 			cls: styles.continueBtn,
 		});
 		continueBtn.onclick = () => void this.handleContinue();
+
+		const doneBtn = buttonRow.createEl('button', {
+			type: 'button',
+			text: 'Done',
+			cls: styles.primaryBtn,
+		});
+		doneBtn.onclick = () => void this.handleDone(true);
 
 		// Focus ASAP — delay felt sluggish on phone
 		requestAnimationFrame(() => this.inputEl?.focus());
@@ -153,33 +125,11 @@ export class QuickCaptureModal extends Modal {
 		});
 	}
 
-	private toggleTag(tag: string, btn: HTMLButtonElement) {
-		if (this.selectedTag === tag) {
-			this.selectedTag = undefined;
-			btn.removeClass(styles.tagChipActive);
-			return;
-		}
-
-		this.selectedTag = tag;
-		this.tagButtons.forEach((b) => b.removeClass(styles.tagChipActive));
-		btn.addClass(styles.tagChipActive);
-	}
-
 	private async saveCurrentInput(): Promise<boolean> {
 		const text = this.inputEl?.value ?? '';
 		const description = this.descriptionEl?.value ?? '';
-		const saved = await appendCaptureLine(
-			this.app,
-			this.settings,
-			text,
-			this.selectedTag,
-			description
-		);
+		const saved = await appendCaptureLine(this.app, this.settings, text, undefined, description);
 		if (!saved) return false;
-
-		if (this.settings.captureRememberLastTag !== false) {
-			rememberCaptureTag(this.selectedTag);
-		}
 
 		pixelNotice('Captured ✓', 1500);
 		return true;
@@ -219,7 +169,6 @@ export class QuickCaptureModal extends Modal {
 		this.inputEl = null;
 		this.descriptionEl = null;
 		this.descriptionWrap = null;
-		this.tagButtons = [];
 	}
 }
 

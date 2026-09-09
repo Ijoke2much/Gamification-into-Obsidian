@@ -29,6 +29,7 @@ import type { VisualThemePresetId } from "../../../shared/themes/types";
 import { SystemFrame, SystemHeader, SystemScaffold } from "../../../shared/components/ui/system";
 import { useMobileOptimizations } from "../../../shared/hooks/useMobileOptimizations";
 import { getLootboxKeyCount, openLootbox, type LootboxReward } from "../utils/lootboxService";
+import { PixelIcon } from "../../../shared/components/ui/PixelIcon";
 import { getRarityColor } from "../../quests/utils/questRewardsSystem";
 
 interface Props {
@@ -715,12 +716,6 @@ export default function ShopTab({
                         const rawEffects = getRawEffectLines(item);
                         const hasEffects = (item.effects && item.effects.length > 0) || (rawEffects && rawEffects.length > 0);
                         const isNew = item.tags?.some(t => t.toLowerCase() === "new") ?? false;
-                        const isFileOrUrlIcon =
-                            Boolean(item.icon) &&
-                            (Boolean(item.icon!.match(/^https?:\/\//)) ||
-                                Boolean(item.icon!.match(/\.(png|jpe?g|gif|svg)$/i)));
-                        // Mobile: never load remote/file icons (decode hitch)
-                        const showImgIcon = !isMobile && isFileOrUrlIcon;
                         return (
                             <div key={item.name} className="gami-shop-card">
                                 {isNew && (
@@ -733,15 +728,14 @@ export default function ShopTab({
                                     {itemCategory}
                                 </div>
                                 <div className={shopStyles.cardBody}>
-                                    {showImgIcon ? (
-                                        <div className={shopStyles.cardIconWrap}>
-                                            <img src={item.icon} alt="" className={shopStyles.cardIconImg} />
-                                        </div>
-                                    ) : item.icon && !isFileOrUrlIcon ? (
-                                        <div className={shopStyles.cardIconEmoji}>{item.icon}</div>
-                                    ) : (
-                                        <div className={shopStyles.cardIconPlaceholder}>🎁</div>
-                                    )}
+                                    <div className={shopStyles.cardIconWrap}>
+                                        <PixelIcon
+                                            item={item}
+                                            fallback="🎁"
+                                            className={shopStyles.cardIconEmoji}
+                                            imgClassName={shopStyles.cardIconImg}
+                                        />
+                                    </div>
                                     <div className="gami-shop-card-title">{item.name}</div>
                                     {item.stock != null && item.stock > 0 && (
                                         <div className={shopStyles.cardStock}>Stock: {item.stock}</div>

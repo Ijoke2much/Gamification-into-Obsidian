@@ -397,6 +397,8 @@
     width: 72px;
     height: 72px;
     object-fit: contain;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
 }
 
 .cardIconEmoji {

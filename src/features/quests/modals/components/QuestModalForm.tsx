@@ -1,6 +1,7 @@
-import React, { memo } from 'react';
+import React, { memo, useState } from 'react';
 import type { SkillMetadata } from '../../../../shared/utils/skillDiscovery';
 import { PRIORITY_OPTIONS, DIFFICULTY_OPTIONS } from '../../utils/questUtils';
+import { normalizeCustomTag } from '../../utils/taskParser';
 import {
     ACTIVITY_PROFILE_IDS,
     formatActivityProfileLabel,
@@ -60,6 +61,8 @@ interface QuestModalFormProps {
     openContracts?: string[];
     attachedContract: string;
     setAttachedContract: (contract: string) => void;
+    customTags: string[];
+    setCustomTags: (tags: string[]) => void;
 }
 
 export const QuestModalForm: React.FC<QuestModalFormProps> = memo(({
@@ -105,7 +108,25 @@ export const QuestModalForm: React.FC<QuestModalFormProps> = memo(({
     openContracts = [],
     attachedContract,
     setAttachedContract,
+    customTags,
+    setCustomTags,
 }) => {
+    const [tagDraft, setTagDraft] = useState('');
+
+    const addCustomTag = () => {
+        const slug = normalizeCustomTag(tagDraft);
+        if (!slug) {
+            setTagDraft('');
+            return;
+        }
+        if (customTags.includes(slug)) {
+            setTagDraft('');
+            return;
+        }
+        setCustomTags([...customTags, slug]);
+        setTagDraft('');
+    };
+
     return (
         <>
             {/* Quest Title */}
@@ -167,7 +188,7 @@ export const QuestModalForm: React.FC<QuestModalFormProps> = memo(({
                                 : "Select a skill to add..."}
                     </option>
                     {!skillsLoading && allSkills
-                        .filter(skill => !skills.some(s => s.name === skill.name))
+                        .filter(skill => !skills.some(s => s.name.toLowerCase() === skill.name.toLowerCase()))
                         .map((skill) => (
                             <option key={skill.name} value={skill.name}>
                                 {skill.name} ({skill.class})
@@ -175,6 +196,17 @@ export const QuestModalForm: React.FC<QuestModalFormProps> = memo(({
                         ))
                     }
                 </select>
+
+                {skills.length === 0 && !skillsLoading && (
+                    <div style={{
+                        marginTop: -4,
+                        marginBottom: 8,
+                        fontSize: 12,
+                        color: "var(--text-muted)",
+                    }}>
+                        Pick at least one skill to create or update this quest.
+                    </div>
+                )}
 
                 {/* Selected Skills Display - Enhanced */}
                 {skills.length > 0 && (
@@ -318,6 +350,72 @@ export const QuestModalForm: React.FC<QuestModalFormProps> = memo(({
                         ))}
                     </div>
                 )}
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+                <label style={{
+                    display: "block",
+                    marginBottom: 8,
+                    fontWeight: 600,
+                    color: "var(--text-normal)",
+                    fontSize: 16,
+                }}>
+                    Tags
+                </label>
+                {customTags.length > 0 && (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
+                        {customTags.map((tag) => (
+                            <span
+                                key={tag}
+                                style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 6,
+                                    padding: "4px 8px",
+                                    backgroundColor: "var(--background-secondary)",
+                                    border: "1px solid var(--background-modifier-border)",
+                                    borderRadius: 8,
+                                    fontSize: 13,
+                                }}
+                            >
+                                #{tag}
+                                <button
+                                    type="button"
+                                    onClick={() => setCustomTags(customTags.filter((t) => t !== tag))}
+                                    aria-label={`Remove tag ${tag}`}
+                                    style={{
+                                        background: "transparent",
+                                        border: "none",
+                                        color: "var(--text-muted)",
+                                        cursor: "pointer",
+                                        padding: 0,
+                                        fontSize: 14,
+                                        lineHeight: 1,
+                                    }}
+                                >
+                                    ×
+                                </button>
+                            </span>
+                        ))}
+                    </div>
+                )}
+                <input
+                    type="text"
+                    value={tagDraft}
+                    onChange={(e) => setTagDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                            e.preventDefault();
+                            addCustomTag();
+                        }
+                    }}
+                    placeholder="Add a tag and press Enter"
+                    className={styles.select}
+                    style={{ marginBottom: 4 }}
+                />
+                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                    Your labels only — skills and activity stay on their own tags.
+                </div>
             </div>
 
             {showContractPicker && (

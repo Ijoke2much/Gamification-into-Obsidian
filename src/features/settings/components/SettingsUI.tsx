@@ -19,7 +19,7 @@ import { TutorialSettingsPanel } from '../../tutorial/components/TutorialSetting
 import { AppearanceSettings } from './AppearanceSettings';
 import { updatePlayerData } from '../../player/utils/playerDataUtils';
 import { listPlayerDataBackups, restorePlayerDataBackup } from '../../player/utils/playerDataUtils';
-import { DEFAULT_PLAYER } from '../../../data/models/PlayerData';
+import { createStarterPlayerData } from '../../../data/models/PlayerData';
 import type { App } from 'obsidian';
 import { TFile, TFolder } from 'obsidian';
 import type GamifiedObsidianPlugin from '../../../core/main';
@@ -149,9 +149,13 @@ export const SettingsUI: React.FC<SettingsUIProps> = ({
       gameplayProfile: profile,
       modules: getProfileModules(profile),
       gameplayOnboardingComplete: true,
-      notificationLevel: profile === 'lite' ? 'quiet' : 'normal',
+      notificationLevel: profile === 'hardcore' ? 'normal' : 'quiet',
       preferQuickComplete: profile !== 'hardcore',
       energyHudMode: profile === 'hardcore' ? 'full' : 'simple',
+      visualTheme: {
+        preset: 'clay',
+        ceremonyLevel: profile === 'hardcore' ? 'full' : 'minimal',
+      },
     };
     setSettings(merged);
     onSettingsChange(merged);
@@ -548,7 +552,7 @@ export const SettingsUI: React.FC<SettingsUIProps> = ({
       {/* Header */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <h1 className={styles.title}>🎮 Gamification Settings</h1>
+          <h1 className={styles.title}>Gamified Obsidian</h1>
           {viewMode === 'category' && currentGroup && (
             <div className={styles.breadcrumb}>
               <span onClick={goBackToGroups} className={styles.breadcrumbLink}>
@@ -1030,6 +1034,7 @@ const ExperienceFeelSettingsSection: React.FC<{
       <h3>🔔 Notifications</h3>
       <p className={styles.helperText} style={{ marginTop: 0, marginBottom: '16px' }}>
         Control how chatty reward and status toasts are during play.
+        Normal stays until you click. Review the day’s messages in Player → Analytics → Notices.
       </p>
       <div className={styles.settingGroup}>
         <label>
@@ -1040,7 +1045,7 @@ const ExperienceFeelSettingsSection: React.FC<{
               onPatchSettings({ notificationLevel: e.target.value as NotificationLevel })
             }
           >
-            <option value="normal">Normal — full messages</option>
+            <option value="normal">Normal — click to dismiss</option>
             <option value="quiet">Quiet — shorter toasts, dedupe repeats</option>
             <option value="minimal">Minimal — errors and important alerts only</option>
           </select>
@@ -1113,9 +1118,10 @@ const ModulesSettingsSection: React.FC<{
                 onPatchSettings({
                   gameplayProfile: profile,
                   modules: bundle,
-                  notificationLevel: profile === 'lite' ? 'quiet' : 'normal',
+                  notificationLevel: profile === 'hardcore' ? 'normal' : 'quiet',
                   preferQuickComplete: profile !== 'hardcore',
                   energyHudMode: profile === 'hardcore' ? 'full' : 'simple',
+                  bookOfEasy: profile !== 'hardcore',
                 });
               }}
             >
@@ -1163,7 +1169,15 @@ const ModulesSettingsSection: React.FC<{
         <div className={styles.settingGroup}>
           <label className={styles.checkboxLabel}>
             <input type="checkbox" checked={modules.enableBossBattles === true} onChange={(e) => setModule('enableBossBattles', e.target.checked)} />
-            Boss battles (arena &amp; sidebar boss)
+            Boss battles (Projects in the quest hub)
+          </label>
+          <label className={styles.checkboxLabel}>
+            <input type="checkbox" checked={modules.enableJourneyDungeonHub === true} onChange={(e) => setModule('enableJourneyDungeonHub', e.target.checked)} />
+            Journey &amp; Dungeon (foes unlock the gate; Dungeon starts boss fights)
+          </label>
+          <label className={styles.checkboxLabel}>
+            <input type="checkbox" checked={modules.enableExtraQuestSurfaces === true} onChange={(e) => setModule('enableExtraQuestSurfaces', e.target.checked)} />
+            Extra quest views (calendar tab, Advanced, extra boss analytics)
           </label>
           <label className={styles.checkboxLabel}>
             <input type="checkbox" checked={modules.enableEnergySystem === true} onChange={(e) => setModule('enableEnergySystem', e.target.checked)} />
@@ -1172,6 +1186,23 @@ const ModulesSettingsSection: React.FC<{
           <label className={styles.checkboxLabel}>
             <input type="checkbox" checked={modules.enableProductivityGear === true} onChange={(e) => setModule('enableProductivityGear', e.target.checked)} />
             Productivity equipment (inventory modal)
+          </label>
+        </div>
+      </Card>
+
+      <Card className={styles.settingsCard}>
+        <h3>📖 Key items</h3>
+        <p className={styles.helperText} style={{ marginTop: 0, marginBottom: '16px' }}>
+          Quality-of-life relics. They change rules, not combat power. Balanced starts with the Book of Easy open.
+        </p>
+        <div className={styles.settingGroup}>
+          <label className={styles.checkboxLabel}>
+            <input
+              type="checkbox"
+              checked={settings.bookOfEasy !== false}
+              onChange={(e) => onPatchSettings({ bookOfEasy: e.target.checked })}
+            />
+            The Book of Easy — dream equipment never breaks
           </label>
         </div>
       </Card>
@@ -1718,15 +1749,15 @@ const PerformanceSettingsSection: React.FC<{
     </Card>
 
     <Card className={styles.settingsCard}>
-      <h3>🧪 Beta & Feature Flags</h3>
+      <h3>Developer extras</h3>
       <div className={styles.settingGroup}>
         <label className={styles.checkboxLabel}>
           <input
             type="checkbox"
-            checked={settings.betaMode ?? true}
+            checked={settings.betaMode ?? false}
             onChange={(e) => onSettingChange('betaMode', e.target.checked)}
           />
-          Enable Beta Mode (debug buttons/logs)
+          Show debug controls (reload player, extra logs)
         </label>
         <p className={styles.helperText} style={{ marginTop: 0 }}>
           Analytics tab visibility is controlled under Gameplay → Feature Modules.
@@ -1851,7 +1882,7 @@ const FileSettingsSection: React.FC<{
             }
           >
             <option value="list">List file (append to markdown)</option>
-            <option value="per-note">One task per note</option>
+            <option value="per-note">One task per note (TaskNotes / TaskForge)</option>
           </select>
         </label>
         {(settings.questStorageMode || 'list') === 'per-note' && (
@@ -1935,9 +1966,19 @@ const FileSettingsSection: React.FC<{
       </div>
       <h4>External task sync</h4>
       <p className={styles.helperText}>
-        Award XP when tasks are checked off in TaskForge, TaskNotes, or other apps that sync to
-        your vault. Tasks need <code>#gamified-task</code> or TaskNotes <code>status: done</code>{' '}
-        with gamified metadata.
+        For TaskNotes and TaskForge, use <strong>one task per note</strong> and point both plugins
+        at the same folder. New quests write TaskNotes frontmatter (<code>status</code>,{' '}
+        <code>tags: [task]</code>, <code>due</code>, <code>projects</code>) plus gamified fields
+        (<code>xp</code>, <code>cp</code>, <code>#gamified-task</code>). Completing in either app
+        updates the checkbox and <code>status: done</code>, and XP is awarded once.
+      </p>
+      <p className={styles.helperText}>
+        Setup: (1) TaskNotes → set Tasks folder. (2) Here, storage mode = one task per note, Task
+        notes folder and TaskNotes folder = that same path. (3) Keep both compatibility toggles on.
+        (4) In TaskNotes, add custom properties <code>xp</code> / <code>cp</code> if you want them
+        in the TaskNotes UI. TaskForge follows TaskNotes notes after vault sync. Existing
+        TaskNotes files in that folder show on the quest board (default 50 XP unless{' '}
+        <code>xp</code> is in YAML). List-file quests in GamifiedTasks.md stay as they are.
       </p>
       <div className={styles.settingGroup}>
         <label>
@@ -1962,10 +2003,10 @@ const FileSettingsSection: React.FC<{
             checked={settings.taskNotesCompatibility !== false}
             onChange={(e) => onSettingChange('taskNotesCompatibility', e.target.checked)}
           />
-          TaskNotes compatibility (detect <code>status: done</code> in frontmatter)
+          TaskNotes compatibility (read/write <code>status</code>, load folder as quests)
         </label>
         <label>
-          TaskNotes folder (optional):
+          TaskNotes folder (shared with TaskNotes / TaskForge):
           <input
             type="text"
             value={settings.taskNotesFolder || ''}
@@ -2380,11 +2421,7 @@ const ResetSettingsSection: React.FC<{
     
     try {
       // Reset PlayerData.md to default values
-      const resetData = {
-        ...DEFAULT_PLAYER,
-        // Preserve the current timestamp for lastDailyReset
-        lastDailyReset: new Date().toISOString()
-      };
+      const resetData = createStarterPlayerData();
       
       await updatePlayerData(app.vault, resetData);
       console.log('✅ Player progress reset successfully');

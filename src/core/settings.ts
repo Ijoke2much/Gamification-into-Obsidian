@@ -76,9 +76,9 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
         id: 'game-modules',
         name: 'Feature Modules',
         icon: '🧩',
-        description: 'Gameplay profile and which tabs / systems are enabled',
+        description: 'Gameplay profile, key items, and which tabs / systems are enabled',
         color: '#7C4DFF',
-        settings: ['gameplayProfile', 'modules']
+        settings: ['gameplayProfile', 'modules', 'bookOfEasy']
       },
       {
         id: 'experience-feel',
@@ -480,6 +480,10 @@ export interface GamificationModules {
   enableEnergySystem?: boolean;
   /** Productivity equipment in inventory modal */
   enableProductivityGear?: boolean;
+  /** Calendar, timeline, unified quest views, and Advanced dashboard */
+  enableExtraQuestSurfaces?: boolean;
+  /** Journey + Dungeon hub tabs (second boss loops). Projects stay the main boss path. */
+  enableJourneyDungeonHub?: boolean;
 }
 
 /** Lite: quests + pomodoro + energy only */
@@ -498,6 +502,8 @@ export const LITE_GAMEPLAY_MODULES: Required<GamificationModules> = {
   enableBossBattles: false,
   enableEnergySystem: true,
   enableProductivityGear: false,
+  enableExtraQuestSurfaces: false,
+  enableJourneyDungeonHub: false,
 };
 
 /** Balanced default: core loop without shop/crafting/analytics clutter */
@@ -516,6 +522,8 @@ export const BALANCED_GAMEPLAY_MODULES: Required<GamificationModules> = {
   enableBossBattles: true,
   enableEnergySystem: true,
   enableProductivityGear: false,
+  enableExtraQuestSurfaces: false,
+  enableJourneyDungeonHub: true,
 };
 
 /** Hardcore: all features + penalties */
@@ -534,6 +542,8 @@ export const HARDCORE_GAMEPLAY_MODULES: Required<GamificationModules> = {
   enableBossBattles: true,
   enableEnergySystem: true,
   enableProductivityGear: true,
+  enableExtraQuestSurfaces: true,
+  enableJourneyDungeonHub: true,
 };
 
 /** @deprecated alias — use BALANCED_GAMEPLAY_MODULES */
@@ -558,14 +568,16 @@ export const SETTINGS_PRESETS: SettingsPreset[] = [
     settings: {
       gameplayProfile: 'balanced',
       modules: { ...BALANCED_GAMEPLAY_MODULES },
-      notificationLevel: 'normal',
+      notificationLevel: 'quiet',
       preferQuickComplete: true,
       energyHudMode: 'simple',
+      visualTheme: { preset: 'clay', ceremonyLevel: 'minimal' },
       xpPerTask: 10,
       coinPerTask: 5,
       penaltyLowPct: 0.10,
       penaltyMediumPct: 0.20,
       penaltyHighPct: 0.30,
+      bookOfEasy: true,
       enableSidebarQuestBoard: true,
       autoRefreshTasks: false,
       hideCompletedQuests: false,
@@ -581,11 +593,13 @@ export const SETTINGS_PRESETS: SettingsPreset[] = [
       notificationLevel: 'quiet',
       preferQuickComplete: true,
       energyHudMode: 'simple',
+      visualTheme: { preset: 'clay', ceremonyLevel: 'minimal' },
       xpPerTask: 15,
       coinPerTask: 8,
       penaltyLowPct: 0.05,
       penaltyMediumPct: 0.10,
       penaltyHighPct: 0.15,
+      bookOfEasy: true,
       enableSidebarQuestBoard: true,
       autoRefreshTasks: false,
       hideCompletedQuests: false,
@@ -619,6 +633,7 @@ export const SETTINGS_PRESETS: SettingsPreset[] = [
       penaltyHighPct: 0.50,
       dailyDebtCapXP: 1000,
       dailyDebtCapCoins: 100,
+      bookOfEasy: false,
       enableSidebarQuestBoard: true,
       autoRefreshTasks: true,
       questRefreshInterval: 15,
@@ -772,9 +787,9 @@ export interface GamificationPluginSettings {
   externalCompletionSync?: boolean;
   /** Show a batch summary when external completions are detected. */
   externalCompletionSummary?: boolean;
-  /** Detect TaskNotes-style frontmatter (status: done) for completions. */
+  /** Detect TaskNotes-style frontmatter (status) and load that folder as quests. */
   taskNotesCompatibility?: boolean;
-  /** Folder scanned for TaskNotes completions (defaults to task note folder). */
+  /** Folder scanned and written for TaskNotes / TaskForge (overrides per-note folder when set). */
   taskNotesFolder?: string;
   /** Extra vault paths (files or folders) to watch for quest completions. */
   externalWatchPaths?: string[];
@@ -844,6 +859,12 @@ export interface GamificationPluginSettings {
   modules?: GamificationModules;
   /** Set after first-run experience picker (Phase 3 onboarding) */
   gameplayOnboardingComplete?: boolean;
+
+  /**
+   * Key item: The Book of Easy.
+   * When true (default), dream equipment never breaks.
+   */
+  bookOfEasy?: boolean;
 
   /** Phase 4 — toast volume: normal | quiet (shorter/deduped) | minimal (errors only) */
   notificationLevel?: NotificationLevel;
@@ -1062,8 +1083,9 @@ export const DEFAULT_SETTINGS: GamificationPluginSettings = {
   gameplayProfile: 'balanced',
   modules: { ...BALANCED_GAMEPLAY_MODULES },
   gameplayOnboardingComplete: false,
-  notificationLevel: 'normal',
+  notificationLevel: 'quiet',
   preferQuickComplete: true,
+  bookOfEasy: true,
 
   // Failure penalty defaults
   penaltyLowPct: 0.10,
@@ -1157,7 +1179,7 @@ export const DEFAULT_SETTINGS: GamificationPluginSettings = {
   },
 
   // Beta / Feature Flags defaults
-  betaMode: true,
+  betaMode: false,
   featureFlags: {
     enableAnalyticsTab: false,
     enableEnergyDebug: false

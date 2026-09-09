@@ -13,13 +13,29 @@
  * - onAbort: optional callback when timer resets/aborts
  */
 
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useImperativeHandle, forwardRef } from "react";
 import styles from "./PomodoroTimer.module.css";
 import { showGameNotice } from "../../../shared/utils/noticeUtils";
 
+export type PomodoroPhase = 'work' | 'break';
+
+export interface PomodoroTimerStatus {
+  isRunning: boolean;
+  isBreak: boolean;
+  secondsLeft: number;
+  totalSeconds: number;
+}
+
+export interface PomodoroTimerHandle {
+  start: () => void;
+  pause: () => void;
+  reset: () => void;
+  skip: () => void;
+}
+
 interface PomodoroTimerProps {
   duration: number;
-  onComplete: () => void;
+  onComplete: (phase: PomodoroPhase) => void;
   onStart?: () => void;
   onAbort?: () => void;
   attachedQuest?: Request;
@@ -28,6 +44,10 @@ interface PomodoroTimerProps {
   autoStart?: boolean;
   /** Clay theme — analytic donut ring with matte claymorphism */
   clayUi?: boolean;
+  /** When set, replaces the circle while running, on break, or during grace. */
+  encounter?: React.ReactNode;
+  showEncounter?: boolean;
+  onStatus?: (status: PomodoroTimerStatus) => void;
 }
 
 // Timer mode presets
@@ -35,6 +55,8 @@ const TIMER_MODES = {
   classic: { work: 25 * 60, break: 5 * 60 },
   extended: { work: 45 * 60, break: 10 * 60 },
   short: { work: 15 * 60, break: 5 * 60 },
+  deepWork: { work: 60 * 60, break: 15 * 60 },
+  quickFocus: { work: 10 * 60, break: 5 * 60 },
 };
 
 type ModeKey = keyof typeof TIMER_MODES;
@@ -48,7 +70,20 @@ const CLAY_R = 50;
 const CLAY_STROKE = 14;
 const CLAY_CIRC = 2 * Math.PI * CLAY_R;
 
-export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
+function getPhaseDuration(
+  mode: PomodoroTimerProps['mode'],
+  duration: number,
+  isBreak: boolean
+): number {
+  if (mode !== 'custom' && TIMER_MODES[mode as ModeKey]) {
+    return isBreak
+      ? TIMER_MODES[mode as ModeKey].break
+      : TIMER_MODES[mode as ModeKey].work;
+  }
+  return isBreak ? 5 * 60 : duration;
+}
+
+export const PomodoroTimer = forwardRef<PomodoroTimerHandle, PomodoroTimerProps>(function PomodoroTimer({
   duration,
   onComplete,
   onStart,
@@ -56,7 +91,10 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
   mode = 'custom',
   autoStart = false,
   clayUi = false,
-}) => {
+  encounter,
+  showEncounter = false,
+  onStatus,
+}, ref) {
   const claySvgIdRef = useRef(`clayRing-${Math.random().toString(36).slice(2, 9)}`);
   const clayGradId = `clayAnalyticRing-${claySvgIdRef.current}`;
   const clayBreakGradId = `clayAnalyticBreak-${claySvgIdRef.current}`;
@@ -127,7 +165,8 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
           intervalRef.current = null;
           endTimeRef.current = null;
           setIsRunning(false);
-          onComplete();
+          const finishedPhase: PomodoroPhase = isBreak ? 'break' : 'work';
+          onComplete(finishedPhase);
           setIsBreak((prev) => !prev);
           setSecondsLeft(0);
           return;
@@ -155,7 +194,16 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
       intervalRef.current = null;
       endTimeRef.current = null;
     };
-  }, [isRunning]);
+  }, [isRunning, isBreak]);
+
+  useEffect(() => {
+    onStatus?.({
+      isRunning,
+      isBreak,
+      secondsLeft,
+      totalSeconds: getPhaseDuration(mode, duration, isBreak),
+    });
+  }, [isRunning, isBreak, secondsLeft, mode, duration, onStatus]);
 
   const formatTime = (seconds: number) => {
     const min = Math.floor(seconds / 60)
@@ -166,15 +214,7 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
   };
 
   const reset = () => {
-    let resetDuration;
-    if (mode !== 'custom' && TIMER_MODES[mode as ModeKey]) {
-      resetDuration = isBreak
-        ? TIMER_MODES[mode as ModeKey].break
-        : TIMER_MODES[mode as ModeKey].work;
-    } else {
-      const customBreakDuration = 5 * 60;
-      resetDuration = isBreak ? customBreakDuration : duration;
-    }
+    const resetDuration = getPhaseDuration(mode, duration, isBreak);
     setSecondsLeft(resetDuration);
     setIsRunning(false);
     endTimeRef.current = null;
@@ -184,28 +224,31 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
     onAbort?.();
   };
 
+  const start = () => {
+    setIsRunning(true);
+  };
+
   const pause = () => {
     setIsRunning(false);
-    onAbort?.();
   };
 
   const skip = () => {
+    const finishedPhase: PomodoroPhase = isBreak ? 'break' : 'work';
     setSecondsLeft(0);
     setIsRunning(false);
-    onComplete();
-    onAbort?.();
+    onComplete(finishedPhase);
+    setIsBreak((prev) => !prev);
   };
 
+  useImperativeHandle(ref, () => ({
+    start,
+    pause,
+    reset,
+    skip,
+  }));
+
   const progress = () => {
-    let totalDuration;
-    if (mode !== 'custom' && TIMER_MODES[mode as ModeKey]) {
-      totalDuration = isBreak
-        ? TIMER_MODES[mode as ModeKey].break
-        : TIMER_MODES[mode as ModeKey].work;
-    } else {
-      const customBreakDuration = 5 * 60;
-      totalDuration = isBreak ? customBreakDuration : duration;
-    }
+    const totalDuration = getPhaseDuration(mode, duration, isBreak);
     return (1 - secondsLeft / totalDuration) * ringCirc;
   };
 
@@ -221,7 +264,9 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
         {isBreak ? "🌿 Break Time" : "⚡ Work Time"}
       </div>
 
-      {/* Timer Circle Progress */}
+      {showEncounter && encounter ? (
+        <div className={styles.encounterMount}>{encounter}</div>
+      ) : (
       <div className={`${styles.circleWrapper} ${clayUi ? styles.circleWrapperClay : ''}`}>
         <svg
           className={styles.progressRing}
@@ -344,6 +389,7 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
           <div className={styles.timeCircle}>{formatTime(secondsLeft)}</div>
         </div>
       </div>
+      )}
 
       {/* Timer Controls */}
       <div className={styles.controls}>
@@ -354,7 +400,7 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
           ⏸ Pause
         </button>
         <button onClick={reset} className={styles.btnReset}>
-          ⟲ Reset
+          {showEncounter ? 'Abandon' : '⟲ Reset'}
         </button>
         <button onClick={skip} className={styles.btnSkip}>
           ⏭ Skip
@@ -362,4 +408,4 @@ export const PomodoroTimer: React.FC<PomodoroTimerProps> = ({
       </div>
     </div>
   );
-};
+});

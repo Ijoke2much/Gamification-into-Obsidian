@@ -260,7 +260,7 @@
 /* Clay (Player preview) — Bevel-matched claymorphism */
 :global([data-gamification-visual-theme='clay'].gamification-player-shell),
 :global([data-gamification-visual-theme='clay'] .gamification-player-shell) {
-    background: var(--go-screen-bg, linear-gradient(180deg, #d7ece7, #c9e3de)) !important;
+    background: var(--go-screen-bg, linear-gradient(180deg, #f4efe6, #e8dfd2)) !important;
     color: var(--clay-text, #2e2e2e);
 }
 
@@ -398,4 +398,12 @@
     height: 96px;
     min-height: 96px;
     flex: 0 0 96px;
+}
+
+.playerTabClay .energyCard {
+    background: transparent;
+    border: none;
+    border-radius: var(--clay-radius, 24px);
+    box-shadow: none;
+    padding: 0;
 }

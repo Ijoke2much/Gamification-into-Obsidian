@@ -103,6 +103,7 @@ export async function listAllDataBackups(vault: Vault): Promise<DataBackupEntry[
 			const root = await adapter.list(BACKUP_ROOT);
 			for (const folder of root.folders) {
 				const folderName = folder.split('/').pop() ?? '';
+				if (folderName === 'settings') continue; // leftover settings snapshots; not game data
 				const sourcePath = decodeSourcePath(folderName);
 				const listing = await adapter.list(folder);
 				for (const backupPath of listing.files) {

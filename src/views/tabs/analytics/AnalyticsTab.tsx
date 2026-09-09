@@ -30,6 +30,7 @@ import { realTimeAnalyticsService } from "src/features/analytics/services/realTi
 
 // Simple Analytics Integration
 import { SimpleAnalyticsDashboard } from "src/features/analytics/components/SimpleAnalyticsDashboard";
+import { NoticeLogPanel } from "src/features/analytics/components/NoticeLogPanel";
 
 // Crafting Analytics Integration
 import { craftingAnalyticsService } from "src/features/crafting/utils/craftingAnalyticsService";
@@ -56,7 +57,7 @@ import { QuestAnalyticsService } from "src/features/pomodoro/services/questAnaly
 type Props = { plugin: GamifiedObsidianPlugin };
 
 // Tab types for the analytics interface
-type AnalyticsTabType = 'overview' | 'simple' | 'quests' | 'boss' | 'crafting' | 'achievements' | 'energy' | 'shop' | 'skills' | 'pomodoro' | 'realtime';
+type AnalyticsTabType = 'overview' | 'notices' | 'simple' | 'quests' | 'boss' | 'crafting' | 'achievements' | 'energy' | 'shop' | 'skills' | 'pomodoro' | 'realtime';
 
 function startOfWeek(d = new Date()) {
   const x = new Date(d);
@@ -94,7 +95,7 @@ export const AnalyticsTab: React.FC<Props> = ({ plugin }) => {
   const { useSwipe } = useMobileOptimizations();
   
   // Analytics tabs for swipe navigation
-  const analyticsTabsOrder: AnalyticsTabType[] = ['overview', 'simple', 'quests', 'boss', 'crafting', 'achievements', 'energy', 'shop', 'skills', 'pomodoro', 'realtime'];
+  const analyticsTabsOrder: AnalyticsTabType[] = ['overview', 'notices', 'simple', 'quests', 'boss', 'crafting', 'achievements', 'energy', 'shop', 'skills', 'pomodoro', 'realtime'];
   
   // Swipe navigation for analytics sub-tabs
   const swipeHandlers = useSwipe(
@@ -720,6 +721,8 @@ export const AnalyticsTab: React.FC<Props> = ({ plugin }) => {
     switch (activeTab) {
       case 'overview':
         return renderOverviewTab();
+      case 'notices':
+        return <NoticeLogPanel />;
       case 'simple':
         return (
           <SimpleAnalyticsDashboard 
@@ -2167,6 +2170,12 @@ export const AnalyticsTab: React.FC<Props> = ({ plugin }) => {
           onClick={() => setActiveTab('overview')}
         >
           📊 Overview
+        </button>
+        <button 
+          className={`${styles.tabButton} ${activeTab === 'notices' ? styles.activeTab : ''}`}
+          onClick={() => setActiveTab('notices')}
+        >
+          🔔 Notices
         </button>
         <button 
           className={`${styles.tabButton} ${activeTab === 'simple' ? styles.activeTab : ''}`}

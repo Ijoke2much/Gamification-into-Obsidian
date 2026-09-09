@@ -658,7 +658,7 @@ export class EquipmentCraftingSystem {
             pixelNotice(message, 4000);
 
             if (result.experienceGained > 0) {
-                pixelNotice(`📈 +${result.experienceGained} Crafting XP`, 3000);
+            pixelNotice(`📈 +${result.experienceGained} Crafting XP`, 3000, 'low');
             }
         } else {
             pixelNotice(`❌ Failed to craft ${recipe.name}: ${result.error}`, 5000);

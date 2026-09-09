@@ -1,8 +1,9 @@
 import type { App } from 'obsidian';
+import { BUNDLED_PLUGIN_ASSET_URLS } from './bundledPluginAssets';
 
 const PLUGIN_ID = 'Gamification-into-Obsidian';
 
-/** Plugin-bundled image paths (live under `<plugin>/assets/`, not in main.js). */
+/** Logical paths for bundled images (inlined into main.js for BRAT installs). */
 export const PLUGIN_ASSETS = {
 	journeyOverworldBanner: 'assets/journey-overworld-banner.png',
 	journeyBattleBanner: 'assets/journey-battle-banner.png',
@@ -10,13 +11,25 @@ export const PLUGIN_ASSETS = {
 	treeStage: (stage: number) => `assets/trees/tree_stage_${stage}.png`,
 	treeStages: () =>
 		[1, 2, 3, 4, 5].map((n) => `assets/trees/tree_stage_${n}.png`),
+	weaponSprite: (id: string) => `assets/sprites/weapons/${id}.png`,
+	gearSprite: (id: string) => `assets/sprites/gear/${id}.png`,
+	foeSprite: (id: string) => `assets/sprites/foes/${id}.png`,
+	focusStage: 'assets/focus-stage.jpg',
 } as const;
 
+function bundledUrl(relativePath: string): string {
+	const normalized = relativePath.replace(/^\//, '');
+	return BUNDLED_PLUGIN_ASSET_URLS[normalized] ?? '';
+}
+
 /**
- * Resolve a file under the plugin folder to a URL Obsidian can load in <img src>.
- * Assets must be shipped beside main.js (see npm run build copy step).
+ * URL for a plugin image. Prefers inlined data URLs so BRAT's 3-file install
+ * still shows sprites; falls back to files beside main.js when present.
  */
 export function getPluginAssetUrl(relativePath: string, app?: App): string {
+	const inlined = bundledUrl(relativePath);
+	if (inlined) return inlined;
+
 	try {
 		const obsidianApp =
 			app ??

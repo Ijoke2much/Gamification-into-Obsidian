@@ -7,6 +7,7 @@ interface QuestModalActionsProps {
     onSubmit: (e: React.FormEvent) => void;
     isSubmitting?: boolean;
     isMobile?: boolean;
+    canSubmit?: boolean;
 }
 
 export const QuestModalActions: React.FC<QuestModalActionsProps> = memo(({
@@ -15,7 +16,9 @@ export const QuestModalActions: React.FC<QuestModalActionsProps> = memo(({
     onSubmit,
     isSubmitting = false,
     isMobile = false,
+    canSubmit = true,
 }) => {
+    const submitDisabled = isSubmitting || !canSubmit;
     return (
         <div
             className={isMobile ? styles.mobileFooterActions : undefined}
@@ -46,17 +49,18 @@ export const QuestModalActions: React.FC<QuestModalActionsProps> = memo(({
             <button
                 type="submit"
                 onClick={onSubmit}
-                disabled={isSubmitting}
+                disabled={submitDisabled}
+                title={!canSubmit ? "Add a skill to continue" : undefined}
                 style={{
                     padding: isMobile ? '12px 14px' : '12px 24px',
                     backgroundColor: 'var(--interactive-accent)',
                     border: 'none',
                     borderRadius: 6,
                     color: 'white',
-                    cursor: isSubmitting ? 'wait' : 'pointer',
+                    cursor: submitDisabled ? 'not-allowed' : 'pointer',
                     fontWeight: 600,
                     fontSize: isMobile ? 15 : 14,
-                    opacity: isSubmitting ? 0.8 : 1,
+                    opacity: submitDisabled ? 0.55 : 1,
                 }}
             >
                 {isSubmitting ? 'Saving…' : (mode === 'create' ? 'Create Quest' : 'Update Quest')}

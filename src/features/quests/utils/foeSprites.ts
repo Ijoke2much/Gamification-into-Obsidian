@@ -1,24 +1,40 @@
 import { TFile, normalizePath } from 'obsidian';
 import type GamifiedObsidianPlugin from '../../../core/main';
 import type { JourneyFoeDefinition } from '../data/journeyFoeCatalog';
+import { getPluginAssetUrl } from '../../../shared/utils/pluginAssetUrl';
+import { bundledFoeSpritePath, isPluginSpritePath } from '../../../shared/utils/pixelSprites';
 
 /** Where uploaded foe sprites are stored in the vault. */
 export const FOE_SPRITE_FOLDER = 'GamifiedSprites/foes';
 
 /**
  * Resolve a foe's sprite to a renderable URL.
- * Returns null when the foe has no sprite or the file is missing,
- * so callers can fall back to the emoji.
+ * Vault uploads win, then the foe's sprite path, then a bundled pixel template.
  */
 export function resolveFoeSpriteUrl(
 	plugin: GamifiedObsidianPlugin,
 	foe: JourneyFoeDefinition | undefined
 ): string | null {
-	if (!foe?.sprite) return null;
-	const path = normalizePath(foe.sprite);
-	const file = plugin.app.vault.getAbstractFileByPath(path);
-	if (!(file instanceof TFile)) return null;
-	return plugin.app.vault.getResourcePath(file);
+	if (!foe) return null;
+
+	if (foe.sprite) {
+		const path = normalizePath(foe.sprite);
+		if (isPluginSpritePath(path)) {
+			const bundled = getPluginAssetUrl(path, plugin.app);
+			if (bundled) return bundled;
+		}
+		const file = plugin.app.vault.getAbstractFileByPath(path);
+		if (file instanceof TFile) {
+			return plugin.app.vault.getResourcePath(file);
+		}
+	}
+
+	const bundledPath = bundledFoeSpritePath(foe.id);
+	if (bundledPath) {
+		const url = getPluginAssetUrl(bundledPath, plugin.app);
+		if (url) return url;
+	}
+	return null;
 }
 
 async function ensureSpriteFolder(plugin: GamifiedObsidianPlugin): Promise<void> {

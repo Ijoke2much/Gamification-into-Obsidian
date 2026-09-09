@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { TFile, MarkdownView } from 'obsidian';
-import { PomodoroTimer } from '../../../features/pomodoro/components/PomodoroTimer';
-import { PomodoroRewardDisplay } from '../../../features/pomodoro/components/PomodoroRewardDisplay';
+import { TFile, MarkdownView, Platform } from 'obsidian';
+import { PomodoroTimer, type PomodoroTimerHandle, type PomodoroTimerStatus } from '../../../features/pomodoro/components/PomodoroTimer';
+import { FocusEncounterPanel } from '../../../features/pomodoro/components/FocusEncounterPanel';
+import { FocusSessionOverlay } from '../../../features/pomodoro/components/FocusSessionOverlay';
 import { EnhancedPomodoroNotification, EnhancedNotificationManager } from '../../../features/pomodoro/components/EnhancedPomodoroNotification';
 import { MaterialInventoryManager } from '../../../shared/services/materialInventoryManager';
 import { updatePlayerData } from '../../../shared/utils/progressUpdater';
@@ -9,6 +10,18 @@ import GamifiedObsidianPlugin from '../../../core/main';
 import { PlayerData } from '../../../data/models/PlayerData';
 
 import { PomodoroStatsManager, SESSION_TYPES } from "../../../features/pomodoro/utils/pomodoroStatsManager";
+import {
+  pickFocusFoe,
+  pendingKillMatches,
+  loadPendingFocusKill,
+  savePendingFocusKill,
+  clearPendingFocusKill,
+  type PendingFocusKill,
+} from "../../../features/pomodoro/utils/focusEncounter";
+import {
+  emitFocusSessionLive,
+  type FocusSessionSurface,
+} from "../../../features/pomodoro/utils/focusSessionSurface";
 import { handleCompleteQuestFromPomodoro } from "../../../features/quests/utils/questUtils";
 import styles from '../../../features/pomodoro/components/PomodoroTimer.module.css';
 import { AttachTaskModal } from '../../../features/pomodoro/modals/AttachTaskModal';
@@ -57,36 +70,6 @@ interface PomodoroTabProps {
 }
 
 /** Map vault quest material tokens (e.g. "💎3 Materials") into loot rows for the reward panel. */
-function lootEntryFromQuestMaterialString(material: string): {
-  name: string;
-  icon: string;
-  quality: string;
-  rarity: string;
-} {
-  const icon =
-    material.includes('💎') ? '💎' :
-    material.includes('🔮') ? '🔮' :
-    material.includes('⚔️') ? '⚔️' :
-    material.includes('🛡️') ? '🛡️' :
-    material.includes('🏆') ? '🏆' :
-    material.includes('🔥') ? '🔥' :
-    material.includes('⚡') ? '⚡' :
-    material.includes('🌟') ? '🌟' :
-    '🎁';
-
-  const stripped = material.replace(/^(💎|🔮|⚔️|🛡️|🏆|🔥|⚡|🌟|🎁)/u, '').trim();
-  const name = stripped || material.trim();
-
-  let quality = 'normal';
-  if (/magic/i.test(material)) quality = 'refined';
-  else if (/weapon/i.test(material)) quality = 'masterwork';
-  else if (/armor/i.test(material)) quality = 'refined';
-  else if (/material/i.test(material)) quality = 'fresh';
-  else if (/random|drop/i.test(material)) quality = 'special';
-
-  return { name, icon, quality, rarity: 'common' };
-}
-
 // Pomodoro Tab Component
 export const PomodoroTab: React.FC<PomodoroTabProps> = React.memo(({
   plugin,
@@ -156,6 +139,19 @@ export const PomodoroTab: React.FC<PomodoroTabProps> = React.memo(({
     lineNumber?: number;
     isTimedQuest?: boolean;
   } | null>(null);
+  const [encounterGrace, setEncounterGrace] = useState(false);
+  const [pendingKill, setPendingKill] = useState<PendingFocusKill | null>(() => loadPendingFocusKill());
+  const [timerStatus, setTimerStatus] = useState<PomodoroTimerStatus>({
+    isRunning: false,
+    isBreak: false,
+    secondsLeft: 25 * 60,
+    totalSeconds: 25 * 60,
+  });
+  const handleTimerStatus = useCallback((status: PomodoroTimerStatus) => {
+    setTimerStatus(status);
+  }, []);
+  const timerRef = useRef<PomodoroTimerHandle>(null);
+  const [sessionSurface, setSessionSurface] = useState<FocusSessionSurface>('idle');
 
   // Update energy state periodically
   useEffect(() => {
@@ -755,7 +751,7 @@ export const PomodoroTab: React.FC<PomodoroTabProps> = React.memo(({
       addNotification({
         type: 'achievement',
         title: 'Quest Ready!',
-        message: 'All subtasks completed! Complete a Pomodoro session to claim rewards.',
+        message: 'All subtasks done — foe is down. Press Complete to claim the kill.',
         icon: '🎯',
         progress: 100,
         duration: 4000,
@@ -763,24 +759,32 @@ export const PomodoroTab: React.FC<PomodoroTabProps> = React.memo(({
     }
   }, [attachedQuest, stableSetAttachedQuest, calculateQuestProgress, addNotification, updateFileSafely, addErrorNotification]);
 
-  // Handle quest completion (for quests without subtasks)
-  const handleCompleteQuest = useCallback(async () => {
+  const markAttachedQuestLineComplete = useCallback(async () => {
+    if (!attachedQuest?.filePath) return;
+    const file = stablePluginVault.getAbstractFileByPath(attachedQuest.filePath);
+    if (!(file instanceof TFile)) return;
+    const content = await stablePluginVault.read(file);
+    const lines = content.split('\n');
+    const idx = Math.max(0, (attachedQuest.lineNumber || 1) - 1);
+    if (idx < lines.length && lines[idx].includes('- [ ]')) {
+      lines[idx] = lines[idx].replace('- [ ]', '- [x]');
+      await stablePluginVault.modify(file, lines.join('\n'));
+    }
+  }, [attachedQuest, stablePluginVault]);
+
+  const handleCompleteQuest = useCallback(async (opts?: { honor?: boolean }) => {
     if (!attachedQuest) return;
 
-    // Mark the quest as completed in the file
-    if (attachedQuest.filePath && attachedQuest.lineNumber) {
-      try {
-        await updateFileSafely(attachedQuest.filePath, attachedQuest.lineNumber, []); // Mark as completed
-      } catch (error) {
-        console.error('Error completing quest in file:', error);
-        addErrorNotification(
-          'File Update Failed',
-          'Could not update the quest file. Your progress has been saved locally.'
-        );
-      }
+    try {
+      await markAttachedQuestLineComplete();
+    } catch (error) {
+      console.error('Error completing quest in file:', error);
+      addErrorNotification(
+        'File Update Failed',
+        'Could not update the quest file. Your progress has been saved locally.'
+      );
     }
 
-    // Give rewards
     handleCompleteQuestFromPomodoro(
       stablePluginApp,
       attachedQuest.title,
@@ -788,7 +792,7 @@ export const PomodoroTab: React.FC<PomodoroTabProps> = React.memo(({
       (rewards) => {
         addNotification({
           type: 'achievement',
-          title: 'Quest Completed!',
+          title: opts?.honor ? 'Honor confirm — kill claimed' : 'Quest Completed!',
           message: `+${rewards.xp} XP, ${currencySymbol} +${rewards.coins} ${currencyName.toLowerCase()} earned!`,
           icon: '🏆',
           duration: 4000,
@@ -797,9 +801,37 @@ export const PomodoroTab: React.FC<PomodoroTabProps> = React.memo(({
       }
     );
 
-    // Clear the attached quest
+    clearPendingFocusKill();
+    setPendingKill(null);
+    setEncounterGrace(false);
     stableSetAttachedQuest(null);
-  }, [attachedQuest, stablePluginApp, stablePluginVault, addNotification, reloadPlayerDataSimple, currencySymbol, currencyName, stableSetAttachedQuest, updateFileSafely, addErrorNotification]);
+  }, [attachedQuest, stablePluginApp, stablePluginVault, addNotification, reloadPlayerDataSimple, currencySymbol, currencyName, stableSetAttachedQuest, addErrorNotification, markAttachedQuestLineComplete]);
+
+  const handleDetachQuest = useCallback(() => {
+    if (attachedQuest && (encounterGrace || timerStatus.isBreak)) {
+      const pending: PendingFocusKill = {
+        title: attachedQuest.title,
+        filePath: attachedQuest.filePath,
+        lineNumber: attachedQuest.lineNumber,
+        isTimedQuest: Boolean(attachedQuest.isTimedQuest),
+        foeId: pickFocusFoe(timerMode, attachedQuest.isTimedQuest).id,
+        sessionEndedAt: Date.now(),
+      };
+      savePendingFocusKill(pending);
+      setPendingKill(pending);
+      addNotification({
+        type: 'quest_progress',
+        title: attachedQuest.isTimedQuest ? 'Kill not confirmed' : 'Quest left open',
+        message: attachedQuest.isTimedQuest
+          ? 'Timed quest not completed. Session still counts. Re-attach and confirm (scouts’ honor) if you finished the work.'
+          : 'Detach without Complete leaves the quest open. You can honor-confirm later.',
+        icon: '⚠️',
+        duration: 5000,
+      });
+    }
+    setEncounterGrace(false);
+    stableSetAttachedQuest(null);
+  }, [attachedQuest, encounterGrace, timerStatus.isBreak, timerMode, addNotification, stableSetAttachedQuest]);
 
   // Check for achievement unlocks
   const checkAchievements = useCallback((stats: PomodoroStats) => {
@@ -863,13 +895,22 @@ export const PomodoroTab: React.FC<PomodoroTabProps> = React.memo(({
       if (!attachedQuest?.filePath) return;
       const file = plugin.app.vault.getAbstractFileByPath(attachedQuest.filePath);
       if (file && file instanceof TFile) {
-        const leaf = plugin.app.workspace.getLeaf();
+        const leaf = plugin.app.workspace.getLeaf(false);
         await leaf.openFile(file);
       }
     } catch (e) {
       console.error('Failed to open attached quest file', e);
     }
   }, [attachedQuest, plugin]);
+
+  const handleNotesFromArena = useCallback(() => {
+    setSessionSurface('kit');
+    void handleOpenAttachedQuest();
+  }, [handleOpenAttachedQuest]);
+
+  const handleExpandArena = useCallback(() => {
+    setSessionSurface('arena');
+  }, []);
 
   // Open quest file and jump to the quest line
   const handleJumpToAttachedLine = useCallback(async () => {
@@ -905,7 +946,8 @@ export const PomodoroTab: React.FC<PomodoroTabProps> = React.memo(({
   }, [timerMode, duration]);
 
   // Handle pomodoro session completion
-  const handlePomodoroComplete = useCallback(async () => {
+  const handlePomodoroComplete = useCallback(async (phase: 'work' | 'break' = 'work') => {
+    if (phase === 'break') return;
     if (!playerDataRef.current) return;
 
     try {
@@ -1197,7 +1239,7 @@ export const PomodoroTab: React.FC<PomodoroTabProps> = React.memo(({
           addNotification({
             type: 'achievement',
             title: 'Quest Ready!',
-            message: 'All subtasks completed! Complete a Pomodoro session to claim rewards.',
+            message: 'Foe is down. Press Complete to claim the kill — the session already counted.',
             icon: '🎯',
             progress: 100,
             duration: 4000,
@@ -1213,6 +1255,29 @@ export const PomodoroTab: React.FC<PomodoroTabProps> = React.memo(({
             duration: 3000,
           });
         }
+      }
+
+      if (attachedQuest) {
+        setEncounterGrace(true);
+        const pending: PendingFocusKill = {
+          title: attachedQuest.title,
+          filePath: attachedQuest.filePath,
+          lineNumber: attachedQuest.lineNumber,
+          isTimedQuest: Boolean(attachedQuest.isTimedQuest),
+          foeId: pickFocusFoe(timerMode, attachedQuest.isTimedQuest).id,
+          sessionEndedAt: Date.now(),
+        };
+        savePendingFocusKill(pending);
+        setPendingKill(pending);
+        addNotification({
+          type: 'quest_progress',
+          title: attachedQuest.isTimedQuest ? 'Foe down — confirm the kill' : 'Session done — claim the quest',
+          message: attachedQuest.isTimedQuest
+            ? 'Timed quest is not complete until you press Complete. Session XP already counted.'
+            : 'Press Complete to claim quest loot. Forgetting the button does not fail the Pomodoro.',
+          icon: '☠️',
+          duration: 6000,
+        });
       }
 
       // Reload player data  
@@ -1236,6 +1301,27 @@ export const PomodoroTab: React.FC<PomodoroTabProps> = React.memo(({
   // Memoize expensive calculations
   const currentSessionXP = useMemo(() => Math.floor(getCurrentSessionDuration() * 0.5), [getCurrentSessionDuration]);
   const streakStatus = useMemo(() => PomodoroStatsManager.getStreakStatus(pomodoroStats.currentStreak), [pomodoroStats.currentStreak]);
+  const focusFoe = pickFocusFoe(timerMode, attachedQuest?.isTimedQuest);
+  const honorOffer = pendingKillMatches(pendingKill, attachedQuest) && !timerStatus.isRunning;
+  const showEncounter =
+    timerStatus.isRunning || timerStatus.isBreak || encounterGrace || honorOffer;
+
+  useEffect(() => {
+    if (!showEncounter) {
+      setSessionSurface('idle');
+      return;
+    }
+    setSessionSurface((current) => {
+      if (current !== 'idle') return current;
+      return Platform.isMobile ? 'kit' : 'arena';
+    });
+  }, [showEncounter]);
+
+  useEffect(() => {
+    emitFocusSessionLive(sessionSurface !== 'idle');
+  }, [sessionSurface]);
+
+  useEffect(() => () => emitFocusSessionLive(false), []);
 
   // Cleanup effect to prevent memory leaks (simplified)
   useEffect(() => {
@@ -1248,7 +1334,7 @@ export const PomodoroTab: React.FC<PomodoroTabProps> = React.memo(({
   // Memoize the entire JSX to prevent unnecessary re-renders
   const memoizedJSX = useMemo(() => (
     <div
-      className={`${styles.pomodoroContainer} ${clayUi ? styles.clayPomodoroShell : styles.pixelPomodoroShell}`}
+      className={`${styles.pomodoroContainer} ${clayUi ? styles.clayPomodoroShell : styles.pixelPomodoroShell} ${sessionSurface !== 'idle' ? styles.sessionLive : ''}`}
       data-pixel-shell={clayUi ? undefined : 'pomodoro'}
       data-clay-shell={clayUi ? 'pomodoro' : undefined}
     >
@@ -1298,19 +1384,24 @@ export const PomodoroTab: React.FC<PomodoroTabProps> = React.memo(({
       {/* Main Pomodoro Timer */}
       <div className={styles.timerSection} ref={timerSectionRef}>
         <PomodoroTimer
+          ref={timerRef}
           duration={duration}
           onComplete={handlePomodoroComplete}
           onStart={() => {
             window.console.log('Timer started');
-            setShouldAutoStart(false); // Reset auto-start flag after starting
+            setShouldAutoStart(false);
           }}
           onAbort={() => {
             window.console.log('Timer aborted');
-            setShouldAutoStart(false); // Reset auto-start flag on abort
+            setShouldAutoStart(false);
+            setEncounterGrace(false);
           }}
           mode={timerMode}
           autoStart={shouldAutoStart}
           clayUi={clayUi}
+          onStatus={handleTimerStatus}
+          showEncounter={showEncounter && sessionSurface === 'idle'}
+          encounter={null}
         />
       </div>
 
@@ -1527,40 +1618,50 @@ export const PomodoroTab: React.FC<PomodoroTabProps> = React.memo(({
           <div className={styles.questRewards}>
             {attachedQuest.isTimedQuest && (
               <div className={styles.questTimedRewardBonus}>
-                <span className={styles.timedBonusLabel}>⏰ +20% XP, +15% Coins</span>
+                <span className={styles.timedBonusLabel}>Timed bonus +20% XP / +15% coins</span>
               </div>
             )}
-            <PomodoroRewardDisplay
-              xp={attachedQuest.rewards?.xp || 0}
-              cp={attachedQuest.rewards?.cp || 0}
-              currency={attachedQuest.rewards?.coins || 0}
-              currencySymbol={currencySymbol}
-              currencyName={currencyName}
-              materials={attachedQuest.rewards?.materials?.map(lootEntryFromQuestMaterialString) ?? []}
-              isVisible={true}
-              animate={false} // Show quest rewards immediately without animation
-            />
+            <p className={styles.rewardStripLabel}>Rewards</p>
+            <div className={styles.rewardStrip}>
+              <span className={styles.rewardChip}>
+                <span className={styles.rewardChipValue}>+{attachedQuest.rewards?.xp || 0}</span>
+                <span className={styles.rewardChipKind}>XP</span>
+              </span>
+              <span className={styles.rewardChip}>
+                <span className={styles.rewardChipValue}>+{attachedQuest.rewards?.cp || 0}</span>
+                <span className={styles.rewardChipKind}>CP</span>
+              </span>
+              <span className={styles.rewardChip}>
+                <span className={styles.rewardChipValue}>+{attachedQuest.rewards?.coins || 0}</span>
+                <span className={styles.rewardChipKind}>{currencyName}</span>
+              </span>
+              {(attachedQuest.rewards?.materials ?? []).map((material) => (
+                <span key={material} className={styles.rewardChip}>
+                  <span className={styles.rewardChipKind}>{material}</span>
+                </span>
+              ))}
+            </div>
           </div>
         )}
         
         <div className={styles.questProgressSection}>
-          <div className={styles.progressTextEnhanced}>{attachedQuest.progress}% Complete</div>
-          <div className={styles.circularProgressContainer}>
-            <div className={styles.circularProgress}>
-              <div className={styles.circularProgressFill} style={{ transform: `rotate(${attachedQuest.progress * 3.6}deg)` }}></div>
-              <div className={styles.circularProgressText}>{attachedQuest.progress}%</div>
-            </div>
+          <div className={styles.progressTextEnhanced}>
+            {attachedQuest.progress}% complete
+          </div>
+          <div
+            className={styles.questProgressTrack}
+            role="progressbar"
+            aria-valuenow={attachedQuest.progress}
+            aria-valuemin={0}
+            aria-valuemax={100}
+          >
+            <span
+              className={styles.questProgressFill}
+              style={{ width: `${Math.max(0, Math.min(100, attachedQuest.progress))}%` }}
+            />
           </div>
         </div>
 
-        {/* Quick actions */}
-        <div className={styles.questActions}>
-          <button onClick={handleOpenAttachedQuest} className={styles.attachBtn}>Open quest</button>
-          {attachedQuest.lineNumber ? (
-            <button onClick={handleJumpToAttachedLine} className={styles.attachBtn}>Jump to line</button>
-          ) : null}
-        </div>
-        
         {attachedQuest.subtasks && attachedQuest.subtasks.length > 0 ? (
           <div className={styles.subtasksContainerEnhanced}>
             <div className={styles.subtasksHeader}>
@@ -1584,20 +1685,23 @@ export const PomodoroTab: React.FC<PomodoroTabProps> = React.memo(({
               ))}
             </div>
           </div>
-        ) : (
-          <div className={styles.questActions}>
-            <button onClick={handleCompleteQuest} className={styles.completeQuestBtn}>
-              Complete Quest
-            </button>
-          </div>
-        )}
-        
-        <button 
-          onClick={() => stableSetAttachedQuest(null)} 
-          className={styles.detachBtnEnhanced}
-        >
-          Detach Quest
-        </button>
+        ) : null}
+
+        <div className={styles.questActions}>
+          <button onClick={handleOpenAttachedQuest} className={styles.attachBtn}>Open quest</button>
+          {attachedQuest.lineNumber ? (
+            <button onClick={handleJumpToAttachedLine} className={styles.attachBtn}>Jump to line</button>
+          ) : null}
+          <button onClick={() => void handleCompleteQuest()} className={styles.completeQuestBtn}>
+            Complete Quest
+          </button>
+          <button
+            onClick={handleDetachQuest}
+            className={styles.detachBtnEnhanced}
+          >
+            Detach Quest
+          </button>
+        </div>
       </div>
     )}
 
@@ -1634,7 +1738,59 @@ export const PomodoroTab: React.FC<PomodoroTabProps> = React.memo(({
     handleQuestSuggestionSelect,
     getCurrentSessionDuration,
     clayUi,
+    encounterGrace,
+    honorOffer,
+    showEncounter,
+    focusFoe,
+    timerStatus,
+    handleTimerStatus,
+    handleCompleteQuest,
+    handleDetachQuest,
+    handleSubtaskToggle,
+    handlePomodoroComplete,
+    sessionSurface,
   ]);
 
-  return memoizedJSX;
+  return (
+    <>
+      {memoizedJSX}
+      {sessionSurface !== 'idle' ? (
+        <FocusSessionOverlay
+          surface={sessionSurface}
+          clayUi={clayUi}
+          onBackdropNotes={handleNotesFromArena}
+        >
+          <FocusEncounterPanel
+            foe={focusFoe}
+            quest={attachedQuest}
+            sessionMode={timerMode}
+            secondsLeft={timerStatus.secondsLeft}
+            totalSeconds={timerStatus.totalSeconds}
+            isBreak={timerStatus.isBreak}
+            isRunning={timerStatus.isRunning}
+            grace={encounterGrace}
+            honorOffer={honorOffer}
+            density={sessionSurface === 'kit' ? 'kit' : 'arena'}
+            clayUi={clayUi}
+            onSubtaskToggle={handleSubtaskToggle}
+            onCompleteQuest={() => void handleCompleteQuest()}
+            onHonorComplete={() => void handleCompleteQuest({ honor: true })}
+            onAbandon={() => timerRef.current?.reset()}
+            onNotes={handleNotesFromArena}
+            onExpand={handleExpandArena}
+            onPause={() => timerRef.current?.pause()}
+            onStart={() => timerRef.current?.start()}
+          />
+          {sessionSurface === 'arena' ? (
+            <div className={styles.arenaControls}>
+              <button type="button" onClick={() => timerRef.current?.start()}>Start</button>
+              <button type="button" onClick={() => timerRef.current?.pause()}>Pause</button>
+              <button type="button" onClick={() => timerRef.current?.reset()}>Abandon</button>
+              <button type="button" onClick={() => timerRef.current?.skip()}>Skip</button>
+            </div>
+          ) : null}
+        </FocusSessionOverlay>
+      ) : null}
+    </>
+  );
 }); // Removed React.memo comparison to fix flickering issues

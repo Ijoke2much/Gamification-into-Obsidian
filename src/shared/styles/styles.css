@@ -475,6 +475,76 @@ button,
   justify-content: center !important;
 }
 
+button.gamifyHunterPortrait {
+  box-sizing: border-box !important;
+  width: var(--hunter-face, 220px) !important;
+  height: var(--hunter-face, 220px) !important;
+  min-width: var(--hunter-face, 220px) !important;
+  min-height: var(--hunter-face, 220px) !important;
+  max-width: var(--hunter-face, 220px) !important;
+  max-height: var(--hunter-face, 220px) !important;
+  padding: 8px !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  overflow: hidden !important;
+  border-radius: 2px !important;
+  flex-shrink: 0 !important;
+}
+
+button.gamifyHunterSlot {
+  box-sizing: border-box !important;
+  border-radius: 2px !important;
+  min-width: 0 !important;
+  box-shadow: none !important;
+  font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+}
+
+button.gamifySystemAction {
+  box-sizing: border-box !important;
+  border-radius: 2px !important;
+  min-height: 44px !important;
+  box-shadow: none !important;
+  font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase !important;
+  color: #c8f0ff !important;
+  -webkit-text-fill-color: #c8f0ff !important;
+  background: rgba(12, 40, 72, 0.65) !important;
+  border: 1px solid rgba(34, 200, 255, 0.42) !important;
+}
+
+button.gamifySystemAction:hover {
+  background: rgba(34, 200, 255, 0.16) !important;
+  border-color: rgba(34, 200, 255, 0.7) !important;
+  transform: none !important;
+}
+
+button.gamifySystemActionPrimary {
+  background: linear-gradient(180deg, rgba(40, 90, 140, 0.75), rgba(12, 40, 72, 0.9)) !important;
+  border-color: #22c8ff !important;
+  color: #f0f9ff !important;
+  -webkit-text-fill-color: #f0f9ff !important;
+}
+
+button.gamifySystemActionPrimary:hover {
+  background: rgba(34, 200, 255, 0.22) !important;
+  border-color: #22c8ff !important;
+}
+
+img.gamifyHunterFace {
+  width: 100% !important;
+  height: 100% !important;
+  max-width: 100% !important;
+  max-height: 100% !important;
+  object-fit: contain !important;
+  object-position: center center !important;
+  flex: none !important;
+}
+
 /* Icon-only buttons need larger touch targets */
 .icon-button,
 [data-icon-only="true"],
@@ -526,6 +596,15 @@ button:has(.icon:only-child) {
     max-width: 100% !important;
     height: auto !important;
     object-fit: contain !important;
+  }
+
+  img.gamifyHunterFace {
+    width: 100% !important;
+    height: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    object-fit: contain !important;
+    object-position: center center !important;
   }
 
   /* Prevent horizontal scrolling */
@@ -879,13 +958,15 @@ button:has(.icon:only-child) {
   overflow-x: hidden !important;
 }
 
-/* Clay theme — mint canvas (ChatGPT clay design system) */
+/* Clay theme — warm cream claymorphism canvas */
 [data-gamification-visual-theme='clay'].gamification-player-shell,
 .workspace-leaf-content[data-type="gamified-player-tab"]:has([data-gamification-visual-theme='clay']),
 .workspace-leaf-content[data-type="gamified-player-tab"]:has([data-gamification-visual-theme='clay']) .view-content,
-.workspace-leaf-content[data-type="gamified-player-tab"]:has([data-gamification-visual-theme='clay']) .gamification-player-view-root {
-  background: var(--go-screen-bg, linear-gradient(180deg, #d7ece7, #c9e3de)) !important;
-  color: var(--clay-text, #2e2e2e);
+.workspace-leaf-content[data-type="gamified-player-tab"]:has([data-gamification-visual-theme='clay']) .gamification-player-view-root,
+.workspace-leaf-content[data-type="sidebar-quest-view"]:has([data-gamification-visual-theme='clay']),
+.workspace-leaf-content[data-type="sidebar-quest-view"]:has([data-gamification-visual-theme='clay']) .view-content {
+  background: var(--go-screen-bg, linear-gradient(180deg, #f4efe6, #e8dfd2)) !important;
+  color: var(--clay-text, #3a342c);
 }
 
 @media (max-width: 768px), (pointer: coarse) {

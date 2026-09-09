@@ -6,11 +6,11 @@ import { MaterialRewardService } from './materialRewardService';
 import { getCraftingMaterials, findMaterialByIdOrName } from '../../features/crafting/utils/craftingMaterialRegistry';
 import {
 	HABIT_TREE_MATERIAL_DROP_CHANCE,
-	normalizeQuestDifficulty,
 	POMODORO_MATERIAL_DROP_CHANCE,
 	POMODORO_RARE_BONUS_CHANCE,
 	QUEST_MATERIAL_DROP_CHANCE,
 	rollChance,
+	stepDownQuestDifficulty,
 } from '../utils/materialEconomyConfig';
 
 export interface MaterialReward {
@@ -25,14 +25,18 @@ export interface MaterialReward {
 
 export class MaterialInventoryManager {
     // Add materials to inventory from quest completion
-    static async addQuestMaterials(app: App, difficulty: string): Promise<{ materials: MaterialReward[], quality: string }> {
+    static async addQuestMaterials(
+        app: App,
+        difficulty: string,
+        lootStepsDown = 0
+    ): Promise<{ materials: MaterialReward[], quality: string }> {
         try {
-            const key = normalizeQuestDifficulty(difficulty);
+            const key = stepDownQuestDifficulty(difficulty, lootStepsDown);
             if (!rollChance(QUEST_MATERIAL_DROP_CHANCE[key])) {
                 return { materials: [], quality: 'normal' };
             }
 
-            const reward = MaterialRewardService.getQuestMaterials(difficulty);
+            const reward = MaterialRewardService.getQuestMaterials(key);
             const materials: MaterialReward[] = [];
 
             // Select random materials from the available pool

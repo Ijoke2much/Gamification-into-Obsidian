@@ -17,6 +17,11 @@ import {
 } from '../utils/canvasClassSkillSync';
 import { buildClassNoteFromTemplate } from '../utils/classNoteTemplate';
 import { buildSkillNoteFromTemplate } from '../utils/skillNoteTemplate';
+import {
+    ensureSkillTreeSkeleton,
+    SKILL_TREE_CANVAS_PATH,
+} from '../utils/ensureSkillTreeSkeleton';
+import { DEFAULT_PLAYER } from '../../../data/models/PlayerData';
 import { readPlayerData } from '../../../features/player/utils/playerDataUtils';
 import { useMasterClassProgress } from '../../../features/player/hooks/useMasterClassProgress';
 import { useMobileOptimizations } from '../../../shared/hooks/useMobileOptimizations';
@@ -132,6 +137,7 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
     const loadSkillData = async () => {
         try {
             setIsLoading(true);
+            await ensureSkillTreeSkeleton(plugin.app.vault);
             // Desktop: always refresh. Mobile: keep cache only when it previously had skills
             // (empty cache often means vault wasn't indexed yet on phone).
             if (!isMobile || skills.length === 0) {
@@ -240,16 +246,17 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
 
     const handleCanvasView = async () => {
         try {
-            const canvasFile = plugin.app.vault.getAbstractFileByPath('SkillTree/SkillTree.canvas');
+            let canvasFile = plugin.app.vault.getAbstractFileByPath(SKILL_TREE_CANVAS_PATH);
+            if (!canvasFile || !(canvasFile instanceof TFile)) {
+                await ensureSkillTreeSkeleton(plugin.app.vault);
+                canvasFile = plugin.app.vault.getAbstractFileByPath(SKILL_TREE_CANVAS_PATH);
+            }
             if (canvasFile && canvasFile instanceof TFile) {
                 const leaf = plugin.app.workspace.getLeaf();
                 await leaf.openFile(canvasFile);
                 onClose();
             } else {
-                const shouldCreate = confirm('No SkillTree.canvas file found. Would you like to create one?');
-                if (shouldCreate) {
-                    await createInitialCanvas();
-                }
+                showNotice('❌ Could not create SkillTree canvas');
             }
         } catch (error) {
             console.error('Failed to open canvas:', error);
@@ -390,42 +397,6 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
         }
     };
 
-    const createInitialCanvas = async () => {
-        try {
-            const initialCanvas: CanvasData = {
-                "nodes": [
-                    {
-                        "id": "jester-master",
-                        "type": "file",
-                        "file": "SkillTree/Master-Class/Jester 🎭.md",
-                        "x": 400,
-                        "y": 50,
-                        "width": 300,
-                        "height": 120
-                    }
-                ],
-                "edges": [],
-                "metadata": {
-                    "version": "1.0-1.0",
-                    "frontmatter": {
-                        "type": "canvas",
-                        "title": "Skill Tree",
-                        "description": "Visual representation of skills and progression"
-                    }
-                }
-            };
-    
-            await plugin.app.vault.create('SkillTree/SkillTree.canvas', JSON.stringify(initialCanvas, null, 2));
-            showNotice('✅ Created initial canvas file');
-            
-            // Open the newly created canvas
-            await handleCanvasView();
-        } catch (error) {
-            console.error('Failed to create canvas:', error);
-            showNotice('❌ Failed to create canvas file');
-        }
-    };
-
     const handleSkillEdit = async (skill: SkillMetadata) => {
         try {
             const file = plugin.app.vault.getAbstractFileByPath(skill.filePath);
@@ -512,7 +483,7 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
             const createNewClass = async () => {
                 const name = formData.name.trim();
                 const classPath = `SkillTree/Master-Class/Class/${name}.md`;
-                const masterName = (playerMasterClass || 'Jester').trim() || 'Jester';
+                const masterName = (playerMasterClass || DEFAULT_PLAYER.masterClass).trim() || DEFAULT_PLAYER.masterClass;
                 const content = await buildClassNoteFromTemplate(plugin.app.vault, {
                     name,
                     masterClass: masterName,
@@ -610,7 +581,7 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
     const addClassToCanvas = async (className: string, preferredMasterName?: string) => {
         try {
             const name = className.trim();
-            const masterHint = (preferredMasterName || playerMasterClass || 'Jester').trim();
+            const masterHint = (preferredMasterName || playerMasterClass || DEFAULT_PLAYER.masterClass).trim();
 
             // IMPORTANT: Avoid modifying the canvas file while it is open in a Canvas view.
             // Obsidian will happily overwrite external changes when the view autosaves,
@@ -771,7 +742,7 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
                 canvasData.edges = [];
             }
 
-            const masterHint = (preferredMasterName || playerMasterClass || 'Jester').trim();
+            const masterHint = (preferredMasterName || playerMasterClass || DEFAULT_PLAYER.masterClass).trim();
             const fallbackMaster = findMasterNodeOnCanvas(canvasData.nodes, masterHint);
 
             if (!fallbackMaster) {

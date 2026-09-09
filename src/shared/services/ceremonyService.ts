@@ -84,7 +84,7 @@ export function notifyJourneyHit(
 		fieldNotice(
 			`GRAZE HIT\n−${damage} HP (25% — task missed foe weakness)\nMatch affinity for full damage`,
 			4000,
-			'normal'
+			'low'
 		);
 		return;
 	}
@@ -94,7 +94,7 @@ export function notifyJourneyHit(
 		options?.hpPercentAfter != null && !options?.defeated
 			? `\nFoe at ${options.hpPercentAfter}% HP`
 			: '';
-	fieldNotice(`Journey −${damage} HP${hpLine}${suffix}`, 3200);
+	fieldNotice(`Journey −${damage} HP${hpLine}${suffix}`, 3200, options?.defeated ? 'high' : 'low');
 }
 
 export function notifyBossRaidHit(
@@ -112,7 +112,7 @@ export function notifyBossRaidHit(
 		fieldNotice(
 			`RAID GRAZE\n−${damage} HP vs ${label}\nTag the boss weakness for full damage`,
 			4000,
-			'normal'
+			'low'
 		);
 		return;
 	}
@@ -130,7 +130,7 @@ export function notifyBossRaidHit(
 
 	const hpLine =
 		options?.hpPercentAfter != null ? `\nBoss at ${options.hpPercentAfter}% HP` : '';
-	fieldNotice(`Raid −${damage} HP vs ${label}${hpLine}`, 3200);
+	fieldNotice(`Raid −${damage} HP vs ${label}${hpLine}`, 3200, 'low');
 }
 
 export function notifyDungeonUnlocked(clearedCount?: number, required?: number): void {
@@ -150,5 +150,5 @@ export function notifyJourneyVictory(message: string): void {
 }
 
 export function notifyQuestComplete(message: string): void {
-	systemNotice(message, 5000, 'normal');
+	systemNotice(message, 5000, 'high');
 }

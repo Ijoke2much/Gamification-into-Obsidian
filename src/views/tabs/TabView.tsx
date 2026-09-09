@@ -4,7 +4,6 @@ import type GamifiedObsidianPlugin from "src/core/main";
 import { TFile } from 'obsidian';
 import { ErrorBoundary } from "../../shared/components/ErrorBoundary";
 import { safeAsync } from "../../shared/utils/errorHandler";
-import { ProgressBar } from "src/shared/components/ui/ProgressBar";
 import { getStatsFromFolder, Stat, StatDebugInfo } from "src/shared/utils/readStatsFile";
 import { updatePlayerData } from "src/features/player/utils/playerDataUtils";
 import { AvatarPickerModal } from "../../features/player/modals/AvatarPickerModal";
@@ -37,7 +36,7 @@ import {
 import { resolveEnergyHudConfig } from '../../shared/utils/energyHudConfig';
 import { onSettingsUpdated } from '../../shared/utils/settingsEvents';
 import { getAppliedVisualTheme } from '../../shared/utils/visualThemeManager';
-import { SystemResourceBar } from '../../shared/components/ui/system';
+import { FOCUS_SESSION_EVENT } from '../../features/pomodoro/utils/focusSessionSurface';
 import {
     PlayerIcon,
     ShopIcon,
@@ -104,33 +103,6 @@ const SettingsIcon = (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
         <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
         <circle cx="12" cy="12" r="3"/>
-    </svg>
-);
-
-const SkillTreeCardIcon = (
-    <svg
-        width="16"
-        height="16"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-        focusable="false"
-    >
-        <circle cx="12" cy="7" r="4.5" fill="#16a34a" />
-        <circle cx="9" cy="8" r="3.5" fill="#22c55e" />
-        <circle cx="15" cy="8" r="3.5" fill="#22c55e" />
-        <path
-            d="M12 11v6"
-            stroke="#bbf7d0"
-            strokeWidth="2"
-            strokeLinecap="round"
-        />
-        <path
-            d="M12 13l-3 2.5M12 14.5l3 2"
-            stroke="#bbf7d0"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-        />
-        <circle cx="12" cy="19" r="1.3" fill="#15803d" />
     </svg>
 );
 
@@ -225,6 +197,7 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
     const [showSkillTreeModal, setShowSkillTreeModal] = useState(false);
     // Keep Pomodoro mounted after first open so the timer doesn't reset on tab switch
     const [hasMountedPomodoro, setHasMountedPomodoro] = useState(() => selectedTab === 'pomodoro');
+    const [focusSessionLive, setFocusSessionLive] = useState(false);
     // Keep Shop/Crafting/Achievements mounted after first open — remounting feels like a reload
     const [hasMountedShop, setHasMountedShop] = useState(() => selectedTab === 'shop');
     const [hasMountedCrafting, setHasMountedCrafting] = useState(() => selectedTab === 'crafting');
@@ -248,9 +221,8 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
         console.log('🎮 PlayerTabView render, selectedTab:', selectedTab);
     }
 
-    // Energy Management always uses segmented battery bars (never SystemResourceBar),
-    // regardless of visual theme (system-hunter still styles profile/EXP separately).
-    const energyHudVariant = 'pixel' as const;
+    // Energy Management uses battery bars. Clay gets a molded skin; other presets stay pixel.
+    const energyHudVariant = appliedVisualTheme.preset === 'clay' ? 'clay' : 'pixel';
 
     const openMobileDesktopOnlyNotice = useCallback((feature: string) => {
         pixelNotice(`📱 ${feature} is desktop-only for now. Use Player, Quests, Habits, Skills, Items, Shop, Crafting, or Achievements on mobile.`, 4500);
@@ -387,16 +359,25 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
         localStorage.setItem('gamification-selected-tab', selectedTab);
     }, [selectedTab]);
 
-    // Pomodoro: mount when selected; on mobile unmount when leaving (memory)
     useEffect(() => {
-        if (selectedTab === 'pomodoro') {
+        const onFocusSession = (event: Event) => {
+            const live = Boolean((event as CustomEvent<{ live?: boolean }>).detail?.live);
+            setFocusSessionLive(live);
+        };
+        window.addEventListener(FOCUS_SESSION_EVENT, onFocusSession);
+        return () => window.removeEventListener(FOCUS_SESSION_EVENT, onFocusSession);
+    }, []);
+
+    // Pomodoro: mount when selected; on mobile unmount when leaving unless a focus session is live
+    useEffect(() => {
+        if (selectedTab === 'pomodoro' || focusSessionLive) {
             setHasMountedPomodoro(true);
             return;
         }
         if (isMobile) {
             setHasMountedPomodoro(false);
         }
-    }, [selectedTab, isMobile]);
+    }, [selectedTab, isMobile, focusSessionLive]);
 
     // Shop / Crafting / Achievements:
     // Desktop keeps them mounted after first visit; mobile unmounts on leave (iOS freezes under keep-alive).
@@ -417,7 +398,14 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
             const { targetTab } = event.detail ?? {};
             window.console.log('🔄 TabView: Received tab switch request for:', targetTab);
             if (targetTab === 'boss') {
-                void plugin.activateBossView();
+                void (async () => {
+                    const { getActiveBossFileRaid } = await import('../../features/quests/utils/bossRaidService');
+                    if (getActiveBossFileRaid()) {
+                        void plugin.activateBossView();
+                        return;
+                    }
+                    await plugin.focusQuestHubSection('dungeon');
+                })();
                 return;
             }
             if (targetTab === 'stats') {
@@ -467,7 +455,14 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
     const selectTabKey = useCallback(
         (tabKey: string) => {
             if (tabKey === 'boss') {
-                void plugin.activateBossView();
+                void (async () => {
+                    const { getActiveBossFileRaid } = await import('../../features/quests/utils/bossRaidService');
+                    if (getActiveBossFileRaid()) {
+                        void plugin.activateBossView();
+                        return;
+                    }
+                    await plugin.focusQuestHubSection('dungeon');
+                })();
                 return;
             }
             setSelectedTab(tabKey);
@@ -713,6 +708,8 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
         console.log("[PlayerTabView] Stats passed to StatsTab:", stats);
     }
 
+    const showDebugChrome = plugin.settings.betaMode === true && !isMobile;
+
     return (
         <MobileErrorBoundary>
             {/* Outside mobile animation-nuke subtree so lite ceremonies/toasts can animate */}
@@ -724,23 +721,22 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
                 data-gamification-mobile={isMobile ? 'true' : 'false'}
                 data-gamification-visual-theme={appliedVisualTheme.preset}
                 data-gamification-shell={appliedVisualTheme.shell}
+                data-clay-shell={appliedVisualTheme.preset === 'clay' ? 'player' : undefined}
+                data-pixel-shell={appliedVisualTheme.preset === 'classic' ? 'player' : undefined}
                 {...swipeHandlers}
             >
             {/* Global Notification System — desktop only (heavy) */}
             {!isMobile && <GlobalNotificationSystem />}
 
-            {!isMobile && (
+            {showDebugChrome && (
             <div className={styles.debugRow}>
-            {/* Debug reload button - hidden on mobile in production */}
-            {(!isMobile || process.env.NODE_ENV === 'development') && (
                 <button
                     onClick={reloadPlayerData}
                     className={`${styles.reloadButton} ${mobileClasses.button}`}
                     aria-label="Reload player data"
                 >
-                    {isMobile ? '🔄' : 'Reload Player Data'}
+                    Reload Player Data
                 </button>
-            )}
             
             {/* Manual level check button - hidden on mobile in production */}
             {(!isMobile || process.env.NODE_ENV === 'development') && (
@@ -839,8 +835,8 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
                     border: '1px solid var(--background-modifier-border)',
                     margin: '1rem 0'
                 }}>
-                    <h3>Player Data Not Found</h3>
-                    <p>Please create SkillTree/PlayerData.md with the correct YAML format.</p>
+                    <h3>No player file yet</h3>
+                    <p>Enable the plugin once so it can create SkillTree/PlayerData.md, then reload this tab.</p>
                     {isMobile && (
                                         <>
                                             <p style={{ fontSize: '12px', opacity: 0.7, marginTop: '1rem' }}>
@@ -1123,84 +1119,17 @@ ${testResults.join('\n')}`;
                                     openAvatarPicker={openAvatarPicker}
                                     lightweight={isMobile}
                                     showActivityStreak={isMobile}
+                                    onOpenStats={() => setShowStats(true)}
+                                    onOpenSkills={() => setShowSkillTreeModal(true)}
+                                    onUpdateIdentity={async (patch) => {
+                                        const updatedData = { ...playerData, ...patch };
+                                        await updatePlayerData(plugin.app.vault, updatedData);
+                                        setPlayerData(updatedData);
+                                        document.dispatchEvent(new Event('player-data-updated'));
+                                    }}
                                 />
 
-                                {/* Player Level + EXP row (below Player card) */}
-                                <div
-                                    className={cardStyles.cardRow}
-                                    style={{
-                                        flexDirection: 'row',
-                                        flexWrap: 'nowrap',
-                                        gap: isMobile ? '10px' : '16px',
-                                        alignItems: 'stretch',
-                                    }}
-                                >
-                                    <div className={`${cardStyles.levelCard} ${isMobile ? mobileClasses.card : ''}`}>
-                                        <div className={cardStyles.cardLabel}>LEVEL</div>
-                                        <div className={cardStyles.levelValue}>{playerData.level}</div>
-                                    </div>
-
-                                    <div className={`${cardStyles.expCard} ${isMobile ? mobileClasses.card : ''} ${appliedVisualTheme.preset === 'system-hunter' ? cardStyles.expCardSystem : ''}`}>
-                                        {appliedVisualTheme.preset === 'system-hunter' ? (
-                                            <SystemResourceBar
-                                                label="EXP"
-                                                icon="exp"
-                                                current={Number(playerData.xp || 0)}
-                                                max={Math.max(1, Number(playerData.xpRequired || 1))}
-                                            />
-                                        ) : (
-                                            <>
-                                                {appliedVisualTheme.preset !== 'clay' && (
-                                                    <div className={cardStyles.cardLabel} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                                                        <span style={{ display: 'inline-flex', alignItems: 'center' }} aria-hidden="true">
-                                                            <svg
-                                                                width="14"
-                                                                height="14"
-                                                                viewBox="0 0 24 24"
-                                                                fill="none"
-                                                                stroke="currentColor"
-                                                                strokeWidth="2"
-                                                                strokeLinecap="round"
-                                                                strokeLinejoin="round"
-                                                                xmlns="http://www.w3.org/2000/svg"
-                                                            >
-                                                                <title>Experience</title>
-                                                                <rect x="4" y="4" width="16" height="16" rx="4" />
-                                                                <text x="12" y="16" textAnchor="middle" fontSize="10" fill="currentColor">
-                                                                    XP
-                                                                </text>
-                                                            </svg>
-                                                        </span>
-                                                        EXP
-                                                    </div>
-                                                )}
-                                                <ProgressBar
-                                                    progress={Math.min(
-                                                        100,
-                                                        Math.max(
-                                                            0,
-                                                            Math.round(
-                                                                (Number(playerData.xp || 0) /
-                                                                    Math.max(1, Number(playerData.xpRequired || 1))) *
-                                                                    100
-                                                            )
-                                                        )
-                                                    )}
-                                                    height={appliedVisualTheme.preset === 'clay' ? 16 : 16}
-                                                    variant={appliedVisualTheme.preset === 'clay' ? 'orange' : 'green'}
-                                                    labelPosition={appliedVisualTheme.preset === 'clay' ? 'below' : 'center'}
-                                                    appearance={appliedVisualTheme.preset === 'clay' ? 'clay' : 'pixel'}
-                                                    label={
-                                                        appliedVisualTheme.preset === 'clay'
-                                                            ? `${Number(playerData.xp || 0)} / ${Math.max(1, Number(playerData.xpRequired || 1))} XP`
-                                                            : `${Number(playerData.xp || 0)}/${Math.max(1, Number(playerData.xpRequired || 1))}`
-                                                    }
-                                                />
-                                            </>
-                                        )}
-                                    </div>
-                                </div>
-                                {/* Currency + quick actions */}
+                                {/* Currency + inventory */}
                                 {isMobile ? (
                                     <>
                                         <div className={`${cardStyles.coinsCard} ${mobileClasses.card}`} style={{ width: '100%' }}>
@@ -1225,34 +1154,12 @@ ${testResults.join('\n')}`;
                                         <div className={cardStyles.mobileActionRow}>
                                             <button
                                                 type="button"
-                                                className={`${cardStyles.skillTreeCard} ${mobileClasses.card}`}
-                                                onClick={() => setShowSkillTreeModal(true)}
-                                                aria-label="Open Skill Tree"
-                                            >
-                                                <span className={cardStyles.actionIcon} style={{ display: 'inline-flex', alignItems: 'center' }}>
-                                                    {SkillTreeCardIcon}
-                                                </span>
-                                                <span className={cardStyles.actionLabel}>Skills</span>
-                                            </button>
-                                            <button
-                                                type="button"
                                                 className={`${cardStyles.inventoryCard} ${mobileClasses.card}`}
                                                 onClick={() => new InventoryModalClass(plugin.app).open()}
                                                 aria-label="Open Inventory"
                                             >
                                                 <span className={cardStyles.actionIcon}>🎒</span>
                                                 <span className={cardStyles.actionLabel}>Items</span>
-                                            </button>
-                                            <button
-                                                type="button"
-                                                className={`${cardStyles.inventoryCard} ${mobileClasses.card}`}
-                                                onClick={() => openMobileDesktopOnlyNotice('Stats')}
-                                                aria-label="View Stats"
-                                            >
-                                                <span className={cardStyles.actionIcon} style={{ display: 'inline-flex', alignItems: 'center' }}>
-                                                    {StatsIcon}
-                                                </span>
-                                                <span className={cardStyles.actionLabel}>Stats</span>
                                             </button>
                                         </div>
                                     </>
@@ -1282,18 +1189,6 @@ ${testResults.join('\n')}`;
                                             {playerData.coins}
                                         </div>
                                     </div>
-                                    {/* Skill Tree Card - outer card is the button */}
-                                    <button
-                                        type="button"
-                                        className={`${cardStyles.skillTreeCard} ${mobileClasses.card}`}
-                                        onClick={() => setShowSkillTreeModal(true)}
-                                        aria-label="Open Skill Tree"
-                                    >
-                                        <span className={cardStyles.actionIcon} style={{ display: 'inline-flex', alignItems: 'center' }}>
-                                            {SkillTreeCardIcon}
-                                        </span>
-                                        <span className={cardStyles.actionLabel}>Skill Tree</span>
-                                    </button>
                                     {/* Inventory Card - outer card is the button */}
                                     <button
                                         type="button"
@@ -1303,18 +1198,6 @@ ${testResults.join('\n')}`;
                                     >
                                         <span className={cardStyles.actionIcon}>🎒</span>
                                         <span className={cardStyles.actionLabel}>Inventory</span>
-                                    </button>
-                                    {/* Stats Button Card - outer card is the button */}
-                                    <button
-                                        type="button"
-                                        className={`${cardStyles.inventoryCard} ${mobileClasses.card}`}
-                                        onClick={() => setShowStats(true)}
-                                        aria-label="View Stats"
-                                    >
-                                        <span className={cardStyles.actionIcon} style={{ display: 'inline-flex', alignItems: 'center' }}>
-                                            {StatsIcon}
-                                        </span>
-                                        <span className={cardStyles.actionLabel}>Stats</span>
                                     </button>
                                 </div>
                                 )}

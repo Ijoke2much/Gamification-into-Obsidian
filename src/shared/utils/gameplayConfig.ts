@@ -150,12 +150,21 @@ export function isBossBattlesEnabled(settings?: Partial<GamificationPluginSettin
 	return resolveGameplayConfig(settings).modules.enableBossBattles === true;
 }
 
+export function extraQuestSurfacesEnabled(settings?: Partial<GamificationPluginSettings> | null): boolean {
+	return resolveGameplayConfig(settings).modules.enableExtraQuestSurfaces === true;
+}
+
+export function journeyDungeonHubEnabled(settings?: Partial<GamificationPluginSettings> | null): boolean {
+	return resolveGameplayConfig(settings).modules.enableJourneyDungeonHub === true;
+}
+
 export function isEnergySystemEnabled(settings?: Partial<GamificationPluginSettings> | null): boolean {
 	return resolveGameplayConfig(settings).modules.enableEnergySystem === true;
 }
 
-export function isProductivityGearEnabled(settings?: Partial<GamificationPluginSettings> | null): boolean {
-	return resolveGameplayConfig(settings).modules.enableProductivityGear === true;
+export function isBookOfEasyEnabled(settings?: { bookOfEasy?: boolean } | Record<string, unknown> | null): boolean {
+	if (!settings) return true;
+	return (settings as { bookOfEasy?: boolean }).bookOfEasy !== false;
 }
 
 export function isShopEnabled(settings?: Partial<GamificationPluginSettings> | null): boolean {
