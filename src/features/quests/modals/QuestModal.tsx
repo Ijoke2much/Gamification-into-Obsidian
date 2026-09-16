@@ -19,6 +19,7 @@ import {
 	getTaskNoteFolder,
 	isPerNoteMode,
 } from "../utils/questNoteService";
+import { patchScheduleFrontmatter } from "../utils/taskNotesAdapter";
 import {
     type ActivityProfileId,
     normalizeActivityProfileId,
@@ -35,6 +36,7 @@ import {
 } from "./components";
 import type { Quest, QuestTimelineTheme } from "../utils/taskParser";
 import { getQuestSkillNames, getQuestCustomTags, normalizeQuestTimelineTheme } from "../utils/taskParser";
+import { getAppliedVisualTheme } from "../../../shared/utils/visualThemeManager";
 
 function questEditKey(quest: Quest): string {
     return `${quest.id}|${quest.filePath ?? ""}|${quest.lineNumber ?? ""}|${quest.title}`;
@@ -137,6 +139,12 @@ export const QuestModal: React.FC<QuestModalProps> = ({
         }
         return "";
     });
+    const [startDate, setStartDate] = useState(() => {
+        if (mode === "edit" && quest?.start) {
+            return quest.start.includes('T') ? quest.start.split('T')[0] : quest.start;
+        }
+        return "";
+    });
     
     const [recur, setRecur] = useState(mode === "edit" && quest ? quest.recur || "" : "");
     
@@ -168,13 +176,15 @@ export const QuestModal: React.FC<QuestModalProps> = ({
     );
 
     const [scheduleTime, setScheduleTime] = useState(() => {
-        if (mode === "edit" && quest && quest.due?.includes('T')) {
-            const timePart = quest.due.split('T')[1];
-            return timePart ? timePart.substring(0, 5) : "";
+        if (mode === "edit" && quest) {
+            const stamp = quest.due?.includes("T") ? quest.due : quest.scheduled;
+            if (stamp?.includes("T")) {
+                return stamp.split("T")[1]?.substring(0, 5) || "";
+            }
         }
-        if (mode === "create" && prefill?.dueISO?.includes('T')) {
-            const timePart = prefill.dueISO.split('T')[1];
-            return timePart ? timePart.substring(0,5) : "";
+        if (mode === "create" && prefill?.dueISO?.includes("T")) {
+            const timePart = prefill.dueISO.split("T")[1];
+            return timePart ? timePart.substring(0, 5) : "";
         }
         return "";
     });
@@ -301,10 +311,15 @@ export const QuestModal: React.FC<QuestModalProps> = ({
         setBannerAlign(quest.bannerAlign || "center");
         setTimelineTheme(normalizeQuestTimelineTheme(quest.timelineTheme));
         setDue(quest.due ? (quest.due.includes("T") ? quest.due.split("T")[0] : quest.due) : "");
+        setStartDate(quest.start ? (quest.start.includes("T") ? quest.start.split("T")[0] : quest.start) : "");
         setRecur(quest.recur || "");
         setEstimatedMinutes(normalizeEstimatedMinutes(quest.estimatedTime || ""));
         setScheduleTime(
-            quest.due?.includes("T") ? quest.due.split("T")[1]?.substring(0, 5) || "" : ""
+            quest.due?.includes("T")
+                ? quest.due.split("T")[1]?.substring(0, 5) || ""
+                : quest.scheduled?.includes("T")
+                    ? quest.scheduled.split("T")[1]?.substring(0, 5) || ""
+                    : ""
         );
         setSubtasks(quest.subtasks || []);
         setAttachedContract(quest.project || "");
@@ -540,13 +555,25 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                 return;
             }
 
-            // Helper to combine date and time into ISO format
-            const getScheduledDateTime = () => {
-                if (!due) return "";
-                if (!scheduleTime) return due; // Just date, no time
-                
-                // Combine date and time: YYYY-MM-DDTHH:MM
-                return `${due}T${scheduleTime}`;
+            const getScheduledRange = () => {
+                let start = startDate.trim();
+                let dueDay = due.trim();
+                if (start && dueDay && start > dueDay) {
+                    const swap = start;
+                    start = dueDay;
+                    dueDay = swap;
+                }
+                if (!dueDay && start) dueDay = start;
+                if (start && dueDay && start === dueDay) start = "";
+                const dueISO = dueDay
+                    ? scheduleTime
+                        ? `${dueDay}T${scheduleTime}`
+                        : dueDay
+                    : "";
+                return {
+                    start: start || undefined,
+                    due: dueISO || undefined,
+                };
             };
 
             if (mode === "create") {
@@ -569,7 +596,8 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                             difficulty,
                             xp,
                             cp,
-                            due: getScheduledDateTime() || undefined,
+                            due: getScheduledRange().due,
+                            start: getScheduledRange().start,
                             recur: recur || undefined,
                             estimatedTime: estimatedMinutes || undefined,
                             energyCost: resolvedStamina,
@@ -596,7 +624,8 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                         banner: bannerPath || undefined,
                         bannerAlign,
                         ...(timelineTheme ? { timelineTheme } : {}),
-                        due: getScheduledDateTime() || undefined,
+                        due: getScheduledRange().due,
+                        start: getScheduledRange().start,
                         recur: recur || undefined,
                         estimatedTime: estimatedMinutes || undefined,
                         subtasks,
@@ -623,7 +652,8 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                     banner: bannerPath || undefined,
                     bannerAlign,
                     timelineTheme,
-                    due: getScheduledDateTime() || undefined,
+                    due: getScheduledRange().due,
+                    start: getScheduledRange().start,
                     recur: recur || undefined,
                     estimatedTime: estimatedMinutes || undefined,
                     subtasks,
@@ -673,7 +703,8 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                     banner: bannerPath || undefined,
                     bannerAlign,
                     ...(timelineTheme ? { timelineTheme } : {}),
-                    due: getScheduledDateTime() || undefined,
+                    due: getScheduledRange().due,
+                    start: getScheduledRange().start,
                     recur: recur || undefined,
                     estimatedTime: estimatedMinutes || undefined,
                     subtasks,
@@ -763,7 +794,8 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                     banner: bannerPath || undefined,
                     bannerAlign,
                     timelineTheme,
-                    due: getScheduledDateTime() || undefined,
+                    due: getScheduledRange().due,
+                    start: getScheduledRange().start,
                     recur: recur || undefined,
                     estimatedTime: estimatedMinutes || undefined,
                     subtasks: subtasks,
@@ -784,7 +816,12 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                     ...lines.slice(endIndex)
                 ];
                 
-                const newContent = newLines.join('\n');
+                const range = getScheduledRange();
+                const newContent = patchScheduleFrontmatter(
+                    newLines.join('\n'),
+                    range.due,
+                    range.start
+                );
                 await plugin.app.vault.modify(questFile, newContent);
                 onSubmit();
             }
@@ -802,18 +839,21 @@ export const QuestModal: React.FC<QuestModalProps> = ({
     // Quest Giver dialogue with typewriter effect
     const { displayed: animatedDialogue, isAnimating } = useTypewriter(dialogue, 30);
 
+    const isClayTheme = getAppliedVisualTheme().preset === "clay";
+
     if (!isOpen) return null;
 
     // Quest Modal UI
     const questModalPortal = ReactDOM.createPortal(
         <div
-            className={`${styles.modalOverlay} ${styles.pixelQuestModalOverlay}${isMobile ? ` ${styles.mobileOverlay}` : ''}`}
-            data-pixel-modal="quest-form"
+            className={`${styles.modalOverlay} ${isClayTheme ? styles.clayQuestModalOverlay : styles.pixelQuestModalOverlay}${isMobile ? ` ${styles.mobileOverlay}` : ''}`}
+            data-pixel-modal={isClayTheme ? undefined : "quest-form"}
             onClick={onClose}
         >
             <div
-                className={`${styles.modal} ${styles.pixelQuestModalPanel}${isMobile ? ` ${styles.mobileShell}` : ''}`}
-                data-pixel-shell="quest-form"
+                className={`${styles.modal} ${isClayTheme ? styles.clayQuestModalPanel : styles.pixelQuestModalPanel}${isMobile ? ` ${styles.mobileShell}` : ''}`}
+                data-pixel-shell={isClayTheme ? undefined : "quest-form"}
+                data-clay-shell={isClayTheme ? "quest-form" : undefined}
                 onClick={(e) => e.stopPropagation()}
             >
                 <div className={isMobile ? styles.mobileHeader : undefined}>
@@ -927,6 +967,8 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                             setActivityProfile={setActivityProfile}
                             due={due}
                             setDue={setDue}
+                            startDate={startDate}
+                            setStartDate={setStartDate}
                             time={scheduleTime}
                             setTime={setScheduleTime}
                             estimatedMinutes={estimatedMinutes}
@@ -958,12 +1000,8 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                             setActiveAdvancedTab={setActiveAdvancedTab}
                             description={description}
                             setDescription={setDescription}
-                            due={due}
-                            setDue={setDue}
                             recur={recur}
                             setRecur={setRecur}
-                            scheduleTime={scheduleTime}
-                            setScheduleTime={setScheduleTime}
                             estimatedMinutes={estimatedMinutes}
                             setEstimatedMinutes={setEstimatedMinutes}
                             questGiverImagePath={questGiverImagePath}

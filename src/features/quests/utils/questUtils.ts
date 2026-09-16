@@ -94,6 +94,7 @@ export function generateMarkdownTask({
     xp,
     cp,
     due,
+    start,
     recur,
     estimatedTime,
     banner,
@@ -120,6 +121,7 @@ export function generateMarkdownTask({
     xp: number;
     cp: number;
     due?: string;
+    start?: string;
     recur?: string;
     estimatedTime?: string;
     banner?: string;
@@ -184,7 +186,10 @@ export function generateMarkdownTask({
         if (banner) emojiMeta.push(`🖼️${banner}`);
         // Add estimated time if present
         if (estimatedTime) emojiMeta.push(`⏱️${estimatedTime}`);
-        // Place date last
+        const dueDay = due?.split('T')[0];
+        const startDay = start?.split('T')[0];
+        if (startDay && dueDay && startDay !== dueDay) emojiMeta.push(`🛫${startDay}`);
+        else if (startDay && !dueDay) emojiMeta.push(`🛫${startDay}`);
         if (due) emojiMeta.push(`📅${due}`);
     }
 
@@ -199,6 +204,7 @@ export function generateMarkdownTask({
             ? `energy: ${Math.min(100, Math.floor(energyCost))}`
             : null,
         due ? `due: ${due}` : null,
+        start && start.split('T')[0] !== due?.split('T')[0] ? `start: ${start.split('T')[0]}` : null,
         recur ? `recur: ${recur}` : null,
         estimatedTime ? `time: ${estimatedTime}` : null,
         `skills: ${skills.join(", ")}`,

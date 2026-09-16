@@ -60,3 +60,17 @@ export function isLikelyTabletDevice(): boolean {
 		navigator.maxTouchPoints > 1
 	);
 }
+
+/** Regular phone — not desktop, not iPad/tablet. Use to hide timeline drag-and-drop. */
+export function isPhoneDevice(): boolean {
+	if (typeof document !== 'undefined' && document.body?.classList.contains('is-phone')) {
+		return true;
+	}
+	if (isLikelyTabletDevice()) return false;
+	return isLikelyMobileDevice();
+}
+
+/** Desktop or tablet: day-plan drag onto hours / week days is allowed. */
+export function allowQuestScheduleDrag(): boolean {
+	return !isPhoneDevice();
+}

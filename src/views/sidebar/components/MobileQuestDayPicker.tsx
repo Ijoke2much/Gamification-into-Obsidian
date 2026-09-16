@@ -2,6 +2,12 @@ import React, { useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { Quest } from '../../../features/quests/utils/taskParser';
 import { normalizeQuestTimelineTheme } from '../../../features/quests/utils/taskParser';
+import {
+	eachIsoDayInclusive,
+	isMultiDayQuest,
+	QUEST_SCHEDULE_DRAG_MIME,
+	questRangeParts,
+} from '../../../features/quests/utils/questDateRange';
 import { MissionSectionTitle } from './MissionSectionTitle';
 import styles from './MobileQuestDayPicker.module.css';
 
@@ -13,6 +19,8 @@ export interface MobileQuestDayPickerProps {
 	onQuestComplete?: (quest: Quest) => void;
 	onAddQuest?: (date: Date) => void;
 	onUseDayPlan?: (date: Date) => void;
+	scheduleDragEnabled?: boolean;
+	onDropQuestOnDay?: (quest: Quest, iso: string) => void;
 }
 
 type CalView = 'week' | 'month';
@@ -27,6 +35,7 @@ type DayCell = {
 	isToday: boolean;
 	isSelected: boolean;
 	inMonth: boolean;
+	hasSpan: boolean;
 };
 
 const WEEKDAYS = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
@@ -113,6 +122,7 @@ function buildDayCell(
 		isToday: iso === todayISO,
 		isSelected: iso === selectedISO,
 		inMonth,
+		hasSpan: list.some((q) => isMultiDayQuest(q)),
 	};
 }
 
@@ -124,6 +134,8 @@ export const MobileQuestDayPicker: React.FC<MobileQuestDayPickerProps> = ({
 	onQuestComplete,
 	onAddQuest,
 	onUseDayPlan,
+	scheduleDragEnabled = false,
+	onDropQuestOnDay,
 }) => {
 	const [view, setView] = useState<CalView>('week');
 	const [sheetOpen, setSheetOpen] = useState(false);
@@ -148,11 +160,20 @@ export const MobileQuestDayPicker: React.FC<MobileQuestDayPickerProps> = ({
 		const map = new Map<string, Quest[]>();
 		for (const quest of quests) {
 			if (quest.completed) continue;
-			const due = quest.due?.split('T')[0];
-			if (!due) continue;
-			const list = map.get(due) || [];
-			list.push(quest);
-			map.set(due, list);
+			const { start, due } = questRangeParts(quest);
+			if (!start && !due) {
+				if (quest.today) {
+					const list = map.get(todayISO) || [];
+					list.push(quest);
+					map.set(todayISO, list);
+				}
+				continue;
+			}
+			for (const iso of eachIsoDayInclusive(start!, due!)) {
+				const list = map.get(iso) || [];
+				list.push(quest);
+				map.set(iso, list);
+			}
 		}
 		for (const [, list] of map) {
 			list.sort((a, b) => {
@@ -162,7 +183,7 @@ export const MobileQuestDayPicker: React.FC<MobileQuestDayPickerProps> = ({
 			});
 		}
 		return map;
-	}, [quests]);
+	}, [quests, todayISO]);
 
 	const dayQuests = questsByDay.get(selectedISO) || [];
 
@@ -306,6 +327,20 @@ export const MobileQuestDayPicker: React.FC<MobileQuestDayPickerProps> = ({
 		goToDayPlan(day.date);
 	};
 
+	const findQuestFromDrag = (e: React.DragEvent): Quest | null => {
+		const raw =
+			e.dataTransfer.getData(QUEST_SCHEDULE_DRAG_MIME) ||
+			e.dataTransfer.getData('text/plain');
+		if (!raw) return null;
+		try {
+			const parsed = JSON.parse(raw) as { id?: string };
+			const id = parsed.id || raw;
+			return quests.find((q) => q.id === id) ?? null;
+		} catch {
+			return quests.find((q) => q.id === raw || q.title === raw) ?? null;
+		}
+	};
+
 	const renderDayButton = (day: DayCell) => (
 		<button
 			key={day.iso}
@@ -313,14 +348,33 @@ export const MobileQuestDayPicker: React.FC<MobileQuestDayPickerProps> = ({
 			role="listitem"
 			data-week-day={day.iso}
 			data-quest-day
+			data-span={day.hasSpan ? 'true' : undefined}
 			className={[
 				styles.day,
 				day.isSelected ? styles.daySelected : '',
 				day.isToday ? styles.dayToday : '',
 				!day.inMonth ? styles.dayOutside : '',
+				day.hasSpan ? styles.daySpan : '',
 			]
 				.filter(Boolean)
 				.join(' ')}
+			onDragOver={
+				scheduleDragEnabled && onDropQuestOnDay
+					? (e) => {
+							e.preventDefault();
+							e.dataTransfer.dropEffect = 'move';
+					  }
+					: undefined
+			}
+			onDrop={
+				scheduleDragEnabled && onDropQuestOnDay
+					? (e) => {
+							e.preventDefault();
+							const quest = findQuestFromDrag(e);
+							if (quest) onDropQuestOnDay(quest, day.iso);
+					  }
+					: undefined
+			}
 			onPointerDown={(e) => {
 				// Keep week swipe from capturing this pointer (see onWeekPointerDown).
 				e.stopPropagation();
@@ -404,6 +458,7 @@ export const MobileQuestDayPicker: React.FC<MobileQuestDayPickerProps> = ({
 					</>
 				)}
 			</span>
+			{day.hasSpan ? <span className={styles.spanBar} aria-hidden="true" /> : null}
 		</button>
 	);
 

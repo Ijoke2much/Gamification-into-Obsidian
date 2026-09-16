@@ -118,6 +118,7 @@ export interface CreateQuestNoteInput {
 	xp: number;
 	cp: number;
 	due?: string;
+	start?: string;
 	recur?: string;
 	estimatedTime?: string;
 	energyCost?: number;
@@ -160,6 +161,7 @@ export async function createQuestNote(
 		priority: input.priority,
 		difficulty: input.difficulty,
 		due: input.due,
+		start: input.start,
 		recur: input.recur,
 		estimatedTime: input.estimatedTime,
 		energyCost: input.energyCost,
@@ -182,6 +184,7 @@ export async function createQuestNote(
 		xp: input.xp,
 		cp: input.cp,
 		due: input.due,
+		start: input.start,
 		recur: input.recur,
 		estimatedTime: input.estimatedTime,
 		energyCost: input.energyCost,

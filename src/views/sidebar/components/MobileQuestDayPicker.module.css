@@ -322,6 +322,19 @@
 	opacity: 0.38;
 }
 
+.daySpan {
+	background: color-mix(in srgb, var(--go-accent, #5bb8b0) 16%, transparent) !important;
+}
+
+.spanBar {
+	display: block;
+	width: 72%;
+	height: 3px;
+	border-radius: 999px;
+	background: var(--go-accent, #5bb8b0);
+	opacity: 0.85;
+}
+
 .selectedBar {
 	display: flex;
 	align-items: center;

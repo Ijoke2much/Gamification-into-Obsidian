@@ -963,3 +963,128 @@
     margin: 0 !important;
     display: inline !important;
 }
+
+.timeChipRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.timeChip {
+    appearance: none;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--background-modifier-border);
+    background: var(--background-secondary);
+    color: var(--text-normal);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.timeHint {
+    margin-top: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.timeInput {
+    min-height: 42px;
+    color-scheme: light;
+}
+
+.clayQuestModalPanel .timeHint {
+    color: var(--clay-text-light, #8a8278) !important;
+}
+
+.clayQuestModalPanel input[type="time"] {
+    color-scheme: light;
+    min-height: 42px;
+}
+
+.timeChipActive {
+    border-color: var(--interactive-accent);
+    background: var(--interactive-accent);
+    color: #fff;
+}
+
+.clayQuestModalOverlay {
+    background: rgba(58, 52, 44, 0.38);
+    backdrop-filter: blur(6px);
+}
+
+.clayQuestModalPanel {
+    font-family: var(--go-font-ui, "Nunito", "Segoe UI", system-ui, sans-serif) !important;
+    font-size: 14px;
+    line-height: 1.45;
+    color: var(--clay-text, #3a342c) !important;
+    background: var(--clay-gradient, linear-gradient(145deg, #fbf8f2, #efe6d8)) !important;
+    border: none !important;
+    border-radius: var(--clay-radius, 24px) !important;
+    box-shadow: var(--clay-shadow) !important;
+    color-scheme: light;
+}
+
+.clayQuestModalPanel h2,
+.clayQuestModalPanel :global(h2) {
+    font-family: inherit !important;
+    color: var(--clay-text-strong, #2c2722) !important;
+    text-shadow: none !important;
+}
+
+.clayQuestModalPanel label,
+.clayQuestModalPanel .saveLocationTitle,
+.clayQuestModalPanel .saveLocationHint,
+.clayQuestModalPanel .questGiverDialogueText {
+    color: var(--clay-text, #3a342c) !important;
+}
+
+.clayQuestModalPanel textarea,
+.clayQuestModalPanel .input,
+.clayQuestModalPanel .select,
+.clayQuestModalPanel .customPathInput,
+.clayQuestModalPanel input,
+.clayQuestModalPanel select {
+    background: var(--clay-surface, #f7f3ec) !important;
+    color: var(--clay-text, #3a342c) !important;
+    border: none !important;
+    border-radius: 16px !important;
+    box-shadow: var(--clay-recessed) !important;
+    font-family: inherit !important;
+}
+
+.clayQuestModalPanel .buttonCancel,
+.clayQuestModalPanel .buttonSubmit,
+.clayQuestModalPanel .buttonAdd,
+.clayQuestModalPanel .advancedToggle,
+.clayQuestModalPanel .timeChip {
+    font-family: inherit !important;
+    border-radius: 16px !important;
+    border: none !important;
+    box-shadow: var(--clay-shadow) !important;
+    background: var(--clay-button-gradient, linear-gradient(180deg, #f7f3ec, #ebe3d4)) !important;
+    color: var(--clay-text, #3a342c) !important;
+}
+
+.clayQuestModalPanel .buttonSubmit,
+.clayQuestModalPanel .timeChipActive {
+    background: var(--clay-accent-gradient, linear-gradient(180deg, #6ac9c1, #4aa8a0)) !important;
+    color: #fff !important;
+}
+
+.clayQuestModalPanel .questGiverSection,
+.clayQuestModalPanel .saveLocationSection,
+.clayQuestModalPanel .tabNav {
+    background: var(--clay-surface-2, #efe6d8) !important;
+    border: none !important;
+    border-radius: 18px !important;
+    box-shadow: var(--clay-recessed) !important;
+}
+
+.clayQuestModalPanel .tabButtonActive {
+    background: var(--clay-accent-gradient, linear-gradient(180deg, #6ac9c1, #4aa8a0)) !important;
+    color: #fff !important;
+    box-shadow: var(--clay-pressed) !important;
+}

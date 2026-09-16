@@ -15,7 +15,7 @@
 		"build:analyze": "npm run build && node scripts/analyze-bundle.mjs",
 		"verify-dialogue": "node scripts/verify-shopkeeper-dialogue.js",
 		"analyze": "node scripts/analyze-bundle.mjs",
-		"test:persistence": "node scripts/test-quest-complete-line.mjs && node scripts/test-property-rewards.mjs && node scripts/test-completion-notice.mjs && node scripts/test-player-write-queue.mjs && node scripts/test-phase4-notices.mjs",
+		"test:persistence": "node scripts/test-quest-complete-line.mjs && node scripts/test-property-rewards.mjs && node scripts/test-completion-notice.mjs && node scripts/test-player-write-queue.mjs && node scripts/test-phase4-notices.mjs && node scripts/test-quest-date-range.mjs",
 		"preview:pixel-boss": "node scripts/open-pixel-preview.js",
 		"preview:pixel-boss:serve": "npx --yes serve preview -l 4177",
 		"preview:journey": "node scripts/open-journey-preview.js",

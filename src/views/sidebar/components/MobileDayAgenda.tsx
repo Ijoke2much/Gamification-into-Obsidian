@@ -1,6 +1,7 @@
 import React, { forwardRef, useImperativeHandle, useMemo, useRef } from "react";
 import type { Quest } from "../../../features/quests/utils/taskParser";
 import { getQuestEnergyCost } from "../../../shared/utils/questCompletionPipeline";
+import { QUEST_SCHEDULE_DRAG_MIME } from "../../../features/quests/utils/questDateRange";
 import styles from "./MobileDayAgenda.module.css";
 
 export type AgendaThemeKey = "violet" | "blue" | "pink" | "amber" | "green" | "red";
@@ -30,6 +31,10 @@ interface MobileDayAgendaProps {
 	onCompleteQuest: (quest: Quest) => void;
 	onOpenActions: (quest: Quest) => void;
 	onAddAtMinutes: (minutesFromMidnight: number) => void;
+	scheduleDragEnabled?: boolean;
+	onDropQuestAtMinutes?: (quest: Quest, minutesFromMidnight: number) => void;
+	/** Inbox + board quests so a drop can land a card that is not already on this day. */
+	droppableQuests?: Quest[];
 }
 
 type AgendaRow =
@@ -53,6 +58,9 @@ export const MobileDayAgenda = forwardRef<MobileDayAgendaHandle, MobileDayAgenda
 			onCompleteQuest,
 			onOpenActions,
 			onAddAtMinutes,
+			scheduleDragEnabled = false,
+			onDropQuestAtMinutes,
+			droppableQuests = [],
 		},
 		ref
 	) {
@@ -163,6 +171,40 @@ export const MobileDayAgenda = forwardRef<MobileDayAgendaHandle, MobileDayAgenda
 			onPointerCancel: clearLongPress,
 		});
 
+		const findQuestFromDrag = (e: React.DragEvent): Quest | null => {
+			const raw =
+				e.dataTransfer.getData(QUEST_SCHEDULE_DRAG_MIME) ||
+				e.dataTransfer.getData("text/plain");
+			if (!raw) return null;
+			let id = raw;
+			try {
+				const parsed = JSON.parse(raw) as { id?: string };
+				if (parsed.id) id = parsed.id;
+			} catch {
+				/* text/plain id */
+			}
+			return (
+				blocks.find((b) => b.quest.id === id)?.quest ??
+				droppableQuests.find((q) => q.id === id || q.title === id) ??
+				null
+			);
+		};
+
+		const bindDropAt = (minutes: number) => {
+			if (!scheduleDragEnabled || !onDropQuestAtMinutes) return {};
+			return {
+				onDragOver: (e: React.DragEvent) => {
+					e.preventDefault();
+					e.dataTransfer.dropEffect = "move";
+				},
+				onDrop: (e: React.DragEvent) => {
+					e.preventDefault();
+					const quest = findQuestFromDrag(e);
+					if (quest) onDropQuestAtMinutes(quest, minutes);
+				},
+			};
+		};
+
 		if (sorted.length === 0) {
 			return (
 				<div
@@ -170,6 +212,7 @@ export const MobileDayAgenda = forwardRef<MobileDayAgendaHandle, MobileDayAgenda
 					ref={rootRef}
 					data-mobile-day-agenda
 					aria-label="Day plan agenda"
+					{...bindDropAt(Math.max(plannerStartHour * 60, 9 * 60))}
 				>
 					<div className={styles.empty}>
 						<span>No quests planned for this day</span>
@@ -205,6 +248,7 @@ export const MobileDayAgenda = forwardRef<MobileDayAgendaHandle, MobileDayAgenda
 								ref={nowRef}
 								className={styles.nowRow}
 								aria-label="Current time"
+								{...bindDropAt(row.minutes)}
 							>
 								<div className={`${styles.timeCol} ${styles.timeColNow}`}>
 									{formatAgendaClock(row.minutes)}
@@ -226,7 +270,11 @@ export const MobileDayAgenda = forwardRef<MobileDayAgendaHandle, MobileDayAgenda
 						const minutes = row.endMin - row.startMin;
 						const mid = Math.floor((row.startMin + row.endMin) / 2);
 						return (
-							<div key={row.key} className={`${styles.row} ${styles.gapRow}`}>
+							<div
+								key={row.key}
+								className={`${styles.row} ${styles.gapRow}`}
+								{...bindDropAt(mid)}
+							>
 								<div className={styles.timeCol} aria-hidden="true" />
 								<div className={styles.railCol}>
 									<span className={`${styles.railLine} ${styles.railLineDashed}`} />
@@ -268,6 +316,19 @@ export const MobileDayAgenda = forwardRef<MobileDayAgendaHandle, MobileDayAgenda
 						<div
 							key={row.key}
 							className={`${styles.row} ${styles.questRow} ${themeClass}${isFlexible ? ` ${styles.questRowFlexible}` : ""}`}
+							draggable={scheduleDragEnabled}
+							onDragStart={
+								scheduleDragEnabled
+									? (e) => {
+											e.dataTransfer.setData(
+												QUEST_SCHEDULE_DRAG_MIME,
+												JSON.stringify({ id: block.quest.id })
+											);
+											e.dataTransfer.setData("text/plain", block.quest.id || block.title);
+											e.dataTransfer.effectAllowed = "move";
+									  }
+									: undefined
+							}
 						>
 							<div className={styles.timeCol}>{formatAgendaTime(block.start, true)}</div>
 							<div className={styles.railCol}>

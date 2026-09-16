@@ -196,6 +196,7 @@ export function generateMarkdownTask({
   xp,
   cp,
   due,
+  start,
   recur,
   estimatedTime,
   customRewards,
@@ -214,6 +215,7 @@ export function generateMarkdownTask({
   xp: number;
   cp: number;
   due?: string;
+  start?: string;
   scheduled?: string;
   recur?: string;
   estimatedTime?: string;
@@ -274,7 +276,10 @@ export function generateMarkdownTask({
     }
     // Add estimated time if present
     if (estimatedTime) emojiParts.push(`⏱️${estimatedTime}`);
-    // Place date last, no space after emoji
+    const dueDay = due?.split('T')[0];
+    const startDay = start?.split('T')[0];
+    if (startDay && dueDay && startDay !== dueDay) emojiParts.push(`🛫${startDay}`);
+    else if (startDay && !dueDay) emojiParts.push(`🛫${startDay}`);
     if (due) emojiParts.push(`📅${due}`);
     // Tags for skill and class
     const skill = skills[0]?.name || '';
@@ -402,6 +407,8 @@ export interface Quest {
   priority?: string;
   difficulty?: string;
   due?: string;
+  /** Inclusive range start (`🛫YYYY-MM-DD` / `start:`). */
+  start?: string;
   scheduled?: string;
   recur?: string;
   skills?: string[];
@@ -681,6 +688,7 @@ export function parseQuestsFromMarkdown(md: string): Quest[] {
         const cleanTitle = title
           .replace(/\{[^}]*\}/g, '') // Remove ALL curly brace metadata like {due: 2025-09-29}
           .replace(/📅\s*\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?)?/gu, '') // Remove date emojis with optional time
+          .replace(/🛫\s*\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?)?/gu, '') // Remove start emojis
           .replace(/⏳\s*\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?/gu, '') // Remove scheduled emojis
           .replace(/✅\s*\d{4}-\d{2}-\d{2}/gu, '') // Remove completed-date emojis
           .replace(/[🔺⏫🔼🔽⏬]/gu, '') // Remove all Tasks plugin priority emojis
@@ -708,6 +716,7 @@ export function parseQuestsFromMarkdown(md: string): Quest[] {
         const priority = String(getField('priority') || '');
         const difficulty = String(getField('difficulty') || '');
         const due = String(getField('due') || '');
+        const start = String(getField('start') || '');
         const scheduled = String(getField('scheduled') || '');
         const recur = String(getField('recur') || getField('recurrence') || '');
         const skillsFromField = String(getField('skills') || getField('skill') || '')
@@ -812,6 +821,7 @@ export function parseQuestsFromMarkdown(md: string): Quest[] {
           priority,
           difficulty,
           due,
+          start: start || undefined,
           scheduled,
           recur,
           skills,
@@ -887,7 +897,7 @@ function parseBooleanMeta(value: unknown): boolean | undefined {
 
 // Performance: Prefer file paths over inline base64. Skip data URLs and very long banners.
 const MAX_BANNER_LENGTH = 500;
-const EMOJI_AFTER_BANNER = /(🛠️|📅|⏳|✅|✨|⭐|🪙|🔥|⚖️|🌱|⏱️|🔋)/gu;
+const EMOJI_AFTER_BANNER = /(🛠️|📅|🛫|⏳|✅|✨|⭐|🪙|🔥|⚖️|🌱|⏱️|🔋)/gu;
 
 function stripBannerFromLine(line: string): string {
   const emoji = '🖼️';
@@ -986,6 +996,11 @@ function parseEmojiMetadata(line: string): Record<string, string> {
     result['due'] = dueMatch[1].trim();
   }
 
+  const startMatch = lineWithoutBanner.match(/🛫\s*(\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?)?)/u);
+  if (startMatch && startMatch[1]) {
+    result['start'] = startMatch[1].trim();
+  }
+
   // Handle ⏳ scheduled date separately - Tasks/Task Genius compatible.
   const scheduledMatch = lineWithoutBanner.match(/⏳\s*(\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?)?)/u);
   if (scheduledMatch && scheduledMatch[1]) {
@@ -1000,7 +1015,7 @@ function parseEmojiMetadata(line: string): Record<string, string> {
 
   // Handle 🔁 recurrence separately (combined character) - must have a value
   // Look for 🔁 followed by actual recurrence text (not other emojis)
-  const recurMatch = lineWithoutBanner.match(/🔁\s*([a-zA-Z0-9\s-]+?)(?=\s*[🛠️📅⏳✅✨⭐🪙🔥⚖️🌱⏱️🔋🖼️]|$)/u);
+  const recurMatch = lineWithoutBanner.match(/🔁\s*([a-zA-Z0-9\s-]+?)(?=\s*[🛠️📅🛫⏳✅✨⭐🪙🔥⚖️🌱⏱️🔋🖼️]|$)/u);
   if (recurMatch && recurMatch[1] && recurMatch[1].trim()) {
     let value = recurMatch[1].trim();
     if (value.startsWith('[') && value.endsWith(']')) {

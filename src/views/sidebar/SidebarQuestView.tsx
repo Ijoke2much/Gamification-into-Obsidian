@@ -26,6 +26,7 @@ import {
 	loadAllQuests,
 	registerQuestVaultWatchers,
 } from "../../features/quests/utils/questNoteService";
+import { patchScheduleFrontmatter } from "../../features/quests/utils/taskNotesAdapter";
 import { launchPomodoroForQuest } from "../../features/pomodoro/utils/launchPomodoroForQuest";
 import styles from "./SidebarQuestView.module.css";
 import { pixelNotice } from '../../shared/utils/noticeUtils';
@@ -68,6 +69,17 @@ import {
 	MobileDayAgenda,
 	type MobileDayAgendaHandle,
 } from './components/MobileDayAgenda';
+import {
+	datePart,
+	daysBetween,
+	injectScheduleEmojis,
+	isQuestOnDate,
+	minutesToClock,
+	QUEST_SCHEDULE_DRAG_MIME,
+	shiftQuestRange,
+	stripScheduleMarkers,
+} from '../../features/quests/utils/questDateRange';
+import { allowQuestScheduleDrag, isLikelyMobileDevice } from '../../shared/utils/deviceDetect';
 import { TodayRunStrip } from './components/TodayRunStrip';
 import { MissionSectionTitle } from './components/MissionSectionTitle';
 import { openQuickCaptureModal } from '../../features/quests/modals/QuickCaptureModal';
@@ -80,7 +92,6 @@ import {
 	shouldReloadCapturesOnFileChange,
 } from '../../features/quests/utils/captureService';
 import { useMobileOptimizations } from '../../shared/hooks/useMobileOptimizations';
-import { isLikelyMobileDevice } from '../../shared/utils/deviceDetect';
 
 export const SIDEBAR_QUEST_VIEW_TYPE = "sidebar-quest-view";
 
@@ -454,7 +465,10 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 	const timedTimelineBlocks = useMemo(() => {
 		if (isMobile && !dayPlanExpanded) return [];
 		return filteredQuests
-			.filter((quest) => isSameDate(quest.due, selectedDateISO) && hasTime(quest.due))
+			.filter((quest) => {
+				if (!isQuestOnDate(quest, selectedDateISO, todayISO)) return false;
+				return hasTime(quest.due) && datePart(quest.due) === selectedDateISO;
+			})
 			.map((quest) => {
 				const start = quest.due ? new Date(quest.due) : new Date();
 				const duration = parseMinutes(quest.estimatedTime) || 60;
@@ -462,16 +476,15 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 				return { quest, start, end, duration, mode: "scheduled" as const };
 			})
 			.sort((a, b) => a.start.getTime() - b.start.getTime());
-	}, [filteredQuests, selectedDateISO, isMobile, dayPlanExpanded]);
+	}, [filteredQuests, selectedDateISO, todayISO, isMobile, dayPlanExpanded]);
 
 	const flexibleTimelineBlocks = useMemo(() => {
 		if (isMobile && !dayPlanExpanded) return [];
 		const sameDayFloating = filteredQuests.filter((quest) => {
 			if (timedTimelineBlocks.some((block) => block.quest.id === quest.id)) return false;
-			if (isSameDate(quest.due, selectedDateISO) && !hasTime(quest.due)) return true;
-			if (!quest.due && selectedDateISO === todayISO) return true;
-			if (quest.today && selectedDateISO === todayISO) return true;
-			return false;
+			if (!isQuestOnDate(quest, selectedDateISO, todayISO)) return false;
+			if (hasTime(quest.due) && datePart(quest.due) === selectedDateISO) return false;
+			return true;
 		});
 		return placeFlexibleBlocks(sameDayFloating, selectedDate, 9, "floating");
 	}, [filteredQuests, selectedDate, selectedDateISO, timedTimelineBlocks, todayISO, isMobile, dayPlanExpanded]);
@@ -1092,26 +1105,15 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 	const handleQuestMove = async (questId: string, newDate: string) => {
 		try {
 			const quest = quests.find((q) => q.id === questId || q.title === questId);
-			const file = app.vault.getAbstractFileByPath(quest?.filePath || "GamifiedTasks.md");
-			if (!(file instanceof TFile)) return;
-			const content = await app.vault.read(file);
-			const lines = content.split("\n");
-			const idx = lines.findIndex((line) => {
-				if (!line.includes("#gamified-task")) return false;
-				if (quest?.title && line.includes(quest.title)) return true;
-				if (questId && line.includes(questId)) return true;
-				return false;
-			});
-			if (idx === -1) return;
-			let updated = lines[idx]
-				.replace(/📅\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?/g, "")
-				.replace(/due::\s*\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?/gi, "")
-				.replace(/due:\s*\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?/gi, "")
-				.replace(/\s{2,}/g, " ")
-				.trim();
-			updated = upsertMetaField(updated, "due", newDate);
-			lines[idx] = updated;
-			await app.vault.modify(file, lines.join("\n"));
+			if (!quest) return;
+			const dueDay = datePart(quest.due);
+			if (dueDay) {
+				const shifted = shiftQuestRange(quest, daysBetween(dueDay, newDate.split("T")[0]));
+				if (!shifted.due) return;
+				await persistQuestSchedule(app, quest, shifted.due, todayISO, shifted.start);
+			} else {
+				await persistQuestSchedule(app, quest, newDate, todayISO, datePart(quest.start));
+			}
 			await loadQuests();
 		} catch (error) {
 			console.error("Failed to move quest from sidebar calendar:", error);
@@ -1199,20 +1201,57 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 
 	const handleTimelineMoveByDays = async (quest: Quest, daysToMove: number) => {
 		try {
-			const baseIso = quest.due?.split("T")[0] || selectedDateISO;
-			const timePart = quest.due && hasTime(quest.due) ? quest.due.split("T")[1]?.slice(0, 5) : null;
-			const targetDate = new Date(`${baseIso}T00:00:00`);
-			if (Number.isNaN(targetDate.getTime())) return;
-			targetDate.setDate(targetDate.getDate() + daysToMove);
-			const targetIso = timePart
-				? `${toISODate(targetDate)}T${timePart}`
-				: toISODate(targetDate);
-			await persistQuestDueDateTime(app, quest, targetIso, todayISO);
+			const shifted = shiftQuestRange(quest, daysToMove);
+			if (!shifted.due) return;
+			await persistQuestSchedule(app, quest, shifted.due, todayISO, shifted.start);
 			await loadQuests();
-			const label = targetDate.toLocaleDateString([], { month: "short", day: "numeric" });
+			const label = new Date(`${datePart(shifted.due)}T00:00:00`).toLocaleDateString([], {
+				month: "short",
+				day: "numeric",
+			});
 			pixelNotice(`Moved "${getQuestDisplayTitle(quest)}" to ${label}`, 2500, 'low');
 		} catch (error) {
 			console.error("Failed to move quest from timeline:", error);
+			pixelNotice("Could not move quest. Please try again.", 3500);
+		}
+	};
+
+	const handleAgendaTimeDrop = async (quest: Quest, minutesFromMidnight: number) => {
+		try {
+			const dueISO = `${selectedDateISO}T${minutesToClock(minutesFromMidnight)}`;
+			const start = datePart(quest.start);
+			const keepStart = start && start < selectedDateISO ? start : undefined;
+			await persistQuestSchedule(app, quest, dueISO, todayISO, keepStart);
+			await loadQuests();
+			pixelNotice(
+				`Scheduled "${getQuestDisplayTitle(quest)}" at ${minutesToClock(minutesFromMidnight)}`,
+				2200,
+				'low'
+			);
+		} catch (error) {
+			console.error("Failed to drop quest onto day plan:", error);
+			pixelNotice("Could not reschedule quest. Please try again.", 3500);
+		}
+	};
+
+	const handleWeekDateDrop = async (quest: Quest, targetIso: string) => {
+		try {
+			const dueDay = datePart(quest.due);
+			if (dueDay) {
+				const shifted = shiftQuestRange(quest, daysBetween(dueDay, targetIso));
+				if (!shifted.due) return;
+				await persistQuestSchedule(app, quest, shifted.due, todayISO, shifted.start);
+			} else {
+				await persistQuestSchedule(app, quest, targetIso, todayISO, datePart(quest.start));
+			}
+			await loadQuests();
+			const label = new Date(`${targetIso}T00:00:00`).toLocaleDateString([], {
+				month: "short",
+				day: "numeric",
+			});
+			pixelNotice(`Moved "${getQuestDisplayTitle(quest)}" to ${label}`, 2500, 'low');
+		} catch (error) {
+			console.error("Failed to drop quest onto week day:", error);
 			pixelNotice("Could not move quest. Please try again.", 3500);
 		}
 	};
@@ -1259,6 +1298,7 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 	};
 
 	const isClayTheme = appliedVisualTheme.preset === 'clay';
+	const scheduleDrag = allowQuestScheduleDrag();
 
 	return (
 		<>
@@ -1382,6 +1422,8 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 			<MobileQuestDayPicker
 				quests={filteredQuests}
 				selectedDate={selectedDate}
+				scheduleDragEnabled={scheduleDrag}
+				onDropQuestOnDay={(quest, iso) => void handleWeekDateDrop(quest, iso)}
 				onSelectDate={(date) => {
 					setSelectedDate(date);
 					setDayPlanExpanded(true);
@@ -1521,6 +1563,9 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 						onCompleteQuest={(quest) => void handleTimelineComplete(quest)}
 						onOpenActions={(quest) => setMobileTimelineMenuId(quest.id)}
 						onAddAtMinutes={openCreateAtMinutes}
+						scheduleDragEnabled={scheduleDrag}
+						droppableQuests={filteredQuests}
+						onDropQuestAtMinutes={(quest, minutes) => void handleAgendaTimeDrop(quest, minutes)}
 					/>
 				</>
 				) : (
@@ -1583,13 +1628,13 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 					onQuestClick={openDetails}
 					collapsed={collapsedGroups.now}
 					onToggleCollapse={toggleGroupCollapse}
-					onDragStart={isMobile ? undefined : handleDragStart}
-					onDragEnd={isMobile ? undefined : handleDragEnd}
-					onDragOver={isMobile ? undefined : (groupId) => {
+					onDragStart={scheduleDrag ? handleDragStart : undefined}
+					onDragEnd={scheduleDrag ? handleDragEnd : undefined}
+					onDragOver={scheduleDrag ? (groupId) => {
 						if (canDropToGroup(groupId)) setActiveDropZone(groupId);
-					}}
-					onDrop={isMobile ? undefined : handleDropToGroup}
-					isDropActive={!isMobile && activeDropZone === "now" && canDropToGroup("now")}
+					} : undefined}
+					onDrop={scheduleDrag ? handleDropToGroup : undefined}
+					isDropActive={scheduleDrag && activeDropZone === "now" && canDropToGroup("now")}
 				/>
 				<InboxGroup
 					groupId="today"
@@ -1599,13 +1644,13 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 					onQuestClick={openDetails}
 					collapsed={collapsedGroups.today}
 					onToggleCollapse={toggleGroupCollapse}
-					onDragStart={isMobile ? undefined : handleDragStart}
-					onDragEnd={isMobile ? undefined : handleDragEnd}
-					onDragOver={isMobile ? undefined : (groupId) => {
+					onDragStart={scheduleDrag ? handleDragStart : undefined}
+					onDragEnd={scheduleDrag ? handleDragEnd : undefined}
+					onDragOver={scheduleDrag ? (groupId) => {
 						if (canDropToGroup(groupId)) setActiveDropZone(groupId);
-					}}
-					onDrop={isMobile ? undefined : handleDropToGroup}
-					isDropActive={!isMobile && activeDropZone === "today" && canDropToGroup("today")}
+					} : undefined}
+					onDrop={scheduleDrag ? handleDropToGroup : undefined}
+					isDropActive={scheduleDrag && activeDropZone === "today" && canDropToGroup("today")}
 				/>
 				{/* Always show on mobile — brain dumps land here until timed */}
 				<InboxGroup
@@ -1616,13 +1661,13 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 					onQuestClick={openDetails}
 					collapsed={collapsedGroups.unscheduled}
 					onToggleCollapse={toggleGroupCollapse}
-					onDragStart={isMobile ? undefined : handleDragStart}
-					onDragEnd={isMobile ? undefined : handleDragEnd}
-					onDragOver={isMobile ? undefined : (groupId) => {
+					onDragStart={scheduleDrag ? handleDragStart : undefined}
+					onDragEnd={scheduleDrag ? handleDragEnd : undefined}
+					onDragOver={scheduleDrag ? (groupId) => {
 						if (canDropToGroup(groupId)) setActiveDropZone(groupId);
-					}}
-					onDrop={isMobile ? undefined : handleDropToGroup}
-					isDropActive={!isMobile && activeDropZone === "unscheduled" && canDropToGroup("unscheduled")}
+					} : undefined}
+					onDrop={scheduleDrag ? handleDropToGroup : undefined}
+					isDropActive={scheduleDrag && activeDropZone === "unscheduled" && canDropToGroup("unscheduled")}
 				/>
 				<InboxGroup
 					groupId="overdue"
@@ -1632,10 +1677,10 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 					onQuestClick={openDetails}
 					collapsed={collapsedGroups.overdue}
 					onToggleCollapse={toggleGroupCollapse}
-					onDragStart={isMobile ? undefined : handleDragStart}
-					onDragEnd={isMobile ? undefined : handleDragEnd}
-					onDragOver={isMobile ? undefined : () => setActiveDropZone(null)}
-					onDrop={isMobile ? undefined : handleDropToGroup}
+					onDragStart={scheduleDrag ? handleDragStart : undefined}
+					onDragEnd={scheduleDrag ? handleDragEnd : undefined}
+					onDragOver={scheduleDrag ? () => setActiveDropZone(null) : undefined}
+					onDrop={scheduleDrag ? handleDropToGroup : undefined}
 					isDropActive={false}
 				/>
 				{!isMobile && (
@@ -1913,6 +1958,10 @@ const InboxGroup: React.FC<InboxGroupProps> = ({
 							onDragStart={
 								onDragStart
 									? (e) => {
+											e.dataTransfer.setData(
+												QUEST_SCHEDULE_DRAG_MIME,
+												JSON.stringify({ id: quest.id })
+											);
 											e.dataTransfer.setData("text/plain", quest.id || titleText);
 											onDragStart(quest, groupId);
 									  }
@@ -1949,11 +1998,6 @@ const InboxGroup: React.FC<InboxGroupProps> = ({
 
 function hasTime(due?: string): boolean {
 	return Boolean(due && due.includes("T"));
-}
-
-function isSameDate(due: string | undefined, isoDate: string): boolean {
-	if (!due) return false;
-	return due.split("T")[0] === isoDate;
 }
 
 function toISODate(date: Date): string {
@@ -2274,8 +2318,7 @@ function classifyInboxGroup(
 
 function isTodayQuest(quest: Quest, todayISO: string): boolean {
 	if (quest.today === true) return true;
-	if (!quest.due) return false;
-	return quest.due.split("T")[0] === todayISO;
+	return isQuestOnDate(quest, todayISO, todayISO);
 }
 
 function isNowQuest(quest: Quest, todayISO: string, now: Date): boolean {
@@ -2356,14 +2399,26 @@ async function persistQuestDueDateTime(
 	dueISO: string,
 	todayISO: string
 ): Promise<void> {
+	await persistQuestSchedule(app, quest, dueISO, todayISO, datePart(quest.start));
+}
+
+async function persistQuestSchedule(
+	app: App,
+	quest: Quest,
+	dueISO: string,
+	todayISO: string,
+	startDay?: string
+): Promise<void> {
 	const file = app.vault.getAbstractFileByPath(quest.filePath || "GamifiedTasks.md");
 	if (!(file instanceof TFile)) return;
 	const content = await app.vault.read(file);
 	const lines = content.split("\n");
 	const index = findQuestLineIndex(lines, quest);
 	if (index === -1) return;
-	lines[index] = applyDueDateTimeToLine(lines[index], dueISO, todayISO);
-	await app.vault.modify(file, lines.join("\n"));
+	lines[index] = applyQuestScheduleToLine(lines[index], dueISO, todayISO, startDay);
+	let next = lines.join("\n");
+	next = patchScheduleFrontmatter(next, dueISO, startDay);
+	await app.vault.modify(file, next);
 }
 
 /**
@@ -2400,8 +2455,11 @@ function applyGroupMoveToLine(line: string, targetGroup: InboxGroupId, todayISO:
 	if (targetGroup === "unscheduled") {
 		updated = updated
 			.replace(/📅\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?/g, "")
+			.replace(/🛫\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?/g, "")
 			.replace(/due::\s*\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?/gi, "")
-			.replace(/due:\s*\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?/gi, "");
+			.replace(/due:\s*\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?/gi, "")
+			.replace(/start::\s*\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?/gi, "")
+			.replace(/start:\s*\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?/gi, "");
 	}
 
 	// Ensure metadata segment exists for modified/today markers.
@@ -2482,24 +2540,29 @@ function applyDateMoveToLine(line: string, targetDateISO: string, todayISO: stri
 	return applyDueDateTimeToLine(line, targetDateISO, todayISO);
 }
 
-function applyDueDateTimeToLine(line: string, dueISO: string, todayISO: string): string {
-	let updated = line;
+function applyDueDateTimeToLine(line: string, dueISO: string, todayISO: string, startDay?: string): string {
+	return applyQuestScheduleToLine(line, dueISO, todayISO, startDay);
+}
+
+function applyQuestScheduleToLine(
+	line: string,
+	dueISO: string,
+	todayISO: string,
+	startDay?: string
+): string {
+	let updated = stripScheduleMarkers(line);
 	const nowIso = new Date().toISOString();
-	const datePart = dueISO.split("T")[0];
-	updated = updated
-		.replace(/\s#status\/[^\s]+/g, "")
-		.replace(/\s#today\/[^\s]+/g, "")
-		.replace(/\s#due\/[^\s]+/g, "")
-		.replace(/📅\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?/g, "")
-		.replace(/due::\s*\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?/gi, "")
-		.replace(/due:\s*\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?/gi, "");
+	const dueDay = dueISO.split("T")[0];
+	const start = startDay && startDay !== dueDay ? startDay : undefined;
 	if (!updated.includes("//")) {
 		updated = `${updated} //`;
 	}
 	updated = upsertMetaField(updated, "modified", nowIso);
 	updated = upsertMetaField(updated, "due", dueISO);
-	const isToday = datePart === todayISO;
+	if (start) updated = upsertMetaField(updated, "start", start);
+	const isToday = dueDay === todayISO;
 	updated = upsertMetaField(updated, "today", isToday ? "true" : "false");
+	updated = injectScheduleEmojis(updated, dueISO, start);
 	updated += isToday ? " #today/true #status/active" : " #today/false #status/active";
 	return updated.replace(/\s{2,}/g, " ").trim();
 }

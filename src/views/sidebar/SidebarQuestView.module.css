@@ -1157,6 +1157,72 @@
   border-radius: 16px;
   background: var(--clay-surface-2, #efe6d8);
   box-shadow: var(--clay-recessed-soft);
+  color: var(--clay-text, #3a342c);
+}
+
+.container.claySidebarQuestShell .inboxItemTitle,
+.container.claySidebarQuestShell .inboxItemLeft,
+.container.claySidebarQuestShell .rowChevron {
+  color: var(--clay-text, #3a342c) !important;
+}
+
+.container.claySidebarQuestShell .badgeDue,
+.container.claySidebarQuestShell .badgeEnergy,
+.container.claySidebarQuestShell .badgeXpCompact,
+.container.claySidebarQuestShell .badgeCoinCompact,
+.container.claySidebarQuestShell .badgeTagCompact {
+  color: var(--clay-text, #3a342c) !important;
+  background: color-mix(in srgb, var(--clay-accent, #5bb8b0) 16%, var(--clay-surface, #f7f3ec)) !important;
+  border-color: transparent !important;
+}
+
+.container.claySidebarQuestShell .inboxGroupHeaderButton.inboxGroupTitle,
+.container.claySidebarQuestShell.mobileTodayRun .inboxGroupHeaderButton.inboxGroupTitle,
+.container.claySidebarQuestShell[data-gamification-mobile='true'] .inboxGroupHeaderButton.inboxGroupTitle {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  min-height: 40px !important;
+  margin: 0 0 8px !important;
+  padding: 8px 14px !important;
+  border: none !important;
+  border-radius: 18px !important;
+  background: var(--clay-surface-2, #efe6d8) !important;
+  box-shadow: var(--clay-recessed) !important;
+  color: var(--clay-text, #3a342c) !important;
+  font-family: inherit !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.02em !important;
+  text-transform: none !important;
+  text-shadow: none !important;
+}
+
+.container.claySidebarQuestShell .inboxGroupHeaderButton .groupTitleText,
+.container.claySidebarQuestShell.mobileTodayRun .inboxGroupHeaderButton .groupTitleText {
+  color: var(--clay-text, #3a342c) !important;
+}
+
+.container.claySidebarQuestShell .inboxGroupHeaderButton .groupChevron {
+  color: var(--clay-accent-deep, #3fa39a) !important;
+}
+
+.container.claySidebarQuestShell .inboxGroupHeaderButton .groupCount,
+.container.claySidebarQuestShell.mobileTodayRun .inboxGroupHeaderButton .groupCount {
+  border: none !important;
+  border-radius: 999px !important;
+  background: color-mix(in srgb, var(--clay-accent, #5bb8b0) 22%, var(--clay-surface, #f7f3ec)) !important;
+  color: var(--clay-accent-deep, #3fa39a) !important;
+}
+
+.container.claySidebarQuestShell .emptyState {
+  color: var(--clay-text-light, #8a8278);
+}
+
+.container.claySidebarQuestShell[data-quests-density='wide'] .boardInbox {
+  border: none;
+  background: var(--clay-gradient);
+  box-shadow: var(--clay-shadow);
+  border-radius: var(--clay-radius, 24px);
 }
 
 /* Pixel / RPG shell — tokens from visualThemeManager (Classic preset by default) */

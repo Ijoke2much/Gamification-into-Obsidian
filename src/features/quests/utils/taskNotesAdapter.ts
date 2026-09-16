@@ -18,6 +18,7 @@ export interface TaskNotesFrontmatter {
 	priority?: string;
 	difficulty?: string;
 	due?: string;
+	start?: string;
 	scheduled?: string;
 	project?: string;
 	projects?: string[];
@@ -45,6 +46,7 @@ export type CreateTaskNotesFields = {
 	priority?: string;
 	difficulty?: string;
 	due?: string;
+	start?: string;
 	recur?: string;
 	estimatedTime?: string;
 	energyCost?: number;
@@ -215,6 +217,49 @@ function splitDueAndScheduled(due?: string): { due?: string; scheduled?: string 
 	return { due: trimmed };
 }
 
+/**
+ * YAML `due` is often date-only; time lives in `scheduled` or on the task line.
+ * Do not clobber a parsed 📅 time with a date-only property.
+ */
+function applyTaskNotesSchedule(quest: Quest, fm: TaskNotesFrontmatter): void {
+	const lineDue = quest.due;
+	const yamlScheduled = fm.scheduled?.trim();
+	const yamlDue = fm.due?.trim();
+
+	if (yamlScheduled?.includes('T')) {
+		quest.due = yamlScheduled;
+		quest.scheduled = yamlScheduled;
+	} else if (yamlDue?.includes('T')) {
+		quest.due = yamlDue;
+	} else if (yamlDue) {
+		const day = yamlDue.split('T')[0];
+		if (lineDue?.includes('T')) {
+			quest.due = `${day}T${lineDue.split('T')[1]}`;
+		} else {
+			quest.due = yamlDue;
+		}
+	}
+
+	if (fm.start) quest.start = fm.start;
+	if (yamlScheduled) quest.scheduled = yamlScheduled;
+}
+
+/** Keep TaskNotes YAML in sync with start/due/time written on the task line. */
+export function patchScheduleFrontmatter(
+	content: string,
+	dueISO?: string,
+	startDay?: string
+): string {
+	if (!splitFrontmatter(content)) return content;
+	const { due, scheduled } = splitDueAndScheduled(dueISO);
+	return patchFrontmatter(content, {
+		due: due,
+		scheduled: scheduled,
+		start: startDay || undefined,
+		dateModified: new Date().toISOString(),
+	});
+}
+
 function formatIsoDate(date = new Date()): string {
 	return date.toISOString().slice(0, 10);
 }
@@ -254,6 +299,7 @@ export function parseTaskNotesFrontmatter(content: string): TaskNotesFrontmatter
 		priority: asString(raw.priority),
 		difficulty: asString(raw.difficulty),
 		due: asString(raw.due),
+		start: asString(raw.start),
 		scheduled: asString(raw.scheduled),
 		project: asString(raw.project),
 		projects: projects.length ? projects : undefined,
@@ -417,6 +463,11 @@ export function buildTaskNotesFrontmatter(input: CreateTaskNotesFields): Record<
 	if (tnPriority) frontmatter.priority = tnPriority;
 	if (input.difficulty) frontmatter.difficulty = input.difficulty;
 	if (due) frontmatter.due = due;
+	if (input.start) {
+		const startDay = String(input.start).split('T')[0];
+		const dueDay = due?.split('T')[0];
+		if (startDay && startDay !== dueDay) frontmatter.start = startDay;
+	}
 	if (scheduled) frontmatter.scheduled = scheduled;
 	if (input.recur) {
 		frontmatter.recur = input.recur;
@@ -510,8 +561,7 @@ export function overlayTaskNotesFields(quest: Quest, content: string): Quest {
 	applyFrontmatterRewardFields(quest, fm as Record<string, unknown>);
 	if (fm.priority) quest.priority = fromTaskNotesPriority(fm.priority) || fm.priority;
 	if (fm.difficulty) quest.difficulty = fm.difficulty;
-	if (fm.due) quest.due = fm.due;
-	if (fm.scheduled) quest.scheduled = fm.scheduled;
+	applyTaskNotesSchedule(quest, fm);
 	if (fm.skills?.length) quest.skills = fm.skills;
 	if (fm.energyCost) quest.energyCost = fm.energyCost;
 	if (fm.activityProfile) quest.activityProfile = fm.activityProfile;
@@ -579,6 +629,7 @@ export function buildQuestFromTaskNotesContent(content: string, filePath: string
 		completed,
 		status: fm?.status,
 		due: fm?.due,
+		start: fm?.start,
 		scheduled: fm?.scheduled,
 		project: fm?.project || (fm?.projects?.[0] ? stripWikilink(fm.projects[0]) : undefined),
 		tags: fm?.tags,

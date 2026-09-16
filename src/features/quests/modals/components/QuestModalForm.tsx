@@ -34,6 +34,8 @@ interface QuestModalFormProps {
     setActivityProfile: (v: ActivityProfileId) => void;
     due: string;
     setDue: (due: string) => void;
+    startDate: string;
+    setStartDate: (start: string) => void;
     time: string;
     setTime: (time: string) => void;
     estimatedMinutes: string;
@@ -88,6 +90,8 @@ export const QuestModalForm: React.FC<QuestModalFormProps> = memo(({
     setActivityProfile,
     due,
     setDue,
+    startDate,
+    setStartDate,
     time,
     setTime,
     estimatedMinutes,
@@ -158,6 +162,115 @@ export const QuestModalForm: React.FC<QuestModalFormProps> = memo(({
                         transition: "all 0.2s ease",
                     }}
                 />
+            </div>
+
+            <div style={{ marginBottom: 16 }}>
+                <label style={{
+                    display: "block",
+                    marginBottom: 8,
+                    fontWeight: 600,
+                    color: "var(--text-normal)",
+                    fontSize: 16,
+                }}>
+                    Dates
+                </label>
+                <div style={{
+                    display: isMobile ? "block" : "flex",
+                    gap: isMobile ? 0 : 12,
+                }}>
+                    <div style={{ flex: 1, marginBottom: isMobile ? 12 : 0 }}>
+                        <label style={{
+                            display: "block",
+                            marginBottom: 6,
+                            fontSize: 12,
+                            color: "var(--text-muted)",
+                            fontWeight: 500,
+                        }}>
+                            Start
+                        </label>
+                        <input
+                            type="date"
+                            value={startDate}
+                            onChange={(e) => {
+                                const next = e.target.value;
+                                setStartDate(next);
+                                if (next && due && next > due) setDue(next);
+                            }}
+                            className={`${styles.input} ${styles.dateInput}`}
+                        />
+                    </div>
+                    <div style={{ flex: 1, marginBottom: isMobile ? 12 : 0 }}>
+                        <label style={{
+                            display: "block",
+                            marginBottom: 6,
+                            fontSize: 12,
+                            color: "var(--text-muted)",
+                            fontWeight: 500,
+                        }}>
+                            Due
+                        </label>
+                        <input
+                            type="date"
+                            value={due}
+                            onChange={(e) => {
+                                const next = e.target.value;
+                                setDue(next);
+                                if (next && startDate && next < startDate) setStartDate(next);
+                            }}
+                            className={`${styles.input} ${styles.dateInput}`}
+                        />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                        <label style={{
+                            display: "block",
+                            marginBottom: 6,
+                            fontSize: 12,
+                            color: "var(--text-muted)",
+                            fontWeight: 500,
+                        }}>
+                            Time on due day
+                        </label>
+                        <input
+                            type="time"
+                            step={60}
+                            value={time}
+                            onChange={(e) => setTime((e.target.value || "").slice(0, 5))}
+                            className={`${styles.input} ${styles.dateInput} ${styles.timeInput}`}
+                        />
+                    </div>
+                </div>
+                <div className={styles.timeChipRow}>
+                    {[
+                        { label: "9 AM", value: "09:00" },
+                        { label: "12 PM", value: "12:00" },
+                        { label: "2 PM", value: "14:00" },
+                        { label: "5 PM", value: "17:00" },
+                        { label: "8 PM", value: "20:00" },
+                    ].map((slot) => (
+                        <button
+                            key={slot.value}
+                            type="button"
+                            className={`${styles.timeChip}${time === slot.value ? ` ${styles.timeChipActive}` : ""}`}
+                            onClick={() => setTime(slot.value)}
+                        >
+                            {slot.label}
+                        </button>
+                    ))}
+                    {time ? (
+                        <button
+                            type="button"
+                            className={styles.timeChip}
+                            onClick={() => setTime("")}
+                        >
+                            Clear
+                        </button>
+                    ) : null}
+                </div>
+                <div className={styles.timeHint}>
+                    {time
+                        ? `Timed at ${formatClockLabel(time)} on the due day`
+                        : "No time — shows as flexible / all-day"}
+                </div>
             </div>
 
             {/* Skills Selection - Core */}
@@ -651,3 +764,13 @@ export const QuestModalForm: React.FC<QuestModalFormProps> = memo(({
         </>
     );
 });
+
+function formatClockLabel(hhmm: string): string {
+    const [hRaw, mRaw] = hhmm.split(":");
+    const h = parseInt(hRaw || "0", 10);
+    const m = parseInt(mRaw || "0", 10);
+    if (!Number.isFinite(h)) return hhmm;
+    const date = new Date();
+    date.setHours(h, Number.isFinite(m) ? m : 0, 0, 0);
+    return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+}

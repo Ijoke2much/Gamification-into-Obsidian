@@ -12,12 +12,8 @@ interface QuestModalAdvancedOptionsProps {
     // Details tab props
     description: string;
     setDescription: (description: string) => void;
-    due: string;
-    setDue: (due: string) => void;
     recur: string;
     setRecur: (recur: string) => void;
-    scheduleTime: string;
-    setScheduleTime: (time: string) => void;
     estimatedMinutes: string;
     setEstimatedMinutes: (minutes: string) => void;
     
@@ -52,12 +48,8 @@ export const QuestModalAdvancedOptions: React.FC<QuestModalAdvancedOptionsProps>
     setActiveAdvancedTab,
     description,
     setDescription,
-    due,
-    setDue,
     recur,
     setRecur,
-    scheduleTime,
-    setScheduleTime,
     estimatedMinutes,
     setEstimatedMinutes,
     questGiverImagePath,
@@ -223,32 +215,13 @@ export const QuestModalAdvancedOptions: React.FC<QuestModalAdvancedOptionsProps>
                                 />
                             </div>
 
-                            {/* Due Date and Recurrence */}
+                            {/* Recurrence + duration */}
                             <div style={{ 
                                 display: isMobile ? "block" : "flex", 
                                 gap: isMobile ? 0 : 16, 
                                 marginBottom: 16 
                             }}>
-                                <div style={{ 
-                                    flex: isMobile ? "none" : 1,
-                                    marginBottom: isMobile ? 16 : 0
-                                }}>
-                                    <label style={{
-                                        display: "block",
-                                        marginBottom: 8,
-                                        fontWeight: 600,
-                                        color: "var(--text-normal)",
-                                    }}>
-                                        📅 Due Date (Optional)
-                                    </label>
-                                    <input
-                                        type="date"
-                                        value={due}
-                                        onChange={(e) => setDue(e.target.value)}
-                                        className={`${styles.input} ${styles.dateInput}`}
-                                    />
-                                </div>
-                                <div style={{ flex: isMobile ? "none" : 1 }}>
+                                <div style={{ flex: isMobile ? "none" : 1, marginBottom: isMobile ? 16 : 0 }}>
                                     <label style={{
                                         display: "block",
                                         marginBottom: 8,
@@ -275,7 +248,6 @@ export const QuestModalAdvancedOptions: React.FC<QuestModalAdvancedOptionsProps>
                                 </div>
                             </div>
 
-                            {/* Schedule Time Section */}
                             <div style={{ marginBottom: 16 }}>
                                 <label style={{
                                     display: "block",
@@ -283,93 +255,12 @@ export const QuestModalAdvancedOptions: React.FC<QuestModalAdvancedOptionsProps>
                                     fontWeight: 600,
                                     color: "var(--text-normal)",
                                 }}>
-                                    🕐 Schedule Time
+                                    Estimated Duration (Optional)
                                 </label>
-                                
-                                {/* Start Time Picker */}
-                                <div style={{ marginBottom: 12 }}>
-                                    <label style={{
-                                        display: "block",
-                                        marginBottom: 6,
-                                        fontSize: 12,
-                                        color: "var(--text-muted)",
-                                        fontWeight: 500,
-                                    }}>
-                                        Start Time (Optional)
-                                    </label>
-                                    <input
-                                        type="time"
-                                        value={scheduleTime}
-                                        onChange={(e) => setScheduleTime(e.target.value)}
-                                        style={{
-                                            width: "100%",
-                                            padding: 12,
-                                            borderRadius: 8,
-                                            border: "1px solid var(--background-modifier-border)",
-                                            backgroundColor: "var(--background-primary)",
-                                            color: "var(--text-normal)",
-                                            fontSize: 14,
-                                        }}
-                                    />
-                                </div>
-
-                                {/* Quick Time Buttons */}
-                                <div style={{
-                                    display: "flex",
-                                    gap: 6,
-                                    marginBottom: 12,
-                                    flexWrap: "wrap",
-                                }}>
-                                    {[
-                                        { label: "9 AM", value: "09:00" },
-                                        { label: "12 PM", value: "12:00" },
-                                        { label: "2 PM", value: "14:00" },
-                                        { label: "5 PM", value: "17:00" },
-                                        { label: "8 PM", value: "20:00" },
-                                    ].map(time => (
-                                        <button
-                                            key={time.value}
-                                            type="button"
-                                            onClick={() => setScheduleTime(time.value)}
-                                            style={{
-                                                padding: "6px 12px",
-                                                borderRadius: 6,
-                                                border: scheduleTime === time.value
-                                                    ? "2px solid var(--interactive-accent)"
-                                                    : "1px solid var(--background-modifier-border)",
-                                                backgroundColor: scheduleTime === time.value
-                                                    ? "var(--interactive-accent)"
-                                                    : "var(--background-secondary)",
-                                                color: scheduleTime === time.value
-                                                    ? "white"
-                                                    : "var(--text-normal)",
-                                                cursor: "pointer",
-                                                fontSize: 12,
-                                                fontWeight: 500,
-                                                transition: "all 0.2s ease",
-                                            }}
-                                        >
-                                            {time.label}
-                                        </button>
-                                    ))}
-                                </div>
-
-                                {/* Estimated Duration */}
-                                <div>
-                                    <label style={{
-                                        display: "block",
-                                        marginBottom: 6,
-                                        fontSize: 12,
-                                        color: "var(--text-muted)",
-                                        fontWeight: 500,
-                                    }}>
-                                        Estimated Duration (Optional)
-                                    </label>
-                                    <DurationWheelPicker
-                                        value={estimatedMinutes}
-                                        onChange={setEstimatedMinutes}
-                                    />
-                                </div>
+                                <DurationWheelPicker
+                                    value={estimatedMinutes}
+                                    onChange={setEstimatedMinutes}
+                                />
                             </div>
                         </div>
                     )}
