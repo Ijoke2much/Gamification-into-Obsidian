@@ -69,12 +69,14 @@ import {
 	MobileDayAgenda,
 	type MobileDayAgendaHandle,
 } from './components/MobileDayAgenda';
+import { PlaceOnDayPlanSheet } from './components/PlaceOnDayPlanSheet';
 import {
 	datePart,
 	daysBetween,
 	injectScheduleEmojis,
 	isQuestOnDate,
 	minutesToClock,
+	parseQuestScheduleDragId,
 	QUEST_SCHEDULE_DRAG_MIME,
 	shiftQuestRange,
 	stripScheduleMarkers,
@@ -188,6 +190,9 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 	const [questsDensity, setQuestsDensity] = useState<'narrow' | 'wide'>('narrow');
 	const [dayScheduleOpen, setDayScheduleOpen] = useState(false);
 	const [mobileTimelineMenuId, setMobileTimelineMenuId] = useState<string | null>(null);
+	const [placeOnPlan, setPlaceOnPlan] = useState<{ quest: Quest; suggestedMinutes: number } | null>(
+		null
+	);
 	const dayScheduleShellRef = useRef<HTMLDivElement | null>(null);
 	const { isMobile } = useMobileOptimizations();
 	const [questsReady, setQuestsReady] = useState(false);
@@ -1216,6 +1221,31 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 		}
 	};
 
+	const defaultPlaceMinutes = () => {
+		if (selectedDateISO === todayISO) {
+			return currentTime.getHours() * 60 + currentTime.getMinutes();
+		}
+		return 9 * 60;
+	};
+
+	const openPlaceOnDayPlan = (quest: Quest, suggestedMinutes?: number) => {
+		setDayPlanExpanded(true);
+		setPlaceOnPlan({
+			quest,
+			suggestedMinutes: suggestedMinutes ?? defaultPlaceMinutes(),
+		});
+	};
+
+	const resolveScheduleDragQuest = (e: React.DragEvent): Quest | null => {
+		const id = parseQuestScheduleDragId(e.dataTransfer);
+		if (!id) return null;
+		return (
+			filteredQuests.find((q) => q.id === id || q.title === id) ??
+			allQuests.find((q) => q.id === id || q.title === id) ??
+			null
+		);
+	};
+
 	const handleAgendaTimeDrop = async (quest: Quest, minutesFromMidnight: number) => {
 		try {
 			const dueISO = `${selectedDateISO}T${minutesToClock(minutesFromMidnight)}`;
@@ -1451,7 +1481,26 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 			/>
 
 			<div className={styles.boardMain}>
-			<section className={`${styles.section} ${styles.boardDayPlan}${dayPlanExpanded || !isMobile ? ` ${isMobile ? styles.dayPlanSectionMobile : styles.dayPlanSectionDesktop}` : ''}`}>
+			<section
+				className={`${styles.section} ${styles.boardDayPlan}${dayPlanExpanded || !isMobile ? ` ${isMobile ? styles.dayPlanSectionMobile : styles.dayPlanSectionDesktop}` : ''}`}
+				onDragOver={
+					scheduleDrag
+						? (e) => {
+								e.preventDefault();
+								e.dataTransfer.dropEffect = "move";
+						  }
+						: undefined
+				}
+				onDrop={
+					scheduleDrag
+						? (e) => {
+								e.preventDefault();
+								const quest = resolveScheduleDragQuest(e);
+								if (quest) openPlaceOnDayPlan(quest);
+						  }
+						: undefined
+				}
+			>
 				<div className={styles.timelineDayShell} ref={dayScheduleShellRef}>
 					<MissionSectionTitle
 						title="Day plan"
@@ -1566,6 +1615,7 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 						scheduleDragEnabled={scheduleDrag}
 						droppableQuests={filteredQuests}
 						onDropQuestAtMinutes={(quest, minutes) => void handleAgendaTimeDrop(quest, minutes)}
+						onDropQuestAskTime={(quest, minutes) => openPlaceOnDayPlan(quest, minutes)}
 					/>
 				</>
 				) : (
@@ -1635,6 +1685,7 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 					} : undefined}
 					onDrop={scheduleDrag ? handleDropToGroup : undefined}
 					isDropActive={scheduleDrag && activeDropZone === "now" && canDropToGroup("now")}
+					onPlaceOnDayPlan={openPlaceOnDayPlan}
 				/>
 				<InboxGroup
 					groupId="today"
@@ -1651,6 +1702,7 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 					} : undefined}
 					onDrop={scheduleDrag ? handleDropToGroup : undefined}
 					isDropActive={scheduleDrag && activeDropZone === "today" && canDropToGroup("today")}
+					onPlaceOnDayPlan={openPlaceOnDayPlan}
 				/>
 				{/* Always show on mobile — brain dumps land here until timed */}
 				<InboxGroup
@@ -1668,6 +1720,7 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 					} : undefined}
 					onDrop={scheduleDrag ? handleDropToGroup : undefined}
 					isDropActive={scheduleDrag && activeDropZone === "unscheduled" && canDropToGroup("unscheduled")}
+					onPlaceOnDayPlan={openPlaceOnDayPlan}
 				/>
 				<InboxGroup
 					groupId="overdue"
@@ -1682,6 +1735,7 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 					onDragOver={scheduleDrag ? () => setActiveDropZone(null) : undefined}
 					onDrop={scheduleDrag ? handleDropToGroup : undefined}
 					isDropActive={false}
+					onPlaceOnDayPlan={openPlaceOnDayPlan}
 				/>
 				{!isMobile && (
 				<InboxGroup
@@ -1699,6 +1753,7 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 					}}
 					onDrop={handleDropToGroup}
 					isDropActive={activeDropZone === "abandon" && canDropToGroup("abandon")}
+					onPlaceOnDayPlan={openPlaceOnDayPlan}
 				/>
 				)}
 			</section>
@@ -1810,6 +1865,16 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 											className={styles.timelineActionSheetBtn}
 											onClick={() => {
 												setMobileTimelineMenuId(null);
+												openPlaceOnDayPlan(menuQuest);
+											}}
+										>
+											Place on day plan…
+										</button>
+										<button
+											type="button"
+											className={styles.timelineActionSheetBtn}
+											onClick={() => {
+												setMobileTimelineMenuId(null);
 												void handleTimelineSnoozeMinutes(menuQuest, 15);
 											}}
 										>
@@ -1863,6 +1928,29 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 					document.body
 				)}
 
+			<PlaceOnDayPlanSheet
+				open={Boolean(placeOnPlan)}
+				questTitle={placeOnPlan ? getQuestDisplayTitle(placeOnPlan.quest) : ""}
+				dateLabel={selectedDate.toLocaleDateString(undefined, {
+					weekday: "short",
+					month: "short",
+					day: "numeric",
+				})}
+				suggestedMinutes={placeOnPlan?.suggestedMinutes ?? 9 * 60}
+				durationHint={
+					placeOnPlan
+						? formatPlaceDuration(parseMinutes(placeOnPlan.quest.estimatedTime))
+						: undefined
+				}
+				clay={isClayTheme}
+				onCancel={() => setPlaceOnPlan(null)}
+				onConfirm={(minutes) => {
+					const quest = placeOnPlan?.quest;
+					setPlaceOnPlan(null);
+					if (quest) void handleAgendaTimeDrop(quest, minutes);
+				}}
+			/>
+
 			<QuestDetailModal
 				isOpen={detailOpen}
 				onClose={() => setDetailOpen(false)}
@@ -1892,6 +1980,7 @@ interface InboxGroupProps {
 	onDragOver?: (groupId: InboxGroupId) => void;
 	onDrop?: (groupId: InboxGroupId) => void;
 	isDropActive?: boolean;
+	onPlaceOnDayPlan?: (quest: Quest) => void;
 }
 
 const InboxGroup: React.FC<InboxGroupProps> = ({
@@ -1907,6 +1996,7 @@ const InboxGroup: React.FC<InboxGroupProps> = ({
 	onDragOver,
 	onDrop,
 	isDropActive = false,
+	onPlaceOnDayPlan,
 }) => (
 	<div
 		className={styles.inboxGroup}
@@ -1948,11 +2038,18 @@ const InboxGroup: React.FC<InboxGroupProps> = ({
 					const primaryTag = firstMeaningfulTag(quest.tags);
 					const isFocusRow = index === 0 && title === "Today";
 					return (
-						<button
+						<div
 							key={`inbox-${title}-${quest.id}`}
-							type="button"
+							role="button"
+							tabIndex={0}
 							className={`${styles.inboxItem} ${isFocusRow ? styles.inboxItemFocus : ""}`}
 							onClick={() => onQuestClick(quest)}
+							onKeyDown={(e) => {
+								if (e.key === "Enter" || e.key === " ") {
+									e.preventDefault();
+									onQuestClick(quest);
+								}
+							}}
 							title={titleText}
 							draggable={Boolean(onDragStart)}
 							onDragStart={
@@ -1975,6 +2072,22 @@ const InboxGroup: React.FC<InboxGroupProps> = ({
 								<span className={styles.inboxItemTitle}>{titleText}</span>
 							</div>
 							<div className={styles.inboxItemRight}>
+								{onPlaceOnDayPlan && (
+									<button
+										type="button"
+										className={styles.inboxScheduleBtn}
+										aria-label={`Place ${titleText} on day plan`}
+										title="Place on day plan"
+										onPointerDown={(e) => e.stopPropagation()}
+										onClick={(e) => {
+											e.stopPropagation();
+											e.preventDefault();
+											onPlaceOnDayPlan(quest);
+										}}
+									>
+										Time
+									</button>
+								)}
 								{compactDue && <span className={`${styles.badge} ${styles.badgeDue}`}>{compactDue}</span>}
 								<span className={`${styles.badge} ${styles.badgeEnergy}`}>
 									{EnergyCalculationService.getEnergyMatchIcon(energy.match)}
@@ -1988,7 +2101,7 @@ const InboxGroup: React.FC<InboxGroupProps> = ({
 								{primaryTag && <span className={`${styles.badge} ${styles.badgeTagCompact}`}>#{primaryTag}</span>}
 								<span className={styles.rowChevron}>›</span>
 							</div>
-						</button>
+						</div>
 					);
 				})}
 			</div>
@@ -2056,6 +2169,14 @@ function parseMinutes(timeString?: string): number {
 	const value = Number(match[1]);
 	const unit = match[2].toLowerCase();
 	return unit.startsWith("h") ? value * 60 : value;
+}
+
+function formatPlaceDuration(minutes: number): string {
+	const hours = Math.floor(minutes / 60);
+	const m = minutes % 60;
+	if (hours > 0 && m > 0) return `${hours}h ${m}m`;
+	if (hours > 0) return `${hours}h`;
+	return `${Math.max(1, m)}m`;
 }
 
 function toTime(date: Date): string {

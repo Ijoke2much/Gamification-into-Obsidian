@@ -245,6 +245,7 @@ export class SkillBasedBattleEngine extends BossBattleEngine {
         boss: SkillBasedBoss
     ): Promise<void> {
         if (!move.skillEffects?.cpGain) return;
+        const cpGain = move.skillEffects.cpGain;
 
         try {
             // Read current skill data
@@ -252,8 +253,8 @@ export class SkillBasedBattleEngine extends BossBattleEngine {
             if (!skillData) return;
 
             // Calculate new CP (progression system)
-            const newCurrentCP = (skillData.currentCP || 0) + move.skillEffects.cpGain;
-            const newTotalCP = (skillData.totalCP || 0) + move.skillEffects.cpGain;
+            const newCurrentCP = (skillData.currentCP || 0) + cpGain;
+            const newTotalCP = (skillData.totalCP || 0) + cpGain;
 
             // Check for level up
             let newLevel = skillData.level || 1;
@@ -293,6 +294,19 @@ export class SkillBasedBattleEngine extends BossBattleEngine {
                     const updatedContent = matter.stringify(markdownContent, data);
                     await vault.modify(file, updatedContent);
                 }
+
+                void import('../../skillTree/utils/skillCpLog')
+                    .then(({ recordSkillCpGain }) =>
+                        recordSkillCpGain(vault, {
+                            skillName: skillData.name || boss.associatedSkill,
+                            skillPath: skillData.filePath,
+                            cp: cpGain,
+                            source: 'battle',
+                        })
+                    )
+                    .catch(() => {
+                        /* weekly log is optional */
+                    });
             }
         } catch (error) {
             console.error('Failed to process skill gains:', error);

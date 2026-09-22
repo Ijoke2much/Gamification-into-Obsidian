@@ -87,6 +87,19 @@ export function shiftQuestRange(
 
 export const QUEST_SCHEDULE_DRAG_MIME = 'application/x-gamify-quest-id';
 
+export function parseQuestScheduleDragId(dataTransfer: DataTransfer): string | null {
+	const raw =
+		dataTransfer.getData(QUEST_SCHEDULE_DRAG_MIME) || dataTransfer.getData('text/plain');
+	if (!raw) return null;
+	try {
+		const parsed = JSON.parse(raw) as { id?: string };
+		if (parsed.id) return parsed.id;
+	} catch {
+		/* plain id */
+	}
+	return raw;
+}
+
 export function minutesToClock(minutesFromMidnight: number): string {
 	const clamped = Math.max(0, Math.min(24 * 60 - 1, Math.floor(minutesFromMidnight)));
 	const h = Math.floor(clamped / 60);

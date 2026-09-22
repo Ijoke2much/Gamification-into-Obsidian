@@ -5,6 +5,7 @@ export const SKILL_TREE_ROOT = 'SkillTree';
 export const HUNTER_MASTER_PATH = 'SkillTree/Master-Class/Hunter.md';
 export const JESTER_MASTER_PATH = 'SkillTree/Master-Class/Jester 🎭.md';
 export const STARTER_CLASS_PATH = 'SkillTree/Master-Class/Class/Focus.md';
+export const STARTER_SKILL_PATH = 'SkillTree/Master-Class/Class/Skills/Deep Work.md';
 export const SKILL_TREE_CANVAS_PATH = 'SkillTree/SkillTree.canvas';
 
 const FOLDERS = [
@@ -49,6 +50,10 @@ function isClassNote(file: TFile): boolean {
 	);
 }
 
+function isSkillNote(file: TFile): boolean {
+	return file.path.endsWith('.md') && /(^|\/)Skills\//i.test(file.path);
+}
+
 function safeMasterFileName(name: string): string {
 	const safe = name.replace(/[\\/:*?"<>|]/g, '').trim();
 	return safe || 'Wanderer';
@@ -70,6 +75,27 @@ async function readPlayerMasterClass(vault: Vault): Promise<string | null> {
 	} catch {
 		return null;
 	}
+}
+
+function starterSkillNote(masterName: string): string {
+	const master = safeMasterFileName(masterName);
+	return `---
+name: "Deep Work"
+class: "Focus"
+masterClass: "${master}"
+icon: "🎯"
+level: 1
+currentCP: 0
+requiredCP: 20
+totalCP: 0
+description: "Sit with one task long enough to finish it. Completing quests tagged with this skill earns CP."
+type: skill
+---
+
+# 🎯 Deep Work
+
+Starter skill on the Focus path. Attach it to quests to train this node on the Realm Map.
+`;
 }
 
 function starterClassNote(masterName: string): string {
@@ -112,7 +138,7 @@ Your starting class. Complete quests to earn CP, then add classes and skills fro
 `;
 }
 
-function buildCanvas(masterPath: string, classPath: string | null): string {
+function buildCanvas(masterPath: string, classPath: string | null, skillPath: string | null): string {
 	const nodes: Array<Record<string, unknown>> = [
 		{
 			id: 'starter-master',
@@ -143,6 +169,24 @@ function buildCanvas(masterPath: string, classPath: string | null): string {
 			toSide: 'top',
 		});
 	}
+	if (classPath && skillPath) {
+		nodes.push({
+			id: 'deep-work-skill',
+			type: 'file',
+			file: skillPath,
+			x: 400,
+			y: 430,
+			width: 240,
+			height: 100,
+		});
+		edges.push({
+			id: 'focus-deep-work',
+			fromNode: 'focus-class',
+			fromSide: 'bottom',
+			toNode: 'deep-work-skill',
+			toSide: 'top',
+		});
+	}
 	return JSON.stringify({ nodes, edges }, null, 2);
 }
 
@@ -167,6 +211,7 @@ export async function ensureSkillTreeSkeleton(vault: Vault): Promise<void> {
 	const markdown = vault.getMarkdownFiles();
 	const hasMaster = markdown.some((file) => isMasterClassNote(file));
 	const hasClass = markdown.some((file) => isClassNote(file));
+	const hasSkill = markdown.some((file) => isSkillNote(file));
 	const playerClass = await readPlayerMasterClass(vault);
 	const masterName = playerClass || pickStarterMasterClass();
 	const masterPath = masterNotePathFor(masterName);
@@ -187,14 +232,27 @@ export async function ensureSkillTreeSkeleton(vault: Vault): Promise<void> {
 		}
 	}
 
+	if (!hasSkill && !vault.getAbstractFileByPath(STARTER_SKILL_PATH)) {
+		try {
+			await vault.create(STARTER_SKILL_PATH, starterSkillNote(masterName));
+		} catch {
+			/* exists */
+		}
+	}
+
 	if (vault.getAbstractFileByPath(SKILL_TREE_CANVAS_PATH)) return;
 
 	const canvasMaster = resolveExistingMasterPath(vault) ?? masterPath;
 	const classFile = vault.getAbstractFileByPath(STARTER_CLASS_PATH);
+	const skillFile = vault.getAbstractFileByPath(STARTER_SKILL_PATH);
 	try {
 		await vault.create(
 			SKILL_TREE_CANVAS_PATH,
-			buildCanvas(canvasMaster, classFile ? STARTER_CLASS_PATH : null)
+			buildCanvas(
+				canvasMaster,
+				classFile ? STARTER_CLASS_PATH : null,
+				skillFile ? STARTER_SKILL_PATH : null
+			)
 		);
 	} catch {
 		/* exists */

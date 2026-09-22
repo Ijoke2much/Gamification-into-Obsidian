@@ -150,6 +150,31 @@ export function describeAffinity(affinity: JourneyAffinity | undefined): string 
 		: `Weak to class: ${affinity.target}`;
 }
 
+/** Skill names (and class-member skills) currently boosted by this affinity. */
+export function skillNamesFromAffinity(affinity: JourneyAffinity | undefined): string[] {
+	if (!affinity || affinity.kind === 'neutral') return [];
+	if (affinity.kind === 'skill') {
+		return affinity.target ? [affinity.target] : [];
+	}
+	const names = [...(affinity.matchedSkills ?? [])];
+	return names;
+}
+
+export function skillMatchesGateAffinity(
+	skillName: string,
+	className: string | undefined,
+	affinity: JourneyAffinity | undefined
+): boolean {
+	if (!affinity || affinity.kind === 'neutral') return false;
+	const n = skillName.trim().toLowerCase();
+	const c = (className ?? '').trim().toLowerCase();
+	const target = (affinity.target ?? '').trim().toLowerCase();
+	if (!target) return false;
+	if (affinity.kind === 'skill') return n === target;
+	if (c === target) return true;
+	return (affinity.matchedSkills ?? []).some((s) => s.trim().toLowerCase() === n);
+}
+
 /** Compact pill label, e.g. "🎯 Body Builder" / "🛡 Physical" / "Neutral". */
 export function affinityPillLabel(affinity: JourneyAffinity | undefined): string {
 	if (!affinity || affinity.kind === 'neutral' || !affinity.target) return 'Neutral';

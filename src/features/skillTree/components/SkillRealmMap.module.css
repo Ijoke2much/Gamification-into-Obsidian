@@ -541,6 +541,44 @@
 	animation: nodePulse 2s ease-in-out infinite;
 }
 
+.nodeGate {
+	box-shadow:
+		0 0 0 2px var(--clay-accent, #5bb8b0),
+		0 0 16px color-mix(in srgb, var(--clay-accent, #5bb8b0) 45%, transparent);
+}
+
+.nodeName {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	min-width: 0;
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+}
+
+.gateChip {
+	padding: 1px 6px;
+	border-radius: 999px;
+	background: var(--clay-accent-gradient, linear-gradient(180deg, #6ac9c1, #4aa8a0));
+	color: #fff;
+	font-size: 8px;
+	font-weight: 800;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+
+.gateBanner {
+	margin: 0 0 12px;
+	padding: 8px 12px;
+	border-radius: 16px;
+	background: color-mix(in srgb, var(--clay-accent, #5bb8b0) 18%, var(--clay-surface, #f7f3ec));
+	color: var(--clay-accent-deep, #3fa39a);
+	font-size: 12px;
+	font-weight: 700;
+	line-height: 1.35;
+}
+
 @keyframes nodePulse {
 	0%,
 	100% {
@@ -560,12 +598,6 @@
 	font-size: 28px;
 	line-height: 1;
 	filter: drop-shadow(0 0 8px rgba(34, 200, 255, 0.35));
-}
-
-.nodeName {
-	font-size: 12px;
-	font-weight: 700;
-	letter-spacing: 0.06em;
 }
 
 .nodeLevel {

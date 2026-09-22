@@ -56,6 +56,9 @@ interface SkillRealmMapProps {
 	masterClass?: MasterClassBrief | null;
 	onSkillSelect?: (skill: SkillRealmSkill) => void;
 	onClassOpen?: (cls: VaultClassBrief) => void;
+	/** Skill names currently weak to an active journey / dungeon gate raid. */
+	gateSkillNames?: string[];
+	gateBanner?: string | null;
 }
 
 function defaultClassIcon(name: string): string {
@@ -80,6 +83,8 @@ export const SkillRealmMap: React.FC<SkillRealmMapProps> = ({
 	vaultClasses = [],
 	masterClass,
 	onSkillSelect,
+	gateSkillNames = [],
+	gateBanner = null,
 }) => {
 	const { isMobile } = useMobileOptimizations();
 	const [searchQuery, setSearchQuery] = useState('');
@@ -176,6 +181,15 @@ export const SkillRealmMap: React.FC<SkillRealmMapProps> = ({
 		if (!isMobile) return pathSkills;
 		return pathSkills.slice(0, mobileVisibleCount);
 	}, [isMobile, pathSkills, mobileVisibleCount]);
+
+	const gateNameSet = useMemo(
+		() => new Set(gateSkillNames.map((n) => n.trim().toLowerCase()).filter(Boolean)),
+		[gateSkillNames]
+	);
+
+	const isGateSkill = (skill: SkillRealmSkill) =>
+		gateNameSet.has(skill.name.trim().toLowerCase()) ||
+		gateNameSet.has(`class:${skill.class.trim().toLowerCase()}`);
 
 	const pathMeta = useMemo(() => {
 		if (pathSkills.length === 0) {
@@ -348,6 +362,10 @@ export const SkillRealmMap: React.FC<SkillRealmMapProps> = ({
 								</div>
 							</div>
 
+							{gateBanner ? (
+								<p className={styles.gateBanner}>{gateBanner}</p>
+							) : null}
+
 							<div className={styles.expBlock}>
 								<div className={styles.expLabelRow}>
 									<span>⚡ PATH CP</span>
@@ -380,6 +398,7 @@ export const SkillRealmMap: React.FC<SkillRealmMapProps> = ({
 										skill.progressToNext > 0 &&
 										skill.progressToNext < 100 &&
 										!skill.isMastered;
+									const onGate = isGateSkill(skill);
 									return (
 										<div key={skill.name} className={styles.nodeRow}>
 											{idx > 0 ? (
@@ -396,6 +415,7 @@ export const SkillRealmMap: React.FC<SkillRealmMapProps> = ({
 													skill.isMastered ? styles.nodeMastered : '',
 													locked ? styles.nodeLocked : '',
 													training ? styles.nodeTraining : '',
+													onGate ? styles.nodeGate : '',
 												]
 													.filter(Boolean)
 													.join(' ')}
@@ -404,7 +424,12 @@ export const SkillRealmMap: React.FC<SkillRealmMapProps> = ({
 												<span className={styles.nodeEmoji}>
 													{skillNodeEmoji(skill)}
 												</span>
-												<span className={styles.nodeName}>{skill.name}</span>
+												<span className={styles.nodeName}>
+													{skill.name}
+													{onGate ? (
+														<span className={styles.gateChip}>Gate</span>
+													) : null}
+												</span>
 												<span className={styles.nodeLevel}>
 													Lv {skill.currentLevel}
 												</span>

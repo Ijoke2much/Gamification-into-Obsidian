@@ -13,6 +13,7 @@ import { PlayerInfoCard } from "../../features/player/components/PlayerInfoCard"
 import { PenaltyStatusCard } from "../../features/player/components/PenaltyStatusCard";
 import { ActiveArtifactsCard } from "../../features/player/components/ActiveArtifactsCard";
 import { ActiveBuffsCard } from "../../features/player/components/ActiveBuffsCard";
+import { WeeklySkillsCard } from "../../features/player/components/WeeklySkillsCard";
 import { ClickableTooltip } from "../../shared/components/ui/ClickableTooltip";
 import { GlobalNotificationSystem } from "../../shared/components/ui/GlobalNotificationSystem";
 import { CeremonyHost } from "../../shared/components/ui/CeremonyHost";
@@ -1217,6 +1218,13 @@ ${testResults.join('\n')}`;
                                 </div>
                                 )}
 
+                                {(!isMobile || mobileHeavyReady) && (
+                                    <WeeklySkillsCard
+                                        vault={plugin.app.vault}
+                                        collapsed={isMobile}
+                                    />
+                                )}
+
                                 {/* Buffs / Recovery / Artifacts: mobile collapsed + lazy after heavy-ready */}
                                 {(!isMobile || mobileHeavyReady) && (
                                     <ActiveBuffsCard collapsed={isMobile} />
@@ -1342,13 +1350,13 @@ ${testResults.join('\n')}`;
             document.body
         )}
 
-        {/* Skill Tree Modal — mobile uses Realm Map lite; desktop unchanged */}
+        {/* Skills modal — phone progress list; desktop Canvas / Manage / Create */}
         {showSkillTreeModal && (
             <SkillTreeModal
                 isOpen={showSkillTreeModal}
                 onClose={() => setShowSkillTreeModal(false)}
                 plugin={plugin}
-                initialTab="mobile"
+                initialTab={isMobile ? 'mobile' : 'overview'}
             />
         )}
         </div>

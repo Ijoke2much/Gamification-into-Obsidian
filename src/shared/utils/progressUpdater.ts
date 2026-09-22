@@ -403,6 +403,19 @@ export async function updateSkillProgress(vault: Vault, skillPath: string, cp: n
     showGameNotice(`Gained ${cp} CP for skill: ${frontmatter.name || skillPath}`, 0);
     document.dispatchEvent(new Event('stats-updated'));
 
+    void import('../../features/skillTree/utils/skillCpLog')
+      .then(({ recordSkillCpGain }) =>
+        recordSkillCpGain(vault, {
+          skillName: String(frontmatter.name || skillPath),
+          className: typeof frontmatter.class === 'string' ? frontmatter.class : undefined,
+          skillPath,
+          cp,
+        })
+      )
+      .catch(() => {
+        /* weekly log is optional */
+      });
+
     // --- AUTO-UPDATE ASSOCIATED STATS ---
     await updateAssociatedStats(vault, skillPath, String(frontmatter.name || skillPath), cp);
 

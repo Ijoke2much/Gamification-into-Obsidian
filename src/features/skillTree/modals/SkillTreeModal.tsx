@@ -25,6 +25,9 @@ import { DEFAULT_PLAYER } from '../../../data/models/PlayerData';
 import { readPlayerData } from '../../../features/player/utils/playerDataUtils';
 import { useMasterClassProgress } from '../../../features/player/hooks/useMasterClassProgress';
 import { useMobileOptimizations } from '../../../shared/hooks/useMobileOptimizations';
+import { gateTrainingBanner, resolveGateSkillNames } from '../utils/activeGateTraining';
+import { BOSS_RAID_UPDATED_EVENT } from '../../quests/utils/bossRaidService';
+import { JOURNEY_UPDATED_EVENT } from '../../quests/utils/journeyRunService';
 import styles from './SkillTreeModal.module.css';
 import { pixelNotice } from '../../../shared/utils/noticeUtils';
 const matter = require('gray-matter');
@@ -77,7 +80,7 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
     isOpen,
     onClose,
     plugin,
-    initialTab = 'mobile'
+    initialTab = 'overview'
 }) => {
     const { isMobile } = useMobileOptimizations();
     const [activeTab, setActiveTab] = useState<SkillTreeModalTab>(initialTab);
@@ -93,16 +96,21 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
     
     const [codexSkill, setCodexSkill] = useState<SkillMetadata | null>(null);
     const [playerMasterClass, setPlayerMasterClass] = useState('');
+    const [gateSkillNames, setGateSkillNames] = useState<string[]>([]);
+    const [gateBanner, setGateBanner] = useState<string | null>(null);
     
     const { classIcon: masterClassIcon, progress: masterClassProgress } =
         useMasterClassProgress(plugin, playerMasterClass || undefined);
 
-    // Phone: always land on Realm Map; leave desktop tab choice alone
+    // Phone: Skills opens the progress list. Desktop never uses that tab.
     useEffect(() => {
-        if (isOpen && isMobile) {
+        if (!isOpen) return;
+        if (isMobile) {
             setActiveTab('mobile');
             setShowMobileAdvanced(false);
+            return;
         }
+        setActiveTab((tab) => (tab === 'mobile' ? 'overview' : tab));
     }, [isOpen, isMobile]);
     
     // Create form states
@@ -134,6 +142,20 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
         }
     }, [isOpen]);
 
+    useEffect(() => {
+        if (!isOpen) return;
+        const refreshGate = () => {
+            setGateSkillNames(resolveGateSkillNames(skills));
+            setGateBanner(gateTrainingBanner());
+        };
+        window.addEventListener(BOSS_RAID_UPDATED_EVENT, refreshGate);
+        window.addEventListener(JOURNEY_UPDATED_EVENT, refreshGate);
+        return () => {
+            window.removeEventListener(BOSS_RAID_UPDATED_EVENT, refreshGate);
+            window.removeEventListener(JOURNEY_UPDATED_EVENT, refreshGate);
+        };
+    }, [isOpen, skills]);
+
     const loadSkillData = async () => {
         try {
             setIsLoading(true);
@@ -160,6 +182,8 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
             setSkills(allSkills);
             setAllClasses(allClassesData);
             setAllStats(allStatsData);
+            setGateSkillNames(resolveGateSkillNames(allSkills));
+            setGateBanner(gateTrainingBanner());
 
             const classGroups = allSkills.reduce((acc, skill) => {
                 if (!acc[skill.class]) acc[skill.class] = [];
@@ -836,12 +860,15 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
                 </div>
 
                 <div className={styles.tabNavigation}>
-                    <button 
-                        className={`${styles.tab} ${activeTab === 'mobile' ? styles.active : ''}`}
-                        onClick={() => setActiveTab('mobile')}
-                    >
-                        ⚔ Realm Map
-                    </button>
+                    {isMobile && showMobileAdvanced && (
+                        <button
+                            type="button"
+                            className={`${styles.tab} ${activeTab === 'mobile' ? styles.active : ''}`}
+                            onClick={() => setActiveTab('mobile')}
+                        >
+                            Skills
+                        </button>
+                    )}
                     {/* Canvas / Manage / Create stay desktop-first; optional Advanced on phone */}
                     {(!isMobile || showMobileAdvanced) && (
                         <>
@@ -881,6 +908,7 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
                             onClick={async () => {
                                 const next = !showMobileAdvanced;
                                 setShowMobileAdvanced(next);
+                                if (!next) setActiveTab('mobile');
                                 if (next && allStats.length === 0) {
                                     try {
                                         setAllStats(await getAllStats(plugin.app.vault));
@@ -920,7 +948,7 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
                                     </div>
                                     
                                     <div className={styles.skillOverview}>
-                                        <h4 className={styles.sectionSubtitle}>Realm map</h4>
+                                        <h4 className={styles.sectionSubtitle}>At a glance</h4>
                                         <div className={styles.stats}>
                                             <div className={styles.statItem}>
                                                 <span>Total Skills:</span>
@@ -1310,7 +1338,7 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
                                 </div>
                             )}
 
-                            {activeTab === 'mobile' && (
+                            {isMobile && activeTab === 'mobile' && (
                                 <div className={styles.mobileTab}>
                                     <SkillRealmMap
                                         masterClass={
@@ -1336,6 +1364,8 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
                                             masterClass: c.masterClass,
                                         }))}
                                         skills={skills.map(skill => skillToProgressView(skill))}
+                                        gateSkillNames={gateSkillNames}
+                                        gateBanner={gateBanner}
                                         onSkillSelect={(skill) => {
                                             const selectedSkill = skills.find(s => s.name === skill.name);
                                             if (selectedSkill) {

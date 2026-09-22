@@ -1021,6 +1021,32 @@
   flex-shrink: 0;
 }
 
+.inboxScheduleBtn {
+  appearance: none;
+  -webkit-appearance: none;
+  flex-shrink: 0;
+  margin: 0;
+  padding: 4px 8px;
+  border: none;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--clay-accent, #5bb8b0) 22%, var(--clay-surface, #f7f3ec));
+  box-shadow: var(--clay-shadow);
+  color: var(--clay-accent-deep, #3fa39a);
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+
+.container.pixelSidebarQuestShell .inboxScheduleBtn {
+  border-radius: 0;
+  border: 1px solid rgba(34, 200, 255, 0.55);
+  background: rgba(8, 28, 54, 0.98);
+  box-shadow: none;
+  color: #22c8ff;
+}
+
 .badgePriority {
   background: rgba(248, 113, 113, 0.14);
   border-color: rgba(248, 113, 113, 0.42);

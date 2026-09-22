@@ -1,7 +1,10 @@
-import React, { forwardRef, useImperativeHandle, useMemo, useRef } from "react";
+import React, { forwardRef, useImperativeHandle, useMemo, useRef, useState } from "react";
 import type { Quest } from "../../../features/quests/utils/taskParser";
 import { getQuestEnergyCost } from "../../../shared/utils/questCompletionPipeline";
-import { QUEST_SCHEDULE_DRAG_MIME } from "../../../features/quests/utils/questDateRange";
+import {
+	parseQuestScheduleDragId,
+	QUEST_SCHEDULE_DRAG_MIME,
+} from "../../../features/quests/utils/questDateRange";
 import styles from "./MobileDayAgenda.module.css";
 
 export type AgendaThemeKey = "violet" | "blue" | "pink" | "amber" | "green" | "red";
@@ -33,6 +36,8 @@ interface MobileDayAgendaProps {
 	onAddAtMinutes: (minutesFromMidnight: number) => void;
 	scheduleDragEnabled?: boolean;
 	onDropQuestAtMinutes?: (quest: Quest, minutesFromMidnight: number) => void;
+	/** Drop on the plan canvas or a large free hole — parent should open a time sheet. */
+	onDropQuestAskTime?: (quest: Quest, suggestedMinutes: number) => void;
 	/** Inbox + board quests so a drop can land a card that is not already on this day. */
 	droppableQuests?: Quest[];
 }
@@ -44,6 +49,8 @@ type AgendaRow =
 
 /** Only surface free-time rows for meaningful holes (keeps the list calm). */
 const MIN_GAP_MINUTES = 45;
+/** Midpoint of a hole this large is a weak default — ask for a clock time. */
+const ASK_TIME_GAP_MINUTES = 120;
 const LONG_PRESS_MS = 420;
 
 export const MobileDayAgenda = forwardRef<MobileDayAgendaHandle, MobileDayAgendaProps>(
@@ -60,6 +67,7 @@ export const MobileDayAgenda = forwardRef<MobileDayAgendaHandle, MobileDayAgenda
 			onAddAtMinutes,
 			scheduleDragEnabled = false,
 			onDropQuestAtMinutes,
+			onDropQuestAskTime,
 			droppableQuests = [],
 		},
 		ref
@@ -68,6 +76,7 @@ export const MobileDayAgenda = forwardRef<MobileDayAgendaHandle, MobileDayAgenda
 		const nowRef = useRef<HTMLDivElement | null>(null);
 		const longPressTimer = useRef<number | null>(null);
 		const longPressFired = useRef(false);
+		const [canvasDropHover, setCanvasDropHover] = useState(false);
 
 		const sorted = useMemo(
 			() =>
@@ -172,17 +181,8 @@ export const MobileDayAgenda = forwardRef<MobileDayAgendaHandle, MobileDayAgenda
 		});
 
 		const findQuestFromDrag = (e: React.DragEvent): Quest | null => {
-			const raw =
-				e.dataTransfer.getData(QUEST_SCHEDULE_DRAG_MIME) ||
-				e.dataTransfer.getData("text/plain");
-			if (!raw) return null;
-			let id = raw;
-			try {
-				const parsed = JSON.parse(raw) as { id?: string };
-				if (parsed.id) id = parsed.id;
-			} catch {
-				/* text/plain id */
-			}
+			const id = parseQuestScheduleDragId(e.dataTransfer);
+			if (!id) return null;
 			return (
 				blocks.find((b) => b.quest.id === id)?.quest ??
 				droppableQuests.find((q) => q.id === id || q.title === id) ??
@@ -190,17 +190,69 @@ export const MobileDayAgenda = forwardRef<MobileDayAgendaHandle, MobileDayAgenda
 			);
 		};
 
+		const defaultAskMinutes = () => {
+			if (isToday) {
+				const nowMin = currentTime.getHours() * 60 + currentTime.getMinutes();
+				return Math.max(plannerStartHour * 60, Math.min(plannerEndHour * 60, nowMin));
+			}
+			return Math.max(plannerStartHour * 60, 9 * 60);
+		};
+
 		const bindDropAt = (minutes: number) => {
 			if (!scheduleDragEnabled || !onDropQuestAtMinutes) return {};
 			return {
 				onDragOver: (e: React.DragEvent) => {
 					e.preventDefault();
+					e.stopPropagation();
 					e.dataTransfer.dropEffect = "move";
 				},
 				onDrop: (e: React.DragEvent) => {
 					e.preventDefault();
+					e.stopPropagation();
+					setCanvasDropHover(false);
 					const quest = findQuestFromDrag(e);
 					if (quest) onDropQuestAtMinutes(quest, minutes);
+				},
+			};
+		};
+
+		const bindAskTime = (suggestedMinutes: number) => {
+			if (!scheduleDragEnabled || !onDropQuestAskTime) return {};
+			return {
+				onDragOver: (e: React.DragEvent) => {
+					e.preventDefault();
+					e.stopPropagation();
+					e.dataTransfer.dropEffect = "move";
+				},
+				onDrop: (e: React.DragEvent) => {
+					e.preventDefault();
+					e.stopPropagation();
+					setCanvasDropHover(false);
+					const quest = findQuestFromDrag(e);
+					if (quest) onDropQuestAskTime(quest, suggestedMinutes);
+				},
+			};
+		};
+
+		const bindCanvasAsk = () => {
+			if (!scheduleDragEnabled || !onDropQuestAskTime) return {};
+			return {
+				onDragOver: (e: React.DragEvent) => {
+					e.preventDefault();
+					e.dataTransfer.dropEffect = "move";
+					setCanvasDropHover(true);
+				},
+				onDragLeave: (e: React.DragEvent) => {
+					if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+						setCanvasDropHover(false);
+					}
+				},
+				onDrop: (e: React.DragEvent) => {
+					e.preventDefault();
+					e.stopPropagation();
+					setCanvasDropHover(false);
+					const quest = findQuestFromDrag(e);
+					if (quest) onDropQuestAskTime(quest, defaultAskMinutes());
 				},
 			};
 		};
@@ -208,16 +260,16 @@ export const MobileDayAgenda = forwardRef<MobileDayAgendaHandle, MobileDayAgenda
 		if (sorted.length === 0) {
 			return (
 				<div
-					className={styles.agenda}
+					className={`${styles.agenda}${canvasDropHover ? ` ${styles.agendaDropHover}` : ""}`}
 					ref={rootRef}
 					data-mobile-day-agenda
 					aria-label="Day plan agenda"
-					{...bindDropAt(Math.max(plannerStartHour * 60, 9 * 60))}
+					{...bindCanvasAsk()}
 				>
 					<div className={styles.empty}>
 						<span>No quests planned for this day</span>
 						<p className={styles.emptyHint}>
-							Schedule a due time, mark a quest for today, or add one into an open slot.
+							Drop a quest here to pick a time, or add a timed quest.
 						</p>
 						<button
 							type="button"
@@ -233,11 +285,15 @@ export const MobileDayAgenda = forwardRef<MobileDayAgendaHandle, MobileDayAgenda
 
 		return (
 			<div
-				className={styles.agenda}
+				className={`${styles.agenda}${canvasDropHover ? ` ${styles.agendaDropHover}` : ""}`}
 				ref={rootRef}
 				data-mobile-day-agenda
 				aria-label="Day plan agenda"
+				{...bindCanvasAsk()}
 			>
+				{canvasDropHover && (
+					<div className={styles.canvasDropHint}>Drop to pick a time</div>
+				)}
 				{rows.map((row, index) => {
 					const isLast = index === rows.length - 1;
 
@@ -269,11 +325,15 @@ export const MobileDayAgenda = forwardRef<MobileDayAgendaHandle, MobileDayAgenda
 					if (row.kind === "gap") {
 						const minutes = row.endMin - row.startMin;
 						const mid = Math.floor((row.startMin + row.endMin) / 2);
+						const gapDrop =
+							minutes >= ASK_TIME_GAP_MINUTES
+								? bindAskTime(mid)
+								: bindDropAt(mid);
 						return (
 							<div
 								key={row.key}
 								className={`${styles.row} ${styles.gapRow}`}
-								{...bindDropAt(mid)}
+								{...gapDrop}
 							>
 								<div className={styles.timeCol} aria-hidden="true" />
 								<div className={styles.railCol}>

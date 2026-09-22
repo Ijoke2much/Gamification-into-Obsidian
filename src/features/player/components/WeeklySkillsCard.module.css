@@ -1,0 +1,113 @@
+.card {
+	margin: 0 0 16px;
+	padding: 14px 16px 12px;
+	border: none;
+	border-radius: var(--clay-radius, 24px);
+	background: var(--clay-gradient, linear-gradient(145deg, #fbf8f2, #efe6d8));
+	box-shadow: var(--clay-shadow);
+	color: var(--clay-text, #3a342c);
+	font-family: var(--go-font-ui, "Nunito", "Segoe UI", system-ui, sans-serif);
+}
+
+.header {
+	appearance: none;
+	width: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	margin: 0;
+	padding: 0;
+	border: none;
+	background: transparent;
+	color: inherit;
+	cursor: pointer;
+	text-align: left;
+}
+
+.title {
+	font-size: 15px;
+	font-weight: 800;
+	color: var(--clay-text-strong, #2c2722);
+}
+
+.count {
+	min-width: 28px;
+	padding: 4px 10px;
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--clay-accent, #5bb8b0) 22%, var(--clay-surface, #f7f3ec));
+	color: var(--clay-accent-deep, #3fa39a);
+	font-size: 12px;
+	font-weight: 800;
+	text-align: center;
+}
+
+.body {
+	margin-top: 12px;
+}
+
+.gateBanner {
+	margin: 0 0 10px;
+	padding: 8px 12px;
+	border-radius: 16px;
+	background: color-mix(in srgb, var(--clay-accent, #5bb8b0) 18%, var(--clay-surface, #f7f3ec));
+	box-shadow: var(--clay-recessed);
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--clay-accent-deep, #3fa39a);
+}
+
+.empty {
+	margin: 0;
+	font-size: 13px;
+	color: var(--clay-text-light, #8a8278);
+	line-height: 1.4;
+}
+
+.list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	padding: 8px 12px;
+	border-radius: 16px;
+	background: var(--clay-surface-2, #efe6d8);
+	box-shadow: var(--clay-recessed-soft);
+}
+
+.name {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	min-width: 0;
+	font-size: 13px;
+	font-weight: 700;
+}
+
+.gateChip {
+	flex-shrink: 0;
+	padding: 2px 7px;
+	border-radius: 999px;
+	background: var(--clay-accent-gradient, linear-gradient(180deg, #6ac9c1, #4aa8a0));
+	color: #fff;
+	font-size: 9px;
+	font-weight: 800;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+}
+
+.cp {
+	flex-shrink: 0;
+	font-size: 12px;
+	font-weight: 800;
+	color: var(--clay-accent-deep, #3fa39a);
+}
