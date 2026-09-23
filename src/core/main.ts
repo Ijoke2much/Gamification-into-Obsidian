@@ -316,7 +316,26 @@ export default class GamifiedObsidianPlugin extends Plugin {
 
 		// Defer opening heavy React views until the user explicitly opens them.
 		// We still apply mobile optimizations once the workspace layout is ready.
+		this.registerInterval(
+			window.setInterval(() => {
+				void import('../features/focus/utils/focusCheckInService')
+					.then(({ promptFocusCheckInIfDue }) =>
+						promptFocusCheckInIfDue(this.app, this.settings)
+					)
+					.catch(() => {
+						/* check-in prompt is optional */
+					});
+			}, 60_000)
+		);
+
 		this.app.workspace.onLayoutReady(async () => {
+			void import('../features/focus/utils/focusCheckInService')
+				.then(({ promptFocusCheckInIfDue }) =>
+					promptFocusCheckInIfDue(this.app, this.settings)
+				)
+				.catch(() => {
+					/* check-in prompt is optional */
+				});
 			if (this.detectMobileDevice()) {
 				this.applyMobileOptimizationsAfterLoad();
 			}

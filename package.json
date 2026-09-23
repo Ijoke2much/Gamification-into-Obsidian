@@ -1,6 +1,6 @@
 {
 	"name": "gamified-obsidian-plugin",
-	"version": "1.0.0-beta.3",
+	"version": "1.0.0-beta.4",
 	"description": "Quests, focus encounters, and RPG progression on top of your vault notes",
 	"main": "main.js",
 	"scripts": {

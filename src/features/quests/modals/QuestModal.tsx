@@ -27,8 +27,6 @@ import {
 // import {
 //     QuestRewardItem,
 // } from "../../../features/quests/utils/questRewardsSystem";
-import { CustomRewardBuilder, EnhancedCustomReward } from "../components/CustomRewardBuilder";
-import { isShopExclusiveCustomReward } from "../utils/shopExclusiveRewards";
 import { 
     QuestModalHeader, 
     QuestModalForm, 
@@ -260,19 +258,6 @@ export const QuestModal: React.FC<QuestModalProps> = ({
         lastRewardTierRef.current = { priority, difficulty };
     }, [isOpen, priority, difficulty]);
     
-    // Reward customization (for future use)
-    // const [customRewards, setCustomRewards] = useState<Array<{ name: string; quantity: number; item?: QuestRewardItem }>>([]);
-    // const [newRewardName, setNewRewardName] = useState("");
-    // const [newRewardQuantity, setNewRewardQuantity] = useState(1);
-    
-    // Enhanced reward customization
-    const [enhancedCustomRewards, setEnhancedCustomRewards] = useState<EnhancedCustomReward[]>(
-        mode === "edit" && quest?.enhancedRewards
-            ? (quest.enhancedRewards as EnhancedCustomReward[])
-            : []
-    );
-    const [showCustomRewardBuilder, setShowCustomRewardBuilder] = useState(false);
-    
     // Random reward generation (for future use)
     // const [randomRewardRarity, setRandomRewardRarity] = useState<"common" | "uncommon" | "rare" | "epic" | "legendary">("common");
     // const [randomRewardCount, setRandomRewardCount] = useState(1);
@@ -454,25 +439,6 @@ export const QuestModal: React.FC<QuestModalProps> = ({
     const handleRemoveSubtask = (index: number) => {
         setSubtasks(subtasks.filter((_, i) => i !== index));
     };
-
-    // Handle adding enhanced custom reward
-    const handleAddEnhancedReward = (reward: EnhancedCustomReward) => {
-        if (isShopExclusiveCustomReward(reward)) {
-            pixelNotice("That treat is shop-only. Buy it in the Shop.", 2800);
-            return;
-        }
-        setEnhancedCustomRewards([...enhancedCustomRewards, reward]);
-    };
-
-    const handleRemoveEnhancedReward = (index: number) => {
-        setEnhancedCustomRewards(enhancedCustomRewards.filter((_, i) => i !== index));
-    };
-
-    // Unused handlers for future reward features
-    // const handleAddCustomReward = () => { ... };
-    // const handleAddRandomRewards = () => { ... };
-    // const handleRemoveCustomReward = (index: number) => { ... };
-    // const handleRemoveEnhancedReward = (index: number) => { ... };
 
     // Helper to ensure banner is stored as a file path (not a large data URL)
     const ensureBannerPath = async (rawBanner: string | undefined): Promise<string | undefined> => {
@@ -670,9 +636,6 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                     recur: recur || undefined,
                     estimatedTime: estimatedMinutes || undefined,
                     subtasks,
-                    customRewards: undefined,
-                    enhancedRewards:
-                        enhancedCustomRewards.length > 0 ? enhancedCustomRewards : undefined,
                     energyCost: resolvedStamina,
                     activityProfile: activityProfile === "generic" ? undefined : activityProfile,
                     project: attachedContract.trim() || undefined,
@@ -812,8 +775,6 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                     recur: recur || undefined,
                     estimatedTime: estimatedMinutes || undefined,
                     subtasks: subtasks,
-                    customRewards: undefined,
-                    enhancedRewards: enhancedCustomRewards.length > 0 ? enhancedCustomRewards : undefined,
                     energyCost: resolvedStamina,
                     activityProfile: activityProfile === "generic" ? undefined : activityProfile,
                     project: attachedContract.trim() || undefined,
@@ -1032,9 +993,6 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                             setNewSubtaskDescription={setNewSubtaskDescription}
                             handleAddSubtask={handleAddSubtask}
                             handleRemoveSubtask={handleRemoveSubtask}
-                            customRewards={enhancedCustomRewards}
-                            onOpenCustomRewardBuilder={() => setShowCustomRewardBuilder(true)}
-                            onRemoveCustomReward={handleRemoveEnhancedReward}
                             isMobile={isMobile}
                         />
 
@@ -1056,24 +1014,6 @@ export const QuestModal: React.FC<QuestModalProps> = ({
         </div>,
         document.body
     );
-
-    // Return both modals if custom reward builder is open
-    if (showCustomRewardBuilder) {
-        return (
-            <>
-                {questModalPortal}
-                {ReactDOM.createPortal(
-                    <CustomRewardBuilder
-                        isOpen={showCustomRewardBuilder}
-                        onClose={() => setShowCustomRewardBuilder(false)}
-                        onAddReward={handleAddEnhancedReward}
-                        isMobile={isMobile}
-                    />,
-                    document.body
-                )}
-            </>
-        );
-    }
 
     return questModalPortal;
 };

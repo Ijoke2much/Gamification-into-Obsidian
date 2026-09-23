@@ -237,8 +237,8 @@ export class QuestCompletionTracker {
 			}
 			const rewardResult = await awardQuestRewards(this.app.vault, rewardedQuest, settings, this.app);
 			try {
-				const { grantAttachedQuestLoot } = await import('../utils/questRewardsSystem');
-				await grantAttachedQuestLoot(this.app, rewardedQuest);
+				const { grantRolledCustomLoot } = await import('../utils/questCustomRewardPool');
+				await grantRolledCustomLoot(this.app, rewardedQuest);
 			} catch (error) {
 				console.error('[QuestTracker] Custom rewards failed:', error);
 			}

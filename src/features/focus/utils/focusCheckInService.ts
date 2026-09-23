@@ -1,5 +1,6 @@
-import { App, TFile } from 'obsidian';
+import { App, Notice, TFile } from 'obsidian';
 import type { GamificationPluginSettings } from '../../../core/settings';
+import { GAMIFIED_NOTICE_CLASS, pixelNotice } from '../../../shared/utils/noticeUtils';
 
 const STATE_PATH = '.obsidian/plugins/Gamification-into-Obsidian/focus-checkin-state.json';
 export const FOCUS_CHECKIN_CHANGED_EVENT = 'gamification:focus-checkin-changed';
@@ -11,6 +12,8 @@ export interface FocusCheckInState {
 	snoozedUntil: string | null;
 	/** Debug: force the check-in button to appear. */
 	debugForceDue: boolean;
+	/** Window key we already toasted so the notice does not spam. */
+	duePromptKey: string | null;
 }
 
 let cachedState: FocusCheckInState | null = null;
@@ -20,6 +23,7 @@ function defaultState(): FocusCheckInState {
 		lastCheckInAt: new Date().toISOString(),
 		snoozedUntil: null,
 		debugForceDue: false,
+		duePromptKey: null,
 	};
 }
 
@@ -147,6 +151,7 @@ export async function completeFocusCheckIn(
 	state.lastCheckInAt = new Date().toISOString();
 	state.snoozedUntil = null;
 	state.debugForceDue = false;
+	state.duePromptKey = null;
 	await saveFocusCheckInState(app, state);
 }
 
@@ -155,6 +160,7 @@ export async function skipFocusCheckIn(app: App): Promise<void> {
 	state.lastCheckInAt = new Date().toISOString();
 	state.snoozedUntil = null;
 	state.debugForceDue = false;
+	state.duePromptKey = null;
 	await saveFocusCheckInState(app, state);
 }
 
@@ -166,6 +172,7 @@ export async function snoozeFocusCheckIn(
 	const state = await loadFocusCheckInState(app);
 	state.snoozedUntil = new Date(Date.now() + minutes * 60 * 1000).toISOString();
 	state.debugForceDue = false;
+	state.duePromptKey = null;
 	await saveFocusCheckInState(app, state);
 }
 
@@ -173,6 +180,7 @@ export async function snoozeFocusCheckIn(
 export async function debugSimulateCheckInDue(app: App): Promise<void> {
 	const state = await loadFocusCheckInState(app);
 	state.debugForceDue = true;
+	state.duePromptKey = null;
 	await saveFocusCheckInState(app, state);
 }
 
@@ -181,3 +189,101 @@ export function subscribeFocusCheckInChanges(callback: () => void): () => void {
 	document.addEventListener(FOCUS_CHECKIN_CHANGED_EVENT, handler);
 	return () => document.removeEventListener(FOCUS_CHECKIN_CHANGED_EVENT, handler);
 }
+
+let dueNotice: Notice | null = null;
+let prompting = false;
+
+function dueWindowKey(state: FocusCheckInState): string {
+	return `${state.lastCheckInAt ?? 'never'}|${state.debugForceDue ? 'debug' : 'live'}`;
+}
+
+function showCheckInActionNotice(
+	snoozeMinutes: number,
+	onCheckIn: () => void,
+	onSnooze: () => void,
+	onSkip: () => void
+): Notice | null {
+	const root = document.createElement('div');
+	root.classList.add(GAMIFIED_NOTICE_CLASS, 'gamification-checkin-notice');
+
+	const title = document.createElement('div');
+	title.className = 'gamification-checkin-notice-title';
+	title.textContent = 'Time for a check-in';
+	root.appendChild(title);
+
+	const hint = document.createElement('div');
+	hint.className = 'gamification-checkin-notice-hint';
+	hint.textContent = 'What did you work on? Do it now, snooze, or skip this window.';
+	root.appendChild(hint);
+
+	const actions = document.createElement('div');
+	actions.className = 'gamification-checkin-notice-actions';
+
+	const addBtn = (label: string, action: () => void) => {
+		const btn = document.createElement('button');
+		btn.type = 'button';
+		btn.className = 'gamification-checkin-notice-btn';
+		btn.textContent = label;
+		btn.addEventListener('click', (event) => {
+			event.preventDefault();
+			event.stopPropagation();
+			dueNotice?.hide();
+			dueNotice = null;
+			action();
+		});
+		actions.appendChild(btn);
+	};
+
+	addBtn('Check in', onCheckIn);
+	addBtn(`Snooze ${snoozeMinutes}m`, onSnooze);
+	addBtn('Skip', onSkip);
+	root.appendChild(actions);
+
+	const fragment = document.createDocumentFragment();
+	fragment.appendChild(root);
+	return pixelNotice(fragment, 0, 'high');
+}
+
+/** Toast once per due window. Safe to call from a timer. */
+export async function promptFocusCheckInIfDue(
+	app: App,
+	settings: GamificationPluginSettings
+): Promise<void> {
+	if (prompting) return;
+	if (settings.enableFocusCheckIns === false) return;
+	if (settings.enableFocusCheckInNotices === false) return;
+	if (!(await isFocusCheckInDue(app, settings))) {
+		dueNotice?.hide();
+		dueNotice = null;
+		return;
+	}
+
+	const state = await loadFocusCheckInState(app);
+	const key = dueWindowKey(state);
+	if (state.duePromptKey === key) return;
+	if (dueNotice) return;
+
+	prompting = true;
+	try {
+		state.duePromptKey = key;
+		await saveFocusCheckInState(app, state);
+		const snoozeMinutes = settings.focusCheckInSnoozeMinutes ?? 30;
+		dueNotice = showCheckInActionNotice(
+			snoozeMinutes,
+			() => {
+				void import('../modals/FocusCheckInModal').then(({ openFocusCheckInModal }) => {
+					openFocusCheckInModal(app, settings);
+				});
+			},
+			() => {
+				void snoozeFocusCheckIn(app, settings);
+			},
+			() => {
+				void skipFocusCheckIn(app);
+			}
+		);
+	} finally {
+		prompting = false;
+	}
+}
+

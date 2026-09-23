@@ -29,6 +29,8 @@ import { DataBackupPanel } from './DataBackupPanel';
 import { GameplayOnboardingModal } from './GameplayOnboardingModal';
 import { areSettingsEqual } from '../../../shared/utils/settingsSnapshot';
 import type { GameplayProfile } from '../../../core/settings';
+import { CustomRewardBuilder } from '../../quests/components/CustomRewardBuilder';
+import { isShopExclusiveCustomReward } from '../../quests/utils/shopExclusiveRewards';
 
 interface SettingsUIProps {
   settings: GamificationPluginSettings;
@@ -750,7 +752,11 @@ const CurrencySettingsSection: React.FC<{
 const QuestSettingsSection: React.FC<{
   settings: GamificationPluginSettings;
   onSettingChange: (path: string, value: unknown) => void;
-}> = ({ settings, onSettingChange }) => (
+}> = ({ settings, onSettingChange }) => {
+  const [rewardBuilderOpen, setRewardBuilderOpen] = useState(false);
+  const pool = settings.questCustomRewardPool ?? [];
+
+  return (
   <div className={styles.settingsSection}>
     <Card className={styles.settingsCard}>
       <h3>📋 Quest Board Settings</h3>
@@ -800,8 +806,59 @@ const QuestSettingsSection: React.FC<{
         </label>
       </div>
     </Card>
+    <Card className={styles.settingsCard}>
+      <h3>🎁 Quest loot</h3>
+      <p className={styles.helperText}>
+        Items in this pool can drop when a quest completes. Common items drop more often.
+        Harder, higher-XP quests make rarer drops more likely. Coffee breaks stay in the Shop.
+      </p>
+      <div className={styles.settingGroup}>
+        {pool.length === 0 && (
+          <div className={styles.helperText}>No custom loot yet. Add materials or items to the pool.</div>
+        )}
+        {pool.map((reward, index) => (
+          <div key={`${reward.name}-${index}`} className={styles.questLocationRow}>
+            <span>
+              {reward.icon} {reward.name}
+              {reward.quantity > 1 ? ` ×${reward.quantity}` : ''}
+              {' · '}
+              {reward.rarity}
+            </span>
+            <button
+              type="button"
+              className={styles.removeButton}
+              onClick={() => {
+                const next = pool.filter((_, i) => i !== index);
+                onSettingChange('questCustomRewardPool', next);
+              }}
+            >
+              Remove
+            </button>
+          </div>
+        ))}
+        <button
+          type="button"
+          className={styles.addButton}
+          onClick={() => setRewardBuilderOpen(true)}
+        >
+          Add loot item
+        </button>
+      </div>
+      {rewardBuilderOpen && (
+        <CustomRewardBuilder
+          isOpen={rewardBuilderOpen}
+          onClose={() => setRewardBuilderOpen(false)}
+          onAddReward={(reward) => {
+            if (isShopExclusiveCustomReward(reward)) return;
+            onSettingChange('questCustomRewardPool', [...pool, reward]);
+            setRewardBuilderOpen(false);
+          }}
+        />
+      )}
+    </Card>
   </div>
-);
+  );
+};
 
 const EnergySettingsSection: React.FC<{
   settings: GamificationPluginSettings;
@@ -2036,8 +2093,8 @@ const FileSettingsSection: React.FC<{
       </div>
       <h4>Focus check-ins</h4>
       <p className={styles.helperText}>
-        While Obsidian is open, a <strong>Check in</strong> button appears after your chosen interval.
-        Click it to reflect on what you did — entries save to your check-in log.
+        While Obsidian is open, a <strong>Check-in</strong> chip appears after your chosen interval.
+        A notice also asks whether to check in now, snooze, or skip.
       </p>
       <div className={styles.settingGroup}>
         <label>
@@ -2083,6 +2140,14 @@ const FileSettingsSection: React.FC<{
               onSettingChange('focusCheckInSnoozeMinutes', Math.max(5, parseInt(e.target.value, 10) || 30))
             }
           />
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={settings.enableFocusCheckInNotices !== false}
+            onChange={(e) => onSettingChange('enableFocusCheckInNotices', e.target.checked)}
+          />
+          Show a notice when a check-in is due
         </label>
       </div>
       <p className={styles.helperText}>

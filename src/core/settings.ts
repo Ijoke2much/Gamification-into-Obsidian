@@ -26,6 +26,23 @@ export interface QuestSaveLocation {
   filePath: string;
 }
 
+/** Player-defined loot that can drop on quest complete (rarity-weighted). */
+export interface QuestCustomRewardSetting {
+  name: string;
+  type: 'item' | 'material' | 'effect';
+  category?: string;
+  rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+  icon: string;
+  description: string;
+  quantity: number;
+  materialData?: {
+    category: 'herb' | 'mineral' | 'essence' | 'crystal' | 'organic' | 'mystical';
+    quality: 'fresh' | 'normal' | 'dried' | 'refined' | 'masterwork';
+    baseValue: number;
+  };
+  effects?: string[];
+}
+
 // ============================================================================
 // ENHANCED SETTINGS CATEGORIES WITH GROUPED PANELS
 // ============================================================================
@@ -53,7 +70,7 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
         icon: '🎯',
         description: 'Quest board, auto-refresh, and display settings',
         color: '#4CAF50',
-        settings: ['enableSidebarQuestBoard', 'questBoardPosition', 'autoRefreshTasks', 'hideCompletedQuests', 'questRefreshInterval']
+        settings: ['enableSidebarQuestBoard', 'questBoardPosition', 'autoRefreshTasks', 'hideCompletedQuests', 'questRefreshInterval', 'questCustomRewardPool']
       },
       {
         id: 'timeline',
@@ -802,6 +819,11 @@ export interface GamificationPluginSettings {
   focusCheckInLogPath?: string;
   /** Minutes to snooze when user clicks Snooze. */
   focusCheckInSnoozeMinutes?: number;
+  /** Show an action notice when a check-in is due (in addition to the tab chip). */
+  enableFocusCheckInNotices?: boolean;
+
+  /** Custom loot table rolled on quest complete. */
+  questCustomRewardPool?: QuestCustomRewardSetting[];
 
   // Custom game item definitions (e.g., weapons and real-world artifacts)
   // These are configuration-level definitions which can be rendered in the
@@ -1054,6 +1076,8 @@ export const DEFAULT_SETTINGS: GamificationPluginSettings = {
   focusCheckInIntervalMinutes: 120,
   focusCheckInLogPath: 'CheckIns.md',
   focusCheckInSnoozeMinutes: 30,
+  enableFocusCheckInNotices: true,
+  questCustomRewardPool: [],
 
   // Timeline & Calendar Default Settings
   timelineViewSettings: {

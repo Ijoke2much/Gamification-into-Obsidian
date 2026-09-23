@@ -126,3 +126,46 @@ html[data-gamification-visual-theme='clay'] .notice-container .notice .gamificat
     letter-spacing: 0.08em !important;
     color: var(--clay-accent-deep, #3fa39a) !important;
 }
+
+.notice-container .notice .gamification-checkin-notice {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    cursor: default !important;
+    white-space: normal !important;
+}
+
+.notice-container .notice .gamification-checkin-notice-title {
+    font-weight: 800;
+}
+
+.notice-container .notice .gamification-checkin-notice-hint {
+    font-size: 14px;
+    opacity: 0.85;
+}
+
+.notice-container .notice .gamification-checkin-notice-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.notice-container .notice .gamification-checkin-notice-btn {
+    border: none;
+    border-radius: 16px;
+    padding: 8px 12px;
+    font: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    background: var(--clay-surface-2, var(--background-secondary));
+    color: inherit;
+    box-shadow: var(--clay-recessed, none);
+}
+
+.notice-container .notice .gamification-checkin-notice-btn:first-child {
+    background: var(--clay-accent, #5bb8b0);
+    color: #fff;
+    box-shadow: var(--clay-shadow, none);
+}

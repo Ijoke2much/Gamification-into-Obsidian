@@ -142,8 +142,8 @@ export async function persistQuestCompletion(
 	});
 	const result = await awardQuestRewards(app.vault, rewardedQuest, rewardSettings, app);
 	try {
-		const { grantAttachedQuestLoot } = await import('./questRewardsSystem');
-		await grantAttachedQuestLoot(app, rewardedQuest);
+		const { grantRolledCustomLoot } = await import('./questCustomRewardPool');
+		await grantRolledCustomLoot(app, rewardedQuest);
 	} catch (error) {
 		console.error('[Quest persist] Custom rewards failed:', error);
 	}
