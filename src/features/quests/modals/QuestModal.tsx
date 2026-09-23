@@ -28,6 +28,7 @@ import {
 //     QuestRewardItem,
 // } from "../../../features/quests/utils/questRewardsSystem";
 import { CustomRewardBuilder, EnhancedCustomReward } from "../components/CustomRewardBuilder";
+import { isShopExclusiveCustomReward } from "../utils/shopExclusiveRewards";
 import { 
     QuestModalHeader, 
     QuestModalForm, 
@@ -265,7 +266,11 @@ export const QuestModal: React.FC<QuestModalProps> = ({
     // const [newRewardQuantity, setNewRewardQuantity] = useState(1);
     
     // Enhanced reward customization
-    const [enhancedCustomRewards, setEnhancedCustomRewards] = useState<EnhancedCustomReward[]>([]);
+    const [enhancedCustomRewards, setEnhancedCustomRewards] = useState<EnhancedCustomReward[]>(
+        mode === "edit" && quest?.enhancedRewards
+            ? (quest.enhancedRewards as EnhancedCustomReward[])
+            : []
+    );
     const [showCustomRewardBuilder, setShowCustomRewardBuilder] = useState(false);
     
     // Random reward generation (for future use)
@@ -452,7 +457,15 @@ export const QuestModal: React.FC<QuestModalProps> = ({
 
     // Handle adding enhanced custom reward
     const handleAddEnhancedReward = (reward: EnhancedCustomReward) => {
+        if (isShopExclusiveCustomReward(reward)) {
+            pixelNotice("That treat is shop-only. Buy it in the Shop.", 2800);
+            return;
+        }
         setEnhancedCustomRewards([...enhancedCustomRewards, reward]);
+    };
+
+    const handleRemoveEnhancedReward = (index: number) => {
+        setEnhancedCustomRewards(enhancedCustomRewards.filter((_, i) => i !== index));
     };
 
     // Unused handlers for future reward features
@@ -658,7 +671,7 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                     estimatedTime: estimatedMinutes || undefined,
                     subtasks,
                     customRewards: undefined,
-                    enhancedCustomRewards:
+                    enhancedRewards:
                         enhancedCustomRewards.length > 0 ? enhancedCustomRewards : undefined,
                     energyCost: resolvedStamina,
                     activityProfile: activityProfile === "generic" ? undefined : activityProfile,
@@ -800,7 +813,7 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                     estimatedTime: estimatedMinutes || undefined,
                     subtasks: subtasks,
                     customRewards: undefined,
-                    enhancedCustomRewards: enhancedCustomRewards.length > 0 ? enhancedCustomRewards : undefined,
+                    enhancedRewards: enhancedCustomRewards.length > 0 ? enhancedCustomRewards : undefined,
                     energyCost: resolvedStamina,
                     activityProfile: activityProfile === "generic" ? undefined : activityProfile,
                     project: attachedContract.trim() || undefined,
@@ -1019,6 +1032,9 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                             setNewSubtaskDescription={setNewSubtaskDescription}
                             handleAddSubtask={handleAddSubtask}
                             handleRemoveSubtask={handleRemoveSubtask}
+                            customRewards={enhancedCustomRewards}
+                            onOpenCustomRewardBuilder={() => setShowCustomRewardBuilder(true)}
+                            onRemoveCustomReward={handleRemoveEnhancedReward}
                             isMobile={isMobile}
                         />
 

@@ -1,5 +1,6 @@
 import React from "react";
 import type { QuestTimelineTheme } from "../../utils/taskParser";
+import type { EnhancedCustomReward } from "../../components/CustomRewardBuilder";
 import styles from "../QuestModal.module.css";
 import { DurationWheelPicker } from "./DurationWheelPicker";
 
@@ -36,6 +37,9 @@ interface QuestModalAdvancedOptionsProps {
     setNewSubtaskDescription: (description: string) => void;
     handleAddSubtask: () => void;
     handleRemoveSubtask: (index: number) => void;
+    customRewards: EnhancedCustomReward[];
+    onOpenCustomRewardBuilder: () => void;
+    onRemoveCustomReward: (index: number) => void;
     
     // Mobile
     isMobile: boolean;
@@ -67,6 +71,9 @@ export const QuestModalAdvancedOptions: React.FC<QuestModalAdvancedOptionsProps>
     setNewSubtaskDescription,
     handleAddSubtask,
     handleRemoveSubtask,
+    customRewards,
+    onOpenCustomRewardBuilder,
+    onRemoveCustomReward,
     isMobile
 }) => {
     if (!showAdvancedOptions) {
@@ -626,6 +633,72 @@ export const QuestModalAdvancedOptions: React.FC<QuestModalAdvancedOptionsProps>
                                                         justifyContent: "center",
                                                         fontSize: 12,
                                                         fontWeight: "bold",
+                                                    }}
+                                                >
+                                                    ×
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div style={{ marginTop: 20 }}>
+                                <label style={{
+                                    display: "block",
+                                    marginBottom: 8,
+                                    fontWeight: 600,
+                                    color: "var(--text-normal)",
+                                }}>
+                                    Custom rewards
+                                </label>
+                                <p style={{
+                                    margin: "0 0 10px",
+                                    fontSize: 12,
+                                    color: "var(--text-muted)",
+                                }}>
+                                    Extra loot when this quest completes. Coffee breaks and other shop treats stay in the Shop.
+                                </p>
+                                <button
+                                    type="button"
+                                    onClick={onOpenCustomRewardBuilder}
+                                    className={styles.buttonAdd}
+                                    style={{ marginBottom: 10 }}
+                                >
+                                    Add custom reward
+                                </button>
+                                {customRewards.length > 0 && (
+                                    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                                        {customRewards.map((reward, index) => (
+                                            <div
+                                                key={`${reward.name}-${index}`}
+                                                style={{
+                                                    display: "flex",
+                                                    alignItems: "center",
+                                                    gap: 8,
+                                                    padding: "8px 12px",
+                                                    borderRadius: 16,
+                                                    background: "var(--clay-surface-2, var(--background-primary))",
+                                                }}
+                                            >
+                                                <span style={{ fontSize: 18 }} aria-hidden="true">{reward.icon}</span>
+                                                <span style={{ flex: 1, fontSize: 14, fontWeight: 700 }}>
+                                                    {reward.name}
+                                                    {reward.quantity > 1 ? ` ×${reward.quantity}` : ""}
+                                                </span>
+                                                <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
+                                                    {reward.type}
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => onRemoveCustomReward(index)}
+                                                    aria-label={`Remove ${reward.name}`}
+                                                    style={{
+                                                        background: "transparent",
+                                                        border: "none",
+                                                        cursor: "pointer",
+                                                        fontSize: 16,
+                                                        color: "var(--text-muted)",
                                                     }}
                                                 >
                                                     ×

@@ -558,3 +558,32 @@
         grid-template-columns: repeat(auto-fill, minmax(35px, 1fr));
     }
 }
+
+.exclusiveError {
+    margin: 0 16px 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #b45309;
+}
+
+.overlay[data-clay-shell] {
+    background: rgba(58, 52, 44, 0.38);
+    backdrop-filter: blur(6px);
+    font-family: var(--go-font-ui, "Nunito", "Segoe UI", system-ui, sans-serif);
+}
+
+.overlay[data-clay-shell] .desktopContainer,
+.overlay[data-clay-shell] .mobileContainer {
+    border: none;
+    border-radius: var(--clay-radius, 24px);
+    background: var(--clay-gradient, linear-gradient(145deg, #fbf8f2, #efe6d8));
+    box-shadow: var(--clay-shadow);
+    color: var(--clay-text, #3a342c);
+}
+
+.overlay[data-clay-shell] .createButton {
+    border: none;
+    border-radius: 16px;
+    background: var(--clay-accent-gradient, linear-gradient(180deg, #6ac9c1, #4aa8a0));
+    color: #fff;
+}

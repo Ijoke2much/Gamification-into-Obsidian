@@ -1,6 +1,7 @@
 import { Vault, TFile } from 'obsidian';
 import * as yaml from "js-yaml";
 import { normalizeActivityProfileId } from '../../../shared/utils/questWellbeingProfiles';
+import { parseGamifyRewardsLine } from './shopExclusiveRewards';
 
 /**
  * Parse `key: value` pipe metadata on the first colon only.
@@ -420,6 +421,22 @@ export interface Quest {
   now?: boolean;
   dependencies?: string[];
   rewards?: string[];
+  /** Quest-attached custom rewards (not shop exclusives). */
+  enhancedRewards?: Array<{
+    name: string;
+    type: 'item' | 'material' | 'effect';
+    category?: string;
+    rarity: string;
+    icon: string;
+    description: string;
+    quantity: number;
+    materialData?: {
+      category: string;
+      quality: string;
+      baseValue: number;
+    };
+    effects?: string[];
+  }>;
   type?: string;
   /** Parent project slug or name (`project:` pipe / `#project/foo`). */
   project?: string;
@@ -767,16 +784,35 @@ export function parseQuestsFromMarkdown(md: string): Quest[] {
         // --- Parse description and subtasks ---
         const subtasks: { text: string; completed: boolean; description?: string }[] = [];
         let questDescription = description as string;
+        let enhancedRewards: Quest['enhancedRewards'];
         let j = i + 1;
 
-        // Check for description line immediately after quest (starts with 💭 or indented description)
+        // Check for description / custom-reward lines immediately after quest
+        while (j < lines.length) {
+          const nextLine = lines[j];
+          const trimmedNext = nextLine.trim();
+          const parsedRewards = parseGamifyRewardsLine(nextLine);
+          if (parsedRewards) {
+            enhancedRewards = parsedRewards as Quest['enhancedRewards'];
+            j++;
+            continue;
+          }
+          if (trimmedNext.startsWith('💭')) {
+            questDescription = trimmedNext.replace(/^💭\s*/, '');
+            j++;
+            continue;
+          }
+          break;
+        }
+
         if (j < lines.length) {
           const nextLine = lines[j].trim();
-          if (nextLine.startsWith('💭')) {
-            questDescription = nextLine.replace(/^💭\s*/, '');
-            j++;
-          } else if (nextLine && !nextLine.startsWith('-') && !nextLine.startsWith('  -')) {
-            // Plain description line
+          if (
+            nextLine &&
+            !nextLine.startsWith('-') &&
+            !nextLine.startsWith('  -') &&
+            !parseGamifyRewardsLine(lines[j])
+          ) {
             questDescription = nextLine;
             j++;
           }
@@ -797,6 +833,9 @@ export function parseQuestsFromMarkdown(md: string): Quest[] {
                 description: parts.length > 1 ? parts.slice(1).join(' - ').trim() : undefined
               });
             }
+            j++;
+          } else if (parseGamifyRewardsLine(line)) {
+            enhancedRewards = parseGamifyRewardsLine(line) as Quest['enhancedRewards'];
             j++;
           } else if (line.trim() === '' || line.match(/^(\s{2,}|\t+)/)) {
             // Skip empty lines or other indented content (like nested subtasks)
@@ -852,6 +891,7 @@ export function parseQuestsFromMarkdown(md: string): Quest[] {
           energyCost,
           activityProfile: activityNorm !== 'generic' ? activityNorm : undefined,
           battle_weapon,
+          enhancedRewards,
         });
       }
     }

@@ -2,6 +2,7 @@ import { App } from 'obsidian';
 import { Quest } from '../utils/taskParser';
 import { addOrIncrementInventoryItem } from '../../inventory/utils/updateInventoryFile';
 import type { EnhancedCustomReward } from '../components/CustomRewardBuilder';
+import { isShopExclusiveCustomReward } from './shopExclusiveRewards';
 import { CraftingEngine } from '../../crafting/utils/craftingEngine';
 import type { CraftingMaterial } from '../../crafting/types/CraftingTypes';
 
@@ -127,7 +128,9 @@ export function parseEnhancedCustomRewards(quest: Quest): EnhancedCustomReward[]
   const rewards: EnhancedCustomReward[] = [];
 
   // Check for enhanced custom rewards metadata
-  const enhancedRewardMetadata = (quest as unknown as Record<string, unknown>)['enhancedRewards'];
+  const enhancedRewardMetadata =
+    (quest as unknown as Record<string, unknown>)['enhancedRewards'] ??
+    (quest as unknown as Record<string, unknown>)['enhancedCustomRewards'];
 
   if (Array.isArray(enhancedRewardMetadata)) {
     enhancedRewardMetadata.forEach((rewardData: any) => {
@@ -138,6 +141,53 @@ export function parseEnhancedCustomRewards(quest: Quest): EnhancedCustomReward[]
   }
 
   return rewards;
+}
+
+export async function grantAttachedQuestLoot(app: App, quest: Quest): Promise<void> {
+  const enhancedRewards = parseEnhancedCustomRewards(quest).filter(
+    (reward) => !isShopExclusiveCustomReward(reward)
+  );
+  const customRewards = parseQuestCustomRewards(quest);
+  if (enhancedRewards.length === 0 && customRewards.length === 0) {
+    return;
+  }
+
+  for (const enhancedReward of enhancedRewards) {
+    if (enhancedReward.type === 'material') {
+      await addCraftingMaterialReward(app, enhancedReward);
+      continue;
+    }
+    const questItem = convertEnhancedRewardToQuestItem(enhancedReward);
+    await addOrIncrementInventoryItem(
+      app,
+      {
+        name: questItem.name,
+        category: questItem.category,
+        rarity: questItem.rarity,
+        description: questItem.description,
+        icon: questItem.icon,
+        price: questItem.value || 0,
+        tags: [questItem.category, questItem.rarity],
+      },
+      questItem.quantity || 1
+    );
+  }
+
+  for (const reward of customRewards) {
+    await addOrIncrementInventoryItem(
+      app,
+      {
+        name: reward.name,
+        category: reward.category,
+        rarity: reward.rarity,
+        description: reward.description,
+        icon: reward.icon,
+        price: reward.value || 0,
+        tags: [reward.category, reward.rarity],
+      },
+      reward.quantity || 1
+    );
+  }
 }
 
 // Convert enhanced custom reward to quest reward item for processing
@@ -313,7 +363,9 @@ export async function processQuestRewards(app: App, quest: Quest): Promise<Quest
   const rewards: QuestRewardItem[] = [];
 
   // 1. Process enhanced custom rewards first
-  const enhancedRewards = parseEnhancedCustomRewards(quest);
+  const enhancedRewards = parseEnhancedCustomRewards(quest).filter(
+    (reward) => !isShopExclusiveCustomReward(reward)
+  );
   for (const enhancedReward of enhancedRewards) {
     if (enhancedReward.type === 'material') {
       // Add to crafting system

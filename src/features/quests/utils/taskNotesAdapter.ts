@@ -2,6 +2,7 @@ import { parseYaml, stringifyYaml } from 'obsidian';
 import type { App, TFile } from 'obsidian';
 import type { Quest } from './taskParser';
 import { appendCompletedDate, removeCompletedDate } from './taskParser';
+import { parseGamifyRewardsLine } from './shopExclusiveRewards';
 
 const XP_PROPERTY_KEYS = ['xp', 'XP', 'exp', 'experience'];
 const CP_PROPERTY_KEYS = ['cp', 'CP', 'classPoints', 'class-points', 'class_points'];
@@ -58,6 +59,26 @@ export type CreateTaskNotesFields = {
 	timelineTheme?: string;
 	customTags?: string[];
 };
+
+function findGamifyRewardsInContent(content: string, taskLine?: string): unknown[] | null {
+	const lines = content.split('\n');
+	let start = 0;
+	if (taskLine) {
+		const index = lines.indexOf(taskLine);
+		if (index >= 0) start = index;
+	}
+	const end = Math.min(lines.length, start + 40);
+	for (let i = start; i < end; i++) {
+		const parsed = parseGamifyRewardsLine(lines[i]);
+		if (parsed) return parsed;
+	}
+	if (start === 0) return null;
+	for (let i = 0; i < lines.length; i++) {
+		const parsed = parseGamifyRewardsLine(lines[i]);
+		if (parsed) return parsed;
+	}
+	return null;
+}
 
 function asString(value: unknown): string | undefined {
 	if (typeof value === 'string' && value.trim()) return value.trim();
@@ -147,6 +168,12 @@ export function hydrateQuestRewardsFromNote(
 ): Quest {
 	const next: Quest = { ...quest };
 	applyLineRewardFallback(next, options.taskLine);
+	if (!next.enhancedRewards?.length) {
+		const attached = findGamifyRewardsInContent(options.content, options.taskLine);
+		if (attached) {
+			next.enhancedRewards = attached as Quest['enhancedRewards'];
+		}
+	}
 	if (!shouldApplyNoteProperties(options.content)) {
 		return next;
 	}

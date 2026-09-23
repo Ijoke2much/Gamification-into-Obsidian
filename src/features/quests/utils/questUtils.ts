@@ -13,6 +13,7 @@ import { MaterialInventoryManager } from "../../../shared/services/materialInven
 import { pixelNotice } from '../../../shared/utils/noticeUtils';
 import { getPluginSettingsFromApp, isFailureDebtEnabled } from '../../../shared/utils/gameplayConfig';
 import { resolveEnergyHudConfig } from '../../../shared/utils/energyHudConfig';
+import { serializeGamifyRewardsLine } from './shopExclusiveRewards';
 import type { QuestTimelineTheme } from './taskParser';
 import { appendCompletedDate, normalizeCustomTag, QUEST_TIMELINE_THEMES } from './taskParser';
 
@@ -285,6 +286,10 @@ export function generateMarkdownTask({
     // Add description if provided
     if (description && description.trim()) {
         md += `\n  💭 ${description.trim()}`;
+    }
+
+    if (enhancedRewards && enhancedRewards.length > 0) {
+        md += `\n${serializeGamifyRewardsLine(enhancedRewards)}`;
     }
 
     if (subtasks.length > 0) {
