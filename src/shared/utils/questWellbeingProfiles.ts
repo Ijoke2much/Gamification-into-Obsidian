@@ -59,6 +59,22 @@ export function normalizeActivityProfileId(raw: string | undefined | null): Acti
 	return ALIASES[key] ?? "generic";
 }
 
+/**
+ * Id stored on a quest (`#activity/create`). Known aliases map to built-in
+ * profiles. Any other slug is kept so a custom type is not collapsed to generic.
+ */
+export function storedActivityTypeId(raw: string | undefined | null): string {
+	if (!raw || typeof raw !== "string") return "generic";
+	const key = raw
+		.trim()
+		.toLowerCase()
+		.replace(/[\s-]+/g, "_")
+		.replace(/[^a-z0-9_]/g, "");
+	if (!key || key === "generic" || key === "default") return "generic";
+	if ((ACTIVITY_PROFILE_IDS as readonly string[]).includes(key)) return key;
+	return ALIASES[key] ?? key;
+}
+
 export function parseActivityProfileFromTaskLine(line: string): ActivityProfileId {
 	const m = line.match(/#activity\/([\w-]+)/i);
 	if (m?.[1]) return normalizeActivityProfileId(m[1]);

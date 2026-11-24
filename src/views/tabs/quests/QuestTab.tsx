@@ -35,6 +35,7 @@ import {
 } from '../../../features/quests/utils/questProjectUtils';
 import { isClosedContract } from '../../../features/quests/utils/projectContractDisplay';
 import { TFile } from 'obsidian';
+import { pixelNotice } from '../../../shared/utils/noticeUtils';
 import styles from './QuestTab.module.css';
 // Boss view is now handled by the full-page BossView
 
@@ -694,10 +695,32 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
     window.console.log('🧠 Hyperfocus started for quest:', quest.title);
   }, [plugin]);
 
-  const handleBreakDown = useCallback((quest: Quest) => {
-    console.log('Breaking down quest:', quest.title);
-    // TODO: Implement quest breakdown functionality
-  }, []);
+  const handleBreakDown = useCallback(async (quest: Quest) => {
+    if ((quest.subtasks?.length ?? 0) > 0) {
+      pixelNotice('This quest already has steps.', 2000);
+      return;
+    }
+    if (!quest.filePath || !quest.lineNumber || quest.lineNumber < 1) {
+      pixelNotice('This quest is not saved in a note yet.', 2500);
+      return;
+    }
+    const file = plugin.app.vault.getAbstractFileByPath(quest.filePath);
+    if (!(file instanceof TFile)) {
+      pixelNotice('Could not find the quest note.', 2500);
+      return;
+    }
+    const content = await plugin.app.vault.read(file);
+    const lines = content.split('\n');
+    const index = quest.lineNumber - 1;
+    const steps = [
+      `  - [ ] Start: ${quest.title}`,
+      `  - [ ] Continue: ${quest.title}`,
+      `  - [ ] Finish: ${quest.title}`,
+    ];
+    lines.splice(index + 1, 0, ...steps);
+    await plugin.app.vault.modify(file, lines.join('\n'));
+    pixelNotice('Broke this quest into 3 steps.', 2500);
+  }, [plugin]);
 
   // Quest move handler for calendar view
   const handleQuestMove = useCallback(async (questId: string, newDate: string) => {

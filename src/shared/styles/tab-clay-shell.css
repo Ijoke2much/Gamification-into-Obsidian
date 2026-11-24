@@ -123,10 +123,36 @@ html[data-gamification-visual-theme='clay'] [data-today-run-strip] [class*='next
 	color: var(--clay-text, #3a342c) !important;
 }
 
-html[data-gamification-visual-theme='clay'] [data-today-run-strip] [class*='energyLabel'],
 html[data-gamification-visual-theme='clay'] [data-today-run-strip] [class*='nextUpLabel'],
 html[data-gamification-visual-theme='clay'] [data-today-run-strip] [class*='clearState'] {
 	color: var(--clay-text-light, #8a8278) !important;
+}
+
+html[data-gamification-visual-theme='clay'] [data-today-run-strip] [class*='energyLabel'],
+html[data-gamification-visual-theme='clay'] [data-today-run-strip] [class*='energyLabel'] strong,
+html[data-gamification-visual-theme='clay'] [data-today-run-strip] [class*='sprintStatus'],
+html[data-gamification-visual-theme='clay'] [data-today-run-strip] [class*='laneCount'],
+html[data-gamification-visual-theme='clay'] [data-today-run-strip] [class*='laneName'] {
+	color: var(--clay-text-strong, #2c2722) !important;
+}
+
+html[data-gamification-visual-theme='clay'] [data-today-run-strip] button[class*='sprintLane'] {
+	border: none !important;
+	border-radius: 18px !important;
+	background: var(--clay-surface-2, #efe6d8) !important;
+	color: var(--clay-text, #3a342c) !important;
+	box-shadow: var(--clay-recessed) !important;
+}
+
+html[data-gamification-visual-theme='clay'] [data-today-run-strip] button[class*='sprintLaneOn'] {
+	background: var(--clay-accent, #5bb8b0) !important;
+	color: #163330 !important;
+	box-shadow: var(--clay-pressed, var(--clay-recessed)) !important;
+}
+
+html[data-gamification-visual-theme='clay'] [data-today-run-strip] button[class*='sprintLaneOn'] [class*='laneCount'],
+html[data-gamification-visual-theme='clay'] [data-today-run-strip] button[class*='sprintLaneOn'] [class*='laneName'] {
+	color: #163330 !important;
 }
 
 /* Calendar — cream board over Solo navy */
@@ -140,9 +166,18 @@ html[data-gamification-visual-theme='clay'] [data-quest-calendar] {
 }
 
 html[data-gamification-visual-theme='clay'] [data-quest-calendar] [class*='title'],
-html[data-gamification-visual-theme='clay'] [data-quest-calendar] [class*='range'] {
+html[data-gamification-visual-theme='clay'] [data-quest-calendar] [class*='range'],
+html[data-gamification-visual-theme='clay'] [data-quest-calendar] [class*='selectedLabel'] {
 	color: var(--clay-text, #3a342c) !important;
 	text-shadow: none !important;
+}
+
+html[data-gamification-visual-theme='clay'] [data-quest-calendar] [class*='selectedCount'] {
+	color: var(--clay-text-light, #8a8278) !important;
+}
+
+html[data-gamification-visual-theme='clay'] [data-quest-calendar] [class*='selectedBar'] {
+	border-top-color: color-mix(in srgb, var(--clay-text, #3a342c) 16%, transparent) !important;
 }
 
 html[data-gamification-visual-theme='clay'] [data-quest-calendar] [class*='navBtn'],

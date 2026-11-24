@@ -68,6 +68,37 @@
 	font-family: inherit;
 }
 
+/* System Hunter — same glass chip as the player tab bar */
+:global([data-gamification-visual-theme='system-hunter']) .hubNavBtn {
+	border: 1px solid rgba(34, 200, 255, 0.42);
+	border-radius: 2px;
+	color: var(--go-text, #e0f2fe);
+	background:
+		linear-gradient(180deg, rgba(34, 200, 255, 0.16), transparent 40%),
+		rgba(8, 24, 46, 0.62);
+	box-shadow: inset 0 0 12px rgba(34, 200, 255, 0.05);
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif);
+}
+
+:global([data-gamification-visual-theme='system-hunter']) .hubNavBtn:hover {
+	border-color: rgba(34, 200, 255, 0.7);
+	color: var(--go-text-bright, #f0f9ff);
+	background:
+		linear-gradient(180deg, rgba(34, 200, 255, 0.22), transparent 42%),
+		rgba(8, 32, 58, 0.7);
+}
+
+:global([data-gamification-visual-theme='system-hunter']) .hubNavBtnActive {
+	border-color: var(--go-accent, #22c8ff);
+	color: var(--go-text-bright, #f0f9ff);
+	background:
+		linear-gradient(180deg, rgba(34, 200, 255, 0.28), transparent 46%),
+		rgba(8, 40, 72, 0.78);
+	box-shadow:
+		inset 0 -2px 0 var(--go-accent, #22c8ff),
+		0 0 12px rgba(34, 200, 255, 0.2);
+}
+
 .panelSection {
 	border: 1px solid var(--background-modifier-border);
 	background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), transparent);
@@ -2189,6 +2220,12 @@
 	border-color: #b1462e;
 	color: #ff8a65;
 	background: rgba(150, 50, 30, 0.18);
+}
+
+.contractBadgeLife {
+	border-color: #2f8f86;
+	color: #9ff3ea;
+	background: rgba(47, 143, 134, 0.18);
 }
 
 .contractBadgeStalled {

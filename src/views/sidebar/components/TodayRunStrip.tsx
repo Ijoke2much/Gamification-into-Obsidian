@@ -1,7 +1,27 @@
 import React from 'react';
 import type { Quest } from '../../../features/quests/utils/taskParser';
+import type { SprintLaneId } from '../../../features/quests/utils/sprintLanes';
 import { BatteryProgressBar } from '../../../shared/components/ui/BatteryProgressBar';
 import styles from './TodayRunStrip.module.css';
+
+export interface SprintStripLane {
+	id: SprintLaneId;
+	label: string;
+	count: number;
+	wide?: boolean;
+}
+
+export interface SprintStripModel {
+	status: string;
+	locked: boolean;
+	win: Quest | null;
+	winStarted: boolean;
+	lanes: SprintStripLane[];
+	activeLane: SprintLaneId;
+	onSelectLane: (lane: SprintLaneId) => void;
+	onOpenWin: (quest: Quest) => void;
+	onStartWin?: () => void;
+}
 
 export type NextUpPhase = 'now' | 'upcoming' | 'queue';
 
@@ -20,6 +40,8 @@ export interface TodayRunStripProps {
 	/** Quiet tip when pane is narrow (no button) */
 	showWidenTip?: boolean;
 	clayUi?: boolean;
+	/** Phone sprint lanes. Desktop leaves this unset and keeps Next up. */
+	sprint?: SprintStripModel | null;
 }
 
 function formatNextUpTime(quest: Quest): string | null {
@@ -52,6 +74,7 @@ export const TodayRunStrip: React.FC<TodayRunStripProps> = ({
 	variant = 'mobile',
 	showWidenTip = false,
 	clayUi = false,
+	sprint = null,
 }) => {
 	const nextTime = nextUp ? formatNextUpTime(nextUp) : null;
 	const hasEnergy =
@@ -82,6 +105,94 @@ export const TodayRunStrip: React.FC<TodayRunStripProps> = ({
 				)}
 			</div>
 
+			{sprint ? (
+				<div className={styles.sprintBody}>
+					{hasEnergy && energyPct != null && (
+						<div
+							className={styles.energyBlock}
+							title={`Energy ${Math.round(energyCurrent!)}/${energyMax}`}
+						>
+							<span className={styles.energyLabel}>
+								Energy <strong>{Math.round(energyCurrent!)}</strong>/{energyMax}
+							</span>
+							<div className={styles.batteryWrap}>
+								{clayUi ? (
+									<div
+										className={styles.clayEnergyTrack}
+										role="meter"
+										aria-valuemin={0}
+										aria-valuemax={energyMax}
+										aria-valuenow={Math.round(energyCurrent!)}
+									>
+										<span
+											className={styles.clayEnergyFill}
+											style={{ width: `${energyPct}%` }}
+										/>
+									</div>
+								) : (
+									<BatteryProgressBar
+										percent={energyPct}
+										segments={12}
+										width={batteryWidth}
+										height={batteryHeight}
+										statType="energy"
+										pixel={false}
+									/>
+								)}
+							</div>
+						</div>
+					)}
+					<p className={styles.sprintStatus}>{sprint.status}</p>
+					<div className={styles.sprintWin}>
+						<span className={styles.nextUpLabel}>Today's win</span>
+						{sprint.win ? (
+							<button
+								type="button"
+								className={styles.nextUpWell}
+								onClick={() => sprint.onOpenWin(sprint.win as Quest)}
+							>
+								<span className={styles.nextUpTitle}>{sprint.win.title}</span>
+							</button>
+						) : (
+							<span className={styles.clearState}>Pin a win from a lane.</span>
+						)}
+						{sprint.win && sprint.winStarted && (
+							<span className={styles.clearState}>Started</span>
+						)}
+						{sprint.win && !sprint.winStarted && sprint.onStartWin && (
+							<button
+								type="button"
+								className={styles.focusBtn}
+								onClick={sprint.onStartWin}
+							>
+								Start this
+							</button>
+						)}
+					</div>
+					{!sprint.locked && (
+						<div
+							className={`${styles.laneGrid} ${isDesktop ? styles.laneGridDesktop : ''}`}
+							role="group"
+							aria-label="Sprint lanes"
+						>
+							{sprint.lanes.map((lane) => (
+								<button
+									key={lane.id}
+									type="button"
+									className={`${styles.sprintLane} ${lane.wide ? styles.sprintLaneWide : ''} ${
+										sprint.activeLane === lane.id ? styles.sprintLaneOn : ''
+									}`}
+									aria-pressed={sprint.activeLane === lane.id}
+									onClick={() => sprint.onSelectLane(lane.id)}
+								>
+									<span className={styles.laneCount}>{lane.count}</span>
+									<span className={styles.laneName}>{lane.label}</span>
+								</button>
+							))}
+						</div>
+					)}
+				</div>
+			) : (
 			<div className={styles.hudGrid}>
 				<div className={styles.hudLeft}>
 					{hasEnergy && energyPct != null && (
@@ -169,6 +280,7 @@ export const TodayRunStrip: React.FC<TodayRunStripProps> = ({
 					)}
 				</div>
 			</div>
+			)}
 
 			{showWidenTip && (
 				<p className={styles.widenTip}>

@@ -2,6 +2,8 @@
 import { Boss, PlayerStats } from '../types/BossTypes';
 import { EnhancedBattleState } from '../types/EnhancedMoveTypes';
 import { pixelNotice } from '../../../shared/utils/noticeUtils';
+import { playerStore } from '../../../shared/state/playerStore';
+import { addBuff } from '../../../shared/utils/buffEngine';
 
 /**
  * Productivity Equipment System
@@ -128,7 +130,8 @@ export class ProductivityEquipmentSystem {
             name: 'Natural Energy Drink',
             type: 'consumable',
             rarity: 'common',
-            description: 'Natural energy boost for immediate productivity',
+            description: 'Take a real drink — water, tea, or what you have — then use this. It adds 50 energy and a 2-hour rewards buff for that break.',
+            realLife: 'Take a real drink — water, tea, or what you have.',
             effects: {
                 immediateEnergy: 50, // +50 energy points
                 duration: 2, // 2 hours
@@ -146,7 +149,8 @@ export class ProductivityEquipmentSystem {
             name: 'Inspirational Quote',
             type: 'consumable',
             rarity: 'common',
-            description: 'Words of wisdom to boost motivation',
+            description: 'Read one real line that helps, then use this. It holds a 1-hour rewards buff for that read.',
+            realLife: 'Read one real line that helps.',
             effects: {
                 motivationBoost: 0.3, // +30% motivation
                 duration: 1, // 1 hour
@@ -332,29 +336,58 @@ export class ProductivityEquipmentSystem {
         // Consume the item
         this.playerInventory.set(itemId, quantity - 1);
 
-        // Apply temporary effects
-        this.applyTemporaryEffect(equipment);
-
-        pixelNotice(`✅ Used "${equipment.name}"`, 3000);
+        const applied = await this.applyTemporaryEffect(equipment);
+        pixelNotice(applied || `Used ${equipment.name}`, 3000);
         return true;
     }
 
     /**
-     * Apply temporary effects from consumables
+     * Apply a catalog consumable by display name. Used when the vault inventory Use button fires.
+     * Returns the notice line, or null when the name is not a consumable.
      */
-    private applyTemporaryEffect(equipment: ProductivityEquipment): void {
+    async applyNamedConsumable(name: string): Promise<string | null> {
+        const equipment = this.getAllEquipment().find(
+            (entry) => entry.type === 'consumable' && entry.name.toLowerCase() === name.trim().toLowerCase()
+        );
+        if (!equipment) return null;
+        return this.applyTemporaryEffect(equipment);
+    }
+
+    /**
+     * Apply energy and a timed buff from a consumable. Returns the notice line.
+     */
+    private async applyTemporaryEffect(equipment: ProductivityEquipment): Promise<string> {
         const effects = equipment.effects;
+        const notes: string[] = [];
+        const hours = effects.duration || 1;
 
-        // Store temporary effect with duration
-        const tempEffect = {
-            equipmentId: equipment.id,
-            effects: effects,
-            duration: effects.duration || 1, // hours
-            appliedAt: new Date()
-        };
+        const energyGain = Math.round(effects.immediateEnergy || (effects.energyBoost ? effects.energyBoost * 100 : 0));
+        if (energyGain > 0) {
+            await playerStore.update((data) => {
+                const stats = { ...(data.stats || {}) };
+                const current = typeof stats.energy === 'number' ? stats.energy : 50;
+                stats.energy = Math.max(0, Math.min(100, current + energyGain));
+                return { ...data, stats };
+            });
+            notes.push(`+${energyGain} Energy`);
+        }
 
-        // This would integrate with a temporary effects system
-        console.log('Applied temporary effect:', tempEffect);
+        const bonus = effects.focusBonus || effects.motivationBoost || effects.motivationBonus || 0;
+        const vault = playerStore.getVault();
+        if (bonus > 0 && vault) {
+            const multiplier = 1 + bonus;
+            const expiresAt = Date.now() + hours * 60 * 60 * 1000;
+            await addBuff(vault, {
+                type: 'rewards',
+                multiplier,
+                expiresAt,
+                source: equipment.name,
+            });
+            notes.push(`Rewards x${multiplier.toFixed(2)} for ${hours}h`);
+        }
+
+        const effectLine = notes.length === 0 ? `Used ${equipment.name}` : `${equipment.name}: ${notes.join(' · ')}`;
+        return equipment.realLife ? `${equipment.realLife} ${effectLine}` : effectLine;
     }
 
     /**
@@ -506,6 +539,8 @@ export interface ProductivityEquipment {
     type: EquipmentType;
     rarity: EquipmentRarity;
     description: string;
+    /** Real action to take before the game effect counts. */
+    realLife?: string;
     effects: EquipmentEffects;
     requirements: EquipmentRequirements;
     source: 'crafting' | 'purchase' | 'quest-reward' | 'achievement';

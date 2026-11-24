@@ -15,6 +15,12 @@ import {
   type EnergyHudMode,
 } from '../../../core/settings';
 import { Card } from '../../../shared/components/ui/Card';
+import {
+  clampActivityEnergy,
+  normalizeActivityEnergyRules,
+  type ActivityEnergyRule,
+} from '../../../shared/utils/activityEnergy';
+import { storedActivityTypeId } from '../../../shared/utils/questWellbeingProfiles';
 import { TutorialSettingsPanel } from '../../tutorial/components/TutorialSettingsPanel';
 import { AppearanceSettings } from './AppearanceSettings';
 import { updatePlayerData } from '../../player/utils/playerDataUtils';
@@ -27,6 +33,7 @@ import styles from './SettingsUI.module.css';
 import { GameDataHubPanel } from './GameDataHubPanel';
 import { DataBackupPanel } from './DataBackupPanel';
 import { GameplayOnboardingModal } from './GameplayOnboardingModal';
+import { AchievementMakerPanel } from '../../achievements/components/AchievementMakerPanel';
 import { areSettingsEqual } from '../../../shared/utils/settingsSnapshot';
 import type { GameplayProfile } from '../../../core/settings';
 import { CustomRewardBuilder } from '../../quests/components/CustomRewardBuilder';
@@ -394,6 +401,17 @@ export const SettingsUI: React.FC<SettingsUIProps> = ({
           )}
           {currentCategory.id === 'penalties' && (
             <PenaltySettingsSection settings={settings} onSettingChange={updateSetting} />
+          )}
+          {currentCategory.id === 'achievements' && (
+            app ? (
+              <AchievementMakerPanel app={app} />
+            ) : (
+              <div className={styles.settingsSection}>
+                <Card className={styles.settingsCard}>
+                  <p>Reload this settings panel from the Gamification plugin to make achievements.</p>
+                </Card>
+              </div>
+            )
           )}
           {currentCategory.id === 'shop' && (
             <ShopSettingsSection settings={settings} onSettingChange={updateSetting} />
@@ -860,6 +878,110 @@ const QuestSettingsSection: React.FC<{
   );
 };
 
+const ActivityEnergyCard: React.FC<{
+  settings: GamificationPluginSettings;
+  onSettingChange: (path: string, value: unknown) => void;
+}> = ({ settings, onSettingChange }) => {
+  const rules = normalizeActivityEnergyRules(settings.activityEnergyRules);
+  const [draftName, setDraftName] = useState('');
+  const [draftEnergy, setDraftEnergy] = useState(10);
+  const [draftError, setDraftError] = useState('');
+
+  const commit = (next: ActivityEnergyRule[]) => {
+    onSettingChange('activityEnergyRules', next);
+  };
+
+  const addType = () => {
+    const id = storedActivityTypeId(draftName);
+    if (!draftName.trim() || id === 'generic') {
+      setDraftError('Give the type a name, like Create.');
+      return;
+    }
+    if (rules.some((rule) => rule.id === id)) {
+      setDraftError('That type is already in the list.');
+      return;
+    }
+    commit([
+      ...rules,
+      { id, label: draftName.trim(), energy: clampActivityEnergy(draftEnergy) },
+    ]);
+    setDraftName('');
+    setDraftEnergy(10);
+    setDraftError('');
+  };
+
+  return (
+    <Card className={styles.settingsCard}>
+      <h3>Activity energy</h3>
+      <p className={styles.helperText} style={{ marginTop: 0, marginBottom: '16px' }}>
+        Set how much energy each kind of quest takes. Positive spends energy. Negative gives it back. A quest uses its type unless you change the number on that quest. The bar moves when Energy is on your HUD (Simple or Full).
+      </p>
+      <div className={styles.settingGroup}>
+        {rules.map((rule) => (
+          <label key={rule.id}>
+            <input
+              type="text"
+              value={rule.label}
+              aria-label={`${rule.label} name`}
+              onChange={(e) => {
+                const label = e.target.value;
+                if (!label.trim()) return;
+                commit(rules.map((item) => (item.id === rule.id ? { ...item, label } : item)));
+              }}
+            />
+            <input
+              type="number"
+              min={-50}
+              max={50}
+              value={rule.energy}
+              aria-label={`${rule.label} energy`}
+              onChange={(e) => {
+                commit(
+                  rules.map((item) =>
+                    item.id === rule.id
+                      ? { ...item, energy: clampActivityEnergy(Number(e.target.value)) }
+                      : item
+                  )
+                );
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => commit(rules.filter((item) => item.id !== rule.id))}
+            >
+              Remove
+            </button>
+          </label>
+        ))}
+        <label>
+          New type:
+          <input
+            type="text"
+            value={draftName}
+            placeholder="Create"
+            onChange={(e) => {
+              setDraftName(e.target.value);
+              setDraftError('');
+            }}
+          />
+          <input
+            type="number"
+            min={-50}
+            max={50}
+            value={draftEnergy}
+            aria-label="New type energy"
+            onChange={(e) => setDraftEnergy(clampActivityEnergy(Number(e.target.value)))}
+          />
+          <button type="button" onClick={addType}>
+            Add
+          </button>
+        </label>
+        {draftError ? <p className={styles.helperText}>{draftError}</p> : null}
+      </div>
+    </Card>
+  );
+};
+
 const EnergySettingsSection: React.FC<{
   settings: GamificationPluginSettings;
   onSettingChange: (path: string, value: unknown) => void;
@@ -909,6 +1031,8 @@ const EnergySettingsSection: React.FC<{
         </label>
       </div>
     </Card>
+
+    <ActivityEnergyCard settings={settings} onSettingChange={onSettingChange} />
 
     <Card className={styles.settingsCard}>
       <h3>🔄 Daily reset</h3>
@@ -1305,7 +1429,7 @@ const PenaltySettingsSection: React.FC<{
             checked={modules.enableOverduePenalties === true}
             onChange={(e) => setModule('enableOverduePenalties', e.target.checked)}
           />
-          Overdue quest penalties (reduced rewards, debt, debuffs)
+          Overdue quest rewards drop 10% each day late (stops at 10% left)
         </label>
         <label className={styles.checkboxLabel}>
           <input

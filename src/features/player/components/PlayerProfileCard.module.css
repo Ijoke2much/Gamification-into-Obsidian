@@ -309,7 +309,7 @@
 }
 
 .identityModalSystem .identityModal {
-    background: var(--go-panel, #0b2238);
+    background: var(--go-panel-strong, rgba(8, 24, 46, 0.84));
     color: var(--go-text-bright, #f0f9ff);
     border: 1px solid var(--go-accent, #22c8ff);
     border-radius: 4px;
@@ -698,15 +698,16 @@
 
 .description {
     margin: 2px 0 0;
+    width: 100%;
+    max-width: 100%;
     font-size: 0.5rem;
     line-height: 1.45;
     color: var(--pixel-muted);
     font-style: italic;
     text-align: center;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 3;
-    overflow: hidden;
+    white-space: normal;
+    overflow: visible;
+    overflow-wrap: anywhere;
 }
 
 .rootSystem .description {
@@ -714,10 +715,9 @@
     font-style: italic;
     color: var(--go-muted, #9ec7df);
     opacity: 0.92;
-    max-width: 32ch;
+    max-width: 100%;
     margin-left: auto;
     margin-right: auto;
-    -webkit-line-clamp: 4;
 }
 
 .rootClay .description {
@@ -727,11 +727,12 @@
     color: var(--clay-muted, #6b6258);
     opacity: 1;
     margin-top: 10px;
-    padding: 0;
-    max-width: 28ch;
+    padding: 0 8px;
+    max-width: 100%;
     margin-left: auto;
     margin-right: auto;
     background: none;
+    box-sizing: border-box;
 }
 
 .descriptionEmpty {
@@ -1218,7 +1219,7 @@
 
 .rootSystem .cardAction {
     border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42));
-    background: rgba(7, 21, 39, 0.72);
+    background: var(--go-panel-strong, rgba(8, 24, 46, 0.84));
     color: var(--go-text-bright, #f0f9ff);
     font-size: 0.72rem;
 }

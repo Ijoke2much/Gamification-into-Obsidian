@@ -117,7 +117,8 @@ export async function listAllDataBackups(vault: Vault): Promise<DataBackupEntry[
 	try {
 		if (await adapter.exists(PLAYERDATA_BACKUP_DIR)) {
 			const listing = await adapter.list(PLAYERDATA_BACKUP_DIR);
-			for (const backupPath of listing.files) {
+			const newest = [...listing.files].sort().slice(-MAX_BACKUPS_PER_FILE);
+			for (const backupPath of newest) {
 				const fileName = backupPath.split('/').pop() ?? '';
 				entries.push({
 					backupPath,

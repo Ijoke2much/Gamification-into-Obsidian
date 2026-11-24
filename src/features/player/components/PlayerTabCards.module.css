@@ -8,7 +8,9 @@
     font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif);
     border-width: 1px;
     border-color: var(--go-border, rgba(34, 200, 255, 0.45));
-    background: var(--go-card-soft, rgba(8, 28, 54, 0.55));
+    background:
+        linear-gradient(180deg, rgba(34, 200, 255, 0.16), transparent 34%),
+        rgba(8, 24, 46, 0.62);
     box-shadow:
         0 0 0 1px rgba(34, 200, 255, 0.08),
         inset 0 0 16px rgba(34, 200, 255, 0.04);
@@ -222,6 +224,22 @@
     .inventoryCard {
         min-height: 72px;
     }
+}
+
+.coinsCardInline {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    gap: 12px;
+    padding: 14px 16px;
+}
+
+.coinsCardInline .coinsValue {
+    margin-top: 0;
+    margin-left: auto;
+    font-size: 1.35rem;
+    line-height: 1;
 }
 
 .mobileActionRow {

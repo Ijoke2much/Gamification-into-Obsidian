@@ -2,6 +2,7 @@ import journeyOverworldBanner from '../../../assets/journey-overworld-banner.png
 import journeyBattleBanner from '../../../assets/journey-battle-banner.png';
 import projectsGuildBanner from '../../../assets/projects-guild-banner.png';
 import focusStage from '../../../assets/focus-stage.jpg';
+import focusRouteMap from '../../../assets/focus-route-map.jpg';
 import treeStage1 from '../../../assets/trees/tree_stage_1.png';
 import treeStage2 from '../../../assets/trees/tree_stage_2.png';
 import treeStage3 from '../../../assets/trees/tree_stage_3.png';
@@ -39,6 +40,7 @@ export const BUNDLED_PLUGIN_ASSET_URLS: Record<string, string> = {
 	'assets/journey-battle-banner.png': journeyBattleBanner,
 	'assets/projects-guild-banner.png': projectsGuildBanner,
 	'assets/focus-stage.jpg': focusStage,
+	'assets/focus-route-map.jpg': focusRouteMap,
 	'assets/trees/tree_stage_1.png': treeStage1,
 	'assets/trees/tree_stage_2.png': treeStage2,
 	'assets/trees/tree_stage_3.png': treeStage3,

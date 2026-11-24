@@ -960,6 +960,18 @@
   text-align: center;
 }
 
+.inboxItemHasFile {
+  flex-wrap: wrap;
+}
+
+.sprintFileRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1 0 100%;
+  margin-top: 8px;
+}
+
 .inboxItem {
   border: 1px solid rgba(126, 146, 183, 0.24);
   background: linear-gradient(180deg, rgba(114, 133, 170, 0.16), rgba(114, 133, 170, 0.11));
@@ -1778,6 +1790,24 @@
   -webkit-appearance: none !important;
   background-image: none !important;
   box-shadow: none;
+}
+
+:global([data-gamification-visual-theme='system-hunter']) .container [data-today-run-strip] button {
+  border: 1px solid rgba(34, 200, 255, 0.42) !important;
+  border-radius: 2px !important;
+  color: var(--go-text, #e0f2fe) !important;
+  background-color: rgba(8, 24, 46, 0.62) !important;
+  background-image: linear-gradient(180deg, rgba(34, 200, 255, 0.16), transparent 40%) !important;
+  box-shadow: inset 0 0 12px rgba(34, 200, 255, 0.05) !important;
+  font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+  text-shadow: none !important;
+}
+
+:global([data-gamification-visual-theme='system-hunter']) .container [data-today-run-strip] button:hover {
+  border-color: rgba(34, 200, 255, 0.7) !important;
+  color: var(--go-text-bright, #f0f9ff) !important;
+  background-color: rgba(8, 32, 58, 0.7) !important;
+  background-image: linear-gradient(180deg, rgba(34, 200, 255, 0.22), transparent 42%) !important;
 }
 
 .container [data-mobile-day-agenda] button[data-agenda-check] {

@@ -1,6 +1,5 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { PLUGIN_ASSETS, getPluginAssetUrl } from '../../../shared/utils/pluginAssetUrl';
-import { resolveBundledFoeSpriteUrl } from '../../../shared/utils/pixelSprites';
 import {
 	computeFocusHp,
 	type FocusEncounterQuest,
@@ -19,23 +18,62 @@ function formatTime(seconds: number): string {
 	return `${min}:${sec}`;
 }
 
-const MODE_RANK: Record<FocusSessionMode, string> = {
-	quickFocus: 'E',
-	short: 'D',
-	classic: 'C',
-	custom: 'C',
-	extended: 'B',
-	deepWork: 'A',
-};
+function formatDue(due?: string): string | null {
+	if (!due?.trim()) return null;
+	const parsed = new Date(due);
+	if (Number.isNaN(parsed.getTime())) return due;
+	return parsed.toLocaleString(undefined, {
+		month: 'short',
+		day: 'numeric',
+		hour: 'numeric',
+		minute: '2-digit',
+	});
+}
 
-const MODE_DUNGEON: Record<FocusSessionMode, string> = {
-	quickFocus: 'Burst Gate',
-	short: 'Burst Gate',
-	classic: 'Focus Hollow',
-	custom: 'Focus Hollow',
-	extended: 'Long Watch',
-	deepWork: 'Inbox Depths',
-};
+function formatDifficulty(difficulty?: string): string | null {
+	const label = difficulty?.trim();
+	if (!label) return null;
+	return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+/** Center of the painted road, from the beach to the checkered flag. */
+const ROUTE: Array<[number, number]> = [
+	[310, 438],
+	[420, 470],
+	[540, 500],
+	[660, 510],
+	[780, 470],
+	[860, 420],
+	[940, 360],
+	[1000, 280],
+	[1020, 200],
+];
+
+const ROUTE_LENGTHS = ROUTE.slice(1).map((point, index) => {
+	const prev = ROUTE[index];
+	return Math.hypot(point[0] - prev[0], point[1] - prev[1]);
+});
+
+const ROUTE_TOTAL = ROUTE_LENGTHS.reduce((sum, length) => sum + length, 0);
+
+function pointAlongRoute(progress: number): { x: number; y: number } {
+	let remaining = Math.max(0, Math.min(1, progress)) * ROUTE_TOTAL;
+	for (let index = 0; index < ROUTE_LENGTHS.length; index += 1) {
+		const length = ROUTE_LENGTHS[index];
+		if (remaining <= length || index === ROUTE_LENGTHS.length - 1) {
+			const share = length === 0 ? 0 : remaining / length;
+			const from = ROUTE[index];
+			const to = ROUTE[index + 1];
+			return {
+				x: from[0] + (to[0] - from[0]) * share,
+				y: from[1] + (to[1] - from[1]) * share,
+			};
+		}
+		remaining -= length;
+	}
+	const end = ROUTE[ROUTE.length - 1];
+	return { x: end[0], y: end[1] };
+}
 
 export const FocusEncounterPanel: React.FC<{
 	foe: FocusFoeDef;
@@ -72,7 +110,6 @@ export const FocusEncounterPanel: React.FC<{
 	onSubtaskToggle,
 	onCompleteQuest,
 	onHonorComplete,
-	onAbandon,
 	onNotes,
 	onExpand,
 	onPause,
@@ -84,31 +121,32 @@ export const FocusEncounterPanel: React.FC<{
 		isBreak || grace || honorOffer ? 1 : elapsedRatio,
 		quest?.subtasks
 	);
-	const spriteUrl = resolveBundledFoeSpriteUrl(foe.id);
-	const stageUrl = getPluginAssetUrl(PLUGIN_ASSETS.focusStage);
+	const workApproach = Math.max(0, Math.min(1, 1 - hp.percent / 100));
+	const turnedAt = useRef(0);
+	if (!isBreak) turnedAt.current = workApproach;
+	const breakRatio = totalSeconds > 0 ? Math.max(0, secondsLeft) / totalSeconds : 1;
+	const approach = isBreak
+		? turnedAt.current * (secondsLeft > 0 ? breakRatio : 1)
+		: workApproach;
+	const pin = pointAlongRoute(approach);
+	const mapUrl = getPluginAssetUrl(PLUGIN_ASSETS.focusRouteMap);
 	const subtasks = quest?.subtasks ?? [];
 	const timed = Boolean(quest?.isTimedQuest);
 	const canComplete = Boolean(quest && onCompleteQuest);
-	const rank = timed ? 'S' : MODE_RANK[sessionMode];
-	const dungeon = timed ? 'Deadline Gate' : MODE_DUNGEON[sessionMode];
 	const sessionMinutes = Math.max(1, Math.round(totalSeconds / 60));
+	const sessionXp = Math.floor(sessionMinutes * 0.5);
+	const sessionCoins = Math.floor(sessionMinutes * 0.2);
+	const rewardXp = sessionXp + (quest?.rewards?.xp ?? 0);
+	const rewardCoins = sessionCoins + (quest?.rewards?.coins ?? 0);
+	const goalTitle = quest?.title?.trim() || 'Focus';
+	const dueLabel = formatDue(quest?.dueDate);
+	const difficultyLabel = quest ? formatDifficulty(quest.difficulty) : null;
 
-	let status = 'LIVE';
-	if (isBreak) status = 'STAGGERED';
-	if (hp.downed && quest && !isBreak) status = 'DOWNED';
-	if (grace) status = timed ? 'CONFIRM KILL' : 'FOE DOWN';
-	if (honorOffer) status = 'SCOUTS’ HONOR';
-
-	const effects = [
-		{ label: `Time chips HP (−${hp.timeDamage})` },
-		subtasks.length > 0
-			? { label: `Subtasks strike (−${hp.subtaskDamage})` }
-			: { label: 'Stay in session to wear it down' },
-	];
-	const weakPoints = [
-		timed ? 'Deadlines' : 'Unbroken time',
-		subtasks.length > 0 ? 'Checklists' : 'Confirm the kill',
-	];
+	let status = 'Ready';
+	if (isRunning && !isBreak) status = 'On the road';
+	if ((grace || hp.downed) && !isBreak) status = 'At the flag';
+	if (isBreak) status = 'Heading home';
+	if (honorOffer) status = 'Confirm';
 
 	if (density === 'kit') {
 		return (
@@ -116,10 +154,9 @@ export const FocusEncounterPanel: React.FC<{
 				className={`${styles.kit} ${clayUi ? styles.kitClay : ''} ${hp.downed ? styles.rootDowned : ''} ${isBreak ? styles.rootBreak : ''}`}
 				data-encounter="focus-kit"
 			>
-				{spriteUrl ? <img className={styles.kitBadge} src={spriteUrl} alt="" /> : null}
 				<div className={styles.kitBody}>
 					<div className={styles.kitMeta}>
-						<span className={styles.kitName}>{foe.name}</span>
+						<span className={styles.kitName}>{goalTitle}</span>
 						<span className={styles.kitStatus}>{status}</span>
 					</div>
 					<div className={styles.kitClock}>{formatTime(secondsLeft)}</div>
@@ -154,7 +191,7 @@ export const FocusEncounterPanel: React.FC<{
 						</button>
 					) : canComplete ? (
 						<button type="button" className={styles.complete} onClick={onCompleteQuest}>
-							{grace || hp.downed ? 'Claim' : 'Complete'}
+							{grace || hp.downed ? 'Arrive' : 'Complete'}
 						</button>
 					) : null}
 				</div>
@@ -164,30 +201,16 @@ export const FocusEncounterPanel: React.FC<{
 
 	return (
 		<div
-			className={`${styles.root} ${hp.downed ? styles.rootDowned : ''} ${isBreak ? styles.rootBreak : ''}`}
+			className={`${styles.root} ${clayUi ? styles.rootClay : ''} ${hp.downed ? styles.rootDowned : ''} ${isBreak ? styles.rootBreak : ''}`}
 			data-encounter="focus"
 			data-foe={foe.id}
-			data-gamification-pixel-enclave="focus"
+			{...(clayUi ? {} : { 'data-gamification-pixel-enclave': 'focus' })}
 		>
-			<div
-				className={styles.stage}
-				style={stageUrl ? { backgroundImage: `url("${stageUrl}")` } : undefined}
-			>
-				<div className={styles.vignette} />
-				{spriteUrl && !stageUrl ? (
-					<img className={`${styles.foeMark} ${hp.downed ? styles.foeMarkDown : ''}`} src={spriteUrl} alt="" />
-				) : null}
-				<div className={styles.clock}>{formatTime(secondsLeft)}</div>
-			</div>
-
 			<header className={styles.header}>
 				<div className={styles.headerLeft}>
-					{spriteUrl ? (
-						<img className={styles.foeBadge} src={spriteUrl} alt="" />
-					) : null}
-					<span className={styles.bossKicker}>Boss</span>
-					<h2 className={styles.foeName}>{foe.name}</h2>
-					<span className={styles.tag}>{timed ? 'TIMED' : foe.tag}</span>
+					<span className={styles.bossKicker}>Goal</span>
+					<h2 className={styles.foeName}>{goalTitle}</h2>
+					{timed ? <span className={styles.tag}>Timed</span> : null}
 				</div>
 				<div className={styles.headerRight}>
 					<span className={styles.status}>{status}</span>
@@ -196,89 +219,75 @@ export const FocusEncounterPanel: React.FC<{
 							Notes
 						</button>
 					) : null}
-					{onAbandon ? (
-						<button type="button" className={styles.abandon} onClick={onAbandon}>
-							Abandon
-						</button>
-					) : null}
 				</div>
 			</header>
 
 			<div className={styles.hud}>
 				<aside className={styles.panel}>
-					<p className={styles.panelTitle}>Intel</p>
-					<dl className={styles.statList}>
-						<div>
-							<dt>Level</dt>
-							<dd>{sessionMinutes}</dd>
-						</div>
-						<div>
-							<dt>Type</dt>
-							<dd>{foe.tag}</dd>
-						</div>
-						<div>
-							<dt>Rank</dt>
-							<dd className={styles.rank}>{rank}</dd>
-						</div>
-						<div>
-							<dt>Dungeon</dt>
-							<dd>{dungeon}</dd>
-						</div>
-					</dl>
-					<p className={styles.flavor}>{foe.flavor}</p>
-					{quest ? (
+					<p className={styles.panelTitle}>Goal</p>
+					<p className={styles.goalTitle}>{goalTitle}</p>
+					{difficultyLabel ? (
 						<p className={styles.questLine}>
-							<span>{quest.title}</span>
-							{timed
-								? ' Timer win ≠ quest win. Complete confirms the kill.'
-								: ' Complete claims the kill.'}
+							<span>Difficulty</span> {difficultyLabel}
 						</p>
+					) : null}
+					{timed && dueLabel ? (
+						<p className={styles.questLine}>
+							<span>Due</span> {dueLabel}
+						</p>
+					) : null}
+					{timed ? (
+						<p className={styles.flavor}>Finishing the quest moves you to the flag. The clock only ends the session.</p>
+					) : quest ? (
+						<p className={styles.flavor}>Stay on the road until you finish, or complete the quest to reach the flag.</p>
 					) : (
-						<p className={styles.questLine}>No quest — skirmish. Session XP still awards.</p>
+						<p className={styles.flavor}>No quest attached. This session still counts.</p>
 					)}
 				</aside>
 
-				<div className={styles.stageGutter} aria-hidden="true" />
+				<div className={styles.stageGutter}>
+					<div className={styles.mapScene}>
+						{mapUrl ? <img className={styles.mapArt} src={mapUrl} alt="" /> : null}
+						<svg
+							className={styles.mapOverlay}
+							viewBox="0 0 1280 720"
+							preserveAspectRatio="xMidYMid meet"
+							aria-hidden="true"
+						>
+							<rect x="500" y="18" width="280" height="58" rx="12" fill="rgba(12, 28, 48, 0.45)" />
+							<text className={styles.mapClock} x="640" y="58" textAnchor="middle">
+								{formatTime(secondsLeft)}
+							</text>
+							<g transform={`translate(${pin.x} ${pin.y})`}>
+								<path
+									d="M0 0 C-4 -18 -28 -28 -28 -52 C-28 -72 -14 -86 0 -86 C14 -86 28 -72 28 -52 C28 -28 4 -18 0 0 Z"
+									fill="#e10600"
+									stroke="#7a0610"
+									strokeWidth="3"
+								/>
+								<circle cx="0" cy="-54" r="10" fill="#fff6ee" />
+								<g fill="#141414" transform="translate(34 2)">
+									<circle cx="0" cy="-36" r="7" />
+									<path d="M-5 -28 H5 L4 -10 H-4 Z" />
+									<path d="M-4 -10 L-8 0 H-4 L-1 -10 Z" />
+									<path d="M4 -10 L8 0 H4 L1 -10 Z" />
+								</g>
+							</g>
+						</svg>
+					</div>
+				</div>
 
-				<aside className={styles.panel}>
-					<p className={styles.panelTitle}>Effects</p>
-					<ul className={styles.effectList}>
-						{effects.map((effect) => (
-							<li key={effect.label}>{effect.label}</li>
-						))}
-					</ul>
-					<p className={styles.panelTitle}>Weak point</p>
-					<ul className={styles.weakList}>
-						{weakPoints.map((point) => (
-							<li key={point}>{point}</li>
-						))}
-					</ul>
+				<aside className={`${styles.panel} ${styles.panelSession}`}>
+					<p className={styles.panelTitle}>This session</p>
+					<p className={styles.goalTitle}>{formatTime(secondsLeft)}</p>
 					<div className={styles.rewards}>
-						<p className={styles.panelTitle}>Rewards</p>
-						{quest ? (
-							<div className={styles.rewardRow}>
-								<span>XP {quest.rewards?.xp ?? '—'}</span>
-								<span>Coins {quest.rewards?.coins ?? '—'}</span>
-							</div>
-						) : (
-							<p className={styles.muted}>Session XP on the clock</p>
-						)}
-						{timed ? <p className={styles.timedBonus}>Timed bonus</p> : null}
+						<p className={styles.panelTitle}>Reward</p>
+						<div className={styles.rewardRow}>
+							<span>XP {rewardXp}</span>
+							<span>Coins {rewardCoins}</span>
+						</div>
 					</div>
 				</aside>
-			</div>
-
-			<div className={styles.hpDock}>
-				<div className={styles.hpMeta}>
-					<span>Health</span>
-					<span>
-						{Math.round(hp.hp)} / {hp.maxHp} HP
-					</span>
-					<span className={styles.hpPct}>{hp.percent}%</span>
-				</div>
-				<div className={styles.hpTrack} role="progressbar" aria-valuenow={hp.percent} aria-valuemin={0} aria-valuemax={100}>
-					<span className={styles.hpFill} style={{ width: `${hp.percent}%` }} />
-				</div>
 			</div>
 
 			{subtasks.length > 0 ? (
@@ -300,31 +309,26 @@ export const FocusEncounterPanel: React.FC<{
 						</button>
 					))}
 					<span className={`${styles.node} ${styles.nodeSkull} ${hp.downed ? styles.nodeDone : ''}`}>
-						<span className={styles.nodeMark}>☠</span>
-						<span className={styles.nodeLabel}>Boss</span>
+						<span className={styles.nodeMark}>⚑</span>
+						<span className={styles.nodeLabel}>Flag</span>
 					</span>
 				</div>
 			) : null}
 
 			{honorOffer && onHonorComplete ? (
 				<div className={styles.honor}>
-					<p>
-						You ran the session but didn’t press Complete. If you finished the work —
-						scouts’ honor — confirm now. No extra loot, no penalty.
-					</p>
+					<p>You finished the session without completing the quest. If the work is done, confirm it. That reaches the flag.</p>
 					<button type="button" className={styles.complete} onClick={onHonorComplete}>
-						I finished this — confirm
+						I finished this
 					</button>
 				</div>
 			) : null}
 
 			{canComplete ? (
 				<button type="button" className={styles.complete} onClick={onCompleteQuest}>
-					{grace || hp.downed ? 'Complete — claim the kill' : 'Complete Quest'}
+					{grace || hp.downed ? 'Reach the flag' : 'Complete quest'}
 				</button>
 			) : null}
-
-			{isRunning ? <p className={styles.live}>Encounter live</p> : null}
 		</div>
 	);
 };

@@ -17,10 +17,10 @@ export const SYSTEM_HUNTER_PRESET: VisualThemePreset = {
 	tokens: {
 		// Semantic theme contract (new surfaces should prefer --go-*).
 		'--go-bg': '#071527',
-		'--go-panel': 'rgba(10, 30, 58, 0.9)',
-		'--go-panel-strong': 'rgba(8, 24, 46, 0.96)',
+		'--go-panel': 'rgba(8, 24, 46, 0.62)',
+		'--go-panel-strong': 'rgba(8, 24, 46, 0.84)',
 		'--go-card': 'rgba(18, 55, 96, 0.58)',
-		'--go-card-soft': 'rgba(8, 28, 54, 0.72)',
+		'--go-card-soft': 'rgba(8, 24, 46, 0.78)',
 		'--go-text': '#e0f2fe',
 		'--go-text-bright': '#f0f9ff',
 		'--go-muted': '#9ec7df',
@@ -49,7 +49,7 @@ export const SYSTEM_HUNTER_PRESET: VisualThemePreset = {
 		'--go-font-ui': '"Segoe UI", "Inter", system-ui, sans-serif',
 		'--go-font-display': '"Segoe UI", "Inter", system-ui, sans-serif',
 		'--go-font-body': '"Segoe UI", "Inter", system-ui, sans-serif',
-		'--go-screen-bg': 'linear-gradient(180deg, rgba(13, 39, 72, 0.98), rgba(5, 20, 40, 0.96))',
+		'--go-screen-bg': 'linear-gradient(180deg, rgba(13, 39, 72, 0.72), rgba(5, 20, 40, 0.86))',
 		'--go-screen-overlay':
 			'repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.04) 0, rgba(255, 255, 255, 0.04) 1px, transparent 2px, transparent 5px), radial-gradient(circle at 30% 20%, rgba(34, 200, 255, 0.13), transparent 36%)',
 		'--go-static-opacity': '0.48',
@@ -98,8 +98,8 @@ export const SYSTEM_HUNTER_PRESET: VisualThemePreset = {
 		'--gamification-secondary': '#1ba9e8',
 
 		'--system-bg': '#071527',
-		'--system-panel-bg': 'rgba(10, 30, 58, 0.9)',
-		'--system-panel-bg-strong': 'rgba(8, 24, 46, 0.96)',
+		'--system-panel-bg': 'rgba(8, 24, 46, 0.62)',
+		'--system-panel-bg-strong': 'rgba(8, 24, 46, 0.84)',
 		'--system-border': 'rgba(34, 200, 255, 0.62)',
 		'--system-accent': '#22c8ff',
 		'--system-gold': '#ffd83d',

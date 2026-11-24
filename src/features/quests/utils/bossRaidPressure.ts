@@ -149,6 +149,19 @@ export function applyBossRaidStrike(
 	};
 }
 
+/**
+ * The gate waits while you are away. Armor does not regen and strikes do not
+ * queue up; the next strike is one cooldown after you return.
+ */
+export function holdBossRaidWhileAway(boss: BossFileData, now = Date.now()): BossFileData {
+	const cooldown = getRaidBossStrikeCooldownMs(boss.difficulty);
+	return {
+		...boss,
+		lastArmorRegenAt: now,
+		attackReadyAt: now + cooldown,
+	};
+}
+
 /** Apply pending boss strikes after time away (capped). */
 export function catchUpBossRaidStrikes(
 	boss: BossFileData,

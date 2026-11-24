@@ -2,6 +2,7 @@
 import { productivityEquipmentSystem, ProductivityEquipment, EquipmentRarity } from './productivityEquipmentSystem';
 import { currencyDisplay } from '../../../shared/services/currencyDisplayService';
 import { pixelNotice } from '../../../shared/utils/noticeUtils';
+import { playerStore } from '../../../shared/state/playerStore';
 
 /**
  * Equipment Crafting System
@@ -165,7 +166,7 @@ export class EquipmentCraftingSystem {
         this.craftingRecipes.set('energy-drink', {
             id: 'energy-drink',
             name: 'Natural Energy Drink',
-            description: 'Healthy energy boost for immediate productivity',
+            description: 'Take a real drink — water, tea, or what you have — then craft and use this.',
             category: 'consumables',
             rarity: 'common',
             materials: {
@@ -669,17 +670,15 @@ export class EquipmentCraftingSystem {
      * Get player coins (integration point with currency system)
      */
     private getPlayerCoins(): number {
-        // This would integrate with the actual currency system
-        // For now, return a placeholder
-        return parseInt(localStorage.getItem('player-coins') || '0');
+        return Math.max(0, Number(playerStore.getSync()?.coins || 0));
     }
 
-    /**
-     * Set player coins (integration point with currency system)
-     */
     private setPlayerCoins(amount: number): void {
-        // This would integrate with the actual currency system
-        localStorage.setItem('player-coins', amount.toString());
+        const current = this.getPlayerCoins();
+        const next = Math.max(0, Math.round(amount));
+        const delta = next - current;
+        if (delta < 0) void playerStore.spendCoins(-delta);
+        else if (delta > 0) void playerStore.addCoins(delta);
     }
 
     /**

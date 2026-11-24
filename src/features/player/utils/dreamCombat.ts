@@ -374,14 +374,63 @@ function pickWearTargets(
 	return candidates.slice(0, count).map((entry) => entry.itemName as string);
 }
 
+/** Flat heal for a Health Potion. */
+export const HEALTH_POTION_HEAL = 20;
+
+/** Share of max HP restored when a wrecked dream clears a comfortable quest. */
+const COMFORTABLE_RECOVERY_FRAC = 0.12;
+
+export function applyDreamHeal(
+	currentHp: number,
+	maxHp: number,
+	amount: number
+): { hp: number; healed: number } {
+	const before = Math.max(0, Math.min(maxHp, Math.round(currentHp)));
+	const hp = Math.min(maxHp, before + Math.max(0, Math.round(amount)));
+	return { hp, healed: hp - before };
+}
+
 export function planDreamBattleTick(
 	stats: DreamCombatStats,
 	forecast: DreamForecast,
 	look: EquippedGearItem[],
 	unbreaking = false,
-	rng: () => number = Math.random
+	rng: () => number = Math.random,
+	options?: { recordOnly?: boolean }
 ): DreamBattleTickPlan {
 	const tone = forecast.tone;
+	const wreckedPenalty = stats.hp <= 0 ? 1 : 0;
+
+	if (options?.recordOnly) {
+		return {
+			chip: 0,
+			hpBefore: stats.hp,
+			hpAfter: stats.hp,
+			outcome: stats.hp <= 0 ? 'wrecked' : 'survived',
+			tone,
+			bossName: forecast.bossName,
+			wearNames: [],
+			lootStepsDown: wreckedPenalty,
+			unbreaking,
+		};
+	}
+
+	if (stats.hp <= 0 && tone === 'comfortable') {
+		const heal = Math.max(1, Math.round(stats.maxHp * COMFORTABLE_RECOVERY_FRAC));
+		const hpAfter = Math.min(stats.maxHp, heal);
+		return {
+			chip: 0,
+			hpBefore: stats.hp,
+			hpAfter,
+			outcome: 'survived',
+			tone,
+			bossName: forecast.bossName,
+			wearNames: pickWearTargets(look, wearCountForTone(tone, rng), unbreaking, rng),
+			lootStepsDown: 1,
+			unbreaking,
+		};
+	}
+
 	const mitigation = 1 - Math.min(0.4, stats.def / (stats.def + 48));
 	let chip = Math.round(stats.maxHp * CHIP_FRAC[tone] * mitigation);
 	chip = Math.max(tone === 'comfortable' ? 1 : 2, chip);
@@ -397,12 +446,16 @@ export function planDreamBattleTick(
 		tone,
 		bossName: forecast.bossName,
 		wearNames,
-		lootStepsDown: lootStepsDownForTone(tone),
+		lootStepsDown: lootStepsDownForTone(tone) + (stats.hp <= 0 ? 1 : 0),
 		unbreaking,
 	};
 }
 
 export function dreamTickNoticeLine(plan: DreamBattleTickPlan): string {
+	const recovered = plan.hpAfter - plan.hpBefore;
+	if (recovered > 0) {
+		return `Dream recovers +${recovered} HP`;
+	}
 	const hpBit = plan.chip > 0 ? ` · −${plan.chip} HP` : '';
 	if (plan.outcome === 'wrecked') {
 		return `Dream wrecked${hpBit} · quest still counts`;

@@ -14,6 +14,7 @@ import { playerStore } from '../../../shared/state/playerStore';
 import { getHunterKitItems } from '../../inventory/utils/gearFile';
 import { readInventory, writeInventory } from '../../inventory/utils/updateInventoryFile';
 import { getActiveBossFileRaid } from '../../quests/utils/bossRaidService';
+import { loadJourneyState } from '../../quests/utils/journeyRunService';
 import { readBoss } from '../../quests/utils/bossFile';
 import { isBookOfEasyEnabled } from '../../../shared/utils/gameplayConfig';
 
@@ -35,6 +36,14 @@ async function loadRaidHint(app: App): Promise<DreamRaidHint | null> {
 	} catch {
 		return null;
 	}
+}
+
+/** Journey run or an open gate already took this quest. Dream HP stays put. */
+function activeEnemyOwnsQuest(): boolean {
+	const raid = getActiveBossFileRaid();
+	if (raid && !raid.defeated) return true;
+	const run = loadJourneyState().activeRun;
+	return !!run && run.status === 'active';
 }
 
 function dispatchGearUpdated(): void {
@@ -62,7 +71,9 @@ export async function applyDreamBattleOnQuestComplete(
 		const raidHint = await loadRaidHint(app);
 		const stats = buildDreamCombatStats(player.level ?? 1, look, player.dream, unbreaking);
 		const forecast = forecastDreamRaid(stats, player.level ?? 1, raidHint);
-		const plan = planDreamBattleTick(stats, forecast, look, unbreaking);
+		const plan = planDreamBattleTick(stats, forecast, look, unbreaking, Math.random, {
+			recordOnly: activeEnemyOwnsQuest(),
+		});
 
 		let hpToStore = plan.hpAfter;
 		if (plan.wearNames.length > 0) {

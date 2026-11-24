@@ -23,6 +23,7 @@ export interface TaskNotesFrontmatter {
 	scheduled?: string;
 	project?: string;
 	projects?: string[];
+	projectKind?: 'standing' | 'campaign';
 	tags?: string[];
 	skills?: string[];
 	recur?: string;
@@ -30,6 +31,7 @@ export interface TaskNotesFrontmatter {
 	estimatedTime?: string;
 	timeEstimate?: number;
 	energyCost?: number;
+	energyLock?: boolean;
 	activityProfile?: string;
 	completedDate?: string;
 	dateCreated?: string;
@@ -51,6 +53,7 @@ export type CreateTaskNotesFields = {
 	recur?: string;
 	estimatedTime?: string;
 	energyCost?: number;
+	energyLocked?: boolean;
 	activityProfile?: string;
 	project?: string;
 	skills?: string[];
@@ -130,6 +133,18 @@ export function applyFrontmatterRewardFields(
 	}
 }
 
+/** Date on the task line, when the quest object was built without one. */
+export function applyLineDueFallback(quest: Quest, line: string | undefined): void {
+	if (!line || quest.due) return;
+	const dueMatch = line.match(/📅\s*(\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2})?)?)/u);
+	if (dueMatch) {
+		quest.due = dueMatch[1];
+		return;
+	}
+	const dueField = line.match(/\bdue::\s*(\d{4}-\d{2}-\d{2}(?:T\d{2}:\d{2}(?::\d{2})?)?)/i);
+	if (dueField) quest.due = dueField[1];
+}
+
 /** Line parse is the fallback when Properties omit a field. */
 export function applyLineRewardFallback(quest: Quest, line: string | undefined): void {
 	if (!line) return;
@@ -168,6 +183,7 @@ export function hydrateQuestRewardsFromNote(
 ): Quest {
 	const next: Quest = { ...quest };
 	applyLineRewardFallback(next, options.taskLine);
+	applyLineDueFallback(next, options.taskLine);
 	if (!next.enhancedRewards?.length) {
 		const attached = findGamifyRewardsInContent(options.content, options.taskLine);
 		if (attached) {
@@ -330,6 +346,7 @@ export function parseTaskNotesFrontmatter(content: string): TaskNotesFrontmatter
 		scheduled: asString(raw.scheduled),
 		project: asString(raw.project),
 		projects: projects.length ? projects : undefined,
+		projectKind: parseProjectKind(raw.projectKind),
 		tags: tags.length ? tags : undefined,
 		skills: skills.length ? skills : undefined,
 		recur: asString(raw.recur),
@@ -337,6 +354,7 @@ export function parseTaskNotesFrontmatter(content: string): TaskNotesFrontmatter
 		estimatedTime: asString(raw.estimatedTime),
 		timeEstimate: asNumber(raw.timeEstimate),
 		energyCost: asNumber(raw.energyCost),
+		energyLock: raw.energyLock === true || raw.energyLock === 'true',
 		activityProfile: asString(raw.activityProfile),
 		completedDate: asString(raw.completedDate),
 		dateCreated: asString(raw.dateCreated),
@@ -376,9 +394,28 @@ export function parseFrontmatterBlock(content: string): TaskNotesFrontmatter | n
 	return fm;
 }
 
+function parseProjectKind(value: unknown): 'standing' | 'campaign' | undefined {
+	const raw = asString(value)?.toLowerCase();
+	if (raw === 'standing' || raw === 'campaign') return raw;
+	return undefined;
+}
+
+function normalizedTags(tags: string[] | undefined): string[] {
+	return (tags || []).map((tag) => tag.toLowerCase().replace(/^#/, ''));
+}
+
+/** TaskNotes / TaskForge project note (`type/project` or `projectKind`). */
+export function isTaskNotesProjectNote(fm: TaskNotesFrontmatter | null | undefined): boolean {
+	if (!fm) return false;
+	if (fm.projectKind === 'standing' || fm.projectKind === 'campaign') return true;
+	const tags = normalizedTags(fm.tags);
+	return tags.includes('type/project') || tags.includes('project');
+}
+
 export function isTaskNotesContent(content: string): boolean {
 	const fm = parseTaskNotesFrontmatter(content);
 	if (!fm) return false;
+	if (isTaskNotesProjectNote(fm)) return true;
 	if (typeof fm.status === 'string' && fm.status.length > 0) return true;
 	return Boolean(fm.tags?.some((tag) => tag.toLowerCase() === 'task' || tag.toLowerCase() === '#task'));
 }
@@ -504,7 +541,10 @@ export function buildTaskNotesFrontmatter(input: CreateTaskNotesFields): Record<
 	}
 	if (input.estimatedTime) frontmatter.estimatedTime = input.estimatedTime;
 	if (timeEstimate) frontmatter.timeEstimate = timeEstimate;
-	if (input.energyCost) frontmatter.energyCost = input.energyCost;
+	if (input.energyLocked && typeof input.energyCost === 'number' && Number.isFinite(input.energyCost)) {
+		frontmatter.energyCost = Math.trunc(input.energyCost);
+		frontmatter.energyLock = true;
+	}
 	if (input.activityProfile) frontmatter.activityProfile = input.activityProfile;
 	if (input.skills?.length) frontmatter.skills = input.skills;
 	if (input.banner) frontmatter.banner = input.banner;
@@ -590,8 +630,15 @@ export function overlayTaskNotesFields(quest: Quest, content: string): Quest {
 	if (fm.difficulty) quest.difficulty = fm.difficulty;
 	applyTaskNotesSchedule(quest, fm);
 	if (fm.skills?.length) quest.skills = fm.skills;
-	if (fm.energyCost) quest.energyCost = fm.energyCost;
-	if (fm.activityProfile) quest.activityProfile = fm.activityProfile;
+	if (fm.energyLock) {
+		quest.energyLocked = true;
+		if (typeof fm.energyCost === 'number' && Number.isFinite(fm.energyCost)) {
+			quest.energyCost = Math.trunc(fm.energyCost);
+		}
+	} else if (!quest.energyLocked && typeof fm.energyCost === 'number' && Number.isFinite(fm.energyCost)) {
+		quest.energyCost = Math.trunc(fm.energyCost);
+	}
+	if (fm.activityProfile && !quest.activityProfile) quest.activityProfile = fm.activityProfile;
 	if (fm.estimatedTime) quest.estimatedTime = fm.estimatedTime;
 	else if (typeof fm.timeEstimate === 'number') quest.estimatedTime = String(fm.timeEstimate);
 	if (fm.recur) quest.recur = fm.recur;
@@ -600,8 +647,18 @@ export function overlayTaskNotesFields(quest: Quest, content: string): Quest {
 	if (fm.status) quest.status = fm.status;
 	if (isStatusDone(fm.status)) quest.completed = true;
 
-	const projectName = fm.project || (fm.projects?.[0] ? stripWikilink(fm.projects[0]) : undefined);
-	if (projectName && !quest.project) quest.project = projectName;
+	const linkedProjects = (fm.projects || []).map(stripWikilink).filter(Boolean);
+	if (linkedProjects.length) quest.projects = linkedProjects;
+	const projectName = fm.project || linkedProjects[0];
+	if (projectName && !quest.project) quest.project = stripWikilink(projectName);
+
+	if (isTaskNotesProjectNote(fm)) {
+		quest.type = 'project';
+		const tags = normalizedTags(fm.tags);
+		quest.projectKind =
+			fm.projectKind ||
+			(tags.includes('project/standing') ? 'standing' : 'campaign');
+	}
 
 	return quest;
 }
@@ -663,6 +720,7 @@ export function buildQuestFromTaskNotesContent(content: string, filePath: string
 		estimatedTime: fm?.estimatedTime || (typeof fm?.timeEstimate === 'number' ? String(fm.timeEstimate) : undefined),
 		recur: fm?.recur || fm?.recurrence,
 		energyCost: fm?.energyCost,
+		...(fm?.energyLock ? { energyLocked: true } : {}),
 		activityProfile: fm?.activityProfile,
 	};
 

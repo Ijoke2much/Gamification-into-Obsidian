@@ -19,6 +19,10 @@ import {
 	type WellbeingDeltas,
 } from "./questWellbeingProfiles";
 import { resolveEnergyHudConfig } from "./energyHudConfig";
+import {
+	resolveActivityEnergy,
+	type ActivityEnergyRule,
+} from "./activityEnergy";
 import type { GamificationPluginSettings } from "../../core/settings";
 import { distributeCPFromQuest } from "./progressUpdater";
 import {
@@ -48,6 +52,11 @@ import {
 import { recordDailyActivity } from "./dailyActivityStreak";
 import { MaterialInventoryManager } from "../services/materialInventoryManager";
 import { applyDreamBattleOnQuestComplete } from "../../features/player/utils/dreamBattleTick";
+import {
+	overdueKeepFraction,
+	payableQuestRewards,
+} from "./overdueRewardScale";
+import { getPluginSettingsFromApp } from "./gameplayConfig";
 
 export interface QuestRewardSettings {
 	currencyName?: string;
@@ -85,28 +94,34 @@ export interface QuestRewardResult {
 	dreamNotice?: string;
 	dreamOutcome?: 'survived' | 'wrecked';
 	dreamLootDown?: number;
+	/** Set when overdue penalties shrunk this payout. */
+	overdueDaysLate?: number;
 }
 
 /** Default stamina cost when a quest has no `energyCost` in metadata. */
 export const DEFAULT_QUEST_ENERGY_COST = 10;
 
 /**
- * Resolve how much `stats.energy` to subtract when a quest is completed.
+ * Signed energy change when a quest is completed.
+ * Positive spends. Negative restores. The activity type supplies the number
+ * unless this quest locked its own.
  */
-export function getQuestEnergyCost(quest: Pick<Quest, "energyCost"> | null | undefined): number {
-	const e = quest?.energyCost;
-	if (typeof e === "number" && Number.isFinite(e) && e > 0) {
-		return Math.min(100, Math.floor(e));
-	}
-	return DEFAULT_QUEST_ENERGY_COST;
+export function getQuestEnergyCost(
+	quest: Pick<Quest, "energyCost" | "activityProfile" | "energyLocked"> | null | undefined,
+	rules?: ActivityEnergyRule[] | null
+): number {
+	return resolveActivityEnergy(quest, rules);
 }
 
 /**
- * Subtract energy from player stats (clamped 0–100) after a quest completes.
+ * Move `stats.energy` by the quest's signed cost (clamped 0–100).
  */
-export async function applyQuestEnergyCost(quest: Pick<Quest, "energyCost">): Promise<void> {
-	const cost = getQuestEnergyCost(quest);
-	if (cost <= 0) return;
+export async function applyQuestEnergyCost(
+	quest: Pick<Quest, "energyCost" | "activityProfile" | "energyLocked">,
+	rules?: ActivityEnergyRule[] | null
+): Promise<void> {
+	const cost = getQuestEnergyCost(quest, rules);
+	if (!Number.isFinite(cost) || cost === 0) return;
 
 	await playerStore.update((data) => {
 		const stats = { ...(data.stats || {}) };
@@ -120,13 +135,16 @@ export async function applyQuestEnergyCost(quest: Pick<Quest, "energyCost">): Pr
  * Parse `energy` / `energyCost` from a raw gamified task markdown line (Pomodoro / legacy paths).
  */
 export function parseEnergyCostFromMarkdownLine(line: string): number | undefined {
-	const brace = line.match(/\{([^}]*)\}/);
-	if (brace) {
-		const m = brace[1].match(/(?:energy|energyCost)\s*:\s*(\d+)/i);
-		if (m) return Math.min(100, parseInt(m[1], 10));
+	const signed = line.match(/(?:energy|energyCost)\s*:\s*(-?\d+)/i);
+	if (signed) {
+		const n = parseInt(signed[1], 10);
+		if (Number.isFinite(n)) return Math.max(-100, Math.min(100, n));
 	}
-	const m2 = line.match(/(?:\||\s)(?:energy|energyCost)\s*:\s*(\d+)/i);
-	if (m2) return Math.min(100, parseInt(m2[1], 10));
+	const emoji = line.match(/🔋\s*(-?\d+)/);
+	if (emoji) {
+		const n = parseInt(emoji[1], 10);
+		if (Number.isFinite(n)) return Math.max(-100, Math.min(100, n));
+	}
 	return undefined;
 }
 
@@ -142,12 +160,13 @@ export async function awardQuestRewards(
 	app?: App
 ): Promise<QuestRewardResult> {
 	const rewardSettings = normalizeQuestRewardSettings(settings);
-	const awardedXP = Math.max(0, Number.isFinite(quest.xp) ? (quest.xp as number) : 0);
-	const awardedCP = Math.max(0, Number.isFinite(quest.cp) ? (quest.cp as number) : 0);
-	const awardedCoins = Math.max(
-		0,
-		Number.isFinite(quest.coins) ? (quest.coins as number) : Math.round(awardedXP * 0.2)
-	);
+	const payable = payableQuestRewards(quest, resolveGameplaySettings(settings, app), new Date(), {
+		ignoreCompleted: true,
+	});
+	const awardedXP = payable.xp;
+	const awardedCP = payable.cp;
+	const awardedCoins = payable.coins;
+	const overdueDaysLate = payable.reduced ? payable.daysLate : undefined;
 
 	let xpGain: XPGainResult | undefined;
 	if (awardedXP > 0) {
@@ -177,7 +196,7 @@ export async function awardQuestRewards(
 	// Stamina + wellbeing — only for stats the user tracks in their HUD mode
 	const hudConfig = resolveEnergyHudConfig(rewardSettings?.energySettings);
 	if (hudConfig.trackEnergyCost) {
-		await applyQuestEnergyCost(quest);
+		await applyQuestEnergyCost(quest, rewardSettings?.energySettings?.activityEnergyRules);
 	}
 	if (hudConfig.activeWellbeingStats.length > 0) {
 		const wellbeing = await applyQuestWellbeingEffects(quest, rewardSettings?.energySettings);
@@ -293,6 +312,7 @@ export async function awardQuestRewards(
 					dreamLootDown: dreamTick.lootStepsDown,
 				}
 			: {}),
+		...(overdueDaysLate ? { overdueDaysLate } : {}),
 	};
 }
 
@@ -307,6 +327,19 @@ export async function undoBossFileQuestCompletion(
 	quest: Quest
 ): Promise<{ reverted: boolean; hpRestored: number }> {
 	return revertBossFileQuestCompletion(app, quest);
+}
+
+function resolveGameplaySettings(
+	settings?: QuestRewardSettings | Partial<GamificationPluginSettings>,
+	app?: App
+): Partial<GamificationPluginSettings> | null {
+	if (settings && ("modules" in settings || "gameplayProfile" in settings)) {
+		return settings as Partial<GamificationPluginSettings>;
+	}
+	if (settings && "energySettings" in settings && settings.energySettings) {
+		return settings.energySettings;
+	}
+	return getPluginSettingsFromApp(app) ?? null;
 }
 
 function normalizeQuestRewardSettings(
@@ -382,6 +415,11 @@ export function buildCompletionNoticeText(
 	const lines = [
 		`✅ QUEST COMPLETE!\n+${result.awardedXP} XP · +${result.awardedCP} CP · ${currencySymbol}${result.awardedCoins} ${currencyName}`,
 	];
+	if (result.overdueDaysLate && result.overdueDaysLate > 0) {
+		const kept = Math.round(overdueKeepFraction(result.overdueDaysLate) * 100);
+		const dayLabel = result.overdueDaysLate === 1 ? '1 day late' : `${result.overdueDaysLate} days late`;
+		lines.push(`${dayLabel} · ${kept}% of the reward`);
+	}
 	if (result.wellbeingLine) {
 		lines.push(result.wellbeingLine);
 	}

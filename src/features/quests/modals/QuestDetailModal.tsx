@@ -7,10 +7,11 @@ import { updateQuestCustomTags } from '../utils/questProjectUtils';
 import { pixelNotice } from '../../../shared/utils/noticeUtils';
 import type GamificationObsidianPlugin from '../../../core/main';
 import { formatRecur, parseEstimatedMinutes, formatMinutesHuman } from '../utils/questDisplayUtils';
-import { formatActivityProfileLabel, normalizeActivityProfileId } from '../../../shared/utils/questWellbeingProfiles';
+import { formatActivityEnergyBadge } from '../../../shared/utils/activityEnergy';
 import { currencyDisplay } from '../../../shared/services/currencyDisplayService';
 import { isPerNoteQuestFile } from '../utils/questNoteService';
 import styles from './QuestDetailModal.module.css';
+import { displayedQuestRewards, overdueRewardHint } from '../../../shared/utils/overdueRewardScale';
 
 interface QuestDetailModalProps {
   isOpen: boolean;
@@ -240,6 +241,7 @@ export const QuestDetailModal: React.FC<QuestDetailModalProps> = ({
   };
 
   const dueInfo = getDueDateInfo();
+  const payable = displayedQuestRewards(displayQuest, plugin.settings);
   const displayTags = localCustomTags;
 
   const persistCustomTags = async (next: string[]) => {
@@ -274,9 +276,10 @@ export const QuestDetailModal: React.FC<QuestDetailModalProps> = ({
   const recurLabel = formatRecur(displayQuest.recur);
   const skillNames = getQuestSkillNames(displayQuest);
   const currencyName = plugin.settings?.currencyName?.trim() || currencyDisplay.getCurrencyName();
-  const activityLabel = displayQuest.activityProfile
-    ? formatActivityProfileLabel(normalizeActivityProfileId(displayQuest.activityProfile))
-    : null;
+  const activityLabel = formatActivityEnergyBadge(
+    displayQuest,
+    plugin.settings?.activityEnergyRules
+  );
   const bannerAlign = displayQuest.bannerAlign || 'center';
   const bannerPosition =
     bannerAlign === 'top' ? 'center top' :
@@ -433,10 +436,34 @@ export const QuestDetailModal: React.FC<QuestDetailModalProps> = ({
               <div className={styles.infoItem}>
                 <span className={styles.infoLabel}>🎁 Rewards</span>
                 <span className={styles.infoValue}>
-                  {displayQuest.xp && <span className={styles.reward}>XP: {displayQuest.xp}</span>}
-                  {displayQuest.cp && <span className={styles.reward}>CP: {displayQuest.cp}</span>}
+                  {displayQuest.xp && (
+                    <span
+                      className={styles.reward}
+                      title={overdueRewardHint(payable.daysLate, payable.originalXp, payable.xp, 'XP')}
+                    >
+                      XP: {payable.xp}
+                    </span>
+                  )}
+                  {displayQuest.cp && (
+                    <span
+                      className={styles.reward}
+                      title={overdueRewardHint(payable.daysLate, payable.originalCp, payable.cp, 'CP')}
+                    >
+                      CP: {payable.cp}
+                    </span>
+                  )}
                   {typeof displayQuest.coins === 'number' && displayQuest.coins > 0 && (
-                    <span className={styles.reward}>{currencyName}: {displayQuest.coins}</span>
+                    <span
+                      className={styles.reward}
+                      title={overdueRewardHint(payable.daysLate, payable.originalCoins, payable.coins, currencyName)}
+                    >
+                      {currencyName}: {payable.coins}
+                    </span>
+                  )}
+                  {payable.reduced && (
+                    <span className={styles.reward}>
+                      {payable.daysLate === 1 ? '1 day late' : `${payable.daysLate} days late`}
+                    </span>
                   )}
                 </span>
               </div>
@@ -500,7 +527,7 @@ export const QuestDetailModal: React.FC<QuestDetailModalProps> = ({
               </div>
             )}
 
-            {activityLabel && activityLabel !== 'Generic task' && (
+            {activityLabel && (
               <div className={styles.infoItem}>
                 <span className={styles.infoLabel}>🧠 Activity</span>
                 <span className={styles.infoValue}>{activityLabel}</span>

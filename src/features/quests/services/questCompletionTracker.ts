@@ -10,7 +10,7 @@ import {
 	awardQuestRewards,
 	type QuestRewardResult,
 } from '../../../shared/utils/questCompletionPipeline';
-import { parseActivityProfileFromTaskLine } from '../../../shared/utils/questWellbeingProfiles';
+import { storedActivityTypeId } from '../../../shared/utils/questWellbeingProfiles';
 import { getPluginSettingsFromApp } from '../../../shared/utils/gameplayConfig';
 import {
 	buildCompletionKey,
@@ -182,12 +182,10 @@ export class QuestCompletionTracker {
 		const difficulty = this.extractDifficulty(taskLine);
 		const skills = this.extractSkills(taskLine);
 
-		const energyFromLine = (() => {
-			const m = taskLine.match(/🔋\s*(\d+)/);
-			if (m) return Math.min(100, parseInt(m[1], 10));
-			return parseEnergyCostFromMarkdownLine(taskLine);
-		})();
-		const activityId = parseActivityProfileFromTaskLine(taskLine);
+		const energyFromLine = parseEnergyCostFromMarkdownLine(taskLine);
+		const activityTag = taskLine.match(/#activity\/([\w-]+)/i);
+		const activityId = activityTag ? storedActivityTypeId(activityTag[1]) : 'generic';
+		const energyLocked = /energyLock\s*:\s*true/i.test(taskLine);
 
 		return {
 			id: buildCompletionKey(filePath, lineNumber),
@@ -205,6 +203,7 @@ export class QuestCompletionTracker {
 			subtasks: [],
 			completed: true,
 			...(typeof energyFromLine === 'number' ? { energyCost: energyFromLine } : {}),
+			...(energyLocked ? { energyLocked: true } : {}),
 			...(activityId !== 'generic' ? { activityProfile: activityId } : {}),
 		};
 	}
@@ -244,6 +243,15 @@ export class QuestCompletionTracker {
 			}
 
 			await markCompletionRewarded(this.app, ledgerKey);
+
+			try {
+				const { recountCustomAchievements } = await import(
+					'../../achievements/utils/customAchievements'
+				);
+				await recountCustomAchievements(this.app);
+			} catch (error) {
+				console.error('[QuestTracker] Custom achievement update failed:', error);
+			}
 
 			const { achievementEventService } = await import(
 				'../../achievements/services/achievementEventService'

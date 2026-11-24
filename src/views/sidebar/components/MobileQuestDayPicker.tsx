@@ -470,20 +470,22 @@ export const MobileQuestDayPicker: React.FC<MobileQuestDayPickerProps> = ({
 	return (
 		<section className={styles.wrap} data-quest-calendar aria-label="Quest calendar">
 			<div className={styles.header}>
-				<button
-					type="button"
-					className={styles.collapseToggle}
-					onClick={() => setCollapsed((v) => !v)}
-					aria-expanded={!collapsed}
-					title={collapsed ? 'Show calendar details' : 'Hide calendar details'}
-				>
-					<MissionSectionTitle
-						title={view === 'month' ? 'Month' : 'Week'}
-						icon="📅"
-						className={styles.missionTitleInToggle}
-					/>
+				<div className={styles.titleStack}>
+					<button
+						type="button"
+						className={styles.collapseToggle}
+						onClick={() => setCollapsed((v) => !v)}
+						aria-expanded={!collapsed}
+						title={collapsed ? 'Show calendar details' : 'Hide calendar details'}
+					>
+						<MissionSectionTitle
+							title={view === 'month' ? 'Month' : 'Week'}
+							icon="📅"
+							className={styles.missionTitleInToggle}
+						/>
+					</button>
 					<span className={styles.range}>{rangeLabel}</span>
-				</button>
+				</div>
 				<div className={styles.nav}>
 					<button
 						type="button"

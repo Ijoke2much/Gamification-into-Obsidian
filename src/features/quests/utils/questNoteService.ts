@@ -122,6 +122,7 @@ export interface CreateQuestNoteInput {
 	recur?: string;
 	estimatedTime?: string;
 	energyCost?: number;
+	energyLocked?: boolean;
 	activityProfile?: string;
 	project?: string;
 	banner?: string;
@@ -165,6 +166,7 @@ export async function createQuestNote(
 		recur: input.recur,
 		estimatedTime: input.estimatedTime,
 		energyCost: input.energyCost,
+		energyLocked: input.energyLocked,
 		activityProfile: input.activityProfile,
 		project: input.project,
 		skills: skillNames,
@@ -188,6 +190,7 @@ export async function createQuestNote(
 		recur: input.recur,
 		estimatedTime: input.estimatedTime,
 		energyCost: input.energyCost,
+		energyLocked: input.energyLocked,
 		activityProfile: input.activityProfile,
 		project: input.project,
 		customTags: input.customTags,

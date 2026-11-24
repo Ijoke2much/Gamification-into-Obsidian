@@ -22,7 +22,42 @@ function isMasterClassNote(f: TFile): boolean {
   return true;
 }
 
-/** Mobile-safe: reads at most a few master-class notes — no getAllClasses() scan. */
+function masterNoteCandidates(name: string): string[] {
+  const trimmed = name.trim();
+  if (!trimmed) return [];
+  return [
+    `SkillTree/Master-Class/${trimmed}.md`,
+    `SkillTree/Master-Class/${trimmed}/${trimmed}.md`,
+  ];
+}
+
+async function findMasterClassNote(
+  plugin: GamifiedObsidianPlugin,
+  masterClassName: string
+): Promise<TFile | null> {
+  const vault = plugin.app.vault;
+  const target = masterClassName.trim().toLowerCase();
+  for (const path of masterNoteCandidates(masterClassName)) {
+    const hit = vault.getAbstractFileByPath(path);
+    if (hit instanceof TFile) return hit;
+  }
+
+  const files = vault.getMarkdownFiles();
+  const exact = files.find(
+    (f) => isMasterClassNote(f) && f.basename.trim().toLowerCase() === target
+  );
+  if (exact) return exact;
+
+  return (
+    files.find((f) => {
+      if (!isMasterClassNote(f)) return false;
+      const base = f.basename.trim().toLowerCase();
+      return base.includes(target) || base.startsWith(target);
+    }) ?? null
+  );
+}
+
+/** Reads the named master-class note. getMarkdownFiles includes notes the phone has not opened. */
 async function loadMasterClassProgressFast(
   plugin: GamifiedObsidianPlugin,
   masterClassName: string | undefined
@@ -31,16 +66,8 @@ async function loadMasterClassProgressFast(
   if (!target) return { classIcon: null, progress: null };
 
   const vault = plugin.app.vault;
-  const candidates: TFile[] = [];
-
-  for (const f of vault.getAllLoadedFiles()) {
-    if (!(f instanceof TFile) || !isMasterClassNote(f)) continue;
-    const base = f.basename.trim().toLowerCase();
-    if (base.includes(target) || base.startsWith(target)) {
-      candidates.push(f);
-      if (candidates.length >= 4) break;
-    }
-  }
+  const named = await findMasterClassNote(plugin, masterClassName || '');
+  const candidates: TFile[] = named ? [named] : [];
 
   let best: { file: TFile; data: Record<string, unknown> } | null = null;
 
@@ -155,8 +182,12 @@ export function useMasterClassProgress(
     };
 
     void load();
+    document.addEventListener('stats-updated', load);
+    document.addEventListener('player-data-updated', load);
     return () => {
       cancelled = true;
+      document.removeEventListener('stats-updated', load);
+      document.removeEventListener('player-data-updated', load);
     };
   }, [plugin, masterClassName, lightweight]);
 

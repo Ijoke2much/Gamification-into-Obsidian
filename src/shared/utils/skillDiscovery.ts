@@ -374,6 +374,27 @@ function normalizeSkillStats(skillStats: unknown): { [statName: string]: string 
   return stats;
 }
 
+function masterClassPathCandidates(name: string): string[] {
+  const trimmed = name.trim();
+  if (!trimmed) return [];
+  return [
+    `SkillTree/Master-Class/${trimmed}.md`,
+    `SkillTree/Master-Class/${trimmed}/${trimmed}.md`,
+  ];
+}
+
+function resolveMasterClassPath(vault: Vault, name: string, files: TFile[]): string {
+  const trimmed = name.trim();
+  if (!trimmed) return '';
+  for (const candidate of masterClassPathCandidates(trimmed)) {
+    const hit = vault.getAbstractFileByPath(candidate);
+    if (hit instanceof TFile) return hit.path;
+  }
+  const lower = trimmed.toLowerCase();
+  const exact = files.find((f) => f.basename.trim().toLowerCase() === lower);
+  return exact?.path ?? '';
+}
+
 function masterFromSkillPath(filePath: string): string | undefined {
   const pathParts = normVaultPath(filePath).split('/');
   const mcIdx = pathParts.findIndex((p) => p.toLowerCase() === 'master-class');
@@ -400,15 +421,12 @@ export async function getAllSkills(vault: Vault): Promise<SkillMetadata[]> {
     return skillsCache;
   }
 
-  const allFiles = vault.getAllLoadedFiles();
-  const skillFiles = allFiles.filter(
-    (f): f is TFile => f instanceof TFile && isSkillTreeSkillNote(f)
-  );
+  const allFiles = vault.getMarkdownFiles();
+  const skillFiles = allFiles.filter((f) => isSkillTreeSkillNote(f));
 
   // Precompute once (was previously re-filtered for every skill — expensive on mobile).
   const masterClassFiles = allFiles.filter(
-    (f): f is TFile =>
-      f instanceof TFile &&
+    (f) =>
       pathUnderSkillTreeRoot(f.path) &&
       f.path.toLowerCase().includes('/master-class/') &&
       f.path.endsWith('.md') &&
@@ -418,25 +436,22 @@ export async function getAllSkills(vault: Vault): Promise<SkillMetadata[]> {
       !/\/stats\//i.test(f.path)
   );
 
-  // Desktop: resolve class → master once. Mobile: path-derived master is enough for quest picker.
+  // Skill notes live under .../Skills/, so the folder name is not the master class.
+  // Read class notes on phone and desktop so CP can reach the right master class.
   const classMasterMap = new Map<string, string>();
-  if (!isMobile) {
-    const classFiles = allFiles.filter(
-      (f): f is TFile => f instanceof TFile && isSkillTreeClassNoteFile(f)
-    );
-    await Promise.all(
-      classFiles.map(async (clsFile) => {
-        const clsContent = await readVaultTextWithTimeout(vault, clsFile);
-        if (!clsContent) return;
-        const { data: clsData } = matter(clsContent);
-        const className = resolveClassDisplayName(clsData, clsFile);
-        const master = (clsData.master || clsData.masterClass) as string | undefined;
-        if (className && master) {
-          classMasterMap.set(className.toLowerCase(), String(master));
-        }
-      })
-    );
-  }
+  const classFiles = allFiles.filter((f) => isSkillTreeClassNoteFile(f));
+  await Promise.all(
+    classFiles.map(async (clsFile) => {
+      const clsContent = await readVaultTextWithTimeout(vault, clsFile);
+      if (!clsContent) return;
+      const { data: clsData } = isMobile ? parseFrontmatterMobile(clsContent) : matter(clsContent);
+      const className = resolveClassDisplayName(clsData, clsFile);
+      const master = (clsData.master || clsData.masterClass || clsData.MasterClass) as string | undefined;
+      if (className && master) {
+        classMasterMap.set(className.toLowerCase(), String(master).trim());
+      }
+    })
+  );
 
   const settled = await Promise.allSettled(
     skillFiles.map(async (file) => {
@@ -451,24 +466,9 @@ export async function getAllSkills(vault: Vault): Promise<SkillMetadata[]> {
 
       const className = String(skillClass);
       const classPath = `SkillTree/Master-Class/Class/${className}.md`;
-      let masterClass =
+      const masterClass =
         classMasterMap.get(className.toLowerCase()) || masterFromSkillPath(file.path) || '';
-
-      let masterClassPath = masterClass
-        ? `SkillTree/Master-Class/${masterClass}/${masterClass}.md`
-        : '';
-      if (masterClassFiles.length > 0) {
-        if (masterClass) {
-          const exact = masterClassFiles.find(
-            (f) =>
-              f.path === `SkillTree/Master-Class/${masterClass}.md` ||
-              f.path.endsWith(`/${masterClass}.md`)
-          );
-          masterClassPath = (exact || masterClassFiles[0]).path;
-        } else {
-          masterClassPath = masterClassFiles[0].path;
-        }
-      }
+      const masterClassPath = resolveMasterClassPath(vault, masterClass, masterClassFiles);
 
       const stats = normalizeSkillStats(data.stats ?? data.Stats);
       const epithetRaw = data.epithet ?? data.Epithet ?? data.tagline ?? data.Tagline;

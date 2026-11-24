@@ -1,9 +1,12 @@
 // Modal for changing avatar
-import { Modal, TFile, App } from "obsidian";
+import { Modal, Platform, TFile, App } from "obsidian";
 
 export class AvatarPickerModal extends Modal {
 	files: TFile[];
 	onSelect: (path: string) => void;
+	private closeWatcher: MutationObserver | null = null;
+	private closeStyleEl: HTMLStyleElement | null = null;
+	private mobileFrameTimers: number[] = [];
 
 	constructor(app: App, files: TFile[], onSelect: (path: string) => void) {
 		super(app);
@@ -11,62 +14,251 @@ export class AvatarPickerModal extends Modal {
 		this.onSelect = onSelect;
 	}
 
+	/** Hide Obsidian's frame X. Removing it makes Modal re-insert the node. */
+	private hideNativeCloseButtons() {
+		this.containerEl?.classList.add("gamify-avatar-picker-host");
+		this.modalEl?.classList.add("gamify-avatar-picker-modal");
+
+		const hide = (el: Element | null | undefined) => {
+			if (!el) return;
+			const html = el as HTMLElement;
+			if (html.closest(".avatar-picker-header-container")) return;
+			html.style.setProperty("display", "none", "important");
+			html.style.setProperty("visibility", "hidden", "important");
+			html.style.setProperty("opacity", "0", "important");
+			html.style.setProperty("pointer-events", "none", "important");
+			html.setAttribute("aria-hidden", "true");
+			html.setAttribute("tabindex", "-1");
+		};
+
+		const CLOSE_SELECTORS = [
+			".modal-close-button",
+			".modal-close-btn",
+			".modal-header-button",
+			".clickable-icon.modal-header-button",
+			'[aria-label="Close"]',
+			'[aria-label="close"]',
+		].join(", ");
+
+		hide((this as unknown as { closeButtonEl?: HTMLElement }).closeButtonEl);
+		const roots = [this.modalEl, this.containerEl, this.modalEl?.parentElement];
+		for (const root of roots) {
+			root?.querySelectorAll(CLOSE_SELECTORS).forEach(hide);
+		}
+
+		// Phone draws an empty title row beside our header. Desktop keeps Obsidian's title node.
+		if (Platform.isMobile && this.modalEl) {
+			for (const child of Array.from(this.modalEl.children)) {
+				if (child === this.contentEl || child.classList.contains("modal-content")) continue;
+				hide(child);
+			}
+		}
+	}
+
+	/** Phone layout runs after onOpen and can put the dialog back to dialog-width. */
+	private applyMobileFrame() {
+		const container =
+			(this.contentEl.closest(".modal-container") as HTMLElement | null) ??
+			(this.containerEl as HTMLElement);
+		const modal =
+			(this.contentEl.closest(".modal") as HTMLElement | null) ??
+			(this.modalEl as HTMLElement);
+		const bg =
+			(this as unknown as { bgEl?: HTMLElement }).bgEl ??
+			(container.querySelector(".modal-bg") as HTMLElement | null);
+
+		const lock = (el: HTMLElement | null | undefined, props: Record<string, string>) => {
+			if (!el) return;
+			for (const [key, value] of Object.entries(props)) {
+				el.style.setProperty(key, value, "important");
+			}
+		};
+
+		lock(container, {
+			position: "fixed",
+			inset: "0",
+			top: "0",
+			left: "0",
+			right: "0",
+			bottom: "0",
+			width: "100vw",
+			height: "100dvh",
+			"max-width": "none",
+			"max-height": "none",
+			"min-width": "100vw",
+			margin: "0",
+			padding: "0",
+			transform: "none",
+			display: "flex",
+			"flex-direction": "column",
+			"align-items": "stretch",
+			"justify-content": "flex-start",
+			"box-sizing": "border-box",
+			background: "rgba(0, 0, 0, 0.72)",
+			"z-index": "15000",
+		});
+
+		lock(bg, {
+			position: "fixed",
+			inset: "0",
+			width: "100vw",
+			height: "100dvh",
+			"max-width": "none",
+			transform: "none",
+		});
+
+		lock(modal, {
+			position: "relative",
+			inset: "auto",
+			top: "auto",
+			left: "0",
+			right: "0",
+			bottom: "auto",
+			transform: "none",
+			width: "100vw",
+			"min-width": "100vw",
+			"max-width": "100vw",
+			height: "100dvh",
+			"max-height": "100dvh",
+			"min-height": "0",
+			margin: "0",
+			padding: "0",
+			"align-self": "stretch",
+			flex: "1 1 auto",
+			"border-radius": "0",
+			display: "flex",
+			"flex-direction": "column",
+			overflow: "hidden",
+			"box-sizing": "border-box",
+			background: "linear-gradient(135deg, #1a1a2e, #16213e, #0f3460)",
+			border: "none",
+			"box-shadow": "none",
+		});
+
+		lock(this.contentEl, {
+			flex: "1 1 auto",
+			"min-height": "0",
+			height: "auto",
+			width: "100%",
+			"max-width": "none",
+			margin: "0",
+			padding:
+				"max(12px, env(safe-area-inset-top, 0px)) max(12px, env(safe-area-inset-right, 0px)) max(12px, env(safe-area-inset-bottom, 0px)) max(12px, env(safe-area-inset-left, 0px))",
+			display: "flex",
+			"flex-direction": "column",
+			overflow: "hidden",
+			"box-sizing": "border-box",
+			background: "transparent",
+		});
+	}
+
+	private scheduleMobileFrame() {
+		this.applyMobileFrame();
+		this.hideNativeCloseButtons();
+		for (const delay of [0, 50, 200, 400]) {
+			const id = window.setTimeout(() => {
+				this.applyMobileFrame();
+				this.hideNativeCloseButtons();
+			}, delay);
+			this.mobileFrameTimers.push(id);
+		}
+	}
+
+	private ensureCloseKillStyle() {
+		if (this.closeStyleEl) return;
+		const style = document.createElement("style");
+		style.setAttribute("data-gamify-avatar-close-kill", "true");
+		style.textContent = `
+.modal.gamify-avatar-picker-modal > .modal-close-button,
+.modal.gamify-avatar-picker-modal .modal-close-button,
+.modal.gamify-avatar-picker-modal > .modal-header-button,
+.modal.gamify-avatar-picker-modal .modal-header-button,
+.gamify-avatar-picker-host > .modal-close-button,
+.gamify-avatar-picker-host .modal-close-button,
+.gamify-avatar-picker-host > .modal-header-button,
+.gamify-avatar-picker-host .modal-header-button,
+.modal-container:has(.gamify-avatar-picker-modal) > .modal-close-button,
+.modal-container:has(.gamify-avatar-picker-modal) .modal-close-button,
+.modal-container:has(.gamify-avatar-picker-modal) > .modal-header-button,
+.modal-container:has(.gamify-avatar-picker-modal) .modal-header-button,
+.modal.gamify-avatar-picker-modal.is-avatar-picker-phone > .modal-title,
+.modal.gamify-avatar-picker-modal > .modal-close-button::before {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  position: absolute !important;
+  clip: rect(0, 0, 0, 0) !important;
+  content: none !important;
+}
+`;
+		document.head.appendChild(style);
+		this.closeStyleEl = style;
+	}
+
 	onOpen() {
 		const { contentEl } = this;
+
+		this.modalEl.classList.add("gamify-avatar-picker-modal");
+		this.containerEl.classList.add("gamify-avatar-picker-host");
+		this.modalEl.parentElement?.classList.add("gamify-avatar-picker-host");
+		this.ensureCloseKillStyle();
+		this.hideNativeCloseButtons();
+		window.setTimeout(() => this.hideNativeCloseButtons(), 0);
+		window.setTimeout(() => this.hideNativeCloseButtons(), 120);
+		this.closeWatcher?.disconnect();
+		this.closeWatcher = new MutationObserver(() => this.hideNativeCloseButtons());
+		this.closeWatcher.observe(this.modalEl, { childList: true, subtree: true });
+		this.closeWatcher.observe(this.containerEl, { childList: true, subtree: true });
 
 		// Ensure this modal appears above other modals (Quest modal has z-index 10000)
 		(this.containerEl as HTMLElement).style.zIndex = "15000";
 
-		// Simple mobile detection using window dimensions and touch capability
-		const isMobile = window.innerWidth <= 768 || 'ontouchstart' in window;
-		const isLargePhone = window.innerHeight > 800; // iPhone 14 Pro Max is 932px height
+		// Obsidian's own mobile flag. Width and ontouchstart also match desktop trackpads.
+		const isMobile = Platform.isMobile;
 
-		console.log('🔍 Avatar Modal Mobile Detection:', {
-			isMobile,
-			isLargePhone,
-			innerWidth: window.innerWidth,
-			innerHeight: window.innerHeight,
-			hasTouch: 'ontouchstart' in window
-		});
-
-		// Remove the default modal close button that appears in background
-		const existingCloseButton = this.containerEl.querySelector('.modal-close-button');
-		if (existingCloseButton) {
-			existingCloseButton.remove();
-		}
-
-		// MOBILE-ONLY STYLING - DESKTOP USES DEFAULT OBSIDIAN BEHAVIOR
 		if (isMobile) {
+			this.modalEl.classList.add("is-avatar-picker-phone");
 			const container = this.containerEl as HTMLElement;
 			const modal = this.modalEl as HTMLElement;
 
-			// Make it ACTUALLY full screen and centered
 			container.style.cssText = `
 				position: fixed !important;
 				top: 0 !important;
 				left: 0 !important;
 				right: 0 !important;
 				bottom: 0 !important;
-				width: 100vw !important;
-				height: 100vh !important;
+				width: 100% !important;
+				height: 100dvh !important;
 				z-index: 15000 !important;
 				background: rgba(0, 0, 0, 0.9) !important;
 				display: flex !important;
-				align-items: center !important;
-				justify-content: center !important;
-				padding: 10px !important;
+				flex-direction: column !important;
+				align-items: stretch !important;
+				justify-content: stretch !important;
+				padding-top: max(12px, env(safe-area-inset-top, 0px)) !important;
+				padding-right: max(12px, env(safe-area-inset-right, 0px)) !important;
+				padding-bottom: max(12px, env(safe-area-inset-bottom, 0px)) !important;
+				padding-left: max(12px, env(safe-area-inset-left, 0px)) !important;
 				box-sizing: border-box !important;
 			`;
 
-			// Make modal positioned at left -3% with smaller width and higher position
 			modal.style.cssText = `
-				position: absolute !important;
-				left: -3% !important;
-				top: 10% !important;
-				transform: translateY(-50%) !important;
-				width: 65vw !important;
-				height: calc(100vh - 80px) !important;
-				max-width: 450px !important;
+				position: relative !important;
+				left: auto !important;
+				top: auto !important;
+				right: auto !important;
+				bottom: auto !important;
+				transform: none !important;
+				width: 100% !important;
+				height: auto !important;
+				max-width: none !important;
+				max-height: none !important;
+				flex: 1 1 auto !important;
+				min-height: 0 !important;
 				margin: 0 !important;
 				border-radius: 16px !important;
 				background: linear-gradient(135deg, #1a1a2e, #16213e, #0f3460) !important;
@@ -122,10 +314,11 @@ export class AvatarPickerModal extends Modal {
 			display: flex;
 			align-items: center;
 			justify-content: center;
-			padding: ${isMobile ? (isLargePhone ? '18px 24px' : '16px 20px') : '16px'};
+			flex-shrink: 0;
+			box-sizing: border-box;
+			padding: ${isMobile ? '14px 72px' : '16px'};
 			border-bottom: ${isMobile ? '2px solid rgba(255, 215, 0, 0.4)' : '1px solid var(--background-modifier-border)'};
 			background: ${isMobile ? 'linear-gradient(135deg, rgba(26, 26, 46, 0.95), rgba(22, 33, 62, 0.95))' : 'var(--background-primary)'};
-			flex-shrink: 0;
 		`;
 
 		const header = headerContainer.createEl("h2", { text: "Choose an Avatar" });
@@ -135,9 +328,11 @@ export class AvatarPickerModal extends Modal {
 		header.style.cssText = `
 			color: ${isMobile ? 'white' : 'var(--text-normal)'};
 			margin: 0;
-			font-size: ${isMobile ? '24px' : '20px'};
+			font-size: ${isMobile ? '18px' : '20px'};
 			font-weight: 600;
 			text-align: center;
+			line-height: 1.3;
+			${isMobile ? 'max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;' : ''}
 		`;
 
 		// Add close button aligned with header
@@ -195,12 +390,23 @@ export class AvatarPickerModal extends Modal {
 
 		// Add styling to the modal content - ensure proper layout
 		contentEl.addClass('avatar-picker-content');
-		contentEl.style.cssText = `
-			background: ${isMobile ? 'transparent' : 'var(--background-primary)'};
+		contentEl.style.cssText = isMobile ? `
+			background: transparent;
+			padding: 0;
+			margin: 0;
+			display: flex;
+			flex-direction: column;
+			flex: 1 1 auto;
+			min-height: 0;
+			height: auto;
+			overflow: hidden;
+			box-sizing: border-box;
+		` : `
+			background: var(--background-primary);
 			padding: 0;
 			display: flex;
 			flex-direction: column;
-			height: ${isMobile ? '100%' : 'auto'};
+			height: auto;
 			overflow: hidden;
 		`;
 
@@ -210,14 +416,15 @@ export class AvatarPickerModal extends Modal {
 		// SIMPLE GRID THAT SHOWS ALL AVATARS WITH PROPER SCROLLING
 		const gridStyle = isMobile ? `
 			display: grid !important;
-			grid-template-columns: repeat(2, 1fr) !important;
-			gap: 15px !important;
-			padding: 15px !important;
-			flex: 1 !important;
+			grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+			gap: 12px !important;
+			padding: 16px !important;
+			flex: 1 1 auto !important;
+			align-content: start !important;
 			overflow-y: auto !important;
 			-webkit-overflow-scrolling: touch !important;
 			min-height: 0 !important;
-			max-height: none !important;
+			box-sizing: border-box !important;
 		` : `
 			display: grid;
 			grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
@@ -245,15 +452,17 @@ export class AvatarPickerModal extends Modal {
 
 			// SIMPLE, VISIBLE AVATAR SIZING
 			const imgStyle = isMobile ? `
-				width: 100px !important;
-				height: 100px !important;
+				width: min(140px, 100%) !important;
+				height: auto !important;
+				aspect-ratio: 1 !important;
 				object-fit: cover !important;
 				cursor: pointer !important;
 				border-radius: 12px !important;
 				border: 2px solid rgba(255, 215, 0, 0.4) !important;
-				transition: all 0.2s ease !important;
+				transition: transform 0.2s ease !important;
 				display: block !important;
 				box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+				pointer-events: none !important;
 			` : `
 				width: 120px;
 				height: 120px;
@@ -276,35 +485,25 @@ export class AvatarPickerModal extends Modal {
 					justify-content: center !important;
 					padding: 12px !important;
 					border-radius: 16px !important;
-					transition: all 0.2s ease !important;
 					background: linear-gradient(135deg, rgba(26, 26, 46, 0.6), rgba(22, 33, 62, 0.6)) !important;
 					border: 2px solid rgba(255, 215, 0, 0.2) !important;
-					min-height: 120px !important;
+					min-height: 0 !important;
 					width: 100% !important;
 					box-sizing: border-box !important;
+					cursor: pointer !important;
+					touch-action: manipulation !important;
 				`;
+				imgContainer.setAttribute('role', 'button');
 			}
 
-			// Hover effects for both mobile and desktop
-			img.addEventListener('mouseenter', () => {
-				img.style.border = '2px solid var(--interactive-accent)';
-				img.style.transform = 'scale(1.05)';
-			});
-
-			img.addEventListener('mouseleave', () => {
-				img.style.border = isMobile ? '2px solid var(--background-modifier-border)' : '2px solid transparent';
-				img.style.transform = 'scale(1)';
-			});
-
-			// Touch feedback for mobile
-			if (isMobile) {
-				img.addEventListener('touchstart', () => {
+			if (!isMobile) {
+				img.addEventListener('mouseenter', () => {
 					img.style.border = '2px solid var(--interactive-accent)';
-					img.style.transform = 'scale(0.95)';
+					img.style.transform = 'scale(1.05)';
 				});
 
-				img.addEventListener('touchend', () => {
-					img.style.border = '2px solid var(--background-modifier-border)';
+				img.addEventListener('mouseleave', () => {
+					img.style.border = '2px solid transparent';
 					img.style.transform = 'scale(1)';
 				});
 			}
@@ -338,76 +537,34 @@ export class AvatarPickerModal extends Modal {
 				}
 			};
 
-			// AGGRESSIVE MOBILE TOUCH HANDLING - DIRECT AND IMMEDIATE
-			if (isMobile) {
-				console.log('📱 Setting up mobile touch for:', file.path);
-
-				// Method 1: Direct touchstart (most immediate)
-				const mobileClickHandler = (event: Event) => {
-					event.preventDefault();
-					event.stopPropagation();
-					console.log('📱📱📱 MOBILE TOUCH DETECTED:', file.path);
-
-					// Stop all propagation immediately
-					if ('stopImmediatePropagation' in event) {
-						(event as Event & { stopImmediatePropagation(): void }).stopImmediatePropagation();
-					}
-
-					// Immediate visual feedback
-					img.style.transform = 'scale(0.95)';
-					img.style.border = '3px solid #FFD700';
-
-					// Use setTimeout to ensure proper execution order
-					setTimeout(async () => {
-						try {
-							console.log('📱 Calling onSelect directly...');
-							await this.onSelect(file.path);
-							console.log('📱 onSelect completed, now closing modal...');
-
-							// Force close modal and prevent navigation
-							this.close();
-
-							// Prevent any further navigation
-							if (window.history && typeof window.history.pushState === 'function') {
-								window.history.replaceState(null, '', window.location.href);
-							}
-
-							console.log('📱 Modal closed and navigation prevented!');
-
-						} catch (error) {
-							console.error('📱 Error in mobile avatar selection:', error);
-						}
-
-						// Reset visual feedback
-						img.style.transform = 'scale(1)';
-						img.style.border = '2px solid rgba(255, 215, 0, 0.4)';
-					}, 50);
-
-					return false;
-				};
-
-				// Add ALL possible mobile events
-				img.addEventListener('touchstart', mobileClickHandler, { passive: false });
-				img.addEventListener('touchend', mobileClickHandler, { passive: false });
-				imgContainer.addEventListener('touchstart', mobileClickHandler, { passive: false });
-				imgContainer.addEventListener('touchend', mobileClickHandler, { passive: false });
-
-				// Also add click as backup
-				img.addEventListener('click', mobileClickHandler);
-				imgContainer.addEventListener('click', mobileClickHandler);
-
-				console.log('📱 Mobile touch handlers added for:', file.path);
-			} else {
-				// Desktop - use simple click handlers
-				console.log('🖥️ Setting up desktop click handlers for:', file.path);
+			imgContainer.addEventListener('click', clickHandler);
+			if (!isMobile) {
 				img.addEventListener('click', clickHandler);
-				imgContainer.addEventListener('click', clickHandler);
-				console.log('🖥️ Desktop click handlers added for:', file.path);
 			}
 		});
+
+		if (this.files.length === 0) {
+			const empty = list.createEl('p', {
+				text: 'No avatar images in the avatar folder.',
+			});
+			empty.style.cssText = isMobile
+				? 'grid-column: 1 / -1; margin: 24px 8px; color: #fff; text-align: center; font-size: 15px;'
+				: 'grid-column: 1 / -1; margin: 24px 8px; text-align: center;';
+		}
+
+		if (isMobile) this.scheduleMobileFrame();
 	}
 
 	onClose() {
+		for (const id of this.mobileFrameTimers) window.clearTimeout(id);
+		this.mobileFrameTimers = [];
+		this.closeWatcher?.disconnect();
+		this.closeWatcher = null;
+		this.closeStyleEl?.remove();
+		this.closeStyleEl = null;
+		this.modalEl.classList.remove("gamify-avatar-picker-modal");
+		this.containerEl.classList.remove("gamify-avatar-picker-host");
+		this.modalEl.parentElement?.classList.remove("gamify-avatar-picker-host");
 		this.contentEl.empty();
 	}
 }

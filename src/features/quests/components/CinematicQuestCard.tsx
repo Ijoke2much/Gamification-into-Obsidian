@@ -3,6 +3,7 @@ import { TFile } from "obsidian";
 import type { Quest } from "../utils/taskParser";
 import { formatRecur, parseEstimatedMinutes, formatMinutesHuman } from "../utils/questDisplayUtils";
 import styles from "./CinematicQuestCard.module.css";
+import { displayedQuestRewards, overdueRewardHint } from "../../../shared/utils/overdueRewardScale";
 
 interface PluginType {
     app: {
@@ -299,6 +300,7 @@ const CinematicQuestCardComponent: React.FC<CinematicQuestCardProps> = ({
     };
 
     const dueDateInfo = getDueDateInfo();
+    const payable = displayedQuestRewards(quest);
 
     const handleComplete = () => {
         setIsAnimating(true);
@@ -428,6 +430,14 @@ const CinematicQuestCardComponent: React.FC<CinematicQuestCardProps> = ({
 								⏱️ {formatMinutesHuman(estimatedMinutes)}
 							</span>
 						)}
+						{payable.reduced && typeof quest.xp === "number" && quest.xp > 0 && (
+							<span
+								className={styles.skillTag}
+								title={overdueRewardHint(payable.daysLate, payable.originalXp, payable.xp, "XP")}
+							>
+								✨ {payable.xp} XP
+							</span>
+						)}
                     </div>
                     {/* Difficulty and Priority Display */}
                     <div className={styles.difficultyPriorityRow}>
@@ -530,20 +540,40 @@ const CinematicQuestCardComponent: React.FC<CinematicQuestCardProps> = ({
                         {/* Rewards Section */}
                         <div className={styles.rewardsSection}>
                             <h4>REWARDS</h4>
+                            {payable.reduced && (
+                                <div className={styles.rewardLabel}>
+                                    {payable.daysLate === 1 ? "1 day late" : `${payable.daysLate} days late`}
+                                </div>
+                            )}
                             <div className={styles.rewardsList}>
-                                <div className={styles.rewardItem}>
+                                <div
+                                    className={styles.rewardItem}
+                                    title={overdueRewardHint(payable.daysLate, payable.originalXp, payable.xp, "XP")}
+                                >
                                     <div className={styles.rewardIcon}>✨</div>
-                                    <div className={styles.rewardValue}>{quest.xp || 100}</div>
+                                    <div className={styles.rewardValue}>
+                                        {payable.reduced && typeof quest.xp === "number" ? payable.xp : (quest.xp || 100)}
+                                    </div>
                                     <div className={styles.rewardLabel}>XP</div>
                                 </div>
-                                <div className={styles.rewardItem}>
+                                <div
+                                    className={styles.rewardItem}
+                                    title={overdueRewardHint(payable.daysLate, payable.originalCp, payable.cp, "CP")}
+                                >
                                     <div className={styles.rewardIcon}>⭐</div>
-                                    <div className={styles.rewardValue}>{quest.cp || 50}</div>
+                                    <div className={styles.rewardValue}>
+                                        {payable.reduced && typeof quest.cp === "number" ? payable.cp : (quest.cp || 50)}
+                                    </div>
                                     <div className={styles.rewardLabel}>CP</div>
                                 </div>
-                                <div className={styles.rewardItem}>
+                                <div
+                                    className={styles.rewardItem}
+                                    title={overdueRewardHint(payable.daysLate, payable.originalCoins, payable.coins, "coins")}
+                                >
                                     <div className={styles.rewardIcon}>🪙</div>
-                                    <div className={styles.rewardValue}>{quest.coins || 25}</div>
+                                    <div className={styles.rewardValue}>
+                                        {payable.reduced && typeof quest.coins === "number" ? payable.coins : (quest.coins || 25)}
+                                    </div>
                                     <div className={styles.rewardLabel}>COINS</div>
                                 </div>
                             </div>

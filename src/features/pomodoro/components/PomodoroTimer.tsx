@@ -233,11 +233,16 @@ export const PomodoroTimer = forwardRef<PomodoroTimerHandle, PomodoroTimerProps>
   };
 
   const skip = () => {
-    const finishedPhase: PomodoroPhase = isBreak ? 'break' : 'work';
-    setSecondsLeft(0);
     setIsRunning(false);
-    onComplete(finishedPhase);
-    setIsBreak((prev) => !prev);
+    endTimeRef.current = null;
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    intervalRef.current = null;
+    if (isBreak) {
+      onComplete('break');
+      setIsBreak(false);
+      return;
+    }
+    setIsBreak(true);
   };
 
   useImperativeHandle(ref, () => ({

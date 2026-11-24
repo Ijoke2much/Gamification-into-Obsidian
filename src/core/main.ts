@@ -4,12 +4,13 @@ import "../shared/styles/tab-system-shell.css";
 import "../shared/styles/tab-clay-shell.css";
 import "../shared/styles/shop-system-hunter.css";
 import "../shared/styles/pixel-enclave.css";
-import { Plugin, App, PluginSettingTab, Setting, FuzzySuggestModal } from "obsidian";
+import { Plugin, App, PluginSettingTab, Setting, FuzzySuggestModal, TFile } from "obsidian";
 import {
 	listAllDataBackups,
 	restoreDataBackup,
 	type DataBackupEntry,
 } from "../shared/utils/vaultDataBackup";
+import { prunePlayerDataBackups } from "../features/player/utils/playerDataUtils";
 import React from 'react';
 import { PlayerTab, PLAYER_TAB_VIEW_TYPE } from "../views/tabs/player/PlayerTab";
 import { StatsTab, STATS_TAB_VIEW_TYPE } from "../views/tabs/stats/StatsTab";
@@ -282,6 +283,7 @@ export default class GamifiedObsidianPlugin extends Plugin {
 	}
 
 	async onload() {
+		void prunePlayerDataBackups(this.app.vault);
 		try {
 			// Mobile detection and optimization
 			const isMobile = this.detectMobileDevice();
@@ -1110,6 +1112,35 @@ export default class GamifiedObsidianPlugin extends Plugin {
 		}
 	}
 
+	private customAchievementSyncTimer: number | null = null;
+
+	/** Quest checks and skill-note edits both refresh custom badges. */
+	private registerCustomAchievementSync(): void {
+		const schedule = () => {
+			if (this.customAchievementSyncTimer != null) window.clearTimeout(this.customAchievementSyncTimer);
+			this.customAchievementSyncTimer = window.setTimeout(() => {
+				this.customAchievementSyncTimer = null;
+				void import('../features/achievements/utils/customAchievements')
+					.then(async ({ syncCustomAchievementsFromVault }) => {
+						await syncCustomAchievementsFromVault(this.app);
+					})
+					.catch(() => {
+						/* custom achievements keep their last saved counts */
+					});
+			}, 700);
+		};
+		this.registerEvent(
+			this.app.vault.on('modify', (file) => {
+				if (file instanceof TFile && file.extension === 'md') schedule();
+			})
+		);
+		this.registerEvent(
+			this.app.vault.on('rename', (file) => {
+				if (file instanceof TFile) schedule();
+			})
+		);
+	}
+
 	private async initializeServicesInBackground() {
 		try {
 			// Load plugin settings
@@ -1162,6 +1193,8 @@ export default class GamifiedObsidianPlugin extends Plugin {
 					this.app.metadataCache
 				);
 			}
+
+			this.registerCustomAchievementSync();
 
 			// Initialize Energy Services when energy module is enabled
 			const energyEnabled = this.settings.modules?.enableEnergySystem !== false;

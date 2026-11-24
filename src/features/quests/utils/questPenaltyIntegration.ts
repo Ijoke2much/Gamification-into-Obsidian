@@ -8,6 +8,11 @@ import {
     getResolvedGameplayConfig,
     isPenaltyTypeEnabled,
 } from '../../../shared/utils/gameplayConfig';
+import {
+    calendarDaysPastDue,
+    OVERDUE_REWARD_DAILY_CUT,
+    OVERDUE_REWARD_MAX_CUT,
+} from '../../../shared/utils/overdueRewardScale';
 
 export class QuestPenaltyIntegration {
 
@@ -31,11 +36,8 @@ export class QuestPenaltyIntegration {
 
         // Check if quest is overdue
         if (quest.due) {
-            const now = new Date();
-            const dueDate = new Date(quest.due);
-
-            if (now > dueDate) {
-                const daysOverdue = Math.ceil((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+            const daysOverdue = calendarDaysPastDue(quest.due);
+            if (daysOverdue > 0) {
                 const gameplay = getResolvedGameplayConfig();
                 const overdueEnabled = isPenaltyTypeEnabled(gameplay, 'quest_overdue');
 
@@ -167,11 +169,8 @@ export class QuestPenaltyIntegration {
             return { shouldApply: false, penaltyType: 'none' };
         }
 
-        const now = new Date();
-        const dueDate = new Date(quest.due);
-
-        if (now > dueDate) {
-            const daysOverdue = Math.ceil((now.getTime() - dueDate.getTime()) / (1000 * 60 * 60 * 24));
+        const daysOverdue = calendarDaysPastDue(quest.due);
+        if (daysOverdue > 0) {
             return {
                 shouldApply: true,
                 penaltyType: 'overdue',
@@ -203,7 +202,7 @@ export class QuestPenaltyIntegration {
         }
 
         const daysOverdue = penaltyCheck.daysOverdue || 0;
-        const penaltyPercent = Math.min(0.9, daysOverdue * 0.1); // Max 90% reduction, 10% per day
+        const penaltyPercent = Math.min(OVERDUE_REWARD_MAX_CUT, daysOverdue * OVERDUE_REWARD_DAILY_CUT);
         const originalReward = {
             xp: quest.xp || 0,
             coins: quest.coins || 0,

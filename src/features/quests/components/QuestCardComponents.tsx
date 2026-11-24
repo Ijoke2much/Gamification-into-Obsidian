@@ -1,5 +1,6 @@
 import React from "react";
 import type { Quest } from "../utils/taskParser";
+import { displayedQuestRewards, overdueRewardHint } from "../../../shared/utils/overdueRewardScale";
 
 interface QuestHeaderProps {
     quest: Quest;
@@ -94,6 +95,7 @@ interface QuestMetadataProps {
 }
 
 export const QuestMetadata: React.FC<QuestMetadataProps> = ({ quest }) => {
+    const payable = displayedQuestRewards(quest);
     const getDifficultyColor = (difficulty?: string) => {
         switch (difficulty?.toLowerCase()) {
             case "hard": return "#ff4757";
@@ -235,13 +237,19 @@ export const QuestMetadata: React.FC<QuestMetadataProps> = ({ quest }) => {
                     </span>
                 )}
                 {quest.xp && (
-                    <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                        ✨ {quest.xp} XP
+                    <span
+                        style={{ display: "flex", alignItems: "center", gap: 4 }}
+                        title={overdueRewardHint(payable.daysLate, payable.originalXp, payable.xp, "XP")}
+                    >
+                        ✨ {payable.xp} XP
                     </span>
                 )}
                 {quest.cp && (
-                    <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
-                        ⭐ {quest.cp} CP
+                    <span
+                        style={{ display: "flex", alignItems: "center", gap: 4 }}
+                        title={overdueRewardHint(payable.daysLate, payable.originalCp, payable.cp, "CP")}
+                    >
+                        ⭐ {payable.cp} CP
                     </span>
                 )}
             </div>

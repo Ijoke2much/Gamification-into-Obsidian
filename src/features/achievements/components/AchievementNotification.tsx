@@ -2,7 +2,17 @@
 // Provides animated feedback when achievements are unlocked
 
 import React, { useState, useEffect } from 'react';
+import type { App } from 'obsidian';
 import { Achievement } from '../../../data/models/AchievementSystem';
+
+function vaultImageUrl(path: string): string {
+  try {
+    const app = (window as { app?: App }).app;
+    return app?.vault.adapter.getResourcePath(path) ?? '';
+  } catch {
+    return '';
+  }
+}
 
 interface AchievementNotificationProps {
   achievement: Achievement;
@@ -71,7 +81,15 @@ export const AchievementNotification: React.FC<AchievementNotificationProps> = (
               animation: lite ? 'none' : 'bounce 0.6s ease-in-out',
             }}
           >
-            {achievement.icon}
+            {achievement.imagePath ? (
+              <img
+                src={vaultImageUrl(achievement.imagePath)}
+                alt=""
+                style={{ width: lite ? 36 : 56, height: lite ? 36 : 56, objectFit: 'cover', borderRadius: 12 }}
+              />
+            ) : (
+              achievement.icon
+            )}
           </div>
           <div style={{ flex: 1 }}>
             <h3

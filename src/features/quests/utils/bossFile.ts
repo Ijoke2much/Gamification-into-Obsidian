@@ -257,13 +257,16 @@ export function applyTaskCompletion(
 	boss: BossFileData,
 	matchesSkill: boolean,
 	now = Date.now(),
-	options?: { damageMultiplier?: number }
+	options?: { damageMultiplier?: number; settleRegen?: boolean }
 ): BossTaskResult {
 	if (boss.status === 'defeated') {
 		return { boss, hpDamage: 0, grazed: false, damped: false, defeated: true };
 	}
 
-	const settled = settleArmorRegen(boss, now);
+	const settled =
+		options?.settleRegen === false
+			? { ...boss, lastArmorRegenAt: now }
+			: settleArmorRegen(boss, now);
 	const perTask = getPerTaskDamage(settled);
 	const grazed = !matchesSkill;
 	const damped = settled.currentArmor > 0;

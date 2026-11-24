@@ -8,7 +8,7 @@ import { getStatsFromFolder, Stat, StatDebugInfo } from "src/shared/utils/readSt
 import { updatePlayerData } from "src/features/player/utils/playerDataUtils";
 import { AvatarPickerModal } from "../../features/player/modals/AvatarPickerModal";
 import { PlayerData } from "src/data/models/PlayerData";
-import { AchievementTracker } from "../../data/models/AchievementSystem";
+import { achievementEventService } from "../../features/achievements/services/achievementEventService";
 import { PlayerInfoCard } from "../../features/player/components/PlayerInfoCard";
 import { PenaltyStatusCard } from "../../features/player/components/PenaltyStatusCard";
 import { ActiveArtifactsCard } from "../../features/player/components/ActiveArtifactsCard";
@@ -269,15 +269,6 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
             console.log('📱 Mobile device detected');
         }
     }, [isMobile]);
-
-    // Lazy — only constructed when Achievements tab opens
-    const achievementTrackerRef = useRef<AchievementTracker | null>(null);
-    const getAchievementTracker = useCallback(() => {
-        if (!achievementTrackerRef.current) {
-            achievementTrackerRef.current = new AchievementTracker();
-        }
-        return achievementTrackerRef.current;
-    }, []);
 
     const [highlightAchievementId, setHighlightAchievementId] = useState<string | null>(null);
     const [settingsRevision, setSettingsRevision] = useState(0);
@@ -560,10 +551,10 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
                 setLoading(false);
 
                 // iPad/iCloud: vault may still be indexing — retry a couple times
-                if (!data && attempt < 2) {
+                if (!data && attempt < 6) {
                     retryTimer = window.setTimeout(() => {
                         void initializePlayerData(attempt + 1);
-                    }, attempt === 0 ? 800 : 2000);
+                    }, Math.min(1000 * (attempt + 1), 4000));
                 }
 
                 if (!unsubscribe) {
@@ -1133,7 +1124,7 @@ ${testResults.join('\n')}`;
                                 {/* Currency + inventory */}
                                 {isMobile ? (
                                     <>
-                                        <div className={`${cardStyles.coinsCard} ${mobileClasses.card}`} style={{ width: '100%' }}>
+                                        <div className={`${cardStyles.coinsCard} ${cardStyles.coinsCardInline} ${mobileClasses.card}`}>
                                             <ClickableTooltip
                                                 icon={
                                                     <span style={{ fontSize: "16px", paddingRight: "2px" }}>
@@ -1221,7 +1212,6 @@ ${testResults.join('\n')}`;
                                 {(!isMobile || mobileHeavyReady) && (
                                     <WeeklySkillsCard
                                         vault={plugin.app.vault}
-                                        collapsed={isMobile}
                                     />
                                 )}
 
@@ -1285,7 +1275,9 @@ ${testResults.join('\n')}`;
                                 {hasMountedAchievements && (
                                     <div style={{ display: selectedTab === 'achievements' ? 'block' : 'none' }}>
                                         <AchievementsTab
-                                            tracker={getAchievementTracker()}
+                                            tracker={achievementEventService.getTracker()}
+                                            playerData={playerData}
+                                            app={plugin.app}
                                             onRefresh={reloadPlayerData}
                                             highlightAchievementId={highlightAchievementId}
                                         />

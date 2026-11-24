@@ -1,6 +1,7 @@
 import { Vault, TFile } from 'obsidian';
 import * as yaml from "js-yaml";
-import { normalizeActivityProfileId } from '../../../shared/utils/questWellbeingProfiles';
+import { storedActivityTypeId } from '../../../shared/utils/questWellbeingProfiles';
+import { appendLockedEnergyMeta } from '../../../shared/utils/activityEnergy';
 import { parseGamifyRewardsLine } from './shopExclusiveRewards';
 
 /**
@@ -202,6 +203,7 @@ export function generateMarkdownTask({
   estimatedTime,
   customRewards,
   energyCost,
+  energyLocked,
   activityProfile,
   project,
   customTags,
@@ -221,8 +223,9 @@ export function generateMarkdownTask({
   recur?: string;
   estimatedTime?: string;
   customRewards?: string[];
-  /** Resolved stamina cost (1–100); embedded as 🔋 in emoji style. */
+  /** Quest override. Written only when energyLocked is set. Positive spends, negative restores. */
   energyCost?: number;
+  energyLocked?: boolean;
   activityProfile?: string;
   project?: string;
   customTags?: string[];
@@ -259,13 +262,6 @@ export function generateMarkdownTask({
       const emoji = difficultyToEmoji[difficulty.toLowerCase()] || '⚖️';
       emojiParts.push(emoji);
     }
-    if (
-      typeof energyCost === "number" &&
-      Number.isFinite(energyCost) &&
-      energyCost > 0
-    ) {
-      emojiParts.push(`🔋${Math.min(100, Math.floor(energyCost))}`);
-    }
     // Add recurrence if present
     if (recur) emojiParts.push(`🔁${recur}`);
     // Add skills if present
@@ -290,7 +286,7 @@ export function generateMarkdownTask({
     if (project?.trim()) {
       taskLine += ` [project:: ${project.trim()}]`;
     }
-    const ap = normalizeActivityProfileId(activityProfile);
+    const ap = storedActivityTypeId(activityProfile);
     if (ap !== 'generic') {
       taskLine += ` #activity/${ap}`;
     }
@@ -303,6 +299,7 @@ export function generateMarkdownTask({
     if (customRewards && customRewards.length > 0) {
       taskLine += ` // rewards: ${customRewards.join(', ')}`;
     }
+    taskLine = appendLockedEnergyMeta(taskLine, energyCost, energyLocked);
 
     // Add description if provided - with better formatting
     if (description && description.trim()) {
@@ -336,10 +333,10 @@ export function generateMarkdownTask({
     const descriptionLine = description && description.trim() ? `  - Description:: ${description.trim()}` : '';
 
     const energyLine =
+      energyLocked &&
       typeof energyCost === "number" &&
-      Number.isFinite(energyCost) &&
-      energyCost > 0
-        ? `  - Energy:: ${Math.min(100, Math.floor(energyCost))}`
+      Number.isFinite(energyCost)
+        ? `  - Energy:: ${Math.trunc(energyCost)}\n  - EnergyLock:: true`
         : "";
     const result = [
       `- [ ] ${title} ${tags.join(' ')}`,
@@ -440,6 +437,10 @@ export interface Quest {
   type?: string;
   /** Parent project slug or name (`project:` pipe / `#project/foo`). */
   project?: string;
+  /** Every TaskNotes `projects` link, wikilinks stripped. */
+  projects?: string[];
+  /** Standing projects stay open. Campaigns can be finished. */
+  projectKind?: 'standing' | 'campaign';
   giver?: string;
   filePath?: string;
   status?: string;
@@ -456,8 +457,10 @@ export interface Quest {
   /** Planner time-block palette override (pipe metadata `timelineTheme`). */
   timelineTheme?: QuestTimelineTheme;
   // ADHD Energy System
-  energyCost?: number; // Estimated energy cost (1-50)
-  /** Activity profile for wellbeing effects on complete (`#activity/chore`, etc.) */
+  energyCost?: number; // Signed override when energyLocked. Otherwise the activity type decides.
+  /** True when this quest uses its own energy number instead of its activity type. */
+  energyLocked?: boolean;
+  /** Activity type (`#activity/chore`, `#activity/create`, …). */
   activityProfile?: string;
   // Boss system properties
   bossId?: string;
@@ -502,6 +505,8 @@ const SYSTEM_QUEST_TAG_PREFIXES = [
   'status/',
   'now/',
   'project/',
+  'sprint/',
+  'win/',
 ];
 
 export function isSystemQuestTag(tag: string): boolean {
@@ -768,10 +773,11 @@ export function parseQuestsFromMarkdown(md: string): Quest[] {
         const lastModified = String(getField('modified') || '');
         const estimatedTime = String(getField('time') || getField('estimate') || '');
         const notes = String(getField('notes') || '');
-        const energyCost = parseInt(String(getField('energy') || getField('energyCost') || '0')) || undefined;
+        const energyCost = parseSignedEnergy(getField('energy') ?? getField('energyCost') ?? getField('energycost'));
+        const energyLocked = parseBooleanMeta(getField('energylock')) === true;
         const activityRaw = getField('activity') ?? getField('activityprofile');
         const activityNorm = activityRaw
-          ? normalizeActivityProfileId(String(activityRaw))
+          ? storedActivityTypeId(String(activityRaw))
           : 'generic';
         const battleWeaponRaw = getField('battle_weapon') ?? getField('battleweapon');
         const battle_weapon =
@@ -889,6 +895,7 @@ export function parseQuestsFromMarkdown(md: string): Quest[] {
           estimatedTime,
           notes,
           energyCost,
+          ...(energyLocked ? { energyLocked: true } : {}),
           activityProfile: activityNorm !== 'generic' ? activityNorm : undefined,
           battle_weapon,
           enhancedRewards,
@@ -924,6 +931,15 @@ const EMOJI_FIELD_MAP: Record<string, string> = {
   '🔋': 'energy', // Stamina cost on quest completion (numeric)
   // Add more as needed
 };
+
+function parseSignedEnergy(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) return Math.trunc(value);
+  if (typeof value === 'string' && value.trim() !== '') {
+    const n = Number(value);
+    if (Number.isFinite(n)) return Math.trunc(n);
+  }
+  return undefined;
+}
 
 function parseBooleanMeta(value: unknown): boolean | undefined {
   if (typeof value === 'boolean') return value;

@@ -182,12 +182,12 @@ class PlayerStore {
         /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(
           navigator.userAgent.toLowerCase()
         );
-      const maxRetries = isMobile ? 2 : 10;
+      const maxRetries = isMobile ? 8 : 10;
 
       while (retries < maxRetries && !data) {
         if (retries > 0) {
           const delay = isMobile
-            ? Math.min(200 * retries, 400)
+            ? Math.min(700 * retries, 2500)
             : Math.min(1000 * retries, 5000);
           console.log(`[PlayerStore] Retry ${retries}/${maxRetries} - waiting ${delay}ms for vault to load files...`);
           await new Promise(resolve => setTimeout(resolve, delay));
@@ -209,7 +209,8 @@ class PlayerStore {
 
       if (!this.data) {
         console.error('[PlayerStore] Failed to load player data after retries - data is null');
-        // Still emit change with null data so UI can show error state
+        // Allow a later open to try again once iCloud has downloaded the note.
+        this.isInitialized = false;
         this.emitChange({
           type: 'data-updated',
           payload: null,

@@ -111,3 +111,51 @@
 	font-weight: 800;
 	color: var(--clay-accent-deep, #3fa39a);
 }
+
+/* System Hunter player page is navy. Keep this card in that skin. */
+:global([data-gamification-visual-theme='system-hunter']) .card,
+:global([data-gamification-shell='system']) .card {
+	background: var(--go-card, rgba(18, 55, 96, 0.72));
+	color: var(--go-text, #e0f2fe);
+	border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42));
+	border-radius: var(--go-radius, 2px);
+	box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16));
+}
+
+:global([data-gamification-visual-theme='system-hunter']) .header,
+:global([data-gamification-visual-theme='system-hunter']) .title,
+:global([data-gamification-shell='system']) .header,
+:global([data-gamification-shell='system']) .title {
+	color: var(--go-text-bright, #f0f9ff) !important;
+	background: transparent !important;
+	border: none !important;
+	box-shadow: none !important;
+}
+
+:global([data-gamification-visual-theme='system-hunter']) .count,
+:global([data-gamification-shell='system']) .count {
+	background: color-mix(in srgb, var(--go-accent, #22c8ff) 22%, transparent);
+	color: var(--go-accent, #22c8ff);
+}
+
+:global([data-gamification-visual-theme='system-hunter']) .row,
+:global([data-gamification-shell='system']) .row {
+	background: var(--go-card-soft, rgba(8, 28, 54, 0.72));
+	box-shadow: none;
+	color: var(--go-text, #e0f2fe);
+}
+
+:global([data-gamification-visual-theme='system-hunter']) .empty,
+:global([data-gamification-shell='system']) .empty,
+:global([data-gamification-visual-theme='system-hunter']) .cp,
+:global([data-gamification-shell='system']) .cp,
+:global([data-gamification-visual-theme='system-hunter']) .gateBanner,
+:global([data-gamification-shell='system']) .gateBanner {
+	color: var(--go-muted, #9ec7df);
+}
+
+:global([data-gamification-visual-theme='system-hunter']) .gateBanner,
+:global([data-gamification-shell='system']) .gateBanner {
+	background: var(--go-card-soft, rgba(8, 28, 54, 0.72));
+	box-shadow: none;
+}

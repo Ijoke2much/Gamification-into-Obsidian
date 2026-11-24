@@ -1,6 +1,10 @@
 import { TreeRewardConfig, DEFAULT_TREE_REWARD_CONFIG } from '../features/habits/utils/treeRewardSystem';
 import type { GameItemDefinition } from '../features/inventory/types/EnhancedInventoryTypes';
 import {
+	DEFAULT_ACTIVITY_ENERGY_RULES,
+	type ActivityEnergyRule,
+} from '../shared/utils/activityEnergy';
+import {
 	DEFAULT_VISUAL_THEME_SETTINGS,
 	type VisualThemeSettings,
 } from '../shared/themes/types';
@@ -86,7 +90,7 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
     id: 'gameplay',
     name: 'Gameplay',
     icon: '🎮',
-    description: 'Profiles, tabs, notifications, currency, and penalties',
+    description: 'Profiles, tabs, notifications, currency, penalties, and achievements',
     color: '#7C4DFF',
     categories: [
       {
@@ -120,6 +124,14 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
         description: 'Failure penalties and debt management',
         color: '#FF5722',
         settings: ['gameplayProfile', 'modules', 'penaltyLowPct', 'penaltyMediumPct', 'penaltyHighPct', 'dailyDebtCapXP', 'dailyDebtCapCoins', 'pomodoroFailOnlyOnReset']
+      },
+      {
+        id: 'achievements',
+        name: 'Achievements',
+        icon: '🏅',
+        description: 'Make a badge and the rule that unlocks it',
+        color: '#5bb8b0',
+        settings: ['custom achievements', 'skill uses']
       }
     ]
   },
@@ -328,7 +340,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
     icon: '⚡',
     description: 'Energy system, daily resets, and recovery rates',
     color: '#2196F3',
-    settings: ['enableEnergyHUD', 'energyHudMode', 'dailyResetHour', 'dailyRestoreEnergy', 'dailyRestoreFocus', 'dailyRestoreMotivation', 'dailyRestoreCalm', 'dailyRestoreStressReduce']
+    settings: ['enableEnergyHUD', 'energyHudMode', 'activityEnergyRules', 'dailyResetHour', 'dailyRestoreEnergy', 'dailyRestoreFocus', 'dailyRestoreMotivation', 'dailyRestoreCalm', 'dailyRestoreStressReduce']
   },
   {
     id: 'penalties',
@@ -905,6 +917,8 @@ export interface GamificationPluginSettings {
   enableEnergyHUD?: boolean;
   /** HUD complexity preset — hidden stats are not updated by quests or daily reset */
   energyHudMode?: EnergyHudMode;
+  /** Energy spent (positive) or restored (negative) when a quest of that type is finished. */
+  activityEnergyRules?: ActivityEnergyRule[];
   dailyResetHour?: number; // 0-23
   // Daily restore values
   dailyRestoreEnergy?: number;
@@ -1122,6 +1136,7 @@ export const DEFAULT_SETTINGS: GamificationPluginSettings = {
   // Energy/Focus defaults (mirror runtime defaults)
   enableEnergyHUD: true,
   energyHudMode: 'simple',
+  activityEnergyRules: DEFAULT_ACTIVITY_ENERGY_RULES.map((rule) => ({ ...rule })),
   dailyResetHour: 6,
   dailyRestoreEnergy: 30,
   dailyRestoreFocus: 20,

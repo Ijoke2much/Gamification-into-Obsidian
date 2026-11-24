@@ -15,6 +15,7 @@ export const PLUGIN_ASSETS = {
 	gearSprite: (id: string) => `assets/sprites/gear/${id}.png`,
 	foeSprite: (id: string) => `assets/sprites/foes/${id}.png`,
 	focusStage: 'assets/focus-stage.jpg',
+	focusRouteMap: 'assets/focus-route-map.jpg',
 } as const;
 
 function bundledUrl(relativePath: string): string {

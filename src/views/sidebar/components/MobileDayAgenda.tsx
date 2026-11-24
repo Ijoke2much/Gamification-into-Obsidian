@@ -1,6 +1,7 @@
 import React, { forwardRef, useImperativeHandle, useMemo, useRef, useState } from "react";
 import type { Quest } from "../../../features/quests/utils/taskParser";
 import { getQuestEnergyCost } from "../../../shared/utils/questCompletionPipeline";
+import { formatActivityEnergyAmount, type ActivityEnergyRule } from "../../../shared/utils/activityEnergy";
 import {
 	parseQuestScheduleDragId,
 	QUEST_SCHEDULE_DRAG_MIME,
@@ -40,6 +41,7 @@ interface MobileDayAgendaProps {
 	onDropQuestAskTime?: (quest: Quest, suggestedMinutes: number) => void;
 	/** Inbox + board quests so a drop can land a card that is not already on this day. */
 	droppableQuests?: Quest[];
+	activityEnergyRules?: ActivityEnergyRule[] | null;
 }
 
 type AgendaRow =
@@ -69,6 +71,7 @@ export const MobileDayAgenda = forwardRef<MobileDayAgendaHandle, MobileDayAgenda
 			onDropQuestAtMinutes,
 			onDropQuestAskTime,
 			droppableQuests = [],
+			activityEnergyRules,
 		},
 		ref
 	) {
@@ -360,7 +363,9 @@ export const MobileDayAgenda = forwardRef<MobileDayAgendaHandle, MobileDayAgenda
 
 					const { block } = row;
 					const themeClass = themeClassFor(block.themeKey, styles);
-					const energy = getQuestEnergyCost(block.quest);
+					const energy = formatActivityEnergyAmount(
+						getQuestEnergyCost(block.quest, activityEnergyRules)
+					);
 					const durationLabel = formatAgendaDuration(block.start, block.end);
 					const timeLabel = `${formatAgendaTime(block.start)} – ${formatAgendaTime(block.end)} (${durationLabel})`;
 					const longPress = bindLongPress(block.quest);

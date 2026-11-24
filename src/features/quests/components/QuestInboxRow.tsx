@@ -2,6 +2,7 @@ import React from 'react';
 import type { Quest } from '../utils/taskParser';
 import { EnergyCalculationService } from '../services/energyCalculationService';
 import styles from './QuestInboxRow.module.css';
+import { displayedQuestRewards, overdueRewardHint } from '../../../shared/utils/overdueRewardScale';
 
 interface QuestInboxRowProps {
   quest: Quest;
@@ -34,6 +35,7 @@ export const QuestInboxRow: React.FC<QuestInboxRowProps> = ({
   const dueLabel = getDueLabel(quest.due);
   const { energyLabel, isOverBudget } = getEnergyLabel(quest, currentEnergy);
   const isOverdue = dueLabel === 'Overdue';
+  const payable = displayedQuestRewards(quest);
 
   return (
     <div
@@ -95,14 +97,20 @@ export const QuestInboxRow: React.FC<QuestInboxRowProps> = ({
         <span className={[styles.badge, styles.dueBadge].join(' ')}>{dueLabel}</span>
         <span className={[styles.badge, styles.energyBadge].join(' ')}>{energyLabel}</span>
         {typeof currencyAmount === 'number' && currencyAmount > 0 && (
-          <span className={[styles.badge, styles.currencyBadge].join(' ')}>
-            {currencyName} {currencyAmount}
+          <span
+            className={[styles.badge, styles.currencyBadge].join(' ')}
+            title={overdueRewardHint(payable.daysLate, payable.originalCoins, payable.coins, currencyName)}
+          >
+            {currencyName} {payable.reduced ? payable.coins : currencyAmount}
           </span>
         )}
         {(quest.xp || quest.cp) && (
-          <span className={styles.rewards}>
-            {quest.xp ? `+${quest.xp} XP` : ''}
-            {quest.cp ? ` · +${quest.cp} CP` : ''}
+          <span
+            className={styles.rewards}
+            title={overdueRewardHint(payable.daysLate, payable.originalXp, payable.xp, 'XP')}
+          >
+            {quest.xp ? `+${payable.xp} XP` : ''}
+            {quest.cp ? ` · +${payable.cp} CP` : ''}
           </span>
         )}
         {quest.estimatedTime && (

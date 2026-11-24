@@ -25,7 +25,11 @@ html[data-gamification-visual-theme='system-hunter'] [data-pixel-shell],
 
 	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
 	color: var(--go-text, #e0f2fe) !important;
-	background: var(--go-bg, #071527) !important;
+	background-color: var(--go-bg, #071527) !important;
+	background-image: var(--go-energy-field, none) !important;
+	background-repeat: no-repeat !important;
+	background-size: cover !important;
+	background-position: center !important;
 	border-color: var(--go-border, rgba(34, 200, 255, 0.42)) !important;
 	border-width: 1px !important;
 	border-radius: var(--go-radius, 2px) !important;
@@ -162,4 +166,20 @@ body.is-ios .workspace-leaf-content[data-type='gamified-player-tab'] > .view-con
 
 html:not([data-gamification-visual-theme='clay']) .gamification-player-shell[data-gamification-mobile='true'] .gamify-tab-nav {
 	background: var(--background-primary, #0a1628) !important;
+	background-image: none !important;
+}
+
+html[data-gamification-visual-theme='system-hunter'] .gamification-player-shell[data-gamification-mobile='true'] .gamify-tab-nav {
+	background: transparent !important;
+	background-image: none !important;
+	backdrop-filter: none !important;
+	-webkit-backdrop-filter: none !important;
+}
+
+/* Dungeon / boss stay solid. This file's shell rule would otherwise paint the energy field on them. */
+html[data-gamification-visual-theme='system-hunter'] [data-gamification-pixel-enclave],
+html[data-gamification-visual-theme='system-hunter'] [data-gamification-pixel-enclave] [data-pixel-shell] {
+	background-color: var(--pixel-bg, #1b1d2f) !important;
+	background-image: none !important;
+	animation: none !important;
 }

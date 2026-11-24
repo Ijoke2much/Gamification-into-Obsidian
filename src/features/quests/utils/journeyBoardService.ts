@@ -34,7 +34,7 @@ export function getBoardDaysRemaining(board: JourneyBoard | null, now = new Date
 
 /**
  * Make sure the journey board is rolled and current:
- * - refreshes the foe registry from the vault (Foes.md)
+ * - refreshes the foe registry from boss notes (Foes.md overrides by id)
  * - rerolls affinities when the board is missing, expired, or the foe set changed
  *
  * The active run is never touched — it carries its own affinity snapshot.

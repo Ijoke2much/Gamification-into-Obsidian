@@ -20,8 +20,18 @@
 	margin-bottom: 10px;
 }
 
-.collapseToggle {
+.titleStack {
 	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	align-items: stretch;
+	gap: 2px;
+}
+
+.collapseToggle {
+	flex: none;
+	width: 100%;
 	min-width: 0;
 	margin: 0 !important;
 	padding: 0 !important;
@@ -32,9 +42,18 @@
 	color: inherit !important;
 	cursor: pointer;
 	touch-action: manipulation;
-	display: flex;
+	display: flex !important;
 	flex-direction: column;
+	align-items: stretch;
+	justify-content: flex-start;
 	gap: 2px;
+	/* Obsidian buttons are a single fixed-height line, which slices the date range. */
+	height: auto !important;
+	min-height: 0 !important;
+	max-height: none !important;
+	overflow: visible !important;
+	white-space: normal !important;
+	line-height: normal !important;
 }
 
 .missionTitleInToggle {
@@ -58,12 +77,13 @@
 }
 
 .range {
+	display: block;
 	font-size: 13px;
 	font-weight: 600;
+	line-height: 1.35;
 	color: #e8f6ff !important;
-	white-space: nowrap;
-	overflow: hidden;
-	text-overflow: ellipsis;
+	white-space: normal;
+	overflow: visible;
 }
 
 .nav {

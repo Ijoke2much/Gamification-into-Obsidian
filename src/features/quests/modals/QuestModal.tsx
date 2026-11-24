@@ -14,16 +14,14 @@ import {
     generateMarkdownTask,
 } from "../../../features/quests/utils/questUtils";
 import { getQuestEnergyCost } from "../../../shared/utils/questCompletionPipeline";
+import { normalizeActivityEnergyRules } from "../../../shared/utils/activityEnergy";
 import {
 	createQuestNote,
 	getTaskNoteFolder,
 	isPerNoteMode,
 } from "../utils/questNoteService";
-import { patchScheduleFrontmatter } from "../utils/taskNotesAdapter";
-import {
-    type ActivityProfileId,
-    normalizeActivityProfileId,
-} from "../../../shared/utils/questWellbeingProfiles";
+import { patchFrontmatter, patchScheduleFrontmatter } from "../utils/taskNotesAdapter";
+import { storedActivityTypeId } from "../../../shared/utils/questWellbeingProfiles";
 // import {
 //     QuestRewardItem,
 // } from "../../../features/quests/utils/questRewardsSystem";
@@ -194,17 +192,38 @@ export const QuestModal: React.FC<QuestModalProps> = ({
     const [newSubtask, setNewSubtask] = useState("");
     const [newSubtaskDescription, setNewSubtaskDescription] = useState("");
 
-    /** Parsed from quest when editing; undefined means “use default stamina cost” (see getQuestEnergyCost). */
-    const [energyCost, setEnergyCost] = useState<number | undefined>(() =>
-        mode === "edit" && typeof quest?.energyCost === "number" && quest.energyCost > 0
-            ? quest.energyCost
-            : undefined
+    const [energyLocked, setEnergyLocked] = useState(
+        () => mode === "edit" && quest?.energyLocked === true
     );
-    const [activityProfile, setActivityProfile] = useState<ActivityProfileId>(() =>
+    const [energyCost, setEnergyCost] = useState<number>(() =>
+        getQuestEnergyCost(mode === "edit" ? quest : undefined, plugin.settings.activityEnergyRules)
+    );
+    const [activityProfile, setActivityProfile] = useState<string>(() =>
         mode === "edit" && quest?.activityProfile
-            ? normalizeActivityProfileId(quest.activityProfile)
+            ? storedActivityTypeId(quest.activityProfile)
             : "generic"
     );
+    const activityOptions = [
+        { id: "generic", label: "Generic" },
+        ...normalizeActivityEnergyRules(plugin.settings.activityEnergyRules).map((rule) => ({
+            id: rule.id,
+            label: rule.label,
+        })),
+    ];
+    const handleActivityProfile = (id: string) => {
+        setActivityProfile(id);
+        if (!energyLocked) {
+            setEnergyCost(
+                getQuestEnergyCost({ activityProfile: id }, plugin.settings.activityEnergyRules)
+            );
+        }
+    };
+    const useTypeEnergy = () => {
+        setEnergyLocked(false);
+        setEnergyCost(
+            getQuestEnergyCost({ activityProfile }, plugin.settings.activityEnergyRules)
+        );
+    };
     const [attachedContract, setAttachedContract] = useState(
         mode === "edit" && quest?.project ? quest.project : defaultContract || ""
     );
@@ -313,15 +332,10 @@ export const QuestModal: React.FC<QuestModalProps> = ({
         );
         setSubtasks(quest.subtasks || []);
         setAttachedContract(quest.project || "");
-        if (typeof quest.energyCost === "number" && quest.energyCost > 0) {
-            setEnergyCost(quest.energyCost);
-        } else {
-            setEnergyCost(undefined);
-        }
+        setEnergyLocked(quest.energyLocked === true);
+        setEnergyCost(getQuestEnergyCost(quest, plugin.settings.activityEnergyRules));
         setActivityProfile(
-            quest.activityProfile
-                ? normalizeActivityProfileId(quest.activityProfile)
-                : "generic"
+            quest.activityProfile ? storedActivityTypeId(quest.activityProfile) : "generic"
         );
         setSkills(matchQuestSkills(quest, allSkills));
         setCustomTags(getQuestCustomTags(quest));
@@ -555,10 +569,12 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                 };
             };
 
+            const persistedProfile = activityProfile === "generic" ? undefined : activityProfile;
+            const persistedEnergy = energyLocked ? energyCost : undefined;
+
             if (mode === "create") {
                 // Create new quest
                 const bannerPath = await ensureBannerPath(banner || undefined);
-                const resolvedStamina = getQuestEnergyCost({ energyCost });
                 const usePerNoteCreate =
                     isPerNoteMode(plugin.settings) && saveLocationId === "default";
 
@@ -579,9 +595,9 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                             start: getScheduledRange().start,
                             recur: recur || undefined,
                             estimatedTime: estimatedMinutes || undefined,
-                            energyCost: resolvedStamina,
-                            activityProfile:
-                                activityProfile === "generic" ? undefined : activityProfile,
+                            energyCost: persistedEnergy,
+                            energyLocked: energyLocked || undefined,
+                            activityProfile: persistedProfile,
                             banner: bannerPath || undefined,
                             bannerAlign,
                             timelineTheme,
@@ -611,9 +627,11 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                         completed: false,
                         className: skills[0]?.class || "",
                         stats: skills[0]?.stats ? Object.keys(skills[0].stats) : [],
-                        energyCost: resolvedStamina,
+                        ...(persistedEnergy !== undefined
+                            ? { energyCost: persistedEnergy, energyLocked: true as const }
+                            : {}),
                         filePath: file.path,
-                        ...(activityProfile !== "generic" ? { activityProfile } : {}),
+                        ...(persistedProfile ? { activityProfile: persistedProfile } : {}),
                         ...(attachedContract.trim() ? { project: attachedContract.trim() } : {}),
                     };
                     onSubmit(questForState, file.path);
@@ -636,8 +654,9 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                     recur: recur || undefined,
                     estimatedTime: estimatedMinutes || undefined,
                     subtasks,
-                    energyCost: resolvedStamina,
-                    activityProfile: activityProfile === "generic" ? undefined : activityProfile,
+                    energyCost: persistedEnergy,
+                    energyLocked: energyLocked || undefined,
+                    activityProfile: persistedProfile,
                     project: attachedContract.trim() || undefined,
                     customTags,
                 };
@@ -687,8 +706,10 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                     completed: false,
                     className: skills[0]?.class || '',
                     stats: skills[0]?.stats ? Object.keys(skills[0].stats) : [],
-                    energyCost: resolvedStamina,
-                    ...(activityProfile !== "generic" ? { activityProfile } : {}),
+                    ...(persistedEnergy !== undefined
+                        ? { energyCost: persistedEnergy, energyLocked: true as const }
+                        : {}),
+                    ...(persistedProfile ? { activityProfile: persistedProfile } : {}),
                 };
                 onSubmit(questForState, targetPath);
             } else if (mode === "edit" && quest) {
@@ -758,7 +779,6 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                 
                 // Generate the updated quest
                 const bannerPath = await ensureBannerPath(banner || undefined);
-                const resolvedStamina = getQuestEnergyCost({ energyCost });
                 const updatedQuest = {
                     title: title.trim(),
                     description: description.trim() || undefined,
@@ -775,8 +795,9 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                     recur: recur || undefined,
                     estimatedTime: estimatedMinutes || undefined,
                     subtasks: subtasks,
-                    energyCost: resolvedStamina,
-                    activityProfile: activityProfile === "generic" ? undefined : activityProfile,
+                    energyCost: persistedEnergy,
+                    energyLocked: energyLocked || undefined,
+                    activityProfile: persistedProfile,
                     project: attachedContract.trim() || undefined,
                     customTags,
                 };
@@ -791,11 +812,18 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                 ];
                 
                 const range = getScheduledRange();
-                const newContent = patchScheduleFrontmatter(
+                let newContent = patchScheduleFrontmatter(
                     newLines.join('\n'),
                     range.due,
                     range.start
                 );
+                if (currentContent.trimStart().startsWith("---")) {
+                    newContent = patchFrontmatter(newContent, {
+                        activityProfile: persistedProfile,
+                        energyCost: persistedEnergy,
+                        energyLock: energyLocked ? true : undefined,
+                    });
+                }
                 await plugin.app.vault.modify(questFile, newContent);
                 onSubmit();
             }
@@ -936,9 +964,14 @@ export const QuestModal: React.FC<QuestModalProps> = ({
                             setXp={setXp}
                             cp={cp}
                             setCp={setCp}
-                            energyOnComplete={getQuestEnergyCost({ energyCost })}
+                            energyCost={energyCost}
+                            setEnergyCost={setEnergyCost}
+                            energyLocked={energyLocked}
+                            setEnergyLocked={setEnergyLocked}
+                            onUseTypeEnergy={useTypeEnergy}
                             activityProfile={activityProfile}
-                            setActivityProfile={setActivityProfile}
+                            setActivityProfile={handleActivityProfile}
+                            activityOptions={activityOptions}
                             due={due}
                             setDue={setDue}
                             startDate={startDate}

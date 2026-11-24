@@ -34,51 +34,106 @@ function findExistingMasterClassName(vault: Vault): string | null {
 }
 
 async function ensureBackupDir(vault: Vault) {
-  const dir = vault.getAbstractFileByPath(BACKUP_DIR);
-  if (!dir) {
-    try { await vault.createFolder(BACKUP_DIR); } catch { /* ignore */ }
+  const adapter = vault.adapter;
+  try {
+    if (!(await adapter.exists(BACKUP_DIR))) {
+      await adapter.mkdir(BACKUP_DIR);
+    }
+  } catch {
+    /* ignore */
   }
 }
 
 function timestamp() {
   const d = new Date();
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+  const pad = (n: number, width = 2) => String(n).padStart(width, "0");
+  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}${pad(d.getMilliseconds(), 3)}`;
+}
+
+function backupBaseName(path: string): string {
+  return path.split("/").pop() ?? path;
+}
+
+/**
+ * `.playerdata_backups` is hidden, so Obsidian's vault file list never sees it.
+ * Retention has to go through the adapter or old snapshots are never deleted.
+ */
+async function listBackupPaths(vault: Vault): Promise<string[]> {
+  const adapter = vault.adapter;
+  if (!(await adapter.exists(BACKUP_DIR))) return [];
+  const listing = await adapter.list(BACKUP_DIR);
+  return listing.files
+    .filter((filePath) => {
+      const name = backupBaseName(filePath);
+      return name.startsWith(BACKUP_PREFIX) && name.endsWith(".md");
+    })
+    .sort();
+}
+
+export async function prunePlayerDataBackups(vault: Vault): Promise<void> {
+  const files = await listBackupPaths(vault);
+  const overflow = files.length - MAX_BACKUPS;
+  if (overflow <= 0) return;
+  for (const oldest of files.slice(0, overflow)) {
+    try {
+      await vault.adapter.remove(oldest);
+    } catch {
+      /* ignore */
+    }
+  }
 }
 
 async function createBackup(vault: Vault, src: TFile) {
   await ensureBackupDir(vault);
   const content = await vault.read(src);
-  const name = `${BACKUP_PREFIX}${timestamp()}.md`;
-  await vault.create(`${BACKUP_DIR}/${name}`, content);
-  // Trim oldest backups
-  const files = vault.getFiles().filter(f => f.path.startsWith(BACKUP_DIR + "/") && f.basename.startsWith(BACKUP_PREFIX));
-  files.sort((a, b) => (a.stat.ctime ?? 0) - (b.stat.ctime ?? 0));
-  while (files.length > MAX_BACKUPS) {
-    const f = files.shift();
-    if (f) { try { await vault.delete(f); } catch { /* ignore */ } }
+  if (!content || content.trim().length === 0) return;
+
+  const existing = await listBackupPaths(vault);
+  const newest = existing[existing.length - 1];
+  if (newest) {
+    try {
+      const previous = await vault.adapter.read(newest);
+      if (previous === content) {
+        if (existing.length > MAX_BACKUPS) await prunePlayerDataBackups(vault);
+        return;
+      }
+    } catch {
+      /* write a new snapshot */
+    }
   }
+
+  await vault.adapter.write(`${BACKUP_DIR}/${BACKUP_PREFIX}${timestamp()}.md`, content);
+  await prunePlayerDataBackups(vault);
 }
 
 export async function listPlayerDataBackups(vault: Vault): Promise<TFile[]> {
-  await ensureBackupDir(vault);
-  return vault.getFiles()
-    .filter(f => f.path.startsWith(BACKUP_DIR + "/") && f.basename.startsWith(BACKUP_PREFIX))
-    .sort((a, b) => (b.stat.ctime ?? 0) - (a.stat.ctime ?? 0));
+  const paths = await listBackupPaths(vault);
+  const files: TFile[] = [];
+  for (const path of [...paths].reverse()) {
+    const file = vault.getAbstractFileByPath(path);
+    if (file instanceof TFile) files.push(file);
+  }
+  return files;
 }
 
 export async function restorePlayerDataBackup(vault: Vault, backupPath: string): Promise<void> {
   const target = vault.getAbstractFileByPath("SkillTree/PlayerData.md");
-  const backup = vault.getAbstractFileByPath(backupPath);
-  if (target instanceof TFile && backup instanceof TFile) {
-    const content = await vault.read(backup);
-    document.dispatchEvent(new Event('player-data-saving'));
-    await vault.modify(target, content);
-    document.dispatchEvent(new Event('player-data-saved'));
-    document.dispatchEvent(new Event('player-data-updated'));
-  } else {
+  if (!(target instanceof TFile)) {
     throw new Error("Backup or target file not found");
   }
+  let content: string;
+  try {
+    content = await vault.adapter.read(backupPath);
+  } catch {
+    throw new Error("Backup or target file not found");
+  }
+  if (!content || content.trim().length === 0) {
+    throw new Error("Backup file is empty — refusing to restore.");
+  }
+  document.dispatchEvent(new Event("player-data-saving"));
+  await vault.modify(target, content);
+  document.dispatchEvent(new Event("player-data-saved"));
+  document.dispatchEvent(new Event("player-data-updated"));
 }
 
 async function performWrite(vault: Vault, tfile: TFile, updated: string) {
@@ -292,6 +347,32 @@ export async function readPlayerData(vault: Vault): Promise<PlayerData | null> {
     } catch (mobileErr) {
       console.log("📱 [Mobile] Mobile workaround failed:", mobileErr);
       tfile = null;
+    }
+  }
+
+  if (!tfile && isMobile) {
+    const indexed = vault.getMarkdownFiles().find((f) =>
+      f.path.toLowerCase().endsWith("playerdata.md")
+    );
+    if (indexed) {
+      console.log("📱 [Mobile] Found PlayerData in the markdown index:", indexed.path);
+      filePath = indexed.path;
+      tfile = indexed;
+    } else {
+      let onDisk = false;
+      try {
+        onDisk = await vault.adapter.exists(filePath);
+      } catch {
+        onDisk = false;
+      }
+      // iCloud often has not listed the note yet. Creating a starter here
+      // replaces the real profile with level 1 and 0 coins.
+      console.warn(
+        onDisk
+          ? "📱 [Mobile] PlayerData exists but is not readable yet. Skipping starter file."
+          : "📱 [Mobile] PlayerData is not in the vault index yet. Skipping starter file."
+      );
+      return null;
     }
   }
 

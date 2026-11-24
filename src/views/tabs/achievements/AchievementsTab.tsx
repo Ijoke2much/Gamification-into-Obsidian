@@ -3,6 +3,7 @@
 
 import React, { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import ReactDOM from "react-dom";
+import type { App } from "obsidian";
 import {
 	AchievementTracker,
 	Achievement,
@@ -10,13 +11,28 @@ import {
 	AchievementCategory,
 	BadgeTier,
 } from "../../../data/models/AchievementSystem";
+import type { PlayerData } from "../../../data/models/PlayerData";
 import { useMobileOptimizations } from "../../../shared/hooks/useMobileOptimizations";
+import {
+	collectLiveAchievementInput,
+	syncAchievementsFromLive,
+} from "../../../features/achievements/utils/achievementLiveSync";
+import {
+	loadCustomAchievements,
+	recountCustomAchievements,
+	skillRuleLabel,
+	customToAchievement,
+	CUSTOM_ACHIEVEMENTS_CHANGED,
+	type CustomAchievement,
+} from "../../../features/achievements/utils/customAchievements";
 import achStyles from "./AchievementsTab.module.css";
 
 const MOBILE_PAGE_SIZE = 20;
 
 export interface AchievementsTabProps {
 	tracker: AchievementTracker;
+	playerData?: PlayerData | null;
+	app?: App;
 	onRefresh?: () => void;
 	highlightAchievementId?: string | null;
 }
@@ -49,6 +65,8 @@ const ALL_CATEGORIES: AchievementCategory[] = [
 
 export default function AchievementsTab({
 	tracker,
+	playerData = null,
+	app,
 	onRefresh,
 	highlightAchievementId = null,
 }: AchievementsTabProps) {
@@ -71,9 +89,62 @@ export default function AchievementsTab({
 		achievement: Achievement;
 		playerData: PlayerAchievement;
 	} | null>(null);
+	const [liveTick, setLiveTick] = useState(0);
+	const [customAchievements, setCustomAchievements] = useState<CustomAchievement[]>([]);
 	const shellRef = useRef<HTMLDivElement>(null);
 
-	const allAchievements = tracker.getAllAchievements();
+	const allAchievements = useMemo(
+		() => tracker.getAllAchievements(),
+		[tracker, liveTick]
+	);
+
+	useEffect(() => tracker.subscribe(() => setLiveTick((tick) => tick + 1)), [tracker]);
+
+	useEffect(() => {
+		let cancelled = false;
+		void collectLiveAchievementInput(app, playerData).then((live) => {
+			if (cancelled) return;
+			syncAchievementsFromLive(tracker, live);
+			setLiveTick((tick) => tick + 1);
+		});
+		return () => {
+			cancelled = true;
+		};
+	}, [
+		app,
+		tracker,
+		playerData?.level,
+		playerData?.total_exp,
+		playerData?.coins,
+		playerData?.totalBossVictories,
+		playerData?.consecutiveBossWins,
+	]);
+
+	useEffect(() => {
+		if (!app) return;
+		let cancelled = false;
+		const load = () => {
+			void loadCustomAchievements(app).then((items) => {
+				if (!cancelled) setCustomAchievements(items);
+			});
+		};
+		void recountCustomAchievements(app).then((items) => {
+			if (!cancelled) setCustomAchievements(items);
+		});
+		window.addEventListener(CUSTOM_ACHIEVEMENTS_CHANGED, load);
+		return () => {
+			cancelled = true;
+			window.removeEventListener(CUSTOM_ACHIEVEMENTS_CHANGED, load);
+		};
+	}, [app]);
+
+	useEffect(() => {
+		setDetailEntry((current) => {
+			if (!current) return current;
+			const fresh = tracker.getAchievement(current.achievement.id);
+			return fresh ?? current;
+		});
+	}, [liveTick, tracker]);
 	const completedCount = tracker.getCompletedAchievements().length;
 	const totalCount = allAchievements.length;
 	const recentUnlocks = useMemo(() => tracker.getRecentlyUnlocked(), [tracker, allAchievements]);
@@ -532,24 +603,10 @@ export default function AchievementsTab({
 				)}
 
 				{/* Compact Progress Text */}
-				<div
-					style={{
-						fontSize: "10px",
-						color: "#888",
-						display: "flex",
-						justifyContent: "space-between",
-						alignItems: "center",
-						marginBottom: "8px",
-					}}
-				>
-					{!isLocked && (
-						<span style={{ fontWeight: "500" }}>
-							{Math.round(playerData.progress)}%
-							{playerData.currentValue !== undefined && (
-								<span style={{ color: "#aaa", marginLeft: "4px" }}>
-									({playerData.currentValue}/{achievement.criteria.target})
-								</span>
-							)}
+				<div className={achStyles.progressReadout}>
+					{typeof achievement.criteria.target === "number" && (
+						<span>
+							{Math.round(playerData.progress)}% ({playerData.currentValue ?? 0}/{achievement.criteria.target})
 						</span>
 					)}
 					{isCompleted && playerData.unlockedDate && (
@@ -782,6 +839,61 @@ export default function AchievementsTab({
 					))}
 				</div>
 			</div>
+
+			{app && (
+				<section className={achStyles.yoursSection}>
+					<div className={achStyles.yoursHeader}>
+						<h3 className={achStyles.sectionLabel}>Your achievements</h3>
+					</div>
+					{customAchievements.length === 0 ? (
+						<p className={achStyles.yoursEmpty}>
+							Make these in Settings, under Gameplay, then Achievements.
+						</p>
+					) : (
+						<div className={achStyles.yoursList}>
+							{customAchievements.map((item) => {
+								const photo = item.imagePath
+									? app.vault.adapter.getResourcePath(item.imagePath)
+									: "";
+								const pct = Math.min(100, Math.round((item.uses / Math.max(1, item.target)) * 100));
+								return (
+									<button
+										key={item.id}
+										type="button"
+										className={achStyles.yoursCard}
+										onClick={() =>
+											openDetail(customToAchievement(item), {
+												achievementId: item.id,
+												status: item.status,
+												progress: pct,
+												currentValue: item.uses,
+												unlockedDate: item.unlockedDate ? new Date(item.unlockedDate) : undefined,
+											})
+										}
+									>
+										{photo ? (
+											<img src={photo} alt="" className={achStyles.yoursPhoto} />
+										) : (
+											<span className={achStyles.yoursIcon}>{item.icon}</span>
+										)}
+										<span className={achStyles.yoursCopy}>
+											<span className={achStyles.yoursTitle}>{item.title}</span>
+											<span className={achStyles.yoursRule}>{skillRuleLabel(item)}</span>
+											<span className={achStyles.detailProgressTrack}>
+												<span className={achStyles.detailProgressFill} style={{ width: `${pct}%` }} />
+											</span>
+											<span className={achStyles.detailProgressLabel}>
+												{item.uses}/{item.target}
+												{item.status === "completed" ? " · Unlocked" : ""}
+											</span>
+										</span>
+									</button>
+								);
+							})}
+						</div>
+					)}
+				</section>
+			)}
 
 			{recentUnlocks.length > 0 && (
 				<section className={achStyles.recentSection}>
@@ -1287,14 +1399,24 @@ export default function AchievementsTab({
 							>
 								×
 							</button>
-							<div className={achStyles.detailIcon}>{detailEntry.achievement.icon}</div>
+							<div className={achStyles.detailIcon}>
+								{detailEntry.achievement.imagePath && app ? (
+									<img
+										src={app.vault.adapter.getResourcePath(detailEntry.achievement.imagePath)}
+										alt=""
+										className={achStyles.detailPhoto}
+									/>
+								) : (
+									detailEntry.achievement.icon
+								)}
+							</div>
 							<h3 className={achStyles.detailTitle}>{detailEntry.achievement.title}</h3>
 							<p className={achStyles.detailDesc}>{detailEntry.achievement.description}</p>
 							<div className={achStyles.detailMeta}>
 								<span className={`${achStyles.showcaseTier} ${TIER_CLASS[detailEntry.achievement.tier]}`}>
 									{detailEntry.achievement.tier}
 								</span>
-								<span className={achStyles.showcaseTier}>
+								<span className={`${achStyles.showcaseTier} ${achStyles.detailCategory}`}>
 									{getCategoryInfo(detailEntry.achievement.category).icon}{" "}
 									{getCategoryInfo(detailEntry.achievement.category).name}
 								</span>
@@ -1304,31 +1426,22 @@ export default function AchievementsTab({
 									</span>
 								)}
 							</div>
-							{detailEntry.playerData.status !== "locked" && (
-								<div style={{ marginBottom: 12 }}>
-									<div
-										style={{
-											background: "rgba(255,255,255,0.1)",
-											borderRadius: 6,
-											height: 8,
-											overflow: "hidden",
-										}}
-									>
+							{typeof detailEntry.achievement.criteria.target === "number" && (
+								<div className={achStyles.detailProgress}>
+									<div className={achStyles.detailProgressTrack}>
 										<div
-											style={{
-												background: detailEntry.playerData.status === "completed"
-													? "linear-gradient(90deg, #4CAF50, #66BB6A)"
-													: "linear-gradient(90deg, #2196F3, #42A5F5)",
-												height: "100%",
-												width: `${detailEntry.playerData.progress}%`,
-											}}
+											className={`${achStyles.detailProgressFill}${
+												detailEntry.playerData.status === "completed"
+													? ` ${achStyles.detailProgressFillDone}`
+													: ""
+											}`}
+											style={{ width: `${detailEntry.playerData.progress}%` }}
 										/>
 									</div>
-									<div style={{ fontSize: 12, color: "#aaa", marginTop: 4 }}>
+									<div className={achStyles.detailProgressLabel}>
 										{Math.round(detailEntry.playerData.progress)}%
-										{detailEntry.playerData.currentValue !== undefined && (
-											<> ({detailEntry.playerData.currentValue}/{detailEntry.achievement.criteria.target})</>
-										)}
+										{" "}
+										({detailEntry.playerData.currentValue ?? 0}/{detailEntry.achievement.criteria.target})
 									</div>
 								</div>
 							)}

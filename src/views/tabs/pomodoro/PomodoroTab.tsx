@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
-import { TFile, MarkdownView, Platform } from 'obsidian';
+import { TFile, MarkdownView } from 'obsidian';
 import { PomodoroTimer, type PomodoroTimerHandle, type PomodoroTimerStatus } from '../../../features/pomodoro/components/PomodoroTimer';
 import { FocusEncounterPanel } from '../../../features/pomodoro/components/FocusEncounterPanel';
 import { FocusSessionOverlay } from '../../../features/pomodoro/components/FocusSessionOverlay';
@@ -1313,7 +1313,7 @@ export const PomodoroTab: React.FC<PomodoroTabProps> = React.memo(({
     }
     setSessionSurface((current) => {
       if (current !== 'idle') return current;
-      return Platform.isMobile ? 'kit' : 'arena';
+      return 'arena';
     });
   }, [showEncounter]);
 
@@ -1775,14 +1775,13 @@ export const PomodoroTab: React.FC<PomodoroTabProps> = React.memo(({
             onSubtaskToggle={handleSubtaskToggle}
             onCompleteQuest={() => void handleCompleteQuest()}
             onHonorComplete={() => void handleCompleteQuest({ honor: true })}
-            onAbandon={() => timerRef.current?.reset()}
             onNotes={handleNotesFromArena}
             onExpand={handleExpandArena}
             onPause={() => timerRef.current?.pause()}
             onStart={() => timerRef.current?.start()}
           />
           {sessionSurface === 'arena' ? (
-            <div className={styles.arenaControls}>
+            <div className={`${styles.arenaControls} ${clayUi ? styles.arenaControlsClay : ''}`}>
               <button type="button" onClick={() => timerRef.current?.start()}>Start</button>
               <button type="button" onClick={() => timerRef.current?.pause()}>Pause</button>
               <button type="button" onClick={() => timerRef.current?.reset()}>Abandon</button>

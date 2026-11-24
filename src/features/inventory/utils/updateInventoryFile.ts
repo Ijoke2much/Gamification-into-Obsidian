@@ -4,6 +4,7 @@ import { ShopItem, ShopLikeItem } from "../../shop/utils/ShopParser";
 import { readPlayerData, updatePlayerData } from "../../player/utils/playerDataUtils";
 import type { PlayerData, Artifact } from "../../../data/models/PlayerData";
 import { addBuff, addDebuff, parseDurationToMs, BuffKind } from "../../../shared/utils/buffEngine";
+import { applyDreamHeal, buildDreamCombatStats, HEALTH_POTION_HEAL } from "../../player/utils/dreamCombat";
 import { EnhancedInventoryParser } from "./enhancedInventoryParser";
 import { modifyWithBackup } from "../../../shared/utils/vaultDataBackup";
 // Remove: import { InventoryItem } from "./InventoryParser";
@@ -343,6 +344,16 @@ export async function dropItem(app: App, itemName: string): Promise<void> {
   await writeInventory(app.vault, inventory);
 }
 
+function healthPotionHealAmount(item: InventoryItem): number | null {
+  for (const effect of item.effects ?? []) {
+    const match = effect.toLowerCase().match(/^hp:\+?(\d+)/);
+    if (match) return parseInt(match[1], 10);
+  }
+  const blob = `${item.name} ${(item.effects ?? []).join(' ')}`.toLowerCase();
+  if (blob.includes('health potion') || blob.includes('restores health')) return HEALTH_POTION_HEAL;
+  return null;
+}
+
 export async function useItem(app: App, itemName: string): Promise<void> {
   const inventory = await readInventory(app.vault);
   const item = inventory.find((it) => it.name === itemName);
@@ -359,6 +370,28 @@ export async function useItem(app: App, itemName: string): Promise<void> {
   // Apply immediate effects (coins/xp) and timed buffs
   let appliedSomething = false;
   const player = await readPlayerData(app.vault);
+
+  const potionHeal = healthPotionHealAmount(item);
+  if (potionHeal != null && potionHeal > 0 && player) {
+    const { getHunterKitItems } = await import('./gearFile');
+    const { look } = await getHunterKitItems(app);
+    const stats = buildDreamCombatStats(player.level ?? 1, look, player.dream);
+    if (stats.hp >= stats.maxHp) {
+      try { showGameNotice('Dream HP is already full.', 1500); } catch {}
+      return;
+    }
+    const { hp, healed } = applyDreamHeal(stats.hp, stats.maxHp, potionHeal);
+    await updatePlayerData(app.vault, {
+      ...player,
+      dream: {
+        ...player.dream,
+        hp,
+        lastOutcome: hp > 0 ? 'survived' : player.dream?.lastOutcome ?? null,
+      },
+    });
+    try { showGameNotice(`Drink water or take a short rest. +${healed} Dream HP`, 2500); } catch {}
+    appliedSomething = true;
+  }
 
   for (const e of effects) {
     const effectStr = e.toLowerCase();
@@ -504,6 +537,19 @@ export async function useItem(app: App, itemName: string): Promise<void> {
         appliedSomething = true;
       }
       continue;
+    }
+  }
+
+  if (!appliedSomething) {
+    try {
+      const { productivityEquipmentSystem } = await import('../../quests/systems/productivityEquipmentSystem');
+      const line = await productivityEquipmentSystem.applyNamedConsumable(itemName);
+      if (line) {
+        try { showGameNotice(line, 2500); } catch {}
+        appliedSomething = true;
+      }
+    } catch (error) {
+      console.warn('[useItem] Consumable effect failed:', error);
     }
   }
 

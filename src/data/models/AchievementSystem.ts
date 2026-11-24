@@ -12,6 +12,8 @@ export interface Achievement {
   category: AchievementCategory;
   tier: BadgeTier;
   icon: string;
+  /** Vault-relative photo. Shown instead of the emoji when set. */
+  imagePath?: string;
   criteria: AchievementCriteria;
   rewards: AchievementRewards;
   hidden?: boolean; // Hidden until discovered/unlocked
@@ -550,6 +552,7 @@ export const ACHIEVEMENTS: Achievement[] = [
 // Achievement progress tracking
 export class AchievementTracker {
   private achievements: Map<string, PlayerAchievement> = new Map();
+  private listeners = new Set<() => void>();
 
   constructor(savedAchievements?: PlayerAchievement[]) {
     if (savedAchievements) {
@@ -582,26 +585,61 @@ export class AchievementTracker {
       return false;
     }
 
+    if (typeof achievement.criteria.target === 'string') {
+      if (currentValue <= 0 || playerAchievement.status === 'completed') return false;
+      playerAchievement.currentValue = currentValue;
+      playerAchievement.progress = 100;
+      playerAchievement.status = 'completed';
+      playerAchievement.unlockedDate = new Date();
+      this.emit();
+      return true;
+    }
+
+    const previous = playerAchievement.currentValue ?? 0;
+    if (currentValue < previous) return false;
+
     const target = typeof achievement.criteria.target === 'number' ? achievement.criteria.target : 0;
-    const progress = Math.min((currentValue / target) * 100, 100);
+    const progress = target > 0 ? Math.min((currentValue / target) * 100, 100) : 0;
+    const changed =
+      previous !== currentValue || playerAchievement.progress !== progress;
 
     playerAchievement.currentValue = currentValue;
     playerAchievement.progress = progress;
 
     // Update status based on progress, only if not already completed
     if (playerAchievement.status === 'completed') {
-      return false; // Already completed, no change
+      if (changed) this.emit();
+      return false;
     }
 
-    if (currentValue >= target) {
+    if (currentValue >= target && target > 0) {
       playerAchievement.status = 'completed';
       playerAchievement.unlockedDate = new Date();
+      this.emit();
       return true; // Achievement just unlocked!
     } else if (currentValue > 0 && playerAchievement.status === 'locked') {
       playerAchievement.status = 'in_progress';
     }
 
+    if (changed) this.emit();
     return false;
+  }
+
+  subscribe(listener: () => void): () => void {
+    this.listeners.add(listener);
+    return () => {
+      this.listeners.delete(listener);
+    };
+  }
+
+  private emit(): void {
+    this.listeners.forEach((listener) => {
+      try {
+        listener();
+      } catch (error) {
+        console.error('[AchievementTracker] listener failed', error);
+      }
+    });
   }
 
   // Get all achievements with their current status

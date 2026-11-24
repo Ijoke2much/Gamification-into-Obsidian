@@ -23,6 +23,8 @@ export type FocusSessionMode =
 export interface FocusEncounterQuest {
 	title: string;
 	isTimedQuest?: boolean;
+	dueDate?: string;
+	difficulty?: string;
 	subtasks?: Array<{ completed: boolean; text: string }>;
 	filePath?: string;
 	lineNumber?: number;

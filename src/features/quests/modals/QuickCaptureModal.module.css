@@ -191,6 +191,97 @@
 	background: rgba(2, 8, 18, 0.72) !important;
 }
 
+/* Clay — cream card. This dialog is portaled on body, outside the clay shell. */
+:global(html[data-gamification-visual-theme='clay'] .modal.gamify-quick-capture-modal) {
+	font-family: var(--go-font-ui, "Nunito", "Segoe UI", system-ui, sans-serif) !important;
+	color: var(--clay-text, #3a342c) !important;
+	background: var(--clay-gradient, linear-gradient(145deg, #fbf8f2, #efe6d8)) !important;
+	border: none !important;
+	border-radius: var(--clay-radius, 24px) !important;
+	box-shadow: var(--clay-shadow) !important;
+	color-scheme: light;
+}
+
+:global(html[data-gamification-visual-theme='clay'] .modal.gamify-quick-capture-modal .modal-content) {
+	background: transparent !important;
+	color: var(--clay-text, #3a342c) !important;
+}
+
+:global(html[data-gamification-visual-theme='clay'] .modal.gamify-quick-capture-modal .modal-close-button) {
+	color: var(--clay-text, #3a342c) !important;
+}
+
+:global(html[data-gamification-visual-theme='clay'] .modal-container:has(.gamify-quick-capture-modal)) {
+	background: rgba(58, 52, 44, 0.38) !important;
+}
+
+:global(html[data-gamification-visual-theme='clay']) .modalWrapper {
+	border: none;
+	border-radius: 0;
+	background: transparent;
+	box-shadow: none;
+	color: var(--clay-text, #3a342c);
+	font-family: var(--go-font-ui, "Nunito", "Segoe UI", system-ui, sans-serif);
+}
+
+:global(html[data-gamification-visual-theme='clay']) .modalHeader {
+	color: var(--clay-accent-deep, #3fa39a);
+	text-shadow: none;
+	letter-spacing: 0.08em;
+}
+
+:global(html[data-gamification-visual-theme='clay']) .hint,
+:global(html[data-gamification-visual-theme='clay']) .sectionTitle {
+	color: var(--clay-text, #3a342c);
+	text-shadow: none;
+}
+
+:global(html[data-gamification-visual-theme='clay']) .captureInput,
+:global(html[data-gamification-visual-theme='clay']) .descriptionInput {
+	background: var(--clay-surface-2, #efe6d8) !important;
+	color: var(--clay-text-strong, #2c2722) !important;
+	-webkit-text-fill-color: var(--clay-text-strong, #2c2722) !important;
+	caret-color: var(--clay-text-strong, #2c2722);
+	border: none !important;
+	border-radius: 16px !important;
+	box-shadow: var(--clay-recessed, inset 5px 6px 12px rgba(166, 154, 138, 0.28), inset -3px -3px 8px rgba(255, 255, 255, 0.75)) !important;
+}
+
+:global(html[data-gamification-visual-theme='clay']) .captureInput::placeholder,
+:global(html[data-gamification-visual-theme='clay']) .descriptionInput::placeholder {
+	color: var(--clay-text-light, #8a8278) !important;
+	-webkit-text-fill-color: var(--clay-text-light, #8a8278) !important;
+	opacity: 1;
+}
+
+:global(html[data-gamification-visual-theme='clay']) .captureInput:focus,
+:global(html[data-gamification-visual-theme='clay']) .descriptionInput:focus {
+	outline: 2px solid var(--clay-accent, #5bb8b0);
+	outline-offset: 2px;
+	border-color: transparent !important;
+	box-shadow: var(--clay-recessed, inset 5px 6px 12px rgba(166, 154, 138, 0.28), inset -3px -3px 8px rgba(255, 255, 255, 0.75)) !important;
+}
+
+:global(html[data-gamification-visual-theme='clay']) .continueBtn,
+:global(html[data-gamification-visual-theme='clay']) .noteToggle {
+	border: none !important;
+	border-radius: 16px !important;
+	background: var(--clay-button-gradient, linear-gradient(180deg, #fbf8f2, #ece3d6)) !important;
+	color: var(--clay-text, #3a342c) !important;
+	box-shadow: var(--clay-shadow) !important;
+	text-shadow: none !important;
+}
+
+:global(html[data-gamification-visual-theme='clay']) .primaryBtn {
+	border: none !important;
+	border-radius: 16px !important;
+	background: var(--clay-accent-gradient, linear-gradient(180deg, #6ac9c1, #4aa8a0)) !important;
+	color: #fff !important;
+	-webkit-text-fill-color: #fff !important;
+	box-shadow: var(--clay-pressed) !important;
+	text-shadow: none !important;
+}
+
 @media (max-width: 768px) {
 	.hint {
 		display: none;

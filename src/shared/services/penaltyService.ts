@@ -120,10 +120,8 @@ export class PenaltyService {
             // Add debuff
             updatedData.debuffs = [...(data.debuffs || []), battleFatigueDebuff];
 
-            // Boost boss health for next encounter if bossId is provided
+            // Points are a percent of max HP, spent the next time this boss is armed.
             if (context.bossId) {
-                // This would integrate with boss system
-                // For now, we'll just track it in player data
                 updatedData.bossHealthBoosts = {
                     ...(data.bossHealthBoosts || {}),
                     [context.bossId]: (data.bossHealthBoosts?.[context.bossId] || 0) + Math.ceil(timeExceeded / 10)

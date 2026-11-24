@@ -91,6 +91,23 @@ const getItemDescription = (item: InventoryItem): string => {
     const name = item.name.toLowerCase();
     const rarity = item.rarity || "common";
     
+    // Real-life breaks. The item counts something you already did.
+    if (name.includes("energy drink")) {
+        return "Take a real drink — water, tea, or what you have — then use this. It adds 50 energy and a 2-hour rewards buff for that break.";
+    }
+    if (name.includes("health potion")) {
+        return "Drink water or take a short rest, then use this. Restores 20 dream HP.";
+    }
+    if (name.includes("inspirational quote") || name.includes("scroll of motivation")) {
+        return "Read one real line that helps, then use this.";
+    }
+    if (name.includes("stamina")) {
+        return "Stand up and stretch, then use this. It marks that break.";
+    }
+    if (name.includes("incense") || name.includes("focus elixir") || name.includes("deep focus")) {
+        return "Step away from the screen for one quiet minute, then use this.";
+    }
+
     // Specific item descriptions
     if (name.includes("crystal")) {
         return "A fragment of pure magical crystal that radiates with mystical energy. Its surface shimmers with otherworldly light.";

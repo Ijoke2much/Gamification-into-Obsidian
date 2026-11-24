@@ -2,11 +2,7 @@ import React, { memo, useState } from 'react';
 import type { SkillMetadata } from '../../../../shared/utils/skillDiscovery';
 import { PRIORITY_OPTIONS, DIFFICULTY_OPTIONS } from '../../utils/questUtils';
 import { normalizeCustomTag } from '../../utils/taskParser';
-import {
-    ACTIVITY_PROFILE_IDS,
-    formatActivityProfileLabel,
-    type ActivityProfileId,
-} from "../../../../shared/utils/questWellbeingProfiles";
+import { clampActivityEnergy } from "../../../../shared/utils/activityEnergy";
 import styles from '../QuestModal.module.css';
 
 interface QuestModalFormProps {
@@ -28,10 +24,14 @@ interface QuestModalFormProps {
     setXp: (xp: number) => void;
     cp: number;
     setCp: (cp: number) => void;
-    /** Stamina subtracted on quest completion (resolved default or quest metadata). */
-    energyOnComplete: number;
-    activityProfile: ActivityProfileId;
-    setActivityProfile: (v: ActivityProfileId) => void;
+    energyCost: number;
+    setEnergyCost: (cost: number) => void;
+    energyLocked: boolean;
+    setEnergyLocked: (locked: boolean) => void;
+    onUseTypeEnergy: () => void;
+    activityProfile: string;
+    setActivityProfile: (v: string) => void;
+    activityOptions: { id: string; label: string }[];
     due: string;
     setDue: (due: string) => void;
     startDate: string;
@@ -85,9 +85,14 @@ export const QuestModalForm: React.FC<QuestModalFormProps> = memo(({
     setXp,
     cp,
     setCp,
-    energyOnComplete,
+    energyCost,
+    setEnergyCost,
+    energyLocked,
+    setEnergyLocked,
+    onUseTypeEnergy,
     activityProfile,
     setActivityProfile,
+    activityOptions,
     due,
     setDue,
     startDate,
@@ -605,26 +610,24 @@ export const QuestModalForm: React.FC<QuestModalFormProps> = memo(({
                                 color: "var(--text-normal)",
                                 fontSize: 16,
                             }}
-                            title="Physical energy removed when you mark this quest complete. Separate from stress/motivation in Activity type below."
+                            title="Positive spends energy when you finish. Negative gives energy back."
                         >
-                            🔋 Energy cost
+                            🔋 Energy
                         </label>
-                        <div
+                        <input
+                            type="number"
+                            min={-50}
+                            max={50}
+                            value={energyCost}
                             className={styles.select}
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                fontWeight: 700,
-                                fontSize: 18,
-                                boxSizing: "border-box",
+                            aria-label="Energy change when this quest is finished"
+                            onChange={(e) => {
+                                const next = Number(e.target.value);
+                                if (!Number.isFinite(next)) return;
+                                setEnergyCost(clampActivityEnergy(next));
+                                setEnergyLocked(true);
                             }}
-                            role="status"
-                            aria-live="polite"
-                            aria-label={`Stamina cost when completing this quest: ${energyOnComplete}`}
-                        >
-                            {energyOnComplete}
-                        </div>
+                        />
                     </div>
                     <div style={{ flex: "1 1 140px", minWidth: 0 }}>
                         <label style={{
@@ -654,7 +657,7 @@ export const QuestModalForm: React.FC<QuestModalFormProps> = memo(({
                         color: "var(--text-muted)",
                         lineHeight: 1.4,
                     }}>
-                        Stamina cost defaults to 10 if your task line does not set a custom cost. It is not the same as stress or motivation (see Activity type).
+                        Positive spends energy. Negative gives it back. The number comes from the activity type until you change it.
                     </p>
                 )}
             </div>
@@ -667,19 +670,40 @@ export const QuestModalForm: React.FC<QuestModalFormProps> = memo(({
                     color: "var(--text-normal)",
                     fontSize: 16,
                 }}>
-                    🧠 Activity type (wellbeing)
+                    🧠 Activity type
                 </label>
                 <select
                     value={activityProfile}
-                    onChange={(e) => setActivityProfile(e.target.value as ActivityProfileId)}
+                    onChange={(e) => setActivityProfile(e.target.value)}
                     className={styles.select}
                 >
-                    {ACTIVITY_PROFILE_IDS.map((id) => (
-                        <option key={id} value={id}>
-                            {formatActivityProfileLabel(id)}
+                    {(activityOptions.some((option) => option.id === activityProfile)
+                        ? activityOptions
+                        : [...activityOptions, { id: activityProfile, label: activityProfile }]
+                    ).map((option) => (
+                        <option key={option.id} value={option.id}>
+                            {option.label}
                         </option>
                     ))}
                 </select>
+                {energyLocked && (
+                    <button
+                        type="button"
+                        onClick={onUseTypeEnergy}
+                        style={{
+                            marginTop: 8,
+                            background: "transparent",
+                            border: "none",
+                            padding: 0,
+                            color: "var(--text-muted)",
+                            fontSize: 12,
+                            cursor: "pointer",
+                            textDecoration: "underline",
+                        }}
+                    >
+                        Use the type's number
+                    </button>
+                )}
                 {!isMobile && (
                     <span style={{
                         display: "block",
@@ -688,7 +712,9 @@ export const QuestModalForm: React.FC<QuestModalFormProps> = memo(({
                         color: "var(--text-muted)",
                         lineHeight: 1.35,
                     }}>
-                        On complete, adjusts stress, motivation, focus, and calm (e.g. chores tend to lower stress; exercise raises motivation). “Generic” adds no extra wellbeing change—only energy and rewards, like an untagged task.
+                        {energyLocked
+                            ? "This quest uses its own energy number."
+                            : "Energy follows this type. Change the number above to override just this quest."}
                     </span>
                 )}
             </div>

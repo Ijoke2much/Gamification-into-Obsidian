@@ -19,7 +19,8 @@ import { QuestDetailModal } from "../../features/quests/modals/QuestDetailModal"
 import { QuestModal } from "../../features/quests/modals/QuestModal";
 import { readPlayerData } from "../../features/player/utils/playerDataUtils";
 import { EnergyCalculationService } from "../../features/quests/services/energyCalculationService";
-import { emitQuestCompletionFeedback, type QuestRewardResult } from "../../shared/utils/questCompletionPipeline";
+import { emitQuestCompletionFeedback, getQuestEnergyCost, type QuestRewardResult } from "../../shared/utils/questCompletionPipeline";
+import { formatActivityEnergyBadge, type ActivityEnergyRule } from "../../shared/utils/activityEnergy";
 import { tryClaimQuestDailyClearBonus } from "../../shared/utils/dailyClearBonus";
 import { CeremonyHost } from "../../shared/components/ui/CeremonyHost";
 import {
@@ -83,6 +84,18 @@ import {
 } from '../../features/quests/utils/questDateRange';
 import { allowQuestScheduleDrag, isLikelyMobileDevice } from '../../shared/utils/deviceDetect';
 import { TodayRunStrip } from './components/TodayRunStrip';
+import {
+	classifySprint,
+	persistDailyWin,
+	persistSprintLane,
+	readWinDay,
+	SPRINT_CHECKPOINT_HOUR,
+	SPRINT_LANES,
+	SPRINT_UNSORTED_LABEL,
+	sprintLaneLabel,
+	sprintStatusLine,
+	type SprintLaneId,
+} from '../../features/quests/utils/sprintLanes';
 import { MissionSectionTitle } from './components/MissionSectionTitle';
 import { openQuickCaptureModal } from '../../features/quests/modals/QuickCaptureModal';
 import {
@@ -94,6 +107,8 @@ import {
 	shouldReloadCapturesOnFileChange,
 } from '../../features/quests/utils/captureService';
 import { useMobileOptimizations } from '../../shared/hooks/useMobileOptimizations';
+import { displayedQuestRewards, overdueRewardHint } from '../../shared/utils/overdueRewardScale';
+import type { GamificationPluginSettings } from '../../core/settings';
 
 export const SIDEBAR_QUEST_VIEW_TYPE = "sidebar-quest-view";
 
@@ -103,6 +118,7 @@ const DEFAULT_PLANNER_END_HOUR = 23;
 const INBOX_COLLAPSE_KEY = "sidebarQuestInboxCollapseState.v1";
 const CALENDAR_COLLAPSE_KEY = "sidebarQuestCalendarCollapse.v1";
 const CAPTURE_COLLAPSE_KEY = "sidebarCaptureInboxCollapse.v1";
+const WIN_STARTED_KEY = "gamification-sprint-win-started";
 const DEFAULT_TIMELINE_COLOR_MODE: TimelineColorMode = "adaptive";
 
 interface SidebarQuestViewProps {
@@ -198,9 +214,17 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 	const [questsReady, setQuestsReady] = useState(false);
 	/** Mobile day plan starts open so the agenda is visible without an extra tap. */
 	const [dayPlanExpanded, setDayPlanExpanded] = useState(true);
-	/** Mobile ADHD filters — desktop ignores these. */
-	const [todayOnly, setTodayOnly] = useState(() => isLikelyMobileDevice());
-	const [fitEnergy, setFitEnergy] = useState(false);
+	/** Mobile keeps today + unscheduled in view. Lanes replace the old chips. */
+	const [todayOnly] = useState(() => isLikelyMobileDevice());
+	const [fitEnergy] = useState(false);
+	const [selectedSprintLane, setSelectedSprintLane] = useState<SprintLaneId>('on_fire');
+	const [winStartedToken, setWinStartedToken] = useState(() => {
+		try {
+			return localStorage.getItem(WIN_STARTED_KEY) ?? '';
+		} catch {
+			return '';
+		}
+	});
 
 	/** ≥700px → Day Plan | Inbox split + wide HUD layout */
 	const WIDE_BOARD_MIN_PX = 700;
@@ -437,8 +461,8 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 				}
 			}
 			if (isMobile && fitEnergy) {
-				const cost = quest.energyCost ?? 10;
-				if (cost > currentEnergy) return false;
+				const cost = getQuestEnergyCost(quest, plugin.settings.activityEnergyRules);
+				if (cost > 0 && cost > currentEnergy) return false;
 			}
 			return true;
 		});
@@ -453,6 +477,7 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 		fitEnergy,
 		currentEnergy,
 		currentTime,
+		plugin.settings.activityEnergyRules,
 	]);
 
 	const selectedDateISO = toISODate(selectedDate);
@@ -691,6 +716,47 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 
 	const nextUpQuest = nextUpInfo.quest;
 	const nextUpPhase = nextUpInfo.phase;
+
+	const sprintBoard = useMemo(() => {
+		const grouped: Record<SprintLaneId, Quest[]> = {
+			on_fire: [],
+			coming_up: [],
+			draining: [],
+			wants: [],
+			unsorted: [],
+		};
+		let win: Quest | null = null;
+		for (const quest of filteredQuests) {
+			if (isAbandonQuest(quest, currentTime)) continue;
+			if (!win && readWinDay(quest.tags) === todayISO) win = quest;
+			const place = classifySprint(quest, currentTime);
+			if (place === 'clock') continue;
+			grouped[place].push(quest);
+		}
+		return { grouped, win };
+	}, [filteredQuests, currentTime, todayISO]);
+
+	const sprintWin = sprintBoard.win;
+	const winStarted = Boolean(sprintWin && winStartedToken === `${todayISO}:${sprintWin.id}`);
+	const sprintLocked =
+		currentTime.getHours() >= SPRINT_CHECKPOINT_HOUR &&
+		Boolean(sprintWin) &&
+		!winStarted;
+	const sprintLanesForStrip = [
+		...SPRINT_LANES.map((lane) => ({
+			id: lane.id,
+			label: lane.label,
+			count: sprintBoard.grouped[lane.id].length,
+		})),
+		...(sprintBoard.grouped.unsorted.length > 0
+			? [{
+				id: 'unsorted' as const,
+				label: SPRINT_UNSORTED_LABEL,
+				count: sprintBoard.grouped.unsorted.length,
+				wide: true,
+			}]
+			: []),
+	];
 
 	const todayDateLabel = useMemo(
 		() =>
@@ -989,6 +1055,7 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 				priority: input.priority,
 				skillName: input.skill,
 				skillClass: skillMeta?.class,
+				projectKind: input.projectKind,
 			});
 
 			const path = getContractFilePath();
@@ -1309,6 +1376,46 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 		pixelNotice(`⏱ Focus: ${getQuestDisplayTitle(quest)}`, 2000, 'low');
 	};
 
+	const handlePinWin = async (quest: Quest) => {
+		try {
+			const previous = taskQuests.filter((item) => readWinDay(item.tags) === todayISO);
+			await persistDailyWin(app, quest, todayISO, previous);
+			try {
+				localStorage.removeItem(WIN_STARTED_KEY);
+			} catch {
+				// Ignore storage failures.
+			}
+			setWinStartedToken('');
+			await loadQuests();
+		} catch (error) {
+			console.error('Failed to pin daily win:', error);
+			pixelNotice("Could not pin today's win. Please try again.", 3500);
+		}
+	};
+
+	const handleFileSprintLane = async (quest: Quest, lane: SprintLaneId) => {
+		try {
+			await persistSprintLane(app, quest, lane);
+			setSelectedSprintLane(lane);
+			await loadQuests();
+		} catch (error) {
+			console.error('Failed to file sprint lane:', error);
+			pixelNotice('Could not file that quest. Please try again.', 3500);
+		}
+	};
+
+	const handleStartWin = () => {
+		if (!sprintWin) return;
+		const token = `${todayISO}:${sprintWin.id}`;
+		try {
+			localStorage.setItem(WIN_STARTED_KEY, token);
+		} catch {
+			// Ignore storage failures.
+		}
+		setWinStartedToken(token);
+		handleStartFocus(sprintWin);
+	};
+
 	const scrollTimelineToNow = (behavior: ScrollBehavior = "smooth") => {
 		mobileAgendaRef.current?.scrollToNow(behavior);
 	};
@@ -1371,29 +1478,22 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 				variant={isMobile ? 'mobile' : 'desktop'}
 				showWidenTip={!isMobile && questsDensity === 'narrow'}
 				clayUi={isClayTheme}
+				sprint={{
+					status: sprintStatusLine({
+						locked: sprintLocked,
+						started: winStarted,
+						hasWin: Boolean(sprintWin),
+					}),
+					locked: sprintLocked,
+					win: sprintWin,
+					winStarted,
+					lanes: sprintLanesForStrip,
+					activeLane: selectedSprintLane,
+					onSelectLane: setSelectedSprintLane,
+					onOpenWin: openDetails,
+					onStartWin: sprintWin ? handleStartWin : undefined,
+				}}
 			/>
-			{isMobile && (
-				<div className={styles.mobileFilterRow} role="group" aria-label="Today filters">
-					<button
-						type="button"
-						className={`${styles.mobileFilterChip} ${todayOnly ? styles.mobileFilterChipActive : ''}`}
-						onClick={() => setTodayOnly((v) => !v)}
-						aria-pressed={todayOnly}
-						title="Focus Now / Today / Overdue — To schedule always stays visible"
-					>
-						[ TODAY ]
-					</button>
-					<button
-						type="button"
-						className={`${styles.mobileFilterChip} ${fitEnergy ? styles.mobileFilterChipActive : ''}`}
-						onClick={() => setFitEnergy((v) => !v)}
-						aria-pressed={fitEnergy}
-						title={`Show quests costing ≤ ${currentEnergy} energy`}
-					>
-						[ ⚡ ENERGY ≤ {currentEnergy} ]
-					</button>
-				</div>
-			)}
 			{!questsReady && isMobile && (
 				<div className={styles.mobileQuestsLoading}>Loading today's quests…</div>
 			)}
@@ -1616,6 +1716,7 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 						droppableQuests={filteredQuests}
 						onDropQuestAtMinutes={(quest, minutes) => void handleAgendaTimeDrop(quest, minutes)}
 						onDropQuestAskTime={(quest, minutes) => openPlaceOnDayPlan(quest, minutes)}
+						activityEnergyRules={plugin.settings.activityEnergyRules}
 					/>
 				</>
 				) : (
@@ -1634,15 +1735,9 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 
 			<section className={`${styles.section} ${styles.boardInbox}`}>
 				<MissionSectionTitle
-					title="Inbox"
+					title={sprintLocked ? "Today's win" : sprintLaneLabel(selectedSprintLane)}
 					icon="📥"
-					count={
-						inboxByGroup.now.length +
-						inboxByGroup.today.length +
-						inboxByGroup.unscheduled.length +
-						inboxByGroup.overdue.length +
-						(!isMobile ? inboxByGroup.abandon.length : 0)
-					}
+					count={sprintLocked ? (sprintWin ? 1 : 0) : sprintBoard.grouped[selectedSprintLane].length}
 				/>
 				{!isMobile && (
 				<div className={styles.filterRow}>
@@ -1671,71 +1766,28 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 				)}
 
 				<InboxGroup
-					groupId="now"
-					title="Now"
-					quests={inboxByGroup.now}
-					currentEnergy={currentEnergy}
-					onQuestClick={openDetails}
-					collapsed={collapsedGroups.now}
-					onToggleCollapse={toggleGroupCollapse}
-					onDragStart={scheduleDrag ? handleDragStart : undefined}
-					onDragEnd={scheduleDrag ? handleDragEnd : undefined}
-					onDragOver={scheduleDrag ? (groupId) => {
-						if (canDropToGroup(groupId)) setActiveDropZone(groupId);
-					} : undefined}
-					onDrop={scheduleDrag ? handleDropToGroup : undefined}
-					isDropActive={scheduleDrag && activeDropZone === "now" && canDropToGroup("now")}
-					onPlaceOnDayPlan={openPlaceOnDayPlan}
-				/>
-				<InboxGroup
 					groupId="today"
-					title="Today"
-					quests={inboxByGroup.today}
+					title={sprintLocked ? "Today's win" : sprintLaneLabel(selectedSprintLane)}
+					quests={
+						sprintLocked
+							? (sprintWin ? [sprintWin] : [])
+							: sprintBoard.grouped[selectedSprintLane]
+					}
 					currentEnergy={currentEnergy}
 					onQuestClick={openDetails}
-					collapsed={collapsedGroups.today}
-					onToggleCollapse={toggleGroupCollapse}
-					onDragStart={scheduleDrag ? handleDragStart : undefined}
-					onDragEnd={scheduleDrag ? handleDragEnd : undefined}
-					onDragOver={scheduleDrag ? (groupId) => {
-						if (canDropToGroup(groupId)) setActiveDropZone(groupId);
-					} : undefined}
-					onDrop={scheduleDrag ? handleDropToGroup : undefined}
-					isDropActive={scheduleDrag && activeDropZone === "today" && canDropToGroup("today")}
+					collapsed={false}
+					onToggleCollapse={() => undefined}
 					onPlaceOnDayPlan={openPlaceOnDayPlan}
-				/>
-				{/* Always show on mobile — brain dumps land here until timed */}
-				<InboxGroup
-					groupId="unscheduled"
-					title="To schedule"
-					quests={inboxByGroup.unscheduled}
-					currentEnergy={currentEnergy}
-					onQuestClick={openDetails}
-					collapsed={collapsedGroups.unscheduled}
-					onToggleCollapse={toggleGroupCollapse}
-					onDragStart={scheduleDrag ? handleDragStart : undefined}
-					onDragEnd={scheduleDrag ? handleDragEnd : undefined}
-					onDragOver={scheduleDrag ? (groupId) => {
-						if (canDropToGroup(groupId)) setActiveDropZone(groupId);
-					} : undefined}
-					onDrop={scheduleDrag ? handleDropToGroup : undefined}
-					isDropActive={scheduleDrag && activeDropZone === "unscheduled" && canDropToGroup("unscheduled")}
-					onPlaceOnDayPlan={openPlaceOnDayPlan}
-				/>
-				<InboxGroup
-					groupId="overdue"
-					title="Overdue"
-					quests={inboxByGroup.overdue}
-					currentEnergy={currentEnergy}
-					onQuestClick={openDetails}
-					collapsed={collapsedGroups.overdue}
-					onToggleCollapse={toggleGroupCollapse}
-					onDragStart={scheduleDrag ? handleDragStart : undefined}
-					onDragEnd={scheduleDrag ? handleDragEnd : undefined}
-					onDragOver={scheduleDrag ? () => setActiveDropZone(null) : undefined}
-					onDrop={scheduleDrag ? handleDropToGroup : undefined}
-					isDropActive={false}
-					onPlaceOnDayPlan={openPlaceOnDayPlan}
+					dailyWinId={sprintWin?.id}
+					onMakeWin={sprintLocked ? undefined : (quest) => void handlePinWin(quest)}
+					onFileLane={
+						!sprintLocked && selectedSprintLane === 'unsorted'
+							? (quest, lane) => void handleFileSprintLane(quest, lane)
+							: undefined
+					}
+					hideHeader
+					activityEnergyRules={plugin.settings.activityEnergyRules}
+					rewardSettings={plugin.settings}
 				/>
 				{!isMobile && (
 				<InboxGroup
@@ -1754,6 +1806,8 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 					onDrop={handleDropToGroup}
 					isDropActive={activeDropZone === "abandon" && canDropToGroup("abandon")}
 					onPlaceOnDayPlan={openPlaceOnDayPlan}
+					activityEnergyRules={plugin.settings.activityEnergyRules}
+					rewardSettings={plugin.settings}
 				/>
 				)}
 			</section>
@@ -1981,6 +2035,12 @@ interface InboxGroupProps {
 	onDrop?: (groupId: InboxGroupId) => void;
 	isDropActive?: boolean;
 	onPlaceOnDayPlan?: (quest: Quest) => void;
+	dailyWinId?: string;
+	onMakeWin?: (quest: Quest) => void;
+	onFileLane?: (quest: Quest, lane: SprintLaneId) => void;
+	hideHeader?: boolean;
+	activityEnergyRules?: ActivityEnergyRule[] | null;
+	rewardSettings?: Partial<GamificationPluginSettings> | null;
 }
 
 const InboxGroup: React.FC<InboxGroupProps> = ({
@@ -1997,6 +2057,12 @@ const InboxGroup: React.FC<InboxGroupProps> = ({
 	onDrop,
 	isDropActive = false,
 	onPlaceOnDayPlan,
+	dailyWinId,
+	onMakeWin,
+	onFileLane,
+	hideHeader = false,
+	activityEnergyRules,
+	rewardSettings,
 }) => (
 	<div
 		className={styles.inboxGroup}
@@ -2011,6 +2077,7 @@ const InboxGroup: React.FC<InboxGroupProps> = ({
 			onDrop(groupId);
 		}}
 	>
+		{!hideHeader && (
 		<button
 			type="button"
 			className={`${styles.inboxGroupTitle} ${styles.inboxGroupHeaderButton}`}
@@ -2022,6 +2089,7 @@ const InboxGroup: React.FC<InboxGroupProps> = ({
 			</span>
 			<span className={styles.groupCount}>{quests.length}</span>
 		</button>
+		)}
 		{!collapsed && quests.length === 0 ? (
 			<div className={`${styles.emptyState} ${isDropActive ? styles.emptyStateDropActive : ""}`}>
 				{isDropActive ? `Drop here to move to ${title}` : "No quests"}
@@ -2036,13 +2104,15 @@ const InboxGroup: React.FC<InboxGroupProps> = ({
 					const titleText = getQuestDisplayTitle(quest);
 					const compactDue = compactDueLabel(quest);
 					const primaryTag = firstMeaningfulTag(quest.tags);
+					const energyBadge = formatActivityEnergyBadge(quest, activityEnergyRules);
+					const payable = displayedQuestRewards(quest, rewardSettings);
 					const isFocusRow = index === 0 && title === "Today";
 					return (
 						<div
 							key={`inbox-${title}-${quest.id}`}
 							role="button"
 							tabIndex={0}
-							className={`${styles.inboxItem} ${isFocusRow ? styles.inboxItemFocus : ""}`}
+							className={`${styles.inboxItem} ${isFocusRow ? styles.inboxItemFocus : ""} ${onFileLane ? styles.inboxItemHasFile : ""}`}
 							onClick={() => onQuestClick(quest)}
 							onKeyDown={(e) => {
 								if (e.key === "Enter" || e.key === " ") {
@@ -2088,19 +2158,75 @@ const InboxGroup: React.FC<InboxGroupProps> = ({
 										Time
 									</button>
 								)}
+								{onMakeWin && quest.id !== dailyWinId && (
+									<button
+										type="button"
+										className={styles.inboxScheduleBtn}
+										aria-label={`Make ${titleText} today's win`}
+										title="Make today's win"
+										onPointerDown={(e) => e.stopPropagation()}
+										onClick={(e) => {
+											e.stopPropagation();
+											e.preventDefault();
+											onMakeWin(quest);
+										}}
+									>
+										Win
+									</button>
+								)}
 								{compactDue && <span className={`${styles.badge} ${styles.badgeDue}`}>{compactDue}</span>}
+								{energyBadge && (
+									<span className={`${styles.badge} ${styles.badgeTagCompact}`} title="Energy when you finish this quest">
+										{energyBadge}
+									</span>
+								)}
 								<span className={`${styles.badge} ${styles.badgeEnergy}`}>
 									{EnergyCalculationService.getEnergyMatchIcon(energy.match)}
 								</span>
 								{typeof quest.xp === "number" && quest.xp > 0 && (
-									<span className={`${styles.badge} ${styles.badgeXpCompact}`}>+{quest.xp} XP</span>
+									<span
+										className={`${styles.badge} ${styles.badgeXpCompact}`}
+										title={overdueRewardHint(payable.daysLate, payable.originalXp, payable.xp, "XP")}
+									>
+										+{payable.xp} XP
+									</span>
 								)}
 								{typeof quest.coins === "number" && quest.coins > 0 && (
-									<span className={`${styles.badge} ${styles.badgeCoinCompact}`}>+{quest.coins}</span>
+									<span
+										className={`${styles.badge} ${styles.badgeCoinCompact}`}
+										title={overdueRewardHint(payable.daysLate, payable.originalCoins, payable.coins, "coins")}
+									>
+										+{payable.coins}
+									</span>
 								)}
 								{primaryTag && <span className={`${styles.badge} ${styles.badgeTagCompact}`}>#{primaryTag}</span>}
 								<span className={styles.rowChevron}>›</span>
 							</div>
+							{onFileLane && (
+								<div
+									className={styles.sprintFileRow}
+									onPointerDown={(e) => e.stopPropagation()}
+									onClick={(e) => {
+										e.stopPropagation();
+										e.preventDefault();
+									}}
+								>
+									{SPRINT_LANES.map((lane) => (
+										<button
+											key={lane.id}
+											type="button"
+											className={styles.inboxScheduleBtn}
+											onClick={(e) => {
+												e.stopPropagation();
+												e.preventDefault();
+												onFileLane(quest, lane.id);
+											}}
+										>
+											{lane.label}
+										</button>
+									))}
+								</div>
+							)}
 						</div>
 					);
 				})}

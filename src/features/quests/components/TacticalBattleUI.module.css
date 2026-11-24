@@ -3711,6 +3711,429 @@
     border-radius: 0;
 }
 
+/* Clay and Solo Leveling share the battle. Classic keeps .tacticalBattlePixel. */
+.tacticalBattleThemed {
+    font-family: var(--gamify-font-ui, "Segoe UI", system-ui, sans-serif);
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--go-text);
+    background: var(--go-bg);
+    background-image: none;
+    -webkit-font-smoothing: antialiased;
+}
+
+.tacticalBattleThemed .arenaSection,
+.tacticalBattleThemed .arenaSection::before {
+    background: transparent;
+    background-image: none;
+    opacity: 1;
+}
+
+.tacticalBattleThemed .battleStatusBar,
+.tacticalBattleThemed .movesPanel,
+.tacticalBattleThemed .logPanel,
+.tacticalBattleThemed .statsPanel,
+.tacticalBattleThemed .tasksPanel,
+.tacticalBattleThemed .logEntry,
+.tacticalBattleThemed .spriteContainer,
+.tacticalBattleThemed .playerAvatar,
+.tacticalBattleThemed .tacticalStatsBox,
+.tacticalBattleThemed .nextActionBox,
+.tacticalBattleThemed .turnCounter,
+.tacticalBattleThemed .countdownBox,
+.tacticalBattleThemed .moveButton {
+    border: 1px solid var(--go-border-strong);
+    background: var(--go-panel);
+    box-shadow: none;
+    color: var(--go-text);
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .battleStatusBar,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .movesPanel,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .logPanel,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .statsPanel,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .tasksPanel,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .tacticalStatsBox,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .moveButton,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .spriteContainer,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .playerAvatar {
+    border-radius: var(--clay-radius, 24px);
+    box-shadow: var(--clay-shadow);
+    background: var(--clay-gradient, var(--go-panel));
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="system-hunter"] .battleStatusBar,
+.tacticalBattleThemed[data-gamification-visual-theme="system-hunter"] .movesPanel,
+.tacticalBattleThemed[data-gamification-visual-theme="system-hunter"] .logPanel,
+.tacticalBattleThemed[data-gamification-visual-theme="system-hunter"] .statsPanel,
+.tacticalBattleThemed[data-gamification-visual-theme="system-hunter"] .tasksPanel,
+.tacticalBattleThemed[data-gamification-visual-theme="system-hunter"] .tacticalStatsBox,
+.tacticalBattleThemed[data-gamification-visual-theme="system-hunter"] .moveButton,
+.tacticalBattleThemed[data-gamification-visual-theme="system-hunter"] .spriteContainer,
+.tacticalBattleThemed[data-gamification-visual-theme="system-hunter"] .playerAvatar,
+.tacticalBattleThemed[data-gamification-visual-theme="system-hunter"] .nextActionBox,
+.tacticalBattleThemed[data-gamification-visual-theme="system-hunter"] .countdownBox,
+.tacticalBattleThemed[data-gamification-visual-theme="system-hunter"] .turnCounter {
+    border-radius: 0;
+}
+
+.tacticalBattleThemed .panelHeader,
+.tacticalBattleThemed .panelTitle {
+    background: transparent;
+    color: var(--go-accent);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    border-bottom-color: var(--go-border);
+}
+
+.tacticalBattleThemed .moveName,
+.tacticalBattleThemed .logContent,
+.tacticalBattleThemed .moveStat,
+.tacticalBattleThemed .moveCost,
+.tacticalBattleThemed .moveDamage,
+.tacticalBattleThemed .statLabel,
+.tacticalBattleThemed .countdownLabel,
+.tacticalBattleThemed .turnLabel {
+    font-size: 12px;
+    color: var(--go-muted);
+}
+
+.tacticalBattleThemed .statValue,
+.tacticalBattleThemed .turnNumber,
+.tacticalBattleThemed .countdownNumber {
+    color: var(--go-text-bright);
+    text-shadow: none;
+}
+
+.tacticalBattleThemed .combatantPlayer .hpSegment.filled,
+.tacticalBattleThemed .combatantBoss .hpSegment.filled,
+.tacticalBattleThemed .xpFill {
+    background: var(--go-progress-fill);
+    box-shadow: none;
+}
+
+.tacticalBattleThemed .moveButton:hover:not(:disabled) {
+    border-color: var(--go-accent);
+    color: var(--go-accent);
+    transform: none;
+    box-shadow: none;
+}
+
+.victoryScreen.tacticalBattleThemed {
+    background: var(--go-bg);
+    font-family: var(--gamify-font-ui, "Segoe UI", system-ui, sans-serif);
+}
+
+.victoryScreen.tacticalBattleThemed .victoryContent,
+.victoryScreen.tacticalBattleThemed .victoryRecap,
+.victoryScreen.tacticalBattleThemed .victoryStats,
+.victoryScreen.tacticalBattleThemed .rewardItem {
+    background: var(--go-panel);
+    border: 1px solid var(--go-border-strong);
+    color: var(--go-text);
+    box-shadow: none;
+    animation: none;
+}
+
+.victoryScreen.tacticalBattleThemed[data-gamification-visual-theme="clay"] .victoryContent,
+.victoryScreen.tacticalBattleThemed[data-gamification-visual-theme="clay"] .victoryRecap,
+.victoryScreen.tacticalBattleThemed[data-gamification-visual-theme="clay"] .victoryStats,
+.victoryScreen.tacticalBattleThemed[data-gamification-visual-theme="clay"] .rewardItem {
+    border-radius: var(--clay-radius, 24px);
+    box-shadow: var(--clay-shadow);
+}
+
+.victoryScreen.tacticalBattleThemed[data-gamification-visual-theme="system-hunter"] .victoryContent,
+.victoryScreen.tacticalBattleThemed[data-gamification-visual-theme="system-hunter"] .victoryRecap,
+.victoryScreen.tacticalBattleThemed[data-gamification-visual-theme="system-hunter"] .victoryStats,
+.victoryScreen.tacticalBattleThemed[data-gamification-visual-theme="system-hunter"] .rewardItem {
+    border-radius: 0;
+}
+
+.victoryScreen.tacticalBattleThemed .systemKicker,
+.weaponPickerModal[data-gamification-visual-theme="system-hunter"] .systemKicker {
+    margin: 0 0 8px;
+    color: var(--go-accent);
+    font-size: 12px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    text-align: center;
+}
+
+.victoryScreen.tacticalBattleThemed .victoryTitle,
+.victoryScreen.tacticalBattleThemed .rewardsTitle,
+.victoryScreen.tacticalBattleThemed .victoryValue,
+.victoryScreen.tacticalBattleThemed .xpGain,
+.victoryScreen.tacticalBattleThemed .victoryRecapTitle {
+    color: var(--go-text-bright);
+    text-shadow: none;
+    animation: none;
+}
+
+.victoryScreen.tacticalBattleThemed .victoryButton,
+.weaponPickerModal[data-gamification-visual-theme="system-hunter"] .weaponPickerConfirm {
+    background: var(--go-accent);
+    border: none;
+    color: #071018;
+    box-shadow: none;
+}
+
+.weaponPickerModal[data-gamification-visual-theme="clay"] .weaponPickerConfirm {
+    background: var(--go-accent);
+    border: none;
+    color: #2c2722;
+    box-shadow: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    min-height: 52px;
+    padding: 14px 20px;
+    line-height: 1.2;
+    font-size: 16px;
+    font-weight: 800;
+}
+
+.weaponPickerModal[data-gamification-visual-theme="clay"] .weaponPickerConfirm,
+.weaponPickerModal[data-gamification-visual-theme="clay"] {
+    border-radius: var(--clay-radius, 24px);
+}
+
+.weaponPickerModal[data-gamification-visual-theme="clay"] {
+    background: var(--go-panel);
+    border: none;
+    box-shadow: var(--clay-shadow);
+    color: var(--go-text);
+}
+
+.weaponPickerModal[data-gamification-visual-theme="system-hunter"] {
+    background: var(--go-panel-strong);
+    border: 1px solid var(--go-border-strong);
+    border-radius: 0;
+    box-shadow: none;
+    color: var(--go-text);
+}
+
+.weaponPickerModal[data-gamification-visual-theme="clay"] .weaponPickerTitle,
+.weaponPickerModal[data-gamification-visual-theme="system-hunter"] .weaponPickerTitle,
+.weaponPickerModal[data-gamification-visual-theme="clay"] .weaponPickerPreviewTitle,
+.weaponPickerModal[data-gamification-visual-theme="system-hunter"] .weaponPickerPreviewTitle,
+.weaponPickerModal[data-gamification-visual-theme="clay"] .weaponCardName,
+.weaponPickerModal[data-gamification-visual-theme="system-hunter"] .weaponCardName,
+.weaponPickerModal[data-gamification-visual-theme="clay"] .weaponPickerSubtitle,
+.weaponPickerModal[data-gamification-visual-theme="system-hunter"] .weaponPickerSubtitle,
+.weaponPickerModal[data-gamification-visual-theme="clay"] .weaponPickerPreviewText,
+.weaponPickerModal[data-gamification-visual-theme="system-hunter"] .weaponPickerPreviewText {
+    color: var(--go-text);
+}
+
+.weaponPickerModal[data-gamification-visual-theme="clay"] .weaponCard,
+.weaponPickerModal[data-gamification-visual-theme="system-hunter"] .weaponCard,
+.weaponPickerModal[data-gamification-visual-theme="clay"] .weaponPickerPreview,
+.weaponPickerModal[data-gamification-visual-theme="system-hunter"] .weaponPickerPreview {
+    background: var(--go-card);
+    border: 1px solid var(--go-border);
+    box-shadow: none;
+    color: var(--go-text);
+}
+
+.weaponPickerModal[data-gamification-visual-theme="clay"] .weaponCard,
+.weaponPickerModal[data-gamification-visual-theme="clay"] .weaponPickerPreview,
+.weaponPickerModal[data-gamification-visual-theme="clay"] .weaponPickerConfirm {
+    border-radius: var(--clay-radius-small, 14px);
+}
+
+.weaponPickerModal[data-gamification-visual-theme="system-hunter"] .weaponCard,
+.weaponPickerModal[data-gamification-visual-theme="system-hunter"] .weaponPickerPreview,
+.weaponPickerModal[data-gamification-visual-theme="system-hunter"] .weaponPickerConfirm {
+    border-radius: 0;
+}
+
+.weaponPickerModal[data-gamification-visual-theme="clay"] .weaponCardSelected,
+.weaponPickerModal[data-gamification-visual-theme="system-hunter"] .weaponCardSelected {
+    border-color: var(--go-accent);
+    box-shadow: none;
+}
+
+.victoryScreen.tacticalBattleThemed .victoryFooter {
+    background: var(--go-panel);
+}
+
+/* Clay gate: dark ink, one cream field, no leftover pixel buttons. */
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] {
+    background: var(--go-bg);
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .controlsSection {
+    background: var(--go-bg);
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .battleStatusBar {
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .battleStatusTitle {
+    flex: 1 1 180px;
+    text-align: left;
+    padding-left: 8px;
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .battleStatusTitleMain,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .turnNumber,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .countdownNumber,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .moveName,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .logContent,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .logEntry,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .taskDescription,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .nextActionName,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .statMiniValue,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .bossRaidVaultHint {
+    color: var(--go-text);
+    text-shadow: none;
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .battleStatusTitleSub,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .turnLabel,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .countdownLabel,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .nextActionLabel,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .nextActionEta,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .moveStat,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .moveCost,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .statMiniLabel {
+    color: var(--go-muted);
+    text-shadow: none;
+    font-size: 11px;
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .moveDamage,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .panelTitle,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .bossRaidAffinity {
+    color: var(--go-accent);
+    text-shadow: none;
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .moveName {
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .nextActionBox {
+    order: 5;
+    flex: 1 1 100%;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    padding: 0 8px;
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .countdownBox,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .statMiniItem {
+    background: var(--go-card-soft, #efe6d8);
+    border: none;
+    box-shadow: var(--clay-recessed, inset 0 2px 4px rgba(140, 128, 110, 0.25));
+    border-radius: 14px;
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .closeButton {
+    top: max(18px, env(safe-area-inset-top, 0px));
+    background: var(--go-panel);
+    color: var(--go-text);
+    border: none;
+    border-radius: 999px;
+    box-shadow: var(--clay-shadow);
+    text-shadow: none;
+    font-size: 13px;
+    font-weight: 800;
+    padding: 10px 16px;
+    min-width: 0;
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .closeButton:hover {
+    transform: none;
+    background: var(--go-card-soft, #efe6d8);
+    border: none;
+    box-shadow: var(--clay-shadow);
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .taskButton {
+    background: var(--go-panel);
+    color: var(--go-text);
+    border: none;
+    border-radius: 16px;
+    box-shadow: var(--clay-shadow);
+    overflow: visible;
+    min-height: 0;
+    height: auto;
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .taskButton::before {
+    display: none;
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .taskButton:hover:not(:disabled) {
+    transform: none;
+    background: var(--go-card-soft, #efe6d8);
+    box-shadow: var(--clay-shadow);
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .taskDescription {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+    line-height: 1.35;
+    font-size: 13px;
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .taskNumber {
+    color: var(--go-accent);
+    background: transparent;
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .logEvent,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .logTurn {
+    color: var(--go-text);
+    text-shadow: none;
+    font-size: 13px;
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .logContent {
+    gap: 12px;
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .logEntry {
+    padding: 12px 14px;
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .controlsSection {
+    grid-template-columns: 1.5fr 1.1fr 0.7fr 1.6fr;
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .bossRaidVaultPanel .tasksList {
+    gap: 14px;
+    padding: 4px 2px 8px;
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .bossRaidVaultPanel .taskButton {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 14px 16px;
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .bossRaidVaultPanel .taskHeader {
+    flex: 0 0 auto;
+    margin: 0;
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .bossRaidVaultPanel .taskDescription {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
 /* ==========================
    RESPONSIVE ADJUSTMENTS
    ========================== */
