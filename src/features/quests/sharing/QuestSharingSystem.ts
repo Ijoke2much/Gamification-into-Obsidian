@@ -508,7 +508,7 @@ export class QuestSharingSystem {
 
     private async addQuestToLocalFile(quest: Quest): Promise<void> {
         // Add quest to the local GamifiedTasks.md file
-        const questFile = this.app.vault.getAbstractFileByPath('GamifiedTasks.md');
+        const questFile = this.app.vault.getAbstractFileByPath('Gamified/GamifiedTasks.md');
         if (questFile instanceof TFile) {
             const content = await this.app.vault.read(questFile);
             const questLine = this.formatQuestForFile(quest);

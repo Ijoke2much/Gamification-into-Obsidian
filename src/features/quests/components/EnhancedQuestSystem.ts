@@ -36,7 +36,7 @@ export class EnhancedQuestSystem {
     private async preloadBannerCache(): Promise<void> {
         try {
             const configuredPaths = new Set<string>();
-            const defaultPath = this.plugin.settings?.defaultQuestFilePath || 'GamifiedTasks.md';
+            const defaultPath = this.plugin.settings?.defaultQuestFilePath || 'Gamified/GamifiedTasks.md';
             if (defaultPath) configuredPaths.add(defaultPath);
             (this.plugin.settings?.questSaveLocations ?? []).forEach((loc: { filePath?: string }) => {
                 if (loc.filePath) configuredPaths.add(loc.filePath);
@@ -337,7 +337,7 @@ export class EnhancedQuestSystem {
      */
     async parseQuestsWithEnhancedBanners(): Promise<Quest[]> {
         try {
-            const questsFile = this.plugin.app.vault.getAbstractFileByPath('GamifiedTasks.md');
+            const questsFile = this.plugin.app.vault.getAbstractFileByPath('Gamified/GamifiedTasks.md');
             if (questsFile && questsFile instanceof TFile) {
                 const content = await this.plugin.app.vault.read(questsFile);
                 const quests = parseQuestsFromMarkdown(content);

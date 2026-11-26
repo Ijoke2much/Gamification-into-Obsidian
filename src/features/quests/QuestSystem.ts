@@ -554,7 +554,7 @@ export class QuestSystem {
 
     private async saveQuestToFile(quest: Quest): Promise<void> {
         // Add quest to the appropriate file
-        const questFile = this.app.vault.getAbstractFileByPath('GamifiedTasks.md');
+        const questFile = this.app.vault.getAbstractFileByPath('Gamified/GamifiedTasks.md');
         if (questFile instanceof TFile) {
             const content = await this.app.vault.read(questFile);
             const questLine = this.formatQuestForFile(quest);

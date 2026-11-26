@@ -32,7 +32,7 @@ export class SkillBasedBattleEngine extends BossBattleEngine {
             // Find all stat files in SkillTree/Master-Class/Stats/
             for (const file of allFiles) {
                 if (file instanceof TFile &&
-                    file.path.startsWith('SkillTree/Master-Class/Stats/') &&
+                    file.path.startsWith('Gamified/SkillTree/Master-Class/Stats/') &&
                     file.path.endsWith('.md')) {
 
                     try {
@@ -204,7 +204,7 @@ export class SkillBasedBattleEngine extends BossBattleEngine {
             // Find skill file in SkillTree/Master-Class/Skills/
             for (const file of allFiles) {
                 if (file instanceof TFile &&
-                    file.path.startsWith('SkillTree/Master-Class/Skills/') &&
+                    file.path.startsWith('Gamified/SkillTree/Master-Class/Skills/') &&
                     file.path.endsWith('.md')) {
 
                     try {

@@ -81,7 +81,7 @@ export const useQuestManagement = (plugin: GamifiedObsidianPlugin) => {
             let allQuests = await loadAllQuests(plugin.app, plugin.settings);
 
             if (allQuests.length === 0 && !isPerNoteMode(plugin.settings)) {
-                const defaultPath = plugin.settings?.defaultQuestFilePath || 'GamifiedTasks.md';
+                const defaultPath = plugin.settings?.defaultQuestFilePath || 'Gamified/GamifiedTasks.md';
                 if (!plugin.app.vault.getAbstractFileByPath(defaultPath)) {
                     const defaultContent = '# Gamified Tasks\n\n<!-- Add your quests here -->\n';
                     await plugin.app.vault.create(defaultPath, defaultContent);

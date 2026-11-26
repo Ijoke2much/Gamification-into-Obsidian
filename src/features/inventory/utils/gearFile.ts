@@ -1,7 +1,7 @@
 import { App, TFile, Vault } from 'obsidian';
 import { InventoryItem, readInventory, writeInventory } from './updateInventoryFile';
 
-export const GEAR_FILE_PATH = 'Gear.md';
+export const GEAR_FILE_PATH = 'Gamified/Gear.md';
 
 export type GearSlot =
   | 'head'

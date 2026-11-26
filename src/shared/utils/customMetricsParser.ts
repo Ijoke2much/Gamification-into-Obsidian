@@ -23,7 +23,7 @@ export interface CustomMetricsData {
 
 export class CustomMetricsParser {
     private static readonly METRICS_FILE = 'CustomMetrics.md';
-    private static readonly DEFAULT_METRICS_FILE = 'SkillTree/CustomMetrics.md';
+    private static readonly DEFAULT_METRICS_FILE = 'Gamified/SkillTree/CustomMetrics.md';
 
     /**
      * Load custom metrics from file

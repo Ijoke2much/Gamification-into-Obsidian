@@ -127,8 +127,10 @@ function normVaultPath(path: string): string {
 }
 
 function pathUnderSkillTreeRoot(path: string): boolean {
-  const first = normVaultPath(path).split('/')[0];
-  return first !== undefined && first.toLowerCase() === 'skilltree';
+  const parts = normVaultPath(path).split('/').filter(Boolean);
+  const first = parts[0]?.toLowerCase();
+  if (first === 'skilltree') return true;
+  return first === 'gamified' && parts[1]?.toLowerCase() === 'skilltree';
 }
 
 /**
@@ -239,7 +241,7 @@ export async function getAllStats(vault: Vault): Promise<StatMetadata[]> {
   for (const file of allFiles) {
     if (file instanceof TFile) {
       if (
-        file.path.startsWith('SkillTree/Master-Class/Stats/') &&
+        file.path.startsWith('Gamified/SkillTree/Master-Class/Stats/') &&
         file.path.endsWith('.md')
       ) {
         try {
@@ -369,7 +371,7 @@ function normalizeSkillStats(skillStats: unknown): { [statName: string]: string 
   for (const statNameRaw of statsArr) {
     const statName = String(statNameRaw || '').trim();
     if (!statName) continue;
-    stats[statName] = `SkillTree/Master-Class/Stats/${statName}.md`;
+    stats[statName] = `Gamified/SkillTree/Master-Class/Stats/${statName}.md`;
   }
   return stats;
 }
@@ -378,8 +380,8 @@ function masterClassPathCandidates(name: string): string[] {
   const trimmed = name.trim();
   if (!trimmed) return [];
   return [
-    `SkillTree/Master-Class/${trimmed}.md`,
-    `SkillTree/Master-Class/${trimmed}/${trimmed}.md`,
+    `Gamified/SkillTree/Master-Class/${trimmed}.md`,
+    `Gamified/SkillTree/Master-Class/${trimmed}/${trimmed}.md`,
   ];
 }
 
@@ -465,7 +467,7 @@ export async function getAllSkills(vault: Vault): Promise<SkillMetadata[]> {
       if (!skillName || !skillClass) return null;
 
       const className = String(skillClass);
-      const classPath = `SkillTree/Master-Class/Class/${className}.md`;
+      const classPath = `Gamified/SkillTree/Master-Class/Class/${className}.md`;
       const masterClass =
         classMasterMap.get(className.toLowerCase()) || masterFromSkillPath(file.path) || '';
       const masterClassPath = resolveMasterClassPath(vault, masterClass, masterClassFiles);

@@ -589,7 +589,7 @@ export async function testInventorySystem(app: App): Promise<void> {
     console.log('✅ Test item added successfully');
 
     // Check if inventory file exists
-    const inventoryFile = app.vault.getAbstractFileByPath('Inventory.md');
+    const inventoryFile = app.vault.getAbstractFileByPath('Gamified/Inventory.md');
     if (inventoryFile) {
       console.log('✅ Inventory.md file exists');
       const content = await app.vault.read(inventoryFile as any);

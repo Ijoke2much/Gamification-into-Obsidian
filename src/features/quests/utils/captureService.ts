@@ -17,11 +17,11 @@ export function isCaptureQuest(quest: { tags?: string[] }): boolean {
 }
 
 export function getCaptureFilePath(settings: Pick<GamificationPluginSettings, 'captureFilePath'>): string {
-	return settings.captureFilePath?.trim() || 'Capture.md';
+	return settings.captureFilePath?.trim() || 'Gamified/Capture.md';
 }
 
 export function getDefaultQuestFilePath(settings: Pick<GamificationPluginSettings, 'defaultQuestFilePath'>): string {
-	return settings.defaultQuestFilePath?.trim() || 'GamifiedTasks.md';
+	return settings.defaultQuestFilePath?.trim() || 'Gamified/GamifiedTasks.md';
 }
 
 export function getCaptureTagPresets(settings: Pick<GamificationPluginSettings, 'captureTags'>): string[] {

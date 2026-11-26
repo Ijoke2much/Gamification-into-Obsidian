@@ -105,7 +105,7 @@ export const GameDataHubPanel: React.FC<GameDataHubPanelProps> = ({ plugin }) =>
 		try {
 			currencyDisplay.initialize(plugin.settings);
 			const shopFile = resolveVaultMarkdownFile(plugin.app, 'shop', [
-				'Shop.md',
+				'Gamified/Shop.md',
 				'shop.md',
 				'Gamification/Shop.md',
 				'Gamified/Shop.md',

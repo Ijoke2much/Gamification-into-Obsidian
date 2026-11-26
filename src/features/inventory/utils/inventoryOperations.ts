@@ -177,7 +177,7 @@ export class InventoryOperations {
     // Enhanced inventory reading with parsing
     static async readEnhancedInventory(app: App): Promise<EnhancedInventoryItem[]> {
         try {
-            const inventoryFile = app.vault.getAbstractFileByPath('Inventory.md');
+            const inventoryFile = app.vault.getAbstractFileByPath('Gamified/Inventory.md');
             if (!inventoryFile) {
                 return [];
             }
@@ -193,12 +193,12 @@ export class InventoryOperations {
     // Enhanced inventory writing
     static async writeEnhancedInventory(app: App, inventory: EnhancedInventoryItem[]): Promise<void> {
         const content = EnhancedInventoryParser.generateInventoryContent(inventory);
-        const inventoryFile = app.vault.getAbstractFileByPath('Inventory.md');
+        const inventoryFile = app.vault.getAbstractFileByPath('Gamified/Inventory.md');
 
         if (inventoryFile) {
             await app.vault.modify(inventoryFile as any, content);
         } else {
-            await app.vault.create('Inventory.md', content);
+            await app.vault.create('Gamified/Inventory.md', content);
         }
 
         // Dispatch update event

@@ -194,7 +194,7 @@ export async function updatePlayerData(vault: Vault, xp: number, coins: number, 
     return level * level * 1000 - (level - 1) * (level - 1) * 1000;
   }
   try {
-    const playerPath = 'SkillTree/PlayerData.md';
+    const playerPath = 'Gamified/SkillTree/PlayerData.md';
     const { frontmatter } = await readYamlFrontmatter(vault, playerPath);
 
     // 1) Remove expired debuffs and compute active multipliers
@@ -514,7 +514,7 @@ async function findSkillPath(vault: Vault, skillName: string): Promise<string | 
     for (const file of allFiles) {
       if (file instanceof TFile) {
         if (
-          file.path.startsWith('SkillTree/') &&
+          file.path.startsWith('Gamified/SkillTree/') &&
           file.path.includes('/Skills/') &&
           file.path.endsWith('.md')
         ) {
@@ -560,9 +560,9 @@ async function findStatPath(vault: Vault, statName: string): Promise<string | nu
       if (file instanceof TFile) {
         // Check multiple possible directory structures for stats
         if (
-          (file.path.startsWith('SkillTree/') && file.path.includes('/Stats/') && file.path.endsWith('.md')) ||
-          (file.path.startsWith('SkillTree/') && file.path.includes('/stats/') && file.path.endsWith('.md')) ||
-          (file.path.startsWith('SkillTree/Master-Class/Stats/') && file.path.endsWith('.md')) ||
+          (file.path.startsWith('Gamified/SkillTree/') && file.path.includes('/Stats/') && file.path.endsWith('.md')) ||
+          (file.path.startsWith('Gamified/SkillTree/') && file.path.includes('/stats/') && file.path.endsWith('.md')) ||
+          (file.path.startsWith('Gamified/SkillTree/Master-Class/Stats/') && file.path.endsWith('.md')) ||
           (file.path.includes('/Stats/') && file.path.endsWith('.md')) ||
           (file.path.includes('/stats/') && file.path.endsWith('.md'))
         ) {
@@ -606,7 +606,7 @@ export async function distributeCPFromQuest(vault: Vault, quest: { skills?: stri
         let skillPath = await findSkillPath(vault, skillName);
         if (!skillPath) {
           // Last-chance fallback: try common path structure
-          const candidate = `SkillTree/Master-Class/Skills/${skillName}.md`;
+          const candidate = `Gamified/SkillTree/Master-Class/Skills/${skillName}.md`;
           const f = vault.getAbstractFileByPath(candidate);
           if (f instanceof TFile) skillPath = candidate;
         }

@@ -541,7 +541,7 @@ export async function handleFailQuestAddDebt(
     const capCoins = Number(settings?.dailyDebtCapCoins ?? 50);
 
     // Write/update debt and cap trackers in PlayerData
-    const playerPath = 'SkillTree/PlayerData.md';
+    const playerPath = 'Gamified/SkillTree/PlayerData.md';
     const { frontmatter } = await import('../../../shared/utils/progressUpdater').then(m => m.readYamlFrontmatter(vault, playerPath));
     const fm: Record<string, unknown> = frontmatter as Record<string, unknown>;
     // compute used cap today

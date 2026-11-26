@@ -159,7 +159,7 @@ export function parseMaterialsFromLines(lines: string[]): CraftingMaterial[] {
 
 export function findMaterialsFile(plugin: GamifiedObsidianPlugin) {
 	return resolveVaultMarkdownFile(plugin.app, MATERIALS_FILE_BASENAME, [
-		'Materials.md',
+		'Gamified/Materials.md',
 		'materials.md',
 		'Gamification/Materials.md',
 		'Gamified/Materials.md',
@@ -201,7 +201,7 @@ export async function ensureMaterialsFile(plugin: GamifiedObsidianPlugin): Promi
 
 	try {
 		clearVaultMarkdownFileCache(MATERIALS_FILE_BASENAME);
-		await plugin.app.vault.create('Materials.md', MATERIALS_FILE_HEADER);
+		await plugin.app.vault.create('Gamified/Materials.md', MATERIALS_FILE_HEADER);
 		clearVaultMarkdownFileCache(MATERIALS_FILE_BASENAME);
 		return true;
 	} catch (error) {

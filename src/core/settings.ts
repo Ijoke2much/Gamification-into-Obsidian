@@ -148,7 +148,7 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
         icon: '🧰',
         description: 'Edit shop items, materials, and recipes in vault markdown',
         color: '#673AB7',
-        settings: ['shop', 'materials', 'recipes', 'Shop.md', 'Materials.md', 'Recipes.md']
+        settings: ['shop', 'materials', 'recipes', 'Gamified/Shop.md', 'Gamified/Materials.md', 'Gamified/Recipes.md']
       },
       {
         id: 'shop',
@@ -786,6 +786,9 @@ export interface GamificationPluginSettings {
   questGiverImagePath: string; // Path or URL to the quest giver image
   avatarFolder: string; // Folder for avatar images
   inventoryFilePath: string; // Path to the inventory file
+  playerDataFilePath?: string;
+  habitsFolderPath?: string;
+  habitsFilePath?: string;
   skillTreeRoot: string; // Root folder for skill tree (default: 'SkillTree')
   masterClassFolder: string; // Folder for master class files
   classFolder: string; // Folder for class files
@@ -1062,12 +1065,15 @@ export const DEFAULT_SETTINGS: GamificationPluginSettings = {
   shopkeeperImagePath: "assets/shopkeeper.jpg", // Default image path
   questGiverImagePath: "assets/quest-giver.jpg", // Default quest giver image path
   avatarFolder: 'assets/',
-  inventoryFilePath: 'Inventory.md', // Default inventory file path
-  skillTreeRoot: 'SkillTree', // Default skill tree root folder
-  masterClassFolder: 'SkillTree/Master-Class',
-  classFolder: 'SkillTree/Master-Class/Class',
-  skillFolder: 'SkillTree/Master-Class/Class/Skills',
-  statFolder: 'SkillTree/Master-Class/Stats',
+  inventoryFilePath: 'Gamified/Inventory.md', // Default inventory file path
+  playerDataFilePath: 'Gamified/SkillTree/PlayerData.md',
+  habitsFolderPath: 'Gamified/SkillTree/Habits',
+  habitsFilePath: 'Gamified/SkillTree/Habits.md',
+  skillTreeRoot: 'Gamified/SkillTree', // Default skill tree root folder
+  masterClassFolder: 'Gamified/SkillTree/Master-Class',
+  classFolder: 'Gamified/SkillTree/Master-Class/Class',
+  skillFolder: 'Gamified/SkillTree/Master-Class/Class/Skills',
+  statFolder: 'Gamified/SkillTree/Master-Class/Stats',
 
   // Item definitions
   customArtifacts: [],
@@ -1079,12 +1085,12 @@ export const DEFAULT_SETTINGS: GamificationPluginSettings = {
   hideCompletedQuests: false,
   questRefreshInterval: 0, // Default to disabled
   // Quest file locations
-  defaultQuestFilePath: 'GamifiedTasks.md',
+  defaultQuestFilePath: 'Gamified/GamifiedTasks.md',
   questSaveLocations: [],
   questStorageMode: 'list',
   taskNoteFolder: 'Gamified/Tasks',
-  projectsFilePath: 'GamifiedProjects.md',
-  captureFilePath: 'Capture.md',
+  projectsFilePath: 'Gamified/GamifiedProjects.md',
+  captureFilePath: 'Gamified/Capture.md',
   captureTags: ['idea', 'work', 'plugin', 'personal', 'read-later'],
   captureRememberLastTag: true,
   captureIncludeDescription: true,
@@ -1096,7 +1102,7 @@ export const DEFAULT_SETTINGS: GamificationPluginSettings = {
   externalWatchPaths: [],
   enableFocusCheckIns: true,
   focusCheckInIntervalMinutes: 120,
-  focusCheckInLogPath: 'CheckIns.md',
+  focusCheckInLogPath: 'Gamified/CheckIns.md',
   focusCheckInSnoozeMinutes: 30,
   enableFocusCheckInNotices: true,
   questCustomRewardPool: [],

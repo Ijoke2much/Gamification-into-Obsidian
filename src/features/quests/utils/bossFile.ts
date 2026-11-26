@@ -20,7 +20,7 @@ import { JOURNEY_OFF_AFFINITY_MULTIPLIER } from './journeyAffinity';
  * resets its stats so it is ready to face again later.
  */
 
-export const BOSS_FOLDER = 'Bosses';
+export const BOSS_FOLDER = 'Gamified/Bosses';
 export const BOSS_UPDATED_EVENT = 'gamification-boss-updated';
 
 export type BossDifficulty = 'easy' | 'medium' | 'hard';

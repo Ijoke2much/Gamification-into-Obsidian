@@ -64,7 +64,7 @@ export const usePlayerData = (plugin: GamifiedObsidianPlugin) => {
     // Load stats
     const loadStats = useCallback(async () => {
         try {
-            const statsData = await getStatsFromFolder(plugin.app, plugin.settings.statFolder || "SkillTree/Master-Class/Stats");
+            const statsData = await getStatsFromFolder(plugin.app, plugin.settings.statFolder || "Gamified/SkillTree/Master-Class/Stats");
             // Handle the case where statsData might be StatDebugInfo
             const stats = Array.isArray(statsData) ? statsData : [];
             setState(prev => ({ ...prev, stats }));

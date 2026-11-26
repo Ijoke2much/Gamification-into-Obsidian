@@ -53,7 +53,7 @@ export class GamifiedTaskScanner {
 
             for (const file of markdownFiles) {
                 // Skip GamifiedTasks.md to avoid duplicates
-                if (file.path === 'GamifiedTasks.md') continue;
+                if (file.path === 'Gamified/GamifiedTasks.md') continue;
 
                 try {
                     const content = await this.vault.read(file);

@@ -35,7 +35,7 @@ export const StatsTabView: React.FC<{
   );
 
   const statFolder =
-    plugin.settings.statFolder || "SkillTree/Master-Class/Stats";
+    plugin.settings.statFolder || "Gamified/SkillTree/Master-Class/Stats";
 
   const handleOpenStatNote = useCallback(
     async (stat: StatEntry) => {

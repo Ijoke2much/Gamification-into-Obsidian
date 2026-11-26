@@ -35,7 +35,7 @@ export function parseDurationToMs(input: string): number | null {
 }
 
 export async function getActiveBuffs(vault: Vault): Promise<Buff[]> {
-    const playerPath = "SkillTree/PlayerData.md";
+    const playerPath = "Gamified/SkillTree/PlayerData.md";
     const { frontmatter } = await readYamlFrontmatter(vault, playerPath);
     const now = Date.now();
     type PlayerFrontmatter = Record<string, unknown> & { buffs?: unknown };
@@ -78,7 +78,7 @@ export function computeRewardMultipliers(buffs: Buff[], debuffs: Buff[] = []): M
 }
 
 export async function addBuff(vault: Vault, buff: Buff): Promise<void> {
-    const playerPath = "SkillTree/PlayerData.md";
+    const playerPath = "Gamified/SkillTree/PlayerData.md";
     const { frontmatter } = await readYamlFrontmatter(vault, playerPath);
     type PlayerFrontmatter = Record<string, unknown> & { buffs?: unknown };
     const fm = frontmatter as PlayerFrontmatter;
@@ -91,7 +91,7 @@ export async function addBuff(vault: Vault, buff: Buff): Promise<void> {
 }
 
 export async function addDebuff(vault: Vault, debuff: Buff): Promise<void> {
-    const playerPath = "SkillTree/PlayerData.md";
+    const playerPath = "Gamified/SkillTree/PlayerData.md";
     const { frontmatter } = await readYamlFrontmatter(vault, playerPath);
     type PlayerFrontmatter = Record<string, unknown> & { debuffs?: unknown };
     const fm = frontmatter as PlayerFrontmatter;

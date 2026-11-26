@@ -998,7 +998,7 @@ const SidebarQuestViewComponent: React.FC<SidebarQuestViewProps> = ({ app, plugi
 			}
 			const file = app.vault.getAbstractFileByPath(quest.filePath || "GamifiedTasks.md");
 			if (!(file instanceof TFile)) {
-				pixelNotice(`Quest file not found: ${quest.filePath || 'GamifiedTasks.md'}`, 3500);
+				pixelNotice(`Quest file not found: ${quest.filePath || 'Gamified/GamifiedTasks.md'}`, 3500);
 				return;
 			}
 			const content = await app.vault.read(file);

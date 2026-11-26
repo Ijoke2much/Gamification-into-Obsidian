@@ -100,11 +100,11 @@ export class MobilePlayerDataLoader {
 
         // Try multiple file paths for mobile compatibility
         const possiblePaths = [
-            'SkillTree/PlayerData.md',
+            'Gamified/SkillTree/PlayerData.md',
             'skilltree/PlayerData.md',
             'SKILLTREE/PlayerData.md',
-            'SkillTree/playerdata.md',
-            'SkillTree/PLAYERDATA.md',
+            'Gamified/SkillTree/playerdata.md',
+            'Gamified/SkillTree/PLAYERDATA.md',
             'PlayerData.md', // Fallback to root
             'playerdata.md'
         ];
@@ -262,14 +262,14 @@ Welcome to the gamified Obsidian plugin! This file contains your player data.
 
             // Try to create the SkillTree folder first
             try {
-                await vault.createFolder('SkillTree');
+                await vault.createFolder('Gamified/SkillTree');
             } catch (folderError) {
                 // Folder might already exist, that's okay
                 console.log('📱 [MobilePlayerDataLoader] SkillTree folder already exists or creation failed');
             }
 
             // Create the PlayerData file
-            await vault.create('SkillTree/PlayerData.md', content);
+            await vault.create('Gamified/SkillTree/PlayerData.md', content);
             console.log('📱 [MobilePlayerDataLoader] Default PlayerData.md created successfully');
 
             return defaultData;

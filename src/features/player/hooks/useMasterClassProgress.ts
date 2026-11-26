@@ -13,7 +13,7 @@ export type MasterClassProgress = {
 };
 
 function isMasterClassNote(f: TFile): boolean {
-  if (!f.path.startsWith('SkillTree/Master-Class/')) return false;
+  if (!f.path.startsWith('Gamified/SkillTree/Master-Class/')) return false;
   if (!f.path.endsWith('.md')) return false;
   if (f.path.includes('/Class/')) return false;
   if (f.path.includes('/Skills/')) return false;
@@ -26,8 +26,8 @@ function masterNoteCandidates(name: string): string[] {
   const trimmed = name.trim();
   if (!trimmed) return [];
   return [
-    `SkillTree/Master-Class/${trimmed}.md`,
-    `SkillTree/Master-Class/${trimmed}/${trimmed}.md`,
+    `Gamified/SkillTree/Master-Class/${trimmed}.md`,
+    `Gamified/SkillTree/Master-Class/${trimmed}/${trimmed}.md`,
   ];
 }
 

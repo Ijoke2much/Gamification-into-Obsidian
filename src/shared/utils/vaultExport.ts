@@ -58,31 +58,106 @@ async function readFolder(vault: Vault, folderPath: string, into: Map<string, st
 	}
 }
 
+const PLUGIN_NOTES = [
+	'Inventory.md',
+	'Gear.md',
+	'Foes.md',
+	'Shop.md',
+	'Recipes.md',
+	'Materials.md',
+	'GamifiedTasks.md',
+	'GamifiedProjects.md',
+	'Capture.md',
+	'CheckIns.md',
+	'ShopTemplates.md',
+	'CustomMetrics.md',
+	'QuestLog.md',
+];
+
+/** Store every plugin note under Gamified/, including notes that still live at the vault root. */
+export function toGamifiedPath(path: string): string {
+	const normalized = path.replace(/\\/g, '/').replace(/^\/+/, '').replace(/\/+$/, '');
+	if (!normalized || normalized.startsWith('Gamified/')) return normalized;
+	if (normalized === 'SkillTree' || normalized.startsWith('SkillTree/')) return `Gamified/${normalized}`;
+	if (normalized === 'Bosses' || normalized.startsWith('Bosses/')) return `Gamified/${normalized}`;
+	if (normalized === 'Gamification' || normalized.startsWith('Gamification/')) {
+		return `Gamified/${normalized.slice('Gamification/'.length)}`;
+	}
+	const fileName = normalized.split('/').pop() || normalized;
+	if (!normalized.includes('/') && PLUGIN_NOTES.includes(fileName)) return `Gamified/${fileName}`;
+	if (PLUGIN_NOTES.includes(fileName) && normalized.split('/').length === 1) return `Gamified/${fileName}`;
+	return normalized.includes('/') ? normalized : `Gamified/${normalized}`;
+}
+
 function namedNotes(settings: GamificationPluginSettings): string[] {
 	const paths = [
-		settings.inventoryFilePath || 'Inventory.md',
+		settings.inventoryFilePath || 'Gamified/Inventory.md',
+		settings.playerDataFilePath || 'Gamified/SkillTree/PlayerData.md',
+		'SkillTree/PlayerData.md',
+		settings.habitsFolderPath || 'Gamified/SkillTree/Habits',
+		'SkillTree/Habits',
+		settings.habitsFilePath || 'Gamified/SkillTree/Habits.md',
+		'SkillTree/Habits.md',
 		'Gear.md',
+		'Gamified/Gear.md',
 		'Foes.md',
+		'Gamified/Foes.md',
 		'Shop.md',
-		'shop.md',
+		'Gamified/Shop.md',
 		'Recipes.md',
-		'recipes.md',
-		'Materials.md',
-		'materials.md',
-		'Gamification/Shop.md',
-		'Gamification/Recipes.md',
-		'Gamification/Materials.md',
 		'Gamified/Recipes.md',
+		'Materials.md',
 		'Gamified/Materials.md',
-		settings.defaultQuestFilePath || 'GamifiedTasks.md',
-		settings.projectsFilePath || 'GamifiedProjects.md',
-		settings.captureFilePath || 'Capture.md',
-		settings.focusCheckInLogPath || 'CheckIns.md',
+		settings.defaultQuestFilePath || 'Gamified/GamifiedTasks.md',
+		settings.projectsFilePath || 'Gamified/GamifiedProjects.md',
+		settings.captureFilePath || 'Gamified/Capture.md',
+		settings.focusCheckInLogPath || 'Gamified/CheckIns.md',
 		...(settings.questSaveLocations || []).map((entry) => entry.filePath),
-		...(settings.externalWatchPaths || []),
 	];
-	if (settings.taskNotesFolder) paths.push(settings.taskNotesFolder);
 	return paths;
+}
+
+function relocateSettings(settings: Record<string, unknown>): Record<string, unknown> {
+	const next = { ...settings };
+	const keys = [
+		'inventoryFilePath',
+		'skillTreeRoot',
+		'masterClassFolder',
+		'classFolder',
+		'skillFolder',
+		'statFolder',
+		'defaultQuestFilePath',
+		'projectsFilePath',
+		'captureFilePath',
+		'focusCheckInLogPath',
+		'taskNoteFolder',
+		'playerDataFilePath',
+		'habitsFolderPath',
+		'habitsFilePath',
+	];
+	for (const key of keys) {
+		const value = next[key];
+		if (typeof value === 'string' && value.trim()) next[key] = toGamifiedPath(value);
+	}
+	if (Array.isArray(next.questSaveLocations)) {
+		next.questSaveLocations = next.questSaveLocations.map((entry) => {
+			if (!entry || typeof entry !== 'object') return entry;
+			const filePath = (entry as { filePath?: string }).filePath;
+			if (!filePath) return entry;
+			return { ...(entry as object), filePath: toGamifiedPath(filePath) };
+		});
+	}
+	return next;
+}
+
+function relocateContent(content: string): string {
+	return content
+		.replaceAll('Gamified/SkillTree/', '\u0000')
+		.replaceAll('SkillTree/', 'Gamified/SkillTree/')
+		.replaceAll('\u0000', 'Gamified/SkillTree/')
+		.replaceAll('Gamified/Bosses/', '\u0001')
+		.replaceAll('Bosses/', 'Gamified/Bosses/')
+		.replaceAll('\u0001', 'Gamified/Bosses/');
 }
 
 export async function buildVaultExport(plugin: GamifiedObsidianPlugin): Promise<VaultExportBundle> {
@@ -90,13 +165,20 @@ export async function buildVaultExport(plugin: GamifiedObsidianPlugin): Promise<
 	const vault = plugin.app.vault;
 	const files = new Map<string, string>();
 
-	await readFolder(vault, settings.skillTreeRoot || 'SkillTree', files);
-	await readFolder(vault, settings.masterClassFolder || 'SkillTree/Master-Class', files);
-	await readFolder(vault, settings.classFolder || 'SkillTree/Master-Class/Class', files);
-	await readFolder(vault, settings.skillFolder || 'SkillTree/Master-Class/Class/Skills', files);
-	await readFolder(vault, settings.statFolder || 'SkillTree/Master-Class/Stats', files);
-	await readFolder(vault, 'Bosses', files);
-	await readFolder(vault, settings.taskNoteFolder || 'Gamified/Tasks', files);
+	const folders = [
+		'SkillTree',
+		'Bosses',
+		settings.skillTreeRoot || 'Gamified/SkillTree',
+		settings.masterClassFolder || 'Gamified/SkillTree/Master-Class',
+		settings.classFolder || 'Gamified/SkillTree/Master-Class/Class',
+		settings.skillFolder || 'Gamified/SkillTree/Master-Class/Class/Skills',
+		settings.statFolder || 'Gamified/SkillTree/Master-Class/Stats',
+		'Gamified/Bosses',
+		settings.taskNoteFolder || 'Gamified/Tasks',
+	];
+	for (const folder of folders) {
+		await readFolder(vault, folder, files);
+	}
 
 	for (const path of namedNotes(settings)) {
 		const safe = safePath(path);
@@ -109,14 +191,21 @@ export async function buildVaultExport(plugin: GamifiedObsidianPlugin): Promise<
 		}
 	}
 
-	const parsedSettings = JSON.parse(serializeSettings(settings)) as Record<string, unknown>;
+	const bundled = new Map<string, string>();
+	for (const [path, content] of files) {
+		const dest = safePath(toGamifiedPath(path).startsWith('Gamified/') ? toGamifiedPath(path) : `Gamified/${toGamifiedPath(path)}`);
+		if (!dest) continue;
+		bundled.set(dest, relocateContent(content));
+	}
+
+	const parsedSettings = relocateSettings(JSON.parse(serializeSettings(settings)) as Record<string, unknown>);
 	return {
 		kind: VAULT_EXPORT_KIND,
 		version: EXPORT_VERSION,
 		exportedAt: new Date().toISOString(),
 		pluginVersion: plugin.manifest.version,
 		settings: parsedSettings,
-		files: [...files.entries()]
+		files: [...bundled.entries()]
 			.sort((a, b) => a[0].localeCompare(b[0]))
 			.map(([path, content]) => ({ path, content })),
 	};
@@ -171,8 +260,10 @@ export async function importVaultExport(
 	const vault = plugin.app.vault;
 	let files = 0;
 	for (const entry of bundle.files) {
-		const path = safePath(entry.path);
-		if (!path || typeof entry.content !== 'string' || !isTextPath(path)) continue;
+		const raw = safePath(entry.path);
+		if (!raw || typeof entry.content !== 'string' || !isTextPath(raw)) continue;
+		const path = safePath(raw.startsWith('Gamified/') ? raw : toGamifiedPath(raw));
+		if (!path?.startsWith('Gamified/')) continue;
 		await ensureParentFolders(vault, path);
 		const existing = vault.getAbstractFileByPath(path);
 		if (existing instanceof TFile) {
@@ -185,7 +276,7 @@ export async function importVaultExport(
 
 	let settings = false;
 	if (bundle.settings && typeof bundle.settings === 'object') {
-		const next = hydrateSettings(bundle.settings);
+		const next = hydrateSettings(relocateSettings(bundle.settings));
 		plugin.settings = next;
 		await plugin.saveData(next);
 		settings = true;
