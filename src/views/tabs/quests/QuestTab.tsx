@@ -20,6 +20,8 @@ import { SearchResults } from '../../../features/quests/components/SearchResults
 import { SearchResult } from '../../../features/quests/types/SearchTypes';
 import { currencyDisplay } from '../../../shared/services/currencyDisplayService';
 import { onSettingsUpdated } from '../../../shared/utils/settingsEvents';
+import { getAppliedVisualTheme } from '../../../shared/utils/visualThemeManager';
+import { extraQuestSurfacesEnabled } from '../../../shared/utils/gameplayConfig';
 import { resolveEnergyHudConfig } from '../../../shared/utils/energyHudConfig';
 // Lazy-load heavy views
 const QuestCalendarView = lazy(() => import('../../../features/quests/components/QuestCalendarView').then(m => ({ default: m.QuestCalendarView })));
@@ -33,6 +35,7 @@ import {
 } from '../../../features/quests/utils/questProjectUtils';
 import { isClosedContract } from '../../../features/quests/utils/projectContractDisplay';
 import { TFile } from 'obsidian';
+import { pixelNotice } from '../../../shared/utils/noticeUtils';
 import styles from './QuestTab.module.css';
 // Boss view is now handled by the full-page BossView
 
@@ -244,7 +247,9 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
   const currentEnergy = playerState.playerData?.stats?.energy || 70;
   
   // ADHD-enhanced state management
-  const [viewMode, setViewMode] = useState<QuestViewMode>('test-one-view');
+  const extraSurfaces = extraQuestSurfacesEnabled(plugin.settings);
+  const [viewMode, setViewMode] = useState<QuestViewMode>('cards');
+  const activeView: QuestViewMode = extraSurfaces ? viewMode : 'cards';
   const [selectedQuest, setSelectedQuest] = useState<Quest | null>(null);
   
   // Timeline modal state
@@ -273,6 +278,10 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
   const energyHudConfig = useMemo(
     () => resolveEnergyHudConfig(plugin.settings),
     [plugin.settings, settingsRevision]
+  );
+  const clayUi = useMemo(
+    () => getAppliedVisualTheme().preset === 'clay',
+    [settingsRevision]
   );
 
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -347,12 +356,12 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
 
   // Performance optimization: Enable virtual scrolling for very large lists (cards view only)
   useEffect(() => {
-    const shouldUseVirtualScrolling = viewMode === 'cards' && filteredQuests.length > 75;
+    const shouldUseVirtualScrolling = activeView === 'cards' && filteredQuests.length > 75;
     setVirtualScrolling(shouldUseVirtualScrolling);
     if (shouldUseVirtualScrolling) {
       setVisibleRange({ start: 0, end: 50 });
     }
-  }, [filteredQuests.length, viewMode]);
+  }, [filteredQuests.length, activeView]);
 
   // Virtual scrolling handler
   const handleScroll = useCallback(() => {
@@ -389,7 +398,7 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
 
   // Debug: log when switching to calendar view (for troubleshooting empty calendar)
   useEffect(() => {
-    if (viewMode === 'calendar') {
+    if (activeView === 'calendar') {
       window.console.log('📅 [QuestTab] Switched to calendar view:', {
         calendarQuestsCount: calendarQuests.length,
         filteredQuestsCount: filteredQuests.length,
@@ -398,7 +407,7 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
         sampleQuests: calendarQuests.slice(0, 3).map(q => ({ title: q.title, due: q.due, completed: q.completed }))
       });
     }
-  }, [viewMode, calendarQuests, filteredQuests.length, quests.length, activeQuickFilter]);
+  }, [activeView, calendarQuests, filteredQuests.length, quests.length, activeQuickFilter]);
 
 
   // Bulk operations handlers (for future use)
@@ -481,11 +490,13 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
           setCompactView(!compactView);
           break;
         case 't':
+          if (!extraSurfaces) break;
           if (e.ctrlKey || e.metaKey) break;
           e.preventDefault();
           handleCreateFromTemplate();
           break;
         case 'b':
+          if (!extraSurfaces) break;
           if (e.ctrlKey || e.metaKey) break;
           e.preventDefault();
           handleBossDashboard();
@@ -508,7 +519,7 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
 
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [showFilters, compactView]);
+  }, [showFilters, compactView, extraSurfaces]);
 
   const handleEditQuest = useCallback((quest: Quest) => {
     setEditingQuest(quest);
@@ -684,10 +695,32 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
     window.console.log('🧠 Hyperfocus started for quest:', quest.title);
   }, [plugin]);
 
-  const handleBreakDown = useCallback((quest: Quest) => {
-    console.log('Breaking down quest:', quest.title);
-    // TODO: Implement quest breakdown functionality
-  }, []);
+  const handleBreakDown = useCallback(async (quest: Quest) => {
+    if ((quest.subtasks?.length ?? 0) > 0) {
+      pixelNotice('This quest already has steps.', 2000);
+      return;
+    }
+    if (!quest.filePath || !quest.lineNumber || quest.lineNumber < 1) {
+      pixelNotice('This quest is not saved in a note yet.', 2500);
+      return;
+    }
+    const file = plugin.app.vault.getAbstractFileByPath(quest.filePath);
+    if (!(file instanceof TFile)) {
+      pixelNotice('Could not find the quest note.', 2500);
+      return;
+    }
+    const content = await plugin.app.vault.read(file);
+    const lines = content.split('\n');
+    const index = quest.lineNumber - 1;
+    const steps = [
+      `  - [ ] Start: ${quest.title}`,
+      `  - [ ] Continue: ${quest.title}`,
+      `  - [ ] Finish: ${quest.title}`,
+    ];
+    lines.splice(index + 1, 0, ...steps);
+    await plugin.app.vault.modify(file, lines.join('\n'));
+    pixelNotice('Broke this quest into 3 steps.', 2500);
+  }, [plugin]);
 
   // Quest move handler for calendar view
   const handleQuestMove = useCallback(async (questId: string, newDate: string) => {
@@ -854,8 +887,9 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
   return (
     <div
       ref={questTabRef}
-      className={`${styles.questTabContainer} ${styles.pixelQuestShell}`}
-      data-pixel-shell="quests"
+      className={`${styles.questTabContainer} ${clayUi ? styles.clayQuestShell : styles.pixelQuestShell}`}
+      data-pixel-shell={clayUi ? undefined : 'quests'}
+      data-clay-shell={clayUi ? 'quests' : undefined}
     >
       {/* Mobile-specific CSS */}
       <style>{`
@@ -936,6 +970,8 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
           >
             ☑️ {bulkMode ? 'Exit Bulk' : 'Bulk Mode'}
           </button>
+          {extraSurfaces && (
+            <>
           <button
             onClick={handleCreateFromTemplate}
             className={`${styles.actionButton} ${styles.templateButton}`}
@@ -956,6 +992,8 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
           >
             🐉 Boss
           </button>
+            </>
+          )}
           <button
             onClick={() => {
               // Export quests functionality
@@ -1108,7 +1146,7 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
 
       </div>
 
-      {/* View Mode Toggle - Cards, Calendar, Timeline, Unified */}
+      {extraSurfaces && (
       <div style={{ marginBottom: 16 }}>
         <QuestViewToggle
           currentView={viewMode}
@@ -1116,6 +1154,7 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
           energyLevel={currentEnergy}
         />
       </div>
+      )}
 
       {/* Enhanced Quick Filter Cards with ADHD features */}
       <EnhancedQuestFilters
@@ -1355,7 +1394,7 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
         ) : (
           <>
             {/* Quick Filter Inbox: Todoist-style rows (paginated) above main view */}
-            {viewMode === 'test-one-view' && filteredQuests.length > 0 && activeQuickFilter !== 'all' && (
+            {activeView === 'test-one-view' && filteredQuests.length > 0 && activeQuickFilter !== 'all' && (
               <div
                 style={{
                   marginBottom: '16px',
@@ -1388,7 +1427,7 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
 
             {/* Render based on view mode */}
             <Suspense fallback={<div style={{ padding: '20px', textAlign: 'center' }}>Loading view…</div>}>
-            {viewMode === 'calendar' ? (
+            {activeView === 'calendar' ? (
               <QuestCalendarView
                 quests={calendarQuests}
                 plugin={plugin}
@@ -1401,7 +1440,7 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
                 onStartHyperfocus={handleStartHyperfocus}
                 onAddQuestForDate={handleAddQuestForDate}
               />
-            ) : viewMode === 'timeline' ? (
+            ) : activeView === 'timeline' ? (
               <>
                 {/* Week View Buttons - Open Modal */}
                 <div style={{ 
@@ -1489,7 +1528,7 @@ export const QuestTab: React.FC<QuestTabProps> = ({ plugin }) => {
                   initialViewMode="day"
                 />
               </>
-            ) : viewMode === 'test-one-view' ? (
+            ) : activeView === 'test-one-view' ? (
               <UnifiedQuestView
                 quests={enhancedQuests}
                 plugin={plugin}

@@ -25,6 +25,17 @@ export type PlayerTabKey =
 	| 'pomodoro'
 	| 'analytics';
 
+/** Tabs enabled on phone/tablet until each is mobile-optimized */
+export const MOBILE_SAFE_PLAYER_TABS: readonly PlayerTabKey[] = [
+	'player',
+	'quests',
+	'habits',
+	'pomodoro',
+	'shop',
+	'crafting',
+	'achievements',
+];
+
 const PLUGIN_ID = 'Gamification-into-Obsidian';
 
 export function getPluginSettingsFromApp(app?: App): GamificationPluginSettings | undefined {
@@ -96,6 +107,20 @@ export function isFailureDebtEnabled(settings?: Partial<GamificationPluginSettin
 	return config.penaltiesEnabled && config.modules.enableFailureDebt === true;
 }
 
+export function isPlayerTabEnabledForDevice(
+	config: ResolvedGameplayConfig,
+	tabKey: PlayerTabKey,
+	isMobile: boolean
+): boolean {
+	if (!isPlayerTabEnabled(config, tabKey)) {
+		return false;
+	}
+	if (!isMobile) {
+		return true;
+	}
+	return MOBILE_SAFE_PLAYER_TABS.includes(tabKey);
+}
+
 export function isPlayerTabEnabled(
 	config: ResolvedGameplayConfig,
 	tabKey: PlayerTabKey
@@ -125,12 +150,21 @@ export function isBossBattlesEnabled(settings?: Partial<GamificationPluginSettin
 	return resolveGameplayConfig(settings).modules.enableBossBattles === true;
 }
 
+export function extraQuestSurfacesEnabled(settings?: Partial<GamificationPluginSettings> | null): boolean {
+	return resolveGameplayConfig(settings).modules.enableExtraQuestSurfaces === true;
+}
+
+export function journeyDungeonHubEnabled(settings?: Partial<GamificationPluginSettings> | null): boolean {
+	return resolveGameplayConfig(settings).modules.enableJourneyDungeonHub === true;
+}
+
 export function isEnergySystemEnabled(settings?: Partial<GamificationPluginSettings> | null): boolean {
 	return resolveGameplayConfig(settings).modules.enableEnergySystem === true;
 }
 
-export function isProductivityGearEnabled(settings?: Partial<GamificationPluginSettings> | null): boolean {
-	return resolveGameplayConfig(settings).modules.enableProductivityGear === true;
+export function isBookOfEasyEnabled(settings?: { bookOfEasy?: boolean } | Record<string, unknown> | null): boolean {
+	if (!settings) return true;
+	return (settings as { bookOfEasy?: boolean }).bookOfEasy !== false;
 }
 
 export function isShopEnabled(settings?: Partial<GamificationPluginSettings> | null): boolean {

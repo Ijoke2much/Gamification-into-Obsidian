@@ -1,4 +1,5 @@
 import type { Quest } from './taskParser';
+import { applyCustomTagsToLine } from './taskParser';
 import type { App } from 'obsidian';
 import { normalizePath, TFile } from 'obsidian';
 import type { SkillMetadata } from '../../../shared/utils/skillDiscovery';
@@ -126,6 +127,15 @@ export function findQuestLineIndex(lines: string[], quest: Quest): number {
 	const projectSlug = getQuestProjectSlug(quest);
 	const titleRe = questTitleLineRegex(title);
 
+	// Prefer the scanned line when it still matches — duplicate titles otherwise
+	// complete the first copy in the file.
+	if (typeof quest.lineNumber === 'number' && quest.lineNumber > 0) {
+		const idx = quest.lineNumber - 1;
+		if (idx >= 0 && idx < lines.length && lineMatchesQuestTitle(lines[idx], quest)) {
+			return idx;
+		}
+	}
+
 	if (titleRe) {
 		const titleMatches: number[] = [];
 		for (let i = 0; i < lines.length; i++) {
@@ -214,6 +224,26 @@ export async function appendWaypointChecklistItem(
 	await app.vault.modify(file, lines.join('\n'));
 }
 
+/** Replace user hashtags on a quest line without touching system tags. */
+export async function updateQuestCustomTags(
+	app: App,
+	quest: Quest,
+	tags: string[]
+): Promise<void> {
+	const path = normalizePath(quest.filePath || '');
+	if (!path) throw new Error('Quest has no file path');
+
+	const file = app.vault.getAbstractFileByPath(path);
+	if (!(file instanceof TFile)) throw new Error(`Quest file not found: ${path}`);
+
+	const lines = (await app.vault.read(file)).split('\n');
+	const questLineIndex = findQuestLineIndex(lines, quest);
+	if (questLineIndex === -1) throw new Error(`Quest line not found in ${path}`);
+
+	lines[questLineIndex] = applyCustomTagsToLine(lines[questLineIndex], tags);
+	await app.vault.modify(file, lines.join('\n'));
+}
+
 export function isSameQuest(a: Quest, b: Quest | null | undefined): boolean {
 	if (!b) return false;
 	if (
@@ -254,25 +284,59 @@ export function parseQuestHubSection(raw: string | null): QuestHubSection {
 	return 'tasks';
 }
 
+export type ProjectKind = 'standing' | 'campaign';
+
 /** Header row in GamifiedTasks: `[type:: project]`, `type: project`, or tag `#type/project`. */
 export function isProjectHeaderQuest(quest: Quest): boolean {
 	const type = (quest.type || '').toLowerCase();
 	if (type === 'project') return true;
-	return (quest.tags || []).some((t) => t.toLowerCase() === 'type/project' || t.toLowerCase() === 'project');
+	if (quest.projectKind === 'standing' || quest.projectKind === 'campaign') return true;
+	return (quest.tags || []).some((t) => {
+		const tag = t.toLowerCase().replace(/^#/, '');
+		return tag === 'type/project' || tag === 'project';
+	});
+}
+
+export function getProjectKind(quest: Quest | null | undefined): ProjectKind {
+	if (!quest) return 'campaign';
+	if (quest.projectKind === 'standing') return 'standing';
+	const tags = (quest.tags || []).map((tag) => tag.toLowerCase().replace(/^#/, ''));
+	if (tags.includes('project/standing')) return 'standing';
+	return 'campaign';
+}
+
+function unlinkProjectName(raw: string): string {
+	const match = raw.trim().match(/^\[\[([^\]|]+)(?:\|[^\]]+)?\]\]$/);
+	return match ? match[1].trim() : raw.trim().replace(/^\[\[|\]\]$/g, '');
+}
+
+/** Every project name on a quest, including TaskNotes `projects: [[Note]]`. */
+export function getQuestProjectNames(quest: Quest): string[] {
+	const names: string[] = [];
+	const push = (raw?: string) => {
+		const name = raw ? unlinkProjectName(raw).trim() : '';
+		const id = slugifyProjectId(name);
+		if (!name || !id) return;
+		if (names.some((existing) => slugifyProjectId(existing) === id)) return;
+		names.push(name);
+	};
+
+	push(quest.project);
+	for (const linked of quest.projects || []) push(linked);
+	for (const tag of quest.tags || []) {
+		const lower = tag.toLowerCase().replace(/^#/, '');
+		if (!lower.startsWith('project/')) continue;
+		const rest = lower.slice('project/'.length);
+		if (rest === 'standing' || rest === 'campaign') continue;
+		push(tag.replace(/^#/, '').slice('project/'.length));
+	}
+	return names;
 }
 
 /** Slug/id linking a task to a project (`[project:: Name]`, pipe `project:`, or tag `project/foo`). */
 export function getQuestProjectSlug(quest: Quest): string | null {
-	const direct = (quest.project || '').trim();
-	if (direct) return slugifyProjectId(direct);
-
-	for (const tag of quest.tags || []) {
-		const lower = tag.toLowerCase();
-		if (lower.startsWith('project/')) {
-			return slugifyProjectId(tag.slice('project/'.length));
-		}
-	}
-	return null;
+	const [first] = getQuestProjectNames(quest);
+	return first ? slugifyProjectId(first) : null;
 }
 
 export function slugifyProjectId(name: string): string {
@@ -286,20 +350,14 @@ export function slugifyProjectId(name: string): string {
 export interface ProjectSummary {
 	id: string;
 	title: string;
+	/** Standing stays open. Campaigns can be turned in. */
+	kind: ProjectKind;
 	/** Explicit project header quest, if any. */
 	headerQuest: Quest | null;
 	tasks: Quest[];
 	completedCount: number;
 	totalCount: number;
 	progressPercent: number;
-}
-
-function projectTitleFromSlug(slug: string): string {
-	return slug
-		.split('-')
-		.filter(Boolean)
-		.map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-		.join(' ');
 }
 
 function countProgressForQuest(quest: Quest): { done: number; total: number } {
@@ -324,12 +382,14 @@ export function buildProjectSummaries(allQuests: Quest[]): ProjectSummary[] {
 			if (headerQuest && !existing.headerQuest) {
 				existing.headerQuest = headerQuest;
 				existing.title = headerQuest.title;
+				existing.kind = getProjectKind(headerQuest);
 			}
 			return existing;
 		}
 		const summary: ProjectSummary = {
 			id,
 			title,
+			kind: getProjectKind(headerQuest),
 			headerQuest,
 			tasks: [],
 			completedCount: 0,
@@ -349,14 +409,18 @@ export function buildProjectSummaries(allQuests: Quest[]): ProjectSummary[] {
 
 	for (const quest of allQuests) {
 		if (isProjectHeaderQuest(quest)) continue;
-		const slug = getQuestProjectSlug(quest);
-		if (!slug) continue;
-		const summary = ensure(slug, projectTitleFromSlug(slug), null);
-		summary.tasks.push(quest);
+		for (const name of getQuestProjectNames(quest)) {
+			const slug = slugifyProjectId(name);
+			const summary = ensure(slug, name, null);
+			summary.tasks.push(quest);
+		}
 	}
 
 	for (const summary of byId.values()) {
-		const headerProgress = summary.headerQuest ? countProgressForQuest(summary.headerQuest) : null;
+		const countHeader =
+			summary.headerQuest &&
+			(summary.headerQuest.subtasks.length > 0 || summary.tasks.length === 0);
+		const headerProgress = countHeader && summary.headerQuest ? countProgressForQuest(summary.headerQuest) : null;
 		let done = headerProgress?.done ?? 0;
 		let total = headerProgress?.total ?? 0;
 
@@ -390,6 +454,7 @@ export interface ContractHeaderInput {
 	priority?: string;
 	skillName: string;
 	skillClass?: string;
+	projectKind?: ProjectKind;
 }
 
 function priorityEmoji(priority: string): string {
@@ -439,6 +504,9 @@ export function buildContractHeaderMarkdown(input: ContractHeaderInput): string 
 	const tags = [`#skill/${input.skillName.replace(/\s+/g, '-')}`];
 	if (input.skillClass?.trim()) {
 		tags.push(`#class/${input.skillClass.trim().replace(/\s+/g, '-')}`);
+	}
+	if (input.projectKind === 'standing') {
+		tags.push('#project/standing');
 	}
 
 	let line = `- [ ] ${title} #gamified-task ${meta.join(' ')} ${tags.join(' ')} [type:: project]`;

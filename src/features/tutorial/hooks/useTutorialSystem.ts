@@ -34,8 +34,8 @@ const DEFAULT_STATE: TutorialState = {
 
 export const useTutorialSystem = () => {
     const [state, setState] = useState<TutorialState>(DEFAULT_STATE);
-    const timeoutRef = useRef<NodeJS.Timeout>();
-    const startTimeRef = useRef<Date>();
+    const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+    const startTimeRef = useRef<Date | undefined>(undefined);
 
     // Load tutorial state from localStorage
     useEffect(() => {

@@ -398,7 +398,7 @@
     background: var(--background-secondary);
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
     border-radius: 20px;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .categoryCard:hover {
@@ -409,10 +409,11 @@
 
 .cardHeader {
     display: flex;
-    align-items: center;
-    padding: 25px;
+    align-items: flex-start;
+    padding: 22px 18px;
     border-left: 6px solid;
-    gap: 20px;
+    border-radius: 20px;
+    gap: 14px;
     transition: all 0.3s ease;
 }
 
@@ -429,14 +430,24 @@
 }
 
 .cardContent {
-    flex: 1;
+    flex: 1 1 auto;
+    min-width: 0;
 }
 
 .cardTitle {
     margin: 0 0 8px 0;
-    font-size: 1.3rem;
-    font-weight: 700;
+    font-size: 1.05rem;
+    font-weight: 800;
+    line-height: 1.35;
     color: var(--text-normal);
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+    white-space: normal !important;
+    overflow: visible !important;
+    text-overflow: unset !important;
+    text-shadow: none !important;
+    overflow-wrap: break-word;
+    hyphens: manual;
 }
 
 .cardDescription {
@@ -444,6 +455,10 @@
     color: var(--text-muted);
     font-size: 0.95rem;
     line-height: 1.4;
+    white-space: normal !important;
+    overflow: visible !important;
+    letter-spacing: 0 !important;
+    text-shadow: none !important;
 }
 
 .categoryCount {
@@ -715,6 +730,42 @@
 
 .settingGroup input::placeholder {
     color: var(--text-muted);
+}
+
+.pathRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+}
+
+.settingGroup .pathRow input {
+    flex: 1 1 auto;
+    min-width: 0;
+    width: auto;
+}
+
+.pathPick {
+    flex: 0 0 42px;
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    border-radius: 12px;
+    border: 1px solid var(--background-modifier-border);
+    background: var(--background-secondary);
+    color: var(--text-normal);
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+}
+
+.pathPick:hover:not(:disabled) {
+    border-color: var(--interactive-accent);
+}
+
+.pathPick:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
 }
 
 .checkboxLabel {
@@ -1050,6 +1101,34 @@
     font-weight: 500;
 }
 
+.settingDescription {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 14px;
+    line-height: 1.45;
+}
+
+.backupList {
+    list-style: none;
+    margin: 12px 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.backupRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    background: var(--background-secondary);
+    font-size: 13px;
+}
+
 @keyframes pulse {
     0% {
         opacity: 1;
@@ -1143,8 +1222,8 @@
 
 .onboardingChoices {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 14px;
+    grid-template-columns: 1fr;
+    gap: 12px;
     margin-bottom: 20px;
 }
 
@@ -1153,14 +1232,23 @@
     display: flex;
     flex-direction: column;
     align-items: flex-start;
+    justify-content: flex-start;
     gap: 6px;
+    width: 100%;
+    height: auto !important;
+    min-height: unset !important;
     padding: 16px;
+    padding-right: 108px;
+    box-sizing: border-box;
     border-radius: 14px;
     border: 1px solid var(--background-modifier-border);
     background: var(--background-secondary);
     color: var(--text-normal);
     cursor: pointer;
     text-align: left;
+    white-space: normal !important;
+    overflow: visible;
+    line-height: 1.4;
     transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -1184,9 +1272,11 @@
 }
 
 .onboardingChoiceDesc {
+    display: block;
     font-size: 0.9rem;
     color: var(--text-muted);
     line-height: 1.4;
+    white-space: normal;
 }
 
 .onboardingRecommendedBadge {

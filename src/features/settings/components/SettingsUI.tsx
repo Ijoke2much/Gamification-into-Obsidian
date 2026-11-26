@@ -15,19 +15,30 @@ import {
   type EnergyHudMode,
 } from '../../../core/settings';
 import { Card } from '../../../shared/components/ui/Card';
+import {
+  clampActivityEnergy,
+  normalizeActivityEnergyRules,
+  type ActivityEnergyRule,
+} from '../../../shared/utils/activityEnergy';
+import { storedActivityTypeId } from '../../../shared/utils/questWellbeingProfiles';
 import { TutorialSettingsPanel } from '../../tutorial/components/TutorialSettingsPanel';
 import { AppearanceSettings } from './AppearanceSettings';
 import { updatePlayerData } from '../../player/utils/playerDataUtils';
 import { listPlayerDataBackups, restorePlayerDataBackup } from '../../player/utils/playerDataUtils';
-import { DEFAULT_PLAYER } from '../../../data/models/PlayerData';
+import { createStarterPlayerData } from '../../../data/models/PlayerData';
 import type { App } from 'obsidian';
 import { TFile, TFolder } from 'obsidian';
 import type GamifiedObsidianPlugin from '../../../core/main';
 import styles from './SettingsUI.module.css';
 import { GameDataHubPanel } from './GameDataHubPanel';
+import { VaultPathPicker, type VaultPickKind } from './VaultPathPicker';
+import { DataBackupPanel } from './DataBackupPanel';
 import { GameplayOnboardingModal } from './GameplayOnboardingModal';
+import { AchievementMakerPanel } from '../../achievements/components/AchievementMakerPanel';
 import { areSettingsEqual } from '../../../shared/utils/settingsSnapshot';
 import type { GameplayProfile } from '../../../core/settings';
+import { CustomRewardBuilder } from '../../quests/components/CustomRewardBuilder';
+import { isShopExclusiveCustomReward } from '../../quests/utils/shopExclusiveRewards';
 
 interface SettingsUIProps {
   settings: GamificationPluginSettings;
@@ -137,7 +148,7 @@ export const SettingsUI: React.FC<SettingsUIProps> = ({
   };
 
   const openGameModulesCategory = () => {
-    setSelectedGroup('advanced');
+    setSelectedGroup('gameplay');
     setSelectedCategory('game-modules');
     setViewMode('category');
   };
@@ -148,9 +159,13 @@ export const SettingsUI: React.FC<SettingsUIProps> = ({
       gameplayProfile: profile,
       modules: getProfileModules(profile),
       gameplayOnboardingComplete: true,
-      notificationLevel: profile === 'lite' ? 'quiet' : 'normal',
+      notificationLevel: profile === 'hardcore' ? 'normal' : 'quiet',
       preferQuickComplete: profile !== 'hardcore',
       energyHudMode: profile === 'hardcore' ? 'full' : 'simple',
+      visualTheme: {
+        preset: 'clay',
+        ceremonyLevel: profile === 'hardcore' ? 'full' : 'minimal',
+      },
     };
     setSettings(merged);
     onSettingsChange(merged);
@@ -200,18 +215,25 @@ export const SettingsUI: React.FC<SettingsUIProps> = ({
     await saveSettingsSnapshot(settings);
   };
 
-  // Filter groups based on search
+  const normalizedSearch = searchTerm.trim().toLowerCase();
+
+  const categoryMatchesSearch = (cat: { name: string; description: string; settings: string[] }) => {
+    if (!normalizedSearch) return true;
+    if (cat.name.toLowerCase().includes(normalizedSearch)) return true;
+    if (cat.description.toLowerCase().includes(normalizedSearch)) return true;
+    return cat.settings.some((key) => key.toLowerCase().includes(normalizedSearch));
+  };
+
+  // Filter groups based on search (name, description, categories, setting keys)
   const filteredGroups = useMemo(() => {
-    if (!searchTerm) return SETTINGS_GROUPS;
-    return SETTINGS_GROUPS.filter(group => 
-      group.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      group.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      group.categories.some(cat => 
-        cat.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        cat.description.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+    if (!normalizedSearch) return SETTINGS_GROUPS;
+    return SETTINGS_GROUPS.filter(
+      (group) =>
+        group.name.toLowerCase().includes(normalizedSearch) ||
+        group.description.toLowerCase().includes(normalizedSearch) ||
+        group.categories.some(categoryMatchesSearch)
     );
-  }, [searchTerm]);
+  }, [normalizedSearch]);
 
   // Get current group and category
   const currentGroup = selectedGroup 
@@ -222,10 +244,15 @@ export const SettingsUI: React.FC<SettingsUIProps> = ({
     ? currentGroup?.categories.find(cat => cat.id === selectedCategory)
     : null;
 
-  // Handle group selection
+  // Handle group selection (skip the category grid when there is only one)
   const handleGroupClick = (groupId: string) => {
+    const group = SETTINGS_GROUPS.find((g) => g.id === groupId);
     setSelectedGroup(groupId);
-    setSelectedCategory(null);
+    if (group && group.categories.length === 1) {
+      setSelectedCategory(group.categories[0].id);
+    } else {
+      setSelectedCategory(null);
+    }
     setViewMode('category');
   };
 
@@ -242,8 +269,12 @@ export const SettingsUI: React.FC<SettingsUIProps> = ({
     setViewMode('groups');
   };
 
-  // Go back to group categories view
+  // Go back to group categories view (or groups when the group has only one category)
   const goBackToGroupCategories = () => {
+    if (currentGroup && currentGroup.categories.length === 1) {
+      goBackToGroups();
+      return;
+    }
     setSelectedCategory(null);
     setViewMode('category');
   };
@@ -295,7 +326,10 @@ export const SettingsUI: React.FC<SettingsUIProps> = ({
         </div>
 
         <div className={styles.categoriesGrid}>
-          {currentGroup.categories.map((category) => (
+          {(normalizedSearch
+            ? currentGroup.categories.filter(categoryMatchesSearch)
+            : currentGroup.categories
+          ).map((category) => (
             <Card 
               key={category.id} 
               className={styles.categoryCard}
@@ -323,11 +357,13 @@ export const SettingsUI: React.FC<SettingsUIProps> = ({
   const renderCategorySettings = () => {
     if (!currentCategory || !currentGroup) return null;
 
+    const previewItems = showPreviews ? getSettingsPreview(currentCategory.id) : [];
+
     return (
       <div className={styles.categorySettings}>
         <div className={styles.categoryHeader}>
           <button className={styles.backButton} onClick={goBackToGroupCategories}>
-            ← Back to {currentGroup.name}
+            ← Back to {currentGroup.categories.length === 1 ? 'Groups' : currentGroup.name}
           </button>
           <h2 className={styles.categoryTitle}>
             {currentCategory.icon} {currentCategory.name}
@@ -335,11 +371,11 @@ export const SettingsUI: React.FC<SettingsUIProps> = ({
           <p className={styles.categoryDescription}>{currentCategory.description}</p>
           
           {/* Settings Preview */}
-          {showPreviews && (
+          {previewItems.length > 0 && (
             <div className={styles.settingsPreview}>
               <h4>Current Settings Preview</h4>
               <div className={styles.previewGrid}>
-                {getSettingsPreview(currentCategory.id)}
+                {previewItems}
               </div>
             </div>
           )}
@@ -367,6 +403,17 @@ export const SettingsUI: React.FC<SettingsUIProps> = ({
           {currentCategory.id === 'penalties' && (
             <PenaltySettingsSection settings={settings} onSettingChange={updateSetting} />
           )}
+          {currentCategory.id === 'achievements' && (
+            app ? (
+              <AchievementMakerPanel app={app} />
+            ) : (
+              <div className={styles.settingsSection}>
+                <Card className={styles.settingsCard}>
+                  <p>Reload this settings panel from the Gamification plugin to make achievements.</p>
+                </Card>
+              </div>
+            )
+          )}
           {currentCategory.id === 'shop' && (
             <ShopSettingsSection settings={settings} onSettingChange={updateSetting} />
           )}
@@ -381,24 +428,33 @@ export const SettingsUI: React.FC<SettingsUIProps> = ({
               </div>
             )
           )}
+          {currentCategory.id === 'data-backup' && (
+            plugin ? (
+              <DataBackupPanel
+                plugin={plugin}
+                onSettingsApplied={() => {
+                  setSettings(plugin.settings);
+                  setSavedSettings(plugin.settings);
+                  onSettingsChange(plugin.settings);
+                }}
+              />
+            ) : (
+              <div className={styles.settingsSection}>
+                <Card className={styles.settingsCard}>
+                  <p>Reload this settings panel from the Gamification plugin to manage backups.</p>
+                </Card>
+              </div>
+            )
+          )}
           {currentCategory.id === 'tree' && (
             <TreeSettingsSection settings={settings} onSettingChange={updateSetting} />
           )}
           {currentCategory.id === 'performance' && (
             <PerformanceSettingsSection settings={settings} onSettingChange={updateSetting} />
           )}
-          {currentCategory.id === 'advanced-config' && (
-            <AdvancedSettingsSection settings={settings} onSettingChange={updateSetting} />
-          )}
-          {currentCategory.id === 'theming' && (
-            <AppearanceSettings 
-              settings={settings} 
-              onSettingsChange={patchSettings}
-            />
-          )}
-          {currentCategory.id === 'internationalization' && (
-            <AppearanceSettings 
-              settings={settings} 
+          {currentCategory.id === 'appearance' && (
+            <AppearanceSettings
+              settings={settings}
               onSettingsChange={patchSettings}
             />
           )}
@@ -406,7 +462,7 @@ export const SettingsUI: React.FC<SettingsUIProps> = ({
             <TutorialSettingsSection settings={settings} onSettingChange={updateSetting} />
           )}
           {currentCategory.id === 'files' && (
-            <FileSettingsSection settings={settings} onSettingChange={updateSetting} />
+            <FileSettingsSection settings={settings} onSettingChange={updateSetting} app={app} />
           )}
           {currentCategory.id === 'reset' && (
             <ResetSettingsSection settings={settings} onSettingChange={updateSetting} app={app} />
@@ -418,7 +474,7 @@ export const SettingsUI: React.FC<SettingsUIProps> = ({
 
   // Get settings preview for a category
   const getSettingsPreview = (categoryId: string) => {
-    const previews: JSX.Element[] = [];
+    const previews: React.JSX.Element[] = [];
     
     switch (categoryId) {
       case 'currency':
@@ -517,7 +573,7 @@ export const SettingsUI: React.FC<SettingsUIProps> = ({
       {/* Header */}
       <div className={styles.header}>
         <div className={styles.headerLeft}>
-          <h1 className={styles.title}>🎮 Gamification Settings</h1>
+          <h1 className={styles.title}>Gamified Obsidian</h1>
           {viewMode === 'category' && currentGroup && (
             <div className={styles.breadcrumb}>
               <span onClick={goBackToGroups} className={styles.breadcrumbLink}>
@@ -566,7 +622,7 @@ export const SettingsUI: React.FC<SettingsUIProps> = ({
         <div className={styles.searchContainer}>
           <input
             type="text"
-            placeholder="🔍 Search settings groups..."
+            placeholder="🔍 Search settings, categories, or keys…"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className={styles.searchInput}
@@ -715,7 +771,11 @@ const CurrencySettingsSection: React.FC<{
 const QuestSettingsSection: React.FC<{
   settings: GamificationPluginSettings;
   onSettingChange: (path: string, value: unknown) => void;
-}> = ({ settings, onSettingChange }) => (
+}> = ({ settings, onSettingChange }) => {
+  const [rewardBuilderOpen, setRewardBuilderOpen] = useState(false);
+  const pool = settings.questCustomRewardPool ?? [];
+
+  return (
   <div className={styles.settingsSection}>
     <Card className={styles.settingsCard}>
       <h3>📋 Quest Board Settings</h3>
@@ -765,8 +825,163 @@ const QuestSettingsSection: React.FC<{
         </label>
       </div>
     </Card>
+    <Card className={styles.settingsCard}>
+      <h3>🎁 Quest loot</h3>
+      <p className={styles.helperText}>
+        Items in this pool can drop when a quest completes. Common items drop more often.
+        Harder, higher-XP quests make rarer drops more likely. Coffee breaks stay in the Shop.
+      </p>
+      <div className={styles.settingGroup}>
+        {pool.length === 0 && (
+          <div className={styles.helperText}>No custom loot yet. Add materials or items to the pool.</div>
+        )}
+        {pool.map((reward, index) => (
+          <div key={`${reward.name}-${index}`} className={styles.questLocationRow}>
+            <span>
+              {reward.icon} {reward.name}
+              {reward.quantity > 1 ? ` ×${reward.quantity}` : ''}
+              {' · '}
+              {reward.rarity}
+            </span>
+            <button
+              type="button"
+              className={styles.removeButton}
+              onClick={() => {
+                const next = pool.filter((_, i) => i !== index);
+                onSettingChange('questCustomRewardPool', next);
+              }}
+            >
+              Remove
+            </button>
+          </div>
+        ))}
+        <button
+          type="button"
+          className={styles.addButton}
+          onClick={() => setRewardBuilderOpen(true)}
+        >
+          Add loot item
+        </button>
+      </div>
+      {rewardBuilderOpen && (
+        <CustomRewardBuilder
+          isOpen={rewardBuilderOpen}
+          onClose={() => setRewardBuilderOpen(false)}
+          onAddReward={(reward) => {
+            if (isShopExclusiveCustomReward(reward)) return;
+            onSettingChange('questCustomRewardPool', [...pool, reward]);
+            setRewardBuilderOpen(false);
+          }}
+        />
+      )}
+    </Card>
   </div>
-);
+  );
+};
+
+const ActivityEnergyCard: React.FC<{
+  settings: GamificationPluginSettings;
+  onSettingChange: (path: string, value: unknown) => void;
+}> = ({ settings, onSettingChange }) => {
+  const rules = normalizeActivityEnergyRules(settings.activityEnergyRules);
+  const [draftName, setDraftName] = useState('');
+  const [draftEnergy, setDraftEnergy] = useState(10);
+  const [draftError, setDraftError] = useState('');
+
+  const commit = (next: ActivityEnergyRule[]) => {
+    onSettingChange('activityEnergyRules', next);
+  };
+
+  const addType = () => {
+    const id = storedActivityTypeId(draftName);
+    if (!draftName.trim() || id === 'generic') {
+      setDraftError('Give the type a name, like Create.');
+      return;
+    }
+    if (rules.some((rule) => rule.id === id)) {
+      setDraftError('That type is already in the list.');
+      return;
+    }
+    commit([
+      ...rules,
+      { id, label: draftName.trim(), energy: clampActivityEnergy(draftEnergy) },
+    ]);
+    setDraftName('');
+    setDraftEnergy(10);
+    setDraftError('');
+  };
+
+  return (
+    <Card className={styles.settingsCard}>
+      <h3>Activity energy</h3>
+      <p className={styles.helperText} style={{ marginTop: 0, marginBottom: '16px' }}>
+        Set how much energy each kind of quest takes. Positive spends energy. Negative gives it back. A quest uses its type unless you change the number on that quest. The bar moves when Energy is on your HUD (Simple or Full).
+      </p>
+      <div className={styles.settingGroup}>
+        {rules.map((rule) => (
+          <label key={rule.id}>
+            <input
+              type="text"
+              value={rule.label}
+              aria-label={`${rule.label} name`}
+              onChange={(e) => {
+                const label = e.target.value;
+                if (!label.trim()) return;
+                commit(rules.map((item) => (item.id === rule.id ? { ...item, label } : item)));
+              }}
+            />
+            <input
+              type="number"
+              min={-50}
+              max={50}
+              value={rule.energy}
+              aria-label={`${rule.label} energy`}
+              onChange={(e) => {
+                commit(
+                  rules.map((item) =>
+                    item.id === rule.id
+                      ? { ...item, energy: clampActivityEnergy(Number(e.target.value)) }
+                      : item
+                  )
+                );
+              }}
+            />
+            <button
+              type="button"
+              onClick={() => commit(rules.filter((item) => item.id !== rule.id))}
+            >
+              Remove
+            </button>
+          </label>
+        ))}
+        <label>
+          New type:
+          <input
+            type="text"
+            value={draftName}
+            placeholder="Create"
+            onChange={(e) => {
+              setDraftName(e.target.value);
+              setDraftError('');
+            }}
+          />
+          <input
+            type="number"
+            min={-50}
+            max={50}
+            value={draftEnergy}
+            aria-label="New type energy"
+            onChange={(e) => setDraftEnergy(clampActivityEnergy(Number(e.target.value)))}
+          />
+          <button type="button" onClick={addType}>
+            Add
+          </button>
+        </label>
+        {draftError ? <p className={styles.helperText}>{draftError}</p> : null}
+      </div>
+    </Card>
+  );
+};
 
 const EnergySettingsSection: React.FC<{
   settings: GamificationPluginSettings;
@@ -817,6 +1032,8 @@ const EnergySettingsSection: React.FC<{
         </label>
       </div>
     </Card>
+
+    <ActivityEnergyCard settings={settings} onSettingChange={onSettingChange} />
 
     <Card className={styles.settingsCard}>
       <h3>🔄 Daily reset</h3>
@@ -887,6 +1104,106 @@ const EnergySettingsSection: React.FC<{
         </label>
       </div>
     </Card>
+
+    <Card className={styles.settingsCard}>
+      <h3>🔧 Quest energy costs</h3>
+      <p className={styles.advancedNote}>
+        Fine-tune how much energy quests spend. Only change these if you want to rebalance difficulty.
+      </p>
+
+      <h4>Easy Quests</h4>
+      <div className={styles.settingGroup}>
+        <label>
+          Mental Cost:
+          <input
+            type="number"
+            min="0"
+            value={settings.questCostEasyMental ?? 5}
+            onChange={(e) => onSettingChange('questCostEasyMental', parseInt(e.target.value) || 0)}
+          />
+        </label>
+        <label>
+          Physical Cost:
+          <input
+            type="number"
+            min="0"
+            value={settings.questCostEasyPhysical ?? 2}
+            onChange={(e) => onSettingChange('questCostEasyPhysical', parseInt(e.target.value) || 0)}
+          />
+        </label>
+        <label>
+          Emotional Cost:
+          <input
+            type="number"
+            min="0"
+            value={settings.questCostEasyEmotional ?? 2}
+            onChange={(e) => onSettingChange('questCostEasyEmotional', parseInt(e.target.value) || 0)}
+          />
+        </label>
+      </div>
+
+      <h4>Medium Quests</h4>
+      <div className={styles.settingGroup}>
+        <label>
+          Mental Cost:
+          <input
+            type="number"
+            min="0"
+            value={settings.questCostMediumMental ?? 10}
+            onChange={(e) => onSettingChange('questCostMediumMental', parseInt(e.target.value) || 0)}
+          />
+        </label>
+        <label>
+          Physical Cost:
+          <input
+            type="number"
+            min="0"
+            value={settings.questCostMediumPhysical ?? 5}
+            onChange={(e) => onSettingChange('questCostMediumPhysical', parseInt(e.target.value) || 0)}
+          />
+        </label>
+        <label>
+          Emotional Cost:
+          <input
+            type="number"
+            min="0"
+            value={settings.questCostMediumEmotional ?? 5}
+            onChange={(e) => onSettingChange('questCostMediumEmotional', parseInt(e.target.value) || 0)}
+          />
+        </label>
+      </div>
+
+      <h4>Hard Quests</h4>
+      <div className={styles.settingGroup}>
+        <label>
+          Mental Cost:
+          <input
+            type="number"
+            min="0"
+            value={settings.questCostHardMental ?? 15}
+            onChange={(e) => onSettingChange('questCostHardMental', parseInt(e.target.value) || 0)}
+          />
+        </label>
+        <label>
+          Physical Cost:
+          <input
+            type="number"
+            min="0"
+            value={settings.questCostHardPhysical ?? 10}
+            onChange={(e) => onSettingChange('questCostHardPhysical', parseInt(e.target.value) || 0)}
+          />
+        </label>
+        <label>
+          Emotional Cost:
+          <input
+            type="number"
+            min="0"
+            value={settings.questCostHardEmotional ?? 8}
+            onChange={(e) => onSettingChange('questCostHardEmotional', parseInt(e.target.value) || 0)}
+          />
+        </label>
+      </div>
+    </Card>
   </div>
 );
 
@@ -899,6 +1216,7 @@ const ExperienceFeelSettingsSection: React.FC<{
       <h3>🔔 Notifications</h3>
       <p className={styles.helperText} style={{ marginTop: 0, marginBottom: '16px' }}>
         Control how chatty reward and status toasts are during play.
+        Normal stays until you click. Review the day’s messages in Player → Analytics → Notices.
       </p>
       <div className={styles.settingGroup}>
         <label>
@@ -909,7 +1227,7 @@ const ExperienceFeelSettingsSection: React.FC<{
               onPatchSettings({ notificationLevel: e.target.value as NotificationLevel })
             }
           >
-            <option value="normal">Normal — full messages</option>
+            <option value="normal">Normal — click to dismiss</option>
             <option value="quiet">Quiet — shorter toasts, dedupe repeats</option>
             <option value="minimal">Minimal — errors and important alerts only</option>
           </select>
@@ -982,9 +1300,10 @@ const ModulesSettingsSection: React.FC<{
                 onPatchSettings({
                   gameplayProfile: profile,
                   modules: bundle,
-                  notificationLevel: profile === 'lite' ? 'quiet' : 'normal',
+                  notificationLevel: profile === 'hardcore' ? 'normal' : 'quiet',
                   preferQuickComplete: profile !== 'hardcore',
                   energyHudMode: profile === 'hardcore' ? 'full' : 'simple',
+                  bookOfEasy: profile !== 'hardcore',
                 });
               }}
             >
@@ -1032,7 +1351,15 @@ const ModulesSettingsSection: React.FC<{
         <div className={styles.settingGroup}>
           <label className={styles.checkboxLabel}>
             <input type="checkbox" checked={modules.enableBossBattles === true} onChange={(e) => setModule('enableBossBattles', e.target.checked)} />
-            Boss battles (arena &amp; sidebar boss)
+            Boss battles (Projects in the quest hub)
+          </label>
+          <label className={styles.checkboxLabel}>
+            <input type="checkbox" checked={modules.enableJourneyDungeonHub === true} onChange={(e) => setModule('enableJourneyDungeonHub', e.target.checked)} />
+            Journey &amp; Dungeon (foes unlock the gate; Dungeon starts boss fights)
+          </label>
+          <label className={styles.checkboxLabel}>
+            <input type="checkbox" checked={modules.enableExtraQuestSurfaces === true} onChange={(e) => setModule('enableExtraQuestSurfaces', e.target.checked)} />
+            Extra quest views (calendar tab, Advanced, extra boss analytics)
           </label>
           <label className={styles.checkboxLabel}>
             <input type="checkbox" checked={modules.enableEnergySystem === true} onChange={(e) => setModule('enableEnergySystem', e.target.checked)} />
@@ -1041,6 +1368,23 @@ const ModulesSettingsSection: React.FC<{
           <label className={styles.checkboxLabel}>
             <input type="checkbox" checked={modules.enableProductivityGear === true} onChange={(e) => setModule('enableProductivityGear', e.target.checked)} />
             Productivity equipment (inventory modal)
+          </label>
+        </div>
+      </Card>
+
+      <Card className={styles.settingsCard}>
+        <h3>📖 Key items</h3>
+        <p className={styles.helperText} style={{ marginTop: 0, marginBottom: '16px' }}>
+          Quality-of-life relics. They change rules, not combat power. Balanced starts with the Book of Easy open.
+        </p>
+        <div className={styles.settingGroup}>
+          <label className={styles.checkboxLabel}>
+            <input
+              type="checkbox"
+              checked={settings.bookOfEasy !== false}
+              onChange={(e) => onPatchSettings({ bookOfEasy: e.target.checked })}
+            />
+            The Book of Easy — dream equipment never breaks
           </label>
         </div>
       </Card>
@@ -1086,7 +1430,7 @@ const PenaltySettingsSection: React.FC<{
             checked={modules.enableOverduePenalties === true}
             onChange={(e) => setModule('enableOverduePenalties', e.target.checked)}
           />
-          Overdue quest penalties (reduced rewards, debt, debuffs)
+          Overdue quest rewards drop 10% each day late (stops at 10% left)
         </label>
         <label className={styles.checkboxLabel}>
           <input
@@ -1201,7 +1545,7 @@ const ShopSettingsSection: React.FC<{
       <h3>🛒 Shop System Settings</h3>
       <p className={styles.helperText} style={{ marginTop: 0, marginBottom: '16px' }}>
         To add or edit shop items (written to Shop.md), go to{' '}
-        <strong>Rewards &amp; Progression → Game data hub</strong> in these settings.
+        <strong>Economy &amp; Content → Game data hub</strong> in these settings.
       </p>
       <div className={styles.settingGroup}>
         <label className={styles.checkboxLabel}>
@@ -1587,18 +1931,18 @@ const PerformanceSettingsSection: React.FC<{
     </Card>
 
     <Card className={styles.settingsCard}>
-      <h3>🧪 Beta & Feature Flags</h3>
+      <h3>Developer extras</h3>
       <div className={styles.settingGroup}>
         <label className={styles.checkboxLabel}>
           <input
             type="checkbox"
-            checked={settings.betaMode ?? true}
+            checked={settings.betaMode ?? false}
             onChange={(e) => onSettingChange('betaMode', e.target.checked)}
           />
-          Enable Beta Mode (debug buttons/logs)
+          Show debug controls (reload player, extra logs)
         </label>
         <p className={styles.helperText} style={{ marginTop: 0 }}>
-          Analytics tab visibility is controlled under Advanced → Feature Modules.
+          Analytics tab visibility is controlled under Gameplay → Feature Modules.
         </p>
         <label className={styles.checkboxLabel}>
           <input
@@ -1622,93 +1966,274 @@ const TutorialSettingsSection: React.FC<{
   </div>
 );
 
+const PathField: React.FC<{
+  label: string;
+  value: string;
+  placeholder: string;
+  kind: VaultPickKind;
+  app?: App;
+  onChange: (value: string) => void;
+}> = ({ label, value, placeholder, kind, app, onChange }) => (
+  <label>
+    {label}
+    <span className={styles.pathRow}>
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+      />
+      <button
+        type="button"
+        className={styles.pathPick}
+        aria-label={`Choose ${label}`}
+        title={kind === 'folder' ? 'Choose a folder' : kind === 'image' ? 'Choose an image' : 'Choose a note'}
+        disabled={!app}
+        onClick={() => {
+          if (!app) return;
+          new VaultPathPicker(app, kind, onChange).open();
+        }}
+      >
+        📁
+      </button>
+    </span>
+  </label>
+);
+
 const FileSettingsSection: React.FC<{
   settings: GamificationPluginSettings;
   onSettingChange: (path: string, value: unknown) => void;
-}> = ({ settings, onSettingChange }) => (
+  app?: App;
+}> = ({ settings, onSettingChange, app }) => (
   <div className={styles.settingsSection}>
     <Card className={styles.settingsCard}>
       <h3>📁 File Paths</h3>
       <div className={styles.settingGroup}>
+        <PathField
+          label="Shopkeeper Image Path:"
+          value={settings.shopkeeperImagePath}
+          placeholder="assets/shopkeeper.jpg"
+          kind="image"
+          app={app}
+          onChange={(value) => onSettingChange('shopkeeperImagePath', value)}
+        />
+        <PathField
+          label="Quest Giver Image Path:"
+          value={settings.questGiverImagePath}
+          placeholder="assets/quest-giver.jpg"
+          kind="image"
+          app={app}
+          onChange={(value) => onSettingChange('questGiverImagePath', value)}
+        />
+        <PathField
+          label="Avatar Folder:"
+          value={settings.avatarFolder}
+          placeholder="assets/"
+          kind="folder"
+          app={app}
+          onChange={(value) => onSettingChange('avatarFolder', value)}
+        />
+        <PathField
+          label="Inventory File Path:"
+          value={settings.inventoryFilePath}
+          placeholder="Inventory.md"
+          kind="markdown"
+          app={app}
+          onChange={(value) => onSettingChange('inventoryFilePath', value)}
+        />
+        <PathField
+          label="Master Class Folder:"
+          value={settings.masterClassFolder}
+          placeholder="SkillTree/Master-Class"
+          kind="folder"
+          app={app}
+          onChange={(value) => onSettingChange('masterClassFolder', value)}
+        />
+        <PathField
+          label="Class Folder:"
+          value={settings.classFolder}
+          placeholder="SkillTree/Master-Class/Class"
+          kind="folder"
+          app={app}
+          onChange={(value) => onSettingChange('classFolder', value)}
+        />
+        <PathField
+          label="Skill Folder:"
+          value={settings.skillFolder}
+          placeholder="SkillTree/Master-Class/Class/Skills"
+          kind="folder"
+          app={app}
+          onChange={(value) => onSettingChange('skillFolder', value)}
+        />
+        <PathField
+          label="Stat Folder:"
+          value={settings.statFolder}
+          placeholder="SkillTree/Master-Class/Stats"
+          kind="folder"
+          app={app}
+          onChange={(value) => onSettingChange('statFolder', value)}
+        />
+        <PathField
+          label="Default Quest File:"
+          value={settings.defaultQuestFilePath || 'GamifiedTasks.md'}
+          placeholder="GamifiedTasks.md"
+          kind="markdown"
+          app={app}
+          onChange={(value) => onSettingChange('defaultQuestFilePath', value || 'GamifiedTasks.md')}
+        />
         <label>
-          Shopkeeper Image Path:
+          Quest storage mode:
+          <select
+            value={settings.questStorageMode || 'list'}
+            onChange={(e) =>
+              onSettingChange('questStorageMode', e.target.value as 'list' | 'per-note')
+            }
+          >
+            <option value="list">List file (append to markdown)</option>
+            <option value="per-note">One task per note (TaskNotes / TaskForge)</option>
+          </select>
+        </label>
+        {(settings.questStorageMode || 'list') === 'per-note' && (
+          <PathField
+            label="Task notes folder:"
+            value={settings.taskNoteFolder || 'Gamified/Tasks'}
+            placeholder="Gamified/Tasks"
+            kind="folder"
+            app={app}
+            onChange={(value) => onSettingChange('taskNoteFolder', value || 'Gamified/Tasks')}
+          />
+        )}
+        <PathField
+          label="Projects / contracts file:"
+          value={settings.projectsFilePath || 'GamifiedProjects.md'}
+          placeholder="GamifiedProjects.md"
+          kind="markdown"
+          app={app}
+          onChange={(value) => onSettingChange('projectsFilePath', value || 'GamifiedProjects.md')}
+        />
+        <PathField
+          label="Brain dump file:"
+          value={settings.captureFilePath || 'Capture.md'}
+          placeholder="Capture.md"
+          kind="markdown"
+          app={app}
+          onChange={(value) => onSettingChange('captureFilePath', value || 'Capture.md')}
+        />
+        <label>
+          Capture tag presets (comma-separated):
           <input
             type="text"
-            value={settings.shopkeeperImagePath}
-            onChange={(e) => onSettingChange('shopkeeperImagePath', e.target.value)}
-            placeholder="assets/shopkeeper.jpg"
+            value={(settings.captureTags || ['idea', 'work', 'plugin', 'personal', 'read-later']).join(', ')}
+            onChange={(e) => {
+              const tags = e.target.value
+                .split(',')
+                .map((t) => t.trim().replace(/^#/, ''))
+                .filter(Boolean);
+              onSettingChange('captureTags', tags.length ? tags : ['idea', 'work', 'plugin', 'personal', 'read-later']);
+            }}
+            placeholder="idea, work, plugin, personal, read-later"
           />
         </label>
         <label>
-          Quest Giver Image Path:
+          <input
+            type="checkbox"
+            checked={settings.captureRememberLastTag !== false}
+            onChange={(e) => onSettingChange('captureRememberLastTag', e.target.checked)}
+          />
+          Remember last capture tag between sessions
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={settings.captureIncludeDescription !== false}
+            onChange={(e) => onSettingChange('captureIncludeDescription', e.target.checked)}
+          />
+          Show optional description field in brain dump
+        </label>
+        <label>
+          Capture description format:
+          <select
+            value={settings.captureDescriptionFormat || 'thought'}
+            onChange={(e) =>
+              onSettingChange(
+                'captureDescriptionFormat',
+                e.target.value as 'thought' | 'dataview' | 'both'
+              )
+            }
+          >
+            <option value="thought">💭 thought line (plugin default)</option>
+            <option value="dataview">[description:: …] inline (Task Genius)</option>
+            <option value="both">Both formats</option>
+          </select>
+        </label>
+      </div>
+      <h4>External task sync</h4>
+      <p className={styles.helperText}>
+        For TaskNotes and TaskForge, use <strong>one task per note</strong> and point both plugins
+        at the same folder. New quests write TaskNotes frontmatter (<code>status</code>,{' '}
+        <code>tags: [task]</code>, <code>due</code>, <code>projects</code>) plus gamified fields
+        (<code>xp</code>, <code>cp</code>, <code>#gamified-task</code>). Completing in either app
+        updates the checkbox and <code>status: done</code>, and XP is awarded once.
+      </p>
+      <p className={styles.helperText}>
+        Setup: (1) TaskNotes → set Tasks folder. (2) Here, storage mode = one task per note, Task
+        notes folder and TaskNotes folder = that same path. (3) Keep both compatibility toggles on.
+        (4) In TaskNotes, add custom properties <code>xp</code> / <code>cp</code> if you want them
+        in the TaskNotes UI. TaskForge follows TaskNotes notes after vault sync. Existing
+        TaskNotes files in that folder show on the quest board (default 50 XP unless{' '}
+        <code>xp</code> is in YAML). List-file quests in GamifiedTasks.md stay as they are.
+      </p>
+      <div className={styles.settingGroup}>
+        <label>
+          <input
+            type="checkbox"
+            checked={settings.externalCompletionSync !== false}
+            onChange={(e) => onSettingChange('externalCompletionSync', e.target.checked)}
+          />
+          Sync completions from vault file changes
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={settings.externalCompletionSummary !== false}
+            onChange={(e) => onSettingChange('externalCompletionSummary', e.target.checked)}
+          />
+          Show summary modal when completions are detected
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={settings.taskNotesCompatibility !== false}
+            onChange={(e) => onSettingChange('taskNotesCompatibility', e.target.checked)}
+          />
+          TaskNotes compatibility (read/write <code>status</code>, load folder as quests)
+        </label>
+        <label>
+          TaskNotes folder (shared with TaskNotes / TaskForge):
           <input
             type="text"
-            value={settings.questGiverImagePath}
-            onChange={(e) => onSettingChange('questGiverImagePath', e.target.value)}
-            placeholder="assets/quest-giver.jpg"
+            value={settings.taskNotesFolder || ''}
+            onChange={(e) => onSettingChange('taskNotesFolder', e.target.value)}
+            placeholder={
+              (settings.questStorageMode || 'list') === 'per-note'
+                ? settings.taskNoteFolder || 'Gamified/Tasks'
+                : 'e.g. TaskNotes'
+            }
           />
         </label>
         <label>
-          Avatar Folder:
+          Extra watch paths (comma-separated files or folders):
           <input
             type="text"
-            value={settings.avatarFolder}
-            onChange={(e) => onSettingChange('avatarFolder', e.target.value)}
-            placeholder="assets/"
-          />
-        </label>
-        <label>
-          Inventory File Path:
-          <input
-            type="text"
-            value={settings.inventoryFilePath}
-            onChange={(e) => onSettingChange('inventoryFilePath', e.target.value)}
-            placeholder="Inventory.md"
-          />
-        </label>
-        <label>
-          Master Class Folder:
-          <input
-            type="text"
-            value={settings.masterClassFolder}
-            onChange={(e) => onSettingChange('masterClassFolder', e.target.value)}
-            placeholder="SkillTree/Master-Class"
-          />
-        </label>
-        <label>
-          Class Folder:
-          <input
-            type="text"
-            value={settings.classFolder}
-            onChange={(e) => onSettingChange('classFolder', e.target.value)}
-            placeholder="SkillTree/Master-Class/Class"
-          />
-        </label>
-        <label>
-          Skill Folder:
-          <input
-            type="text"
-            value={settings.skillFolder}
-            onChange={(e) => onSettingChange('skillFolder', e.target.value)}
-            placeholder="SkillTree/Master-Class/Class/Skills"
-          />
-        </label>
-        <label>
-          Stat Folder:
-          <input
-            type="text"
-            value={settings.statFolder}
-            onChange={(e) => onSettingChange('statFolder', e.target.value)}
-            placeholder="SkillTree/Master-Class/Stats"
-          />
-        </label>
-        <label>
-          Default Quest File:
-          <input
-            type="text"
-            value={settings.defaultQuestFilePath || 'GamifiedTasks.md'}
-            onChange={(e) => onSettingChange('defaultQuestFilePath', e.target.value || 'GamifiedTasks.md')}
-            placeholder="GamifiedTasks.md"
+            value={(settings.externalWatchPaths || []).join(', ')}
+            onChange={(e) => {
+              const paths = e.target.value
+                .split(',')
+                .map((p) => p.trim())
+                .filter(Boolean);
+              onSettingChange('externalWatchPaths', paths);
+            }}
+            placeholder="TaskForge/Tasks.md, Notes/Tasks"
           />
         </label>
         <label>
@@ -1776,6 +2301,65 @@ const FileSettingsSection: React.FC<{
             onChange={(e) => onSettingChange('captureRememberLastTag', e.target.checked)}
           />
           Remember last capture tag between sessions
+        </label>
+      </div>
+      <h4>Focus check-ins</h4>
+      <p className={styles.helperText}>
+        While Obsidian is open, a <strong>Check-in</strong> chip appears after your chosen interval.
+        A notice also asks whether to check in now, snooze, or skip.
+      </p>
+      <div className={styles.settingGroup}>
+        <label>
+          <input
+            type="checkbox"
+            checked={settings.enableFocusCheckIns !== false}
+            onChange={(e) => onSettingChange('enableFocusCheckIns', e.target.checked)}
+          />
+          Enable focus check-ins
+        </label>
+        <label>
+          Check-in interval:
+          <select
+            value={String(settings.focusCheckInIntervalMinutes ?? 120)}
+            onChange={(e) =>
+              onSettingChange('focusCheckInIntervalMinutes', parseInt(e.target.value, 10))
+            }
+          >
+            <option value="60">Every 1 hour</option>
+            <option value="90">Every 1.5 hours</option>
+            <option value="120">Every 2 hours</option>
+            <option value="180">Every 3 hours</option>
+            <option value="240">Every 4 hours</option>
+          </select>
+        </label>
+        <label>
+          Check-in log file:
+          <input
+            type="text"
+            value={settings.focusCheckInLogPath || 'CheckIns.md'}
+            onChange={(e) => onSettingChange('focusCheckInLogPath', e.target.value || 'CheckIns.md')}
+            placeholder="CheckIns.md"
+          />
+        </label>
+        <label>
+          Snooze duration (minutes):
+          <input
+            type="number"
+            min={5}
+            max={120}
+            value={settings.focusCheckInSnoozeMinutes ?? 30}
+            onChange={(e) =>
+              onSettingChange('focusCheckInSnoozeMinutes', Math.max(5, parseInt(e.target.value, 10) || 30))
+            }
+          />
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={settings.enableFocusCheckInNotices !== false}
+            onChange={(e) => onSettingChange('enableFocusCheckInNotices', e.target.checked)}
+          />
+          Show a notice when a check-in is due
         </label>
       </div>
       <p className={styles.helperText}>
@@ -1850,115 +2434,6 @@ const FileSettingsSection: React.FC<{
         >
           ➕ Add Quest Location
         </button>
-      </div>
-    </Card>
-  </div>
-);
-
-const AdvancedSettingsSection: React.FC<{
-  settings: GamificationPluginSettings;
-  onSettingChange: (path: string, value: unknown) => void;
-}> = ({ settings, onSettingChange }) => (
-  <div className={styles.settingsSection}>
-    <Card className={styles.settingsCard}>
-      <h3>🔧 Advanced Configuration</h3>
-      <p className={styles.advancedNote}>
-        These are advanced settings for fine-tuning the energy and focus systems. 
-        Only modify these if you understand their impact on gameplay balance.
-      </p>
-      
-      <h4>Quest Energy Costs</h4>
-      <div className={styles.settingGroup}>
-        <h5>Easy Quests</h5>
-        <label>
-          Mental Cost:
-          <input
-            type="number"
-            min="0"
-            value={settings.questCostEasyMental ?? 5}
-            onChange={(e) => onSettingChange('questCostEasyMental', parseInt(e.target.value) || 0)}
-          />
-        </label>
-        <label>
-          Physical Cost:
-          <input
-            type="number"
-            min="0"
-            value={settings.questCostEasyPhysical ?? 2}
-            onChange={(e) => onSettingChange('questCostEasyPhysical', parseInt(e.target.value) || 0)}
-          />
-        </label>
-        <label>
-          Emotional Cost:
-          <input
-            type="number"
-            min="0"
-            value={settings.questCostEasyEmotional ?? 2}
-            onChange={(e) => onSettingChange('questCostEasyEmotional', parseInt(e.target.value) || 0)}
-          />
-        </label>
-      </div>
-
-      <div className={styles.settingGroup}>
-        <h5>Medium Quests</h5>
-        <label>
-          Mental Cost:
-          <input
-            type="number"
-            min="0"
-            value={settings.questCostMediumMental ?? 10}
-            onChange={(e) => onSettingChange('questCostMediumMental', parseInt(e.target.value) || 0)}
-          />
-        </label>
-        <label>
-          Physical Cost:
-          <input
-            type="number"
-            min="0"
-            value={settings.questCostMediumPhysical ?? 5}
-            onChange={(e) => onSettingChange('questCostMediumPhysical', parseInt(e.target.value) || 0)}
-          />
-        </label>
-        <label>
-          Emotional Cost:
-          <input
-            type="number"
-            min="0"
-            value={settings.questCostMediumEmotional ?? 5}
-            onChange={(e) => onSettingChange('questCostMediumEmotional', parseInt(e.target.value) || 0)}
-          />
-        </label>
-      </div>
-
-      <div className={styles.settingGroup}>
-        <h5>Hard Quests</h5>
-        <label>
-          Mental Cost:
-          <input
-            type="number"
-            min="0"
-            value={settings.questCostHardMental ?? 15}
-            onChange={(e) => onSettingChange('questCostHardMental', parseInt(e.target.value) || 0)}
-          />
-        </label>
-        <label>
-          Physical Cost:
-          <input
-            type="number"
-            min="0"
-            value={settings.questCostHardPhysical ?? 10}
-            onChange={(e) => onSettingChange('questCostHardPhysical', parseInt(e.target.value) || 0)}
-          />
-        </label>
-        <label>
-          Emotional Cost:
-          <input
-            type="number"
-            min="0"
-            value={settings.questCostHardEmotional ?? 8}
-            onChange={(e) => onSettingChange('questCostHardEmotional', parseInt(e.target.value) || 0)}
-          />
-        </label>
       </div>
     </Card>
   </div>
@@ -2223,11 +2698,7 @@ const ResetSettingsSection: React.FC<{
     
     try {
       // Reset PlayerData.md to default values
-      const resetData = {
-        ...DEFAULT_PLAYER,
-        // Preserve the current timestamp for lastDailyReset
-        lastDailyReset: new Date().toISOString()
-      };
+      const resetData = createStarterPlayerData();
       
       await updatePlayerData(app.vault, resetData);
       console.log('✅ Player progress reset successfully');

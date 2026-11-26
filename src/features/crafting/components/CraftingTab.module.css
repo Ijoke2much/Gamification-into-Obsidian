@@ -1,1450 +1,989 @@
-.craftingTab {
-    padding: 12px;
-    max-width: 640px;
-    margin: 0 auto;
-    color: #ffffff;
-    overflow-y: auto;
-    height: 100%;
+/* Workshop — materials strip → filters → craftable-first list → detail */
+
+.workshop {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding: 12px 12px calc(20px + env(safe-area-inset-bottom, 0px));
+	max-width: 640px;
+	margin: 0 auto;
+	height: 100%;
+	min-height: 0;
+	box-sizing: border-box;
+	color: var(--go-text, #e8f4ff);
+	background: var(--go-bg, rgba(6, 14, 28, 0.92));
+	overflow: hidden;
 }
 
-.craftingContainer {
-    padding: 12px;
-    max-width: 640px;
-    margin: 0 auto;
-    color: #ffffff;
-    box-sizing: border-box;
+.pixelCraftingShell {
+	isolation: isolate;
+	border: 1px solid var(--go-border, rgba(34, 200, 255, 0.35));
+	box-shadow: inset 0 0 0 1px rgba(34, 200, 255, 0.08);
 }
 
-.craftingHeader {
-    text-align: center;
-    margin: 0 0 12px 0;
-    font-size: 18px;
-    font-weight: 700;
-    background: linear-gradient(135deg, #6495ed, #a855f7);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-}
-
+/* Header */
 .header {
-    text-align: center;
-    margin-bottom: 20px;
-    padding: 15px;
-    background: linear-gradient(135deg, rgba(100, 149, 237, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
-    border: 1px solid rgba(100, 149, 237, 0.2);
-    border-radius: 8px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	flex-shrink: 0;
 }
 
-.header h2 {
-    margin: 0 0 8px 0;
-    font-size: 20px;
-    font-weight: 700;
-    background: linear-gradient(135deg, #6495ed, #a855f7);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+.headerTitle {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
 }
 
-.header p {
-    margin: 0;
-    font-size: 13px;
-    color: rgba(255, 255, 255, 0.8);
-    line-height: 1.4;
+.systemLabel {
+	font-size: 9px;
+	letter-spacing: 0.18em;
+	text-transform: uppercase;
+	color: var(--go-accent, #22c8ff);
+	opacity: 0.85;
 }
 
-/* Tab Navigation */
-.tabNavigation {
-    display: flex;
-    gap: 4px;
-    margin-bottom: 20px;
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 8px;
-    padding: 4px;
+.workshopTitle {
+	margin: 0;
+	font-size: 15px;
+	font-weight: 700;
+	letter-spacing: 0.16em;
+	text-transform: uppercase;
+	color: var(--go-accent, #22c8ff);
 }
 
-.tabButton {
-    flex: 1;
-    padding: 8px 6px;
-    background: transparent;
-    border: none;
-    border-radius: 6px;
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 12px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    min-height: 44px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
+.headerChip {
+	font-size: 10px;
+	letter-spacing: 0.04em;
+	padding: 4px 8px;
+	border: 1px solid var(--go-border, rgba(34, 200, 255, 0.4));
+	border-radius: var(--go-radius, 2px);
+	color: var(--go-muted, rgba(200, 230, 255, 0.7));
+	background: rgba(18, 55, 96, 0.35);
+	white-space: nowrap;
 }
 
-.tabButtonContent {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 2px;
-    width: 100%;
+/* Materials strip */
+.materialsStrip {
+	display: flex;
+	gap: 8px;
+	overflow-x: auto;
+	padding: 8px 2px 10px;
+	flex-shrink: 0;
+	scrollbar-width: thin;
+	border-bottom: 1px solid rgba(34, 200, 255, 0.15);
 }
 
-.tabIcon {
-    font-size: 16px;
-    line-height: 1;
+.materialChip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	flex-shrink: 0;
+	padding: 6px 10px;
+	border: 1px solid var(--go-border, rgba(34, 200, 255, 0.4));
+	border-radius: var(--go-radius, 2px);
+	background: rgba(12, 32, 58, 0.85);
+	font-size: 12px;
 }
 
-.tabLabel {
-    font-size: 10px;
-    font-weight: 500;
-    line-height: 1;
-    white-space: nowrap;
+.materialChipIcon {
+	font-size: 14px;
+	line-height: 1;
 }
 
-.tabButton:hover {
-    background: rgba(255, 255, 255, 0.1);
-    color: rgba(255, 255, 255, 0.9);
+.materialChipName {
+	color: var(--go-text, #e8f4ff);
+	max-width: 88px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
 }
 
-.activeTab {
-    background: rgba(100, 149, 237, 0.3);
-    color: #ffffff;
-    font-weight: 600;
+.materialChipQty {
+	color: var(--go-accent, #22c8ff);
+	font-weight: 700;
 }
 
-.tabContent {
-    animation: fadeIn 0.3s ease;
+.emptyStrip {
+	margin: 0;
+	font-size: 12px;
+	color: var(--go-muted, rgba(200, 230, 255, 0.65));
+	line-height: 1.4;
 }
 
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translateY(10px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+/* Controls */
+.controls {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	flex-shrink: 0;
 }
 
-/* Section Styling */
-.section {
-    margin-bottom: 24px;
-    background: rgba(0, 0, 0, 0.2);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    padding: 16px;
+.filters {
+	display: flex;
+	gap: 2px;
+	overflow-x: auto;
+	scrollbar-width: none;
+	border-bottom: 1px solid rgba(34, 200, 255, 0.22);
+	padding-bottom: 0;
 }
 
-.section h3 {
-    margin: 0 0 16px 0;
-    font-size: 16px;
-    font-weight: 600;
-    color: #ffffff;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+.filters::-webkit-scrollbar {
+	display: none;
 }
 
-.sectionHeader {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 16px;
+/* Text filter tabs — underline active (vision mockup) */
+.filterBtn {
+	flex-shrink: 0;
+	padding: 8px 12px 10px;
+	border: none;
+	border-bottom: 3px solid transparent;
+	border-radius: 0;
+	background: transparent;
+	color: rgba(160, 185, 210, 0.72);
+	font-size: 13px;
+	font-weight: 500;
+	letter-spacing: 0.01em;
+	cursor: pointer;
+	min-height: 36px;
+	box-shadow: none;
+	margin-bottom: -1px;
+	transition: color 0.15s ease, border-color 0.15s ease;
 }
 
-.sectionHeader h3 {
-    margin: 0;
+.filterActive {
+	color: var(--go-accent, #22c8ff);
+	border-bottom-color: var(--go-accent, #22c8ff);
+	background: transparent;
+	font-weight: 700;
+	box-shadow: none;
+	text-shadow: 0 0 10px rgba(34, 200, 255, 0.4);
 }
 
-.toggleButton {
-    padding: 6px 12px;
-    background: rgba(100, 149, 237, 0.3);
-    border: 1px solid rgba(100, 149, 237, 0.5);
-    border-radius: 6px;
-    color: #ffffff;
-    font-size: 11px;
-    cursor: pointer;
-    transition: all 0.2s ease;
+/* Recipes | Experiment — text + pipe, cyan active, no underline */
+.modeToggle {
+	display: inline-flex;
+	align-items: center;
+	align-self: center;
+	justify-content: center;
+	gap: 4px;
+	border: none;
+	border-radius: 0;
+	overflow: visible;
+	background: transparent;
+	padding: 4px 4px 2px;
+	width: 100%;
 }
 
-.toggleButton:hover {
-    background: rgba(100, 149, 237, 0.5);
+.modeBtn {
+	padding: 4px 6px;
+	border: none;
+	border-bottom: none;
+	border-radius: 0;
+	background: transparent;
+	color: rgba(160, 185, 210, 0.65);
+	font-size: 13px;
+	font-weight: 500;
+	letter-spacing: 0.01em;
+	text-transform: none;
+	cursor: pointer;
+	min-height: 28px;
+	box-shadow: none;
 }
 
-/* Materials Grid */
-.materialsGrid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
+.modeSep {
+	color: rgba(100, 130, 160, 0.55);
+	font-size: 13px;
+	padding: 0 2px;
+	user-select: none;
+	line-height: 1;
 }
 
-.materialCard {
-    background: rgba(255, 255, 255, 0.05);
-    border: 2px solid;
-    border-radius: 6px;
-    padding: 8px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: all 0.2s ease;
+.modeActive {
+	background: transparent;
+	color: var(--go-accent, #22c8ff);
+	font-weight: 700;
+	border-bottom: none;
+	text-shadow: 0 0 8px rgba(34, 200, 255, 0.35);
 }
 
-.materialCard:hover {
-    background: rgba(255, 255, 255, 0.1);
-    transform: translateY(-2px);
+/* Recipe list */
+.recipeList,
+.templateList {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	overflow-y: auto;
+	flex: 1;
+	min-height: 0;
 }
 
-.materialIcon {
-    font-size: 20px;
-    width: 24px;
-    text-align: center;
+.recipeRow,
+.templateRow {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	width: 100%;
+	padding: 14px 12px;
+	border: 1px solid rgba(34, 200, 255, 0.22);
+	border-radius: var(--go-radius, 2px);
+	background: rgba(10, 28, 52, 0.75);
+	color: inherit;
+	text-align: left;
+	cursor: pointer;
+	min-height: 88px;
+	height: auto !important;
+	max-height: none;
+	overflow: visible;
+	line-height: normal;
+	white-space: normal;
+	box-sizing: border-box;
 }
 
-.materialInfo {
-    flex: 1;
-    min-width: 0;
+.recipeRow:hover,
+.recipeRowSelected {
+	border-color: var(--go-accent, #22c8ff);
+	background: rgba(18, 55, 96, 0.55);
 }
 
-.materialName {
-    font-size: 12px;
-    font-weight: 600;
-    color: #ffffff;
-    margin-bottom: 2px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+.recipeRowReady {
+	opacity: 1;
 }
 
-.materialQuality {
-    font-size: 10px;
-    color: #10b981;
-    margin-bottom: 2px;
-    text-transform: capitalize;
-}
-
-.materialRarity {
-    font-size: 10px;
-    color: #a855f7;
-    margin-bottom: 2px;
-    text-transform: capitalize;
-}
-
-.materialValue {
-    font-size: 10px;
-    color: #fbbf24;
-    font-weight: 600;
-}
-
-/* Recipes Grid */
-.recipesGrid {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.recipeCard {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    padding: 12px;
-    transition: all 0.2s ease;
-}
-
-.recipeCard:hover {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(100, 149, 237, 0.3);
-}
-
-.cannotCraft {
-    opacity: 0.6;
-    border-color: rgba(239, 68, 68, 0.3);
-}
-
-.recipeHeader {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 8px;
+.recipeRowLocked {
+	opacity: 0.72;
 }
 
 .recipeIcon {
-    font-size: 32px;
-    width: 40px;
-    text-align: center;
+	font-size: 28px;
+	line-height: 1;
+	flex-shrink: 0;
+	width: 36px;
+	text-align: center;
+	margin-top: 2px;
 }
 
-.recipeInfo {
-    flex: 1;
+.recipeMain {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	overflow: visible;
+}
+
+.recipeNameRow {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	min-width: 0;
 }
 
 .recipeName {
-    font-size: 14px;
-    font-weight: 600;
-    color: #ffffff;
-    margin-bottom: 2px;
+	font-size: 15px;
+	font-weight: 700;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
-.recipeCategory {
-    font-size: 11px;
-    color: #a855f7;
-    text-transform: capitalize;
-    margin-bottom: 2px;
+.rarityBadge {
+	flex-shrink: 0;
+	padding: 2px 7px;
+	border: 1px solid rgba(34, 200, 255, 0.35);
+	border-radius: 999px;
+	font-size: 10px;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--go-muted, rgba(200, 230, 255, 0.75));
+	background: rgba(8, 24, 46, 0.7);
 }
 
-.recipeDifficulty {
-    font-size: 11px;
-    font-weight: 600;
-    text-transform: capitalize;
-    margin-bottom: 2px;
+.rarityBadge[data-rarity='uncommon'] {
+	color: #86efac;
+	border-color: rgba(134, 239, 172, 0.45);
 }
 
-.recipeSkill {
-    font-size: 10px;
-    color: #fbbf24;
+.rarityBadge[data-rarity='rare'] {
+	color: #93c5fd;
+	border-color: rgba(147, 197, 253, 0.45);
 }
 
-.recipeDescription {
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.8);
-    margin-bottom: 12px;
-    line-height: 1.4;
+.rarityBadge[data-rarity='epic'] {
+	color: #d8b4fe;
+	border-color: rgba(216, 180, 254, 0.45);
 }
 
-.recipeMaterials {
-    margin-bottom: 12px;
+.rarityBadge[data-rarity='legendary'] {
+	color: #fdba74;
+	border-color: rgba(253, 186, 116, 0.5);
 }
 
-.materialsLabel {
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.7);
-    margin-bottom: 6px;
-    font-weight: 600;
+.customBadge {
+	font-size: 9px;
+	letter-spacing: 0.06em;
+	padding: 2px 5px;
+	border: 1px solid rgba(34, 200, 255, 0.5);
+	color: var(--go-accent, #22c8ff);
+	border-radius: 2px;
+	flex-shrink: 0;
 }
 
-.materialsList {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
+.recipeMats {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	overflow: visible;
 }
 
-.materialRequirement {
-    font-size: 10px;
-    padding: 4px 6px;
-    border-radius: 4px;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+.matChip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 10px;
+	font-size: 13px;
+	border-radius: 6px;
+	border: 1px solid rgba(34, 200, 255, 0.28);
+	background: rgba(8, 18, 32, 0.85);
+	line-height: 1.25;
+	min-height: 30px;
+	box-sizing: border-box;
+	flex-shrink: 0;
 }
 
-.hasMaterial {
-    background: rgba(34, 197, 94, 0.2);
-    border-color: rgba(34, 197, 94, 0.4);
-    color: #22c55e;
+.matChipIcon {
+	font-size: 16px;
+	line-height: 1;
 }
 
-.missingMaterial {
-    background: rgba(239, 68, 68, 0.2);
-    border-color: rgba(239, 68, 68, 0.4);
-    color: #ef4444;
+.matChipName {
+	color: rgba(210, 230, 255, 0.85);
+	text-transform: lowercase;
+	max-width: 86px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-size: 13px;
 }
 
-.recipeRewards {
-    display: flex;
-    gap: 12px;
-    margin-bottom: 12px;
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.7);
+.matChipFrac {
+	font-weight: 700;
+	font-size: 13px;
+	font-variant-numeric: tabular-nums;
 }
 
-.craftButton {
-    width: 100%;
-    padding: 12px 16px;
-    background: linear-gradient(135deg, #10b981, #059669);
-    border: none;
-    border-radius: 8px;
-    color: #ffffff;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    min-height: 44px;
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
+.matOk {
+	color: #7dffb3;
+	border-color: rgba(125, 255, 179, 0.4);
+	background: rgba(20, 70, 50, 0.28);
 }
 
-.craftButton:hover:not(:disabled) {
-    background: linear-gradient(135deg, #059669, #047857);
-    transform: translateY(-1px);
+.matOk .matChipFrac {
+	color: #7dffb3;
 }
 
-.disabledButton {
-    background: rgba(107, 114, 128, 0.5);
-    cursor: not-allowed;
-}
-
-.disabledButton:hover {
-    transform: none;
-}
-
-/* Active Sessions */
-.sessionsList {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.sessionCard {
-    background: rgba(100, 149, 237, 0.1);
-    border: 1px solid rgba(100, 149, 237, 0.3);
-    border-radius: 6px;
-    padding: 10px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.sessionIcon {
-    font-size: 24px;
-    width: 30px;
-    text-align: center;
-}
-
-.sessionInfo {
-    flex: 1;
-}
-
-.sessionName {
-    font-size: 13px;
-    font-weight: 600;
-    color: #ffffff;
-    margin-bottom: 2px;
-}
-
-.sessionTime {
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.7);
-}
-
-/* Gathering Locations */
-.locationsGrid {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.locationCard {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    padding: 12px;
-}
-
-.locationHeader {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 8px;
-}
-
-.locationIcon {
-    font-size: 28px;
-    width: 35px;
-    text-align: center;
-}
-
-.locationInfo {
-    flex: 1;
-}
-
-.locationName {
-    font-size: 14px;
-    font-weight: 600;
-    color: #ffffff;
-    margin-bottom: 2px;
-}
-
-.locationType {
-    font-size: 11px;
-    color: #a855f7;
-    text-transform: capitalize;
-}
-
-.locationDescription {
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.8);
-    margin-bottom: 12px;
-    line-height: 1.4;
-}
-
-.locationMaterials {
-    margin-bottom: 12px;
-}
-
-.locationMaterial {
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.7);
-    margin-bottom: 4px;
-}
-
-.gatherButton {
-    width: 100%;
-    padding: 8px 12px;
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-    border: none;
-    border-radius: 6px;
-    color: #ffffff;
-    font-size: 12px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.gatherButton:hover:not(:disabled) {
-    background: linear-gradient(135deg, #d97706, #b45309);
-    transform: translateY(-1px);
-}
-
-/* Skills */
-.skillCard {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    padding: 16px;
-}
-
-.skillHeader {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 16px;
-}
-
-.skillIcon {
-    font-size: 32px;
-    width: 40px;
-    text-align: center;
-}
-
-.skillInfo {
-    flex: 1;
-}
-
-.skillLevel {
-    font-size: 18px;
-    font-weight: 700;
-    color: #ffffff;
-    margin-bottom: 4px;
-}
-
-.skillMastery {
-    font-size: 14px;
-    color: #a855f7;
-    font-weight: 600;
-}
-
-.skillProgress {
-    margin-bottom: 16px;
-}
-
-.progressBar {
-    width: 100%;
-    height: 8px;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 4px;
-    overflow: hidden;
-    margin-bottom: 8px;
-}
-
-.progressFill {
-    height: 100%;
-    background: linear-gradient(90deg, #10b981, #059669);
-    transition: width 0.3s ease;
-}
-
-.skillSpecialties {
-    margin-bottom: 16px;
-}
-
-.specialtiesLabel {
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.7);
-    margin-bottom: 8px;
-    font-weight: 600;
-}
-
-.specialtiesList {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-}
-
-.specialty {
-    font-size: 11px;
-    padding: 4px 8px;
-    background: rgba(100, 149, 237, 0.2);
-    border: 1px solid rgba(100, 149, 237, 0.3);
-    border-radius: 4px;
-    color: #6495ed;
-}
-
-.noSpecialties {
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.5);
-    font-style: italic;
-}
-
-/* Crafting Stations */
-.stationsGrid {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.stationCard {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    padding: 12px;
-}
-
-.stationHeader {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 8px;
-}
-
-.stationIcon {
-    font-size: 28px;
-    width: 35px;
-    text-align: center;
-}
-
-.stationInfo {
-    flex: 1;
-}
-
-.stationName {
-    font-size: 14px;
-    font-weight: 600;
-    color: #ffffff;
-    margin-bottom: 2px;
-}
-
-.stationType {
-    font-size: 11px;
-    color: #a855f7;
-    text-transform: capitalize;
-    margin-bottom: 2px;
-}
-
-.stationLevel {
-    font-size: 11px;
-    color: #fbbf24;
-}
-
-.stationDescription {
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.8);
-    margin-bottom: 12px;
-    line-height: 1.4;
-}
-
-.stationBonuses {
-    margin-bottom: 12px;
-}
-
-.bonusesLabel {
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.7);
-    margin-bottom: 6px;
-    font-weight: 600;
-}
-
-.bonusesList {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 4px;
-    font-size: 10px;
-    color: rgba(255, 255, 255, 0.8);
-}
-
-.stationStatus {
-    text-align: center;
-}
-
-.unlocked {
-    color: #10b981;
-    font-weight: 600;
-    font-size: 12px;
-}
-
-.locked {
-    color: #ef4444;
-    font-weight: 600;
-    font-size: 12px;
-}
-
-/* Recipe Discovery */
-.fragmentsGrid {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.fragmentCard {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    padding: 12px;
-}
-
-.fragmentHeader {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 8px;
-}
-
-.fragmentIcon {
-    font-size: 28px;
-    width: 35px;
-    text-align: center;
-}
-
-.fragmentInfo {
-    flex: 1;
-}
-
-.fragmentName {
-    font-size: 14px;
-    font-weight: 600;
-    color: #ffffff;
-    margin-bottom: 2px;
-}
-
-.fragmentProgress {
-    font-size: 11px;
-    color: #fbbf24;
-    font-weight: 600;
-}
-
-.fragmentDescription {
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.8);
-    margin-bottom: 12px;
-    line-height: 1.4;
-}
-
-.fragmentLocation {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    font-size: 11px;
-}
-
-.fragmentRarity {
-    font-weight: 600;
-}
-
-/* Crafting Result Modal */
-.resultModal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.8);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1000;
-}
-
-.resultContent {
-    background: rgba(0, 0, 0, 0.95);
-    border: 2px solid rgba(100, 149, 237, 0.5);
-    border-radius: 12px;
-    padding: 24px;
-    max-width: 300px;
-    text-align: center;
-    animation: modalSlideIn 0.3s ease;
-}
-
-@keyframes modalSlideIn {
-    from {
-        opacity: 0;
-        transform: scale(0.9);
-    }
-
-    to {
-        opacity: 1;
-        transform: scale(1);
-    }
-}
-
-.resultContent h3 {
-    margin: 0 0 20px 0;
-    font-size: 18px;
-    color: #10b981;
-    font-weight: 700;
-}
-
-.resultItem {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    margin-bottom: 20px;
-    padding: 16px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 8px;
-}
-
-.resultIcon {
-    font-size: 48px;
-    width: 60px;
-    text-align: center;
-}
-
-.resultInfo {
-    flex: 1;
-    text-align: left;
-}
-
-.resultName {
-    font-size: 16px;
-    font-weight: 700;
-    color: #ffffff;
-    margin-bottom: 4px;
-}
-
-.resultRarity {
-    font-size: 12px;
-    color: #a855f7;
-    text-transform: capitalize;
-    margin-bottom: 4px;
-}
-
-.resultQuality {
-    font-size: 12px;
-    font-weight: 600;
-    text-transform: capitalize;
-    margin-bottom: 8px;
-}
-
-.resultDescription {
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.8);
-    line-height: 1.4;
-    margin-bottom: 8px;
-}
-
-.criticalSuccess {
-    font-size: 12px;
-    color: #fbbf24;
-    font-weight: 600;
-    margin-bottom: 8px;
-    animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-
-    0%,
-    100% {
-        opacity: 1;
-    }
-
-    50% {
-        opacity: 0.7;
-    }
-}
-
-.materialBonus {
-    font-size: 11px;
-    color: #10b981;
-    font-style: italic;
-    margin-bottom: 8px;
-}
-
-.closeButton {
-    padding: 10px 20px;
-    background: linear-gradient(135deg, #6b7280, #4b5563);
-    border: none;
-    border-radius: 6px;
-    color: #ffffff;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.closeButton:hover {
-    background: linear-gradient(135deg, #4b5563, #374151);
-    transform: translateY(-1px);
-}
-
-/* Random Generation Styles */
-.randomTab {
-    animation: fadeIn 0.3s ease;
-}
-
-.randomDescription {
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.8);
-    line-height: 1.4;
-    margin-bottom: 16px;
-    text-align: center;
-}
-
-.randomGenerationPanel {
-    text-align: center;
-    margin-bottom: 20px;
-}
-
-.generateButton {
-    padding: 16px 24px;
-    background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-    border: none;
-    border-radius: 12px;
-    color: #ffffff;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    margin-bottom: 12px;
-    min-height: 48px;
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
-}
-
-.generateButton:hover:not(:disabled) {
-    background: linear-gradient(135deg, #7c3aed, #6d28d9);
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
-}
-
-.generateButton:disabled {
-    background: rgba(107, 114, 128, 0.5);
-    cursor: not-allowed;
-    transform: none;
-}
-
-.noTemplatesMessage {
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.6);
-    font-style: italic;
-    margin-top: 8px;
-}
-
-.templatesGrid {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.templateCard {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 8px;
-    padding: 12px;
-    transition: all 0.2s ease;
-}
-
-.templateCard:hover {
-    background: rgba(255, 255, 255, 0.08);
-}
-
-.craftable {
-    border-color: rgba(34, 197, 94, 0.3);
-    background: rgba(34, 197, 94, 0.05);
-}
-
-.notCraftable {
-    opacity: 0.7;
-    border-color: rgba(239, 68, 68, 0.3);
-}
-
-.templateHeader {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 8px;
-}
-
-.templateIcon {
-    font-size: 24px;
-    width: 32px;
-    text-align: center;
-}
-
-.templateInfo {
-    flex: 1;
-}
-
-.templateName {
-    font-size: 14px;
-    font-weight: 600;
-    color: #ffffff;
-    margin-bottom: 2px;
-}
-
-.templateRarity {
-    font-size: 11px;
-    color: #a855f7;
-    text-transform: capitalize;
-    margin-bottom: 2px;
-}
-
-.templateCategory {
-    font-size: 10px;
-    color: rgba(255, 255, 255, 0.6);
-    text-transform: capitalize;
-}
-
-.templateDescription {
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.8);
-    margin-bottom: 12px;
-    line-height: 1.4;
-}
-
-.templateRequirements {
-    margin-bottom: 12px;
-}
-
-.requirementsLabel {
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.7);
-    margin-bottom: 6px;
-    font-weight: 600;
-}
-
-.requirementsList {
-    font-size: 10px;
-    color: rgba(255, 255, 255, 0.8);
-}
-
-.requirementsList div {
-    margin-bottom: 2px;
-}
-
-.templateEffects {
-    margin-bottom: 12px;
-}
-
-.effectsLabel {
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.7);
-    margin-bottom: 6px;
-    font-weight: 600;
-}
-
-.effectsList {
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.8);
-}
-
-.effect {
-    margin-bottom: 3px;
-    padding: 2px 0;
-}
-
-.templateStatus {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 8px;
-}
-
-.craftableStatus {
-    color: #22c55e;
-    font-weight: 600;
-    font-size: 11px;
-}
-
-.lockedStatus {
-    color: #ef4444;
-    font-weight: 600;
-    font-size: 11px;
-}
-
-.levelRequirement {
-    text-align: center;
-    font-size: 10px;
-    color: #fbbf24;
-    font-weight: 600;
-    background: rgba(251, 191, 36, 0.1);
-    border: 1px solid rgba(251, 191, 36, 0.3);
-    border-radius: 4px;
-    padding: 4px 8px;
-    margin-top: 8px;
-}
-
-.randomInfoPanel {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.infoCard {
-    background: rgba(255, 255, 255, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 6px;
-    padding: 12px;
-}
-
-.infoCard h4 {
-    margin: 0 0 8px 0;
-    font-size: 13px;
-    font-weight: 600;
-    color: #ffffff;
-}
-
-.infoCard p {
-    margin: 0 0 8px 0;
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.8);
-    line-height: 1.4;
-}
-
-.infoCard ul {
-    margin: 0;
-    padding-left: 16px;
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.8);
-    line-height: 1.4;
-}
-
-.infoCard li {
-    margin-bottom: 4px;
-}
-
-.infoCard strong {
-    color: #ffffff;
-    font-weight: 600;
-}
-
-/* Enhanced Mobile Optimizations */
-@media (max-width: 768px) {
-    .craftingContainer {
-        padding: 8px;
-    }
-
-    .tabNavigation {
-        gap: 2px;
-        padding: 2px;
-        margin-bottom: 16px;
-    }
-
-    .tabButton {
-        padding: 10px 4px;
-        font-size: 11px;
-        min-height: 48px;
-    }
-
-    .tabIcon {
-        font-size: 18px;
-    }
-
-    .tabLabel {
-        font-size: 9px;
-        font-weight: 600;
-    }
-
-    .materialsGrid {
-        grid-template-columns: 1fr;
-        gap: 12px;
-    }
-
-    .materialCard {
-        padding: 12px;
-        border-radius: 8px;
-    }
-
-    .materialIcon {
-        font-size: 24px;
-        width: 32px;
-    }
-
-    .recipeCard {
-        padding: 16px;
-        border-radius: 12px;
-    }
-
-    .craftButton {
-        padding: 16px;
-        font-size: 16px;
-        min-height: 48px;
-        border-radius: 12px;
-    }
-
-    .generateButton {
-        padding: 18px 24px;
-        font-size: 18px;
-        min-height: 52px;
-        border-radius: 16px;
-    }
-
-    .section {
-        padding: 12px;
-        margin-bottom: 16px;
-        border-radius: 12px;
-    }
-
-    .templateCard {
-        padding: 16px;
-        border-radius: 12px;
-    }
-
-    .templateIcon {
-        font-size: 28px;
-        width: 36px;
-    }
-}
-
-/* Small mobile screens */
-@media (max-width: 400px) {
-    .tabButton {
-        padding: 12px 2px;
-        font-size: 10px;
-        min-height: 50px;
-    }
-
-    .tabIcon {
-        font-size: 16px;
-    }
-
-    .tabLabel {
-        font-size: 8px;
-        font-weight: 600;
-    }
-
-    .craftButton,
-    .generateButton {
-        font-size: 15px;
-        padding: 18px 16px;
-        min-height: 50px;
-    }
-
-    .recipeIcon {
-        font-size: 24px;
-        width: 32px;
-    }
-
-    .materialIcon {
-        font-size: 20px;
-        width: 28px;
-    }
-}
-
-/* Touch device optimizations */
-@media (pointer: coarse) {
-
-    .tabButton,
-    .craftButton,
-    .generateButton,
-    .toggleButton {
-        min-height: 48px;
-        touch-action: manipulation;
-        -webkit-tap-highlight-color: transparent;
-    }
-
-    .tabButton:active,
-    .craftButton:active,
-    .generateButton:active {
-        transform: scale(0.98);
-        transition: transform 0.1s ease;
-    }
-
-    .materialCard:active,
-    .recipeCard:active,
-    .templateCard:active {
-        transform: scale(0.99);
-        transition: transform 0.1s ease;
-    }
-
-    /* Better touch feedback */
-    .materialCard,
-    .recipeCard,
-    .templateCard {
-        transition: all 0.2s ease;
-    }
-
-    .materialCard:hover,
-    .recipeCard:hover,
-    .templateCard:hover {
-        /* Disable hover effects on touch devices */
-        transform: none;
-    }
-}
-
-/* Video game-like interface enhancements for mobile */
-@media (max-width: 768px) {
-    .craftingContainer {
-        background: linear-gradient(135deg, rgba(0, 0, 0, 0.8) 0%, rgba(20, 20, 40, 0.9) 100%);
-        border-radius: 16px;
-        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-        overflow: hidden;
-    }
-
-    .tabButton {
-        background: linear-gradient(135deg, rgba(100, 149, 237, 0.2) 0%, rgba(139, 92, 246, 0.2) 100%);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        color: rgba(255, 255, 255, 0.9);
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-    }
-
-    .activeTab {
-        background: linear-gradient(135deg, rgba(100, 149, 237, 0.6) 0%, rgba(139, 92, 246, 0.6) 100%);
-        border-color: rgba(255, 255, 255, 0.3);
-        box-shadow: 0 4px 16px rgba(100, 149, 237, 0.3);
-        transform: translateY(-1px);
-    }
-
-    .materialCard,
-    .recipeCard,
-    .templateCard {
-        background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
-        border: 1px solid rgba(255, 255, 255, 0.15);
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-        backdrop-filter: blur(10px);
-    }
-
-    .craftButton {
-        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-        box-shadow: 0 4px 16px rgba(16, 185, 129, 0.3);
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-    }
-
-    .generateButton {
-        background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
-        box-shadow: 0 6px 20px rgba(139, 92, 246, 0.4);
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
-    }
-}
-
-/* ========================================
-   PIXEL / RPG SHELL
-   ======================================== */
-
-.pixelCraftingShell {
-    --pixel-bg: #1b1d2f;
-    --pixel-panel: #252742;
-    --pixel-panel-alt: #2e3152;
-    --pixel-border-dark: #0f1120;
-    --pixel-border-light: #5b61a2;
-    --pixel-accent: #8ecae6;
-    --pixel-highlight: #ffd166;
-    --pixel-text: #ecefff;
-    --pixel-muted: #bac2e3;
-    --pixel-shadow: 3px 3px 0 var(--pixel-border-dark);
-    --pixel-shadow-pressed: 1px 1px 0 var(--pixel-border-dark);
-    --pixel-card-radius: 0;
-    isolation: isolate;
-}
-
-.craftingContainer.pixelCraftingShell {
-    padding: 12px;
-    max-width: 640px;
-    margin: 0 auto;
-    color: var(--pixel-text);
-    font-family: "Press Start 2P", "VT323", "Courier New", monospace;
-    font-size: 11px;
-    line-height: 1.6;
-    background: var(--pixel-bg) !important;
-    border: 2px solid var(--pixel-border-dark);
-    box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light);
-    box-sizing: border-box;
-}
-
-.craftingContainer.pixelCraftingShell > h2,
-.craftingContainer.pixelCraftingShell .craftingHeader {
-    font-family: "Press Start 2P", "VT323", monospace !important;
-    font-size: 11px !important;
-    text-align: center;
-    margin: 0 0 12px 0 !important;
-    color: var(--pixel-accent) !important;
-    text-shadow: 2px 2px 0 var(--pixel-border-dark) !important;
-    background: none !important;
-    -webkit-text-fill-color: var(--pixel-accent) !important;
-}
-
-.craftingContainer.pixelCraftingShell .tabNavigation {
-    border-radius: var(--pixel-card-radius) !important;
-    border: 2px solid var(--pixel-border-dark) !important;
-    background: var(--pixel-panel) !important;
-    box-shadow: var(--pixel-shadow-pressed) !important;
-    padding: 4px !important;
-    gap: 4px !important;
-}
-
-.craftingContainer.pixelCraftingShell .tabButton {
-    border-radius: var(--pixel-card-radius) !important;
-    border: 2px solid transparent !important;
-    font-family: "Press Start 2P", monospace !important;
-    font-size: 7px !important;
-    color: var(--pixel-muted) !important;
-    background: transparent !important;
-}
-
-.craftingContainer.pixelCraftingShell .activeTab {
-    background: var(--pixel-accent) !important;
-    color: var(--pixel-border-dark) !important;
-    border-color: var(--pixel-border-dark) !important;
-    box-shadow: var(--pixel-shadow-pressed) !important;
-}
-
-.craftingContainer.pixelCraftingShell .section {
-    border-radius: var(--pixel-card-radius) !important;
-    border: 2px solid var(--pixel-border-dark) !important;
-    background: var(--pixel-panel) !important;
-    box-shadow: var(--pixel-shadow-pressed) !important;
-    backdrop-filter: none !important;
-}
-
-.craftingContainer.pixelCraftingShell .sectionTitle {
-    font-family: "Press Start 2P", monospace !important;
-    font-size: 8px !important;
-    color: var(--pixel-accent) !important;
-}
-
-.craftingContainer.pixelCraftingShell .materialCard,
-.craftingContainer.pixelCraftingShell .recipeCard,
-.craftingContainer.pixelCraftingShell .sessionCard,
-.craftingContainer.pixelCraftingShell .skillCard,
-.craftingContainer.pixelCraftingShell .stationCard,
-.craftingContainer.pixelCraftingShell .fragmentCard,
-.craftingContainer.pixelCraftingShell .templateCard {
-    border-radius: var(--pixel-card-radius) !important;
-    border: 2px solid var(--pixel-border-dark) !important;
-    background: var(--pixel-panel-alt) !important;
-    box-shadow: var(--pixel-shadow-pressed) !important;
-    backdrop-filter: none !important;
-}
-
-.craftingContainer.pixelCraftingShell .materialName,
-.craftingContainer.pixelCraftingShell .recipeName,
-.craftingContainer.pixelCraftingShell .skillLevel {
-    font-family: "VT323", monospace !important;
-    font-size: 15px !important;
-}
-
-.craftingContainer.pixelCraftingShell .craftButton,
-.craftingContainer.pixelCraftingShell .generateButton {
-    border-radius: var(--pixel-card-radius) !important;
-    border: 2px solid var(--pixel-border-dark) !important;
-    font-family: "Press Start 2P", monospace !important;
-    font-size: 8px !important;
-    box-shadow: var(--pixel-shadow) !important;
-}
-
-.craftingContainer.pixelCraftingShell .materialRequirement {
-    border-radius: var(--pixel-card-radius) !important;
-    border: 2px solid var(--pixel-border-dark) !important;
-}
+.matMissing {
+	color: #ff9aa8;
+	border-color: rgba(255, 120, 140, 0.4);
+	background: rgba(70, 24, 36, 0.35);
+}
+
+.matMissing .matChipFrac {
+	color: #ff9aa8;
+}
 
-.craftingContainer.pixelCraftingShell .progressBar,
-.craftingContainer.pixelCraftingShell .progressFill {
-    border-radius: var(--pixel-card-radius) !important;
+.matMissing .matChipName {
+	color: rgba(255, 180, 190, 0.85);
+}
+
+.rowAction {
+	flex-shrink: 0;
+	align-self: center;
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	padding: 8px 14px;
+	border-radius: 4px;
+	min-width: 78px;
+	text-align: center;
+	box-sizing: border-box;
+}
+
+/* Hollow cyan outline — matches vision mockup list Craft */
+.rowActionReady {
+	color: var(--go-accent, #22c8ff);
+	background: rgba(34, 200, 255, 0.06);
+	border: 1px solid var(--go-accent, #22c8ff);
+	box-shadow:
+		0 0 8px rgba(34, 200, 255, 0.35),
+		inset 0 0 0 1px rgba(34, 200, 255, 0.12);
+	text-shadow: 0 0 6px rgba(34, 200, 255, 0.45);
+}
+
+.rowActionNeed {
+	color: rgba(160, 180, 200, 0.75);
+	background: rgba(12, 20, 32, 0.85);
+	border: 1px solid rgba(120, 140, 160, 0.35);
+	box-shadow: none;
+	text-shadow: none;
+	font-weight: 600;
+}
+
+.emptyList {
+	margin: 8px 0;
+	padding: 12px;
+	font-size: 12px;
+	color: var(--go-muted, rgba(200, 230, 255, 0.65));
+	line-height: 1.45;
+}
+
+.showMore {
+	align-self: center;
+	margin: 4px 0;
+	padding: 8px 16px;
+	border: 1px solid var(--go-border, rgba(34, 200, 255, 0.4));
+	background: transparent;
+	color: var(--go-accent, #22c8ff);
+	font-size: 12px;
+	cursor: pointer;
+	min-height: 40px;
+}
+
+/* Experiment */
+.experimentPane {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	flex: 1;
+	min-height: 0;
+	overflow: hidden;
+}
+
+.experimentBlurb {
+	margin: 0;
+	font-size: 12px;
+	color: var(--go-muted, rgba(200, 230, 255, 0.7));
+	line-height: 1.4;
+}
+
+.templateMeta {
+	font-size: 11px;
+	color: var(--go-muted, rgba(200, 230, 255, 0.6));
+}
+
+/* Detail panel (desktop) */
+.detailPanel,
+.detailSheet {
+	position: relative;
+}
+
+.detailPanel {
+	flex-shrink: 0;
+	padding: 14px 14px 16px;
+	border: 1px solid var(--go-border, rgba(34, 200, 255, 0.4));
+	border-radius: var(--go-radius, 2px);
+	background: rgba(8, 24, 46, 0.95);
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	max-height: 52%;
+	overflow-y: auto;
+	margin-bottom: 2px;
+}
+
+/* Big icon left · details right */
+.detailBody {
+	display: flex;
+	align-items: flex-start;
+	gap: 16px;
+	padding-right: 36px;
+}
+
+.detailIcon {
+	flex-shrink: 0;
+	align-self: center;
+	width: 112px;
+	height: 112px;
+	margin-top: 18px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 64px;
+	line-height: 1;
+	border: 1px solid rgba(34, 200, 255, 0.4);
+	border-radius: 10px;
+	background: rgba(12, 32, 58, 0.9);
+	box-shadow:
+		0 0 16px rgba(34, 200, 255, 0.22),
+		inset 0 0 0 1px rgba(34, 200, 255, 0.1);
+}
+
+.detailInfo {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.detailTitle {
+	margin: 0;
+	font-size: 20px;
+	font-weight: 800;
+	letter-spacing: 0.01em;
+	color: var(--go-text, #e8f4ff);
+	line-height: 1.2;
+}
+
+.detailMeta {
+	margin: 0;
+	font-size: 13px;
+	color: var(--go-muted, rgba(200, 230, 255, 0.65));
+	text-transform: capitalize;
+}
+
+/* Red close square */
+.detailClose {
+	position: absolute;
+	top: 10px;
+	right: 10px;
+	z-index: 2;
+	width: 32px;
+	height: 32px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin: 0;
+	padding: 0;
+	border: 1px solid rgba(255, 80, 90, 0.85);
+	border-radius: 4px;
+	background: rgba(80, 16, 24, 0.75);
+	color: #ff6b75;
+	font-size: 15px;
+	font-weight: 700;
+	line-height: 1;
+	cursor: pointer;
+	box-shadow: 0 0 10px rgba(255, 70, 80, 0.35);
+	min-height: 32px;
+}
+
+.detailClose:hover {
+	background: rgba(120, 24, 32, 0.9);
+	color: #ff8a92;
+	border-color: #ff6b75;
+}
+
+.detailLabel {
+	display: block;
+	font-size: 12px;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+	color: var(--go-accent, #22c8ff);
+	margin-bottom: 8px;
+	font-weight: 700;
+}
+
+.detailNeeds,
+.detailEffects {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.needRow {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 8px 10px;
+	font-size: 14px;
+	border-radius: 6px;
+	border: 1px solid transparent;
+	min-height: 36px;
+	gap: 8px;
+}
+
+.needLeft {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	min-width: 0;
+	flex: 1;
+}
+
+.needLeft .matChipIcon {
+	font-size: 18px;
+}
+
+.needName {
+	text-transform: lowercase;
+	color: rgba(220, 235, 255, 0.92);
+}
+
+.needCheck {
+	font-weight: 800;
+	width: 18px;
+	font-size: 16px;
+	text-align: center;
+	flex-shrink: 0;
+	color: #7dffb3;
+}
+
+.matMissing .needCheck {
+	color: #ff9aa8;
+}
+
+.needHave {
+	font-weight: 700;
+	font-size: 14px;
+	font-variant-numeric: tabular-nums;
+}
+
+.effectLine {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 8px 0;
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--go-text, #e8f4ff);
+	border-radius: 0;
+	background: transparent;
+	border: none;
+	min-height: 0;
+}
+
+/* Double-up effect badge from vision mockup */
+.effectBadge {
+	flex-shrink: 0;
+	width: 28px;
+	height: 28px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border: 1px solid rgba(34, 200, 255, 0.55);
+	border-radius: 4px;
+	background: rgba(12, 40, 72, 0.95);
+	color: var(--go-accent, #22c8ff);
+	font-size: 14px;
+	font-weight: 800;
+	line-height: 1;
+	box-shadow: 0 0 8px rgba(34, 200, 255, 0.3);
+}
+
+.effectText {
+	letter-spacing: 0.02em;
+	font-size: 15px;
+	color: rgba(210, 235, 255, 0.95);
+}
+
+.effectHint {
+	font-size: 12px;
+	color: var(--go-muted, rgba(200, 230, 255, 0.55));
+	font-style: italic;
+	padding-left: 4px;
+}
+
+/* Detail Craft — dark navy fill, cyan chrome + glow (vision mockup) */
+.primaryCraft {
+	width: 100%;
+	padding: 14px 16px;
+	border: 1px solid var(--go-accent, #22c8ff);
+	border-radius: 4px;
+	background: linear-gradient(
+		180deg,
+		rgba(28, 72, 120, 0.95) 0%,
+		rgba(10, 28, 52, 0.98) 55%,
+		rgba(6, 18, 36, 1) 100%
+	);
+	color: var(--go-accent, #22c8ff);
+	font-size: 15px;
+	font-weight: 800;
+	letter-spacing: 0.08em;
+	text-transform: none;
+	cursor: pointer;
+	min-height: 52px;
+	box-shadow:
+		0 0 14px rgba(34, 200, 255, 0.45),
+		0 0 28px rgba(34, 200, 255, 0.18),
+		inset 0 1px 0 rgba(120, 220, 255, 0.25);
+	text-shadow: 0 0 10px rgba(34, 200, 255, 0.55);
+}
+
+.primaryCraft:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+	background: linear-gradient(180deg, rgba(20, 32, 48, 0.9), rgba(10, 16, 28, 0.95));
+	color: rgba(160, 180, 200, 0.65);
+	border-color: rgba(120, 140, 160, 0.4);
+	box-shadow: none;
+	text-shadow: none;
+}
+
+/* Mobile sheet */
+.sheetBackdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 40;
+	border: none;
+	background: rgba(0, 0, 0, 0.55);
+	cursor: pointer;
+}
+
+.detailSheet {
+	position: fixed;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 50;
+	max-height: 78vh;
+	overflow-y: auto;
+	padding: 8px 14px calc(22px + env(safe-area-inset-bottom, 0px));
+	border-radius: 12px 12px 0 0;
+	border: 1px solid var(--go-border, rgba(34, 200, 255, 0.4));
+	border-bottom: none;
+	background: rgba(8, 18, 36, 0.98);
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.45);
+}
+
+.sheetHandle {
+	align-self: center;
+	width: 40px;
+	height: 4px;
+	border-radius: 2px;
+	background: rgba(34, 200, 255, 0.35);
+	margin-bottom: 2px;
+}
+
+.stickyCraft {
+	position: sticky;
+	bottom: 0;
+	margin-top: 4px;
+}
+
+/* Footer */
+.footer {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+	flex-shrink: 0;
+	padding: 8px 4px 4px;
+	border-top: none;
+}
+
+/* Plain terminal-style text links (vision mockup) */
+.footerLink {
+	border: none;
+	background: transparent;
+	color: rgba(140, 200, 230, 0.85);
+	font-size: 12px;
+	font-family: ui-monospace, "SF Mono", "Cascadia Code", "Courier New", monospace;
+	letter-spacing: 0.02em;
+	cursor: pointer;
+	padding: 4px 2px;
+	min-height: 0;
+	box-shadow: none;
+	border-radius: 0;
+}
+
+.footerLink:hover {
+	color: var(--go-accent, #22c8ff);
+	text-decoration: underline;
+	text-underline-offset: 3px;
+}
+
+.footerSep {
+	color: rgba(120, 160, 190, 0.55);
+	font-size: 12px;
+	font-family: ui-monospace, "SF Mono", "Cascadia Code", "Courier New", monospace;
+	line-height: 1;
+}
+
+/* Pixel shell overrides */
+.workshop.pixelCraftingShell {
+	font-family: var(--go-font-ui, "Press Start 2P", "VT323", "Courier New", monospace);
+	font-size: 11px;
+	background: var(--go-bg, var(--pixel-bg, rgba(6, 14, 28, 0.92))) !important;
+	border: 2px solid var(--pixel-border-dark, rgba(34, 200, 255, 0.35));
+	box-shadow: var(--pixel-shadow, none), inset 0 0 0 1px var(--pixel-border-light, rgba(34, 200, 255, 0.08));
+}
+
+.workshop.pixelCraftingShell .workshopTitle {
+	font-family: var(--go-font-ui, "Press Start 2P", "VT323", monospace) !important;
+	font-size: 11px !important;
+	color: var(--pixel-accent, var(--go-accent, #22c8ff)) !important;
+	text-shadow: 2px 2px 0 var(--pixel-border-dark, transparent);
+}
+
+.workshop.pixelCraftingShell .primaryCraft,
+.workshop.pixelCraftingShell .rowActionReady {
+	border-radius: 4px !important;
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+}
+
+.workshop.pixelCraftingShell .rowActionReady {
+	font-size: 11px !important;
+	color: var(--go-accent, #22c8ff) !important;
+	background: rgba(34, 200, 255, 0.06) !important;
+	border: 1px solid var(--go-accent, #22c8ff) !important;
+	box-shadow:
+		0 0 8px rgba(34, 200, 255, 0.35),
+		inset 0 0 0 1px rgba(34, 200, 255, 0.12) !important;
+}
+
+.workshop.pixelCraftingShell .primaryCraft {
+	font-size: 15px !important;
+	color: var(--go-accent, #22c8ff) !important;
+	background: linear-gradient(
+		180deg,
+		rgba(28, 72, 120, 0.95) 0%,
+		rgba(10, 28, 52, 0.98) 55%,
+		rgba(6, 18, 36, 1) 100%
+	) !important;
+	border: 1px solid var(--go-accent, #22c8ff) !important;
+	box-shadow:
+		0 0 14px rgba(34, 200, 255, 0.45),
+		0 0 28px rgba(34, 200, 255, 0.18),
+		inset 0 1px 0 rgba(120, 220, 255, 0.25) !important;
+}
+
+.workshop.pixelCraftingShell .recipeRow,
+.workshop.pixelCraftingShell .materialChip,
+.workshop.pixelCraftingShell .detailPanel {
+	border-radius: var(--pixel-card-radius, 2px) !important;
+	border-width: 2px !important;
+	border-color: var(--pixel-border-dark, rgba(34, 200, 255, 0.35)) !important;
+	background: var(--pixel-panel, rgba(10, 28, 52, 0.75)) !important;
+}
+
+.workshop.pixelCraftingShell .modeToggle {
+	border: none !important;
+	background: transparent !important;
+	box-shadow: none !important;
+}
+
+.workshop.pixelCraftingShell .filterBtn {
+	border: none !important;
+	border-bottom: 3px solid transparent !important;
+	border-radius: 0 !important;
+	background: transparent !important;
+	box-shadow: none !important;
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+	font-size: 13px !important;
+}
+
+.workshop.pixelCraftingShell .filterActive {
+	border-bottom-color: var(--go-accent, #22c8ff) !important;
+	color: var(--go-accent, #22c8ff) !important;
+	background: transparent !important;
+	box-shadow: none !important;
+}
+
+.workshop.pixelCraftingShell .modeBtn {
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+	font-size: 13px !important;
+	text-transform: none !important;
+	border: none !important;
+	background: transparent !important;
+	box-shadow: none !important;
+}
+
+.workshop.pixelCraftingShell .modeActive {
+	border-bottom: none !important;
+	color: var(--go-accent, #22c8ff) !important;
+	background: transparent !important;
+}
+
+.workshop.pixelCraftingShell .matChip {
+	border-radius: 6px !important;
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+	font-size: 13px !important;
+	padding: 6px 10px !important;
+}
+
+.workshop.pixelCraftingShell .detailTitle {
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+	font-size: 20px !important;
+}
+
+.workshop.pixelCraftingShell .effectText {
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+	font-size: 15px !important;
+}
+
+.workshop.pixelCraftingShell .needRow {
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+	font-size: 14px !important;
+}
+
+.workshop.pixelCraftingShell .footerLink {
+	font-family: ui-monospace, "SF Mono", "Cascadia Code", "Courier New", monospace !important;
+	font-size: 12px !important;
+	background: transparent !important;
+	border: none !important;
+	box-shadow: none !important;
+	min-height: 0 !important;
+}
+
+/* System Hunter shell */
+:global([data-gamification-shell='system']) .workshop.pixelCraftingShell {
+	border-width: 1px !important;
+	border-color: var(--go-border, rgba(34, 200, 255, 0.42)) !important;
+	border-radius: var(--go-radius, 2px) !important;
+	box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16)) !important;
+}
+
+:global([data-gamification-shell='system']) .workshop.pixelCraftingShell .workshopTitle {
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+	font-size: 0.85rem !important;
+	letter-spacing: 0.14em;
+	text-shadow: none !important;
+}
+
+:global([data-gamification-shell='system']) .workshop.pixelCraftingShell .primaryCraft {
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+	font-size: 15px !important;
+	color: var(--go-accent, #22c8ff) !important;
+}
+
+/* Mobile tweaks */
+.workshop[data-gamification-mobile='true'] .materialsStrip {
+	position: sticky;
+	top: 0;
+	z-index: 2;
+	background: var(--go-bg, rgba(6, 14, 28, 0.96));
+}
+
+.workshop[data-gamification-mobile='true'] .recipeRow {
+	min-height: 96px;
+	padding: 14px 12px;
+}
+
+.workshop[data-gamification-mobile='true'] .detailIcon {
+	width: 104px;
+	height: 104px;
+	font-size: 58px;
+	margin-top: 22px;
+	align-self: center;
+}
+
+.workshop[data-gamification-mobile='true'] .detailBody {
+	gap: 12px;
+	padding-right: 40px;
+}
+
+.workshop[data-gamification-mobile='true'] .needRow {
+	min-height: 40px;
+	font-size: 15px;
+}
+
+.workshop[data-gamification-mobile='true'] .filterBtn {
+	min-height: 40px;
 }

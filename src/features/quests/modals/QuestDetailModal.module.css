@@ -352,6 +352,39 @@
     border-radius: 4px;
     font-size: 12px;
     font-weight: 500;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.tagEditor {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.tagRemove {
+    appearance: none;
+    background: transparent;
+    border: none;
+    color: inherit;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    font-size: 14px;
+    opacity: 0.7;
+}
+
+.tagInput {
+    min-width: 96px;
+    max-width: 160px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--background-modifier-border);
+    background: var(--background-primary);
+    color: var(--text-normal);
+    font-size: 12px;
 }
 
 /* Energy Status */
@@ -479,6 +512,12 @@
 .actionButton:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.openPageButton:hover {
+    background: color-mix(in srgb, var(--go-accent, #5bb8b0) 22%, var(--background-primary));
+    border-color: var(--go-accent, #5bb8b0);
+    color: var(--go-accent, #5bb8b0);
 }
 
 .editButton:hover {

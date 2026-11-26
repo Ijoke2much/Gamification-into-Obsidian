@@ -41,6 +41,31 @@ export class MaterialUtils {
     /**
      * Group materials by their quality or category for better organization
      */
+    /**
+     * Effective quality of an item: explicit quality tag first, otherwise
+     * mapped from rarity. The quality filter chips and their counts must both
+     * use this — filtering by raw tags while counting by rarity shows nothing.
+     */
+    static getItemQuality(item: InventoryItem): string {
+        const qualityTag = item.tags?.find(tag =>
+            tag.includes('masterwork') || tag.includes('refined') || tag.includes('fresh') || tag.includes('dried')
+        );
+        if (qualityTag) {
+            if (qualityTag.includes('masterwork')) return 'masterwork';
+            if (qualityTag.includes('refined')) return 'refined';
+            if (qualityTag.includes('fresh')) return 'fresh';
+            return 'dried';
+        }
+
+        switch (item.rarity) {
+            case 'legendary': return 'masterwork';
+            case 'epic': return 'refined';
+            case 'uncommon': return 'refined';
+            case 'common': return 'normal';
+            default: return 'other';
+        }
+    }
+
     static groupMaterialsByQuality(materials: InventoryItem[]): { [quality: string]: InventoryItem[] } {
         const grouped: { [quality: string]: InventoryItem[] } = {
             'masterwork': [],
@@ -52,30 +77,7 @@ export class MaterialUtils {
         };
 
         materials.forEach(item => {
-            // Try to determine quality from tags or name
-            let quality = 'normal';
-            if (item.tags?.some(tag => tag.includes('masterwork') || tag.includes('refined') || tag.includes('fresh') || tag.includes('dried'))) {
-                const qualityTag = item.tags.find(tag => tag.includes('masterwork') || tag.includes('refined') || tag.includes('fresh') || tag.includes('dried'));
-                if (qualityTag) {
-                    if (qualityTag.includes('masterwork')) quality = 'masterwork';
-                    else if (qualityTag.includes('refined')) quality = 'refined';
-                    else if (qualityTag.includes('fresh')) quality = 'fresh';
-                    else if (qualityTag.includes('dried')) quality = 'dried';
-                }
-            }
-
-            // Check rarity for quality mapping
-            if (quality === 'normal') {
-                switch (item.rarity) {
-                    case 'legendary': quality = 'masterwork'; break;
-                    case 'epic': quality = 'refined'; break;
-                    case 'uncommon': quality = 'refined'; break;
-                    case 'common': quality = 'normal'; break;
-                    default: quality = 'other'; break;
-                }
-            }
-
-            grouped[quality].push(item);
+            grouped[this.getItemQuality(item)].push(item);
         });
 
         return grouped;

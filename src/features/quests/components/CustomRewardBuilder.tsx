@@ -3,6 +3,7 @@ import { CraftingMaterial } from '../../crafting/types/CraftingTypes';
 import { getCraftingMaterials } from '../../crafting/utils/craftingMaterialRegistry';
 import { QuestRewardItem, getRarityColor, getRarityDisplayName } from '../utils/questRewardsSystem';
 import { IconPicker } from '../../inventory/utils/iconPicker';
+import { isShopExclusiveCustomReward } from '../utils/shopExclusiveRewards';
 import styles from './CustomRewardBuilder.module.css';
 
 export interface CustomRewardBuilderProps {
@@ -85,6 +86,7 @@ export const CustomRewardBuilder: React.FC<CustomRewardBuilderProps> = ({
   
   // Icon picker
   const [showIconPicker, setShowIconPicker] = useState(false);
+  const [exclusiveError, setExclusiveError] = useState('');
   
   // Available materials for reference
   const [availableMaterials, setAvailableMaterials] = useState<CraftingMaterial[]>([]);
@@ -143,6 +145,12 @@ export const CustomRewardBuilder: React.FC<CustomRewardBuilderProps> = ({
       reward.category = 'consumable';
     }
 
+    if (isShopExclusiveCustomReward(reward)) {
+      setExclusiveError('Coffee breaks and shop treats stay in the Shop.');
+      return;
+    }
+
+    setExclusiveError('');
     onAddReward(reward);
     handleReset();
     onClose();
@@ -166,7 +174,7 @@ export const CustomRewardBuilder: React.FC<CustomRewardBuilderProps> = ({
   const containerStyle = isMobile ? styles.mobileContainer : styles.desktopContainer;
 
   return (
-    <div className={styles.overlay}>
+    <div className={styles.overlay} data-clay-shell="custom-reward">
       <div className={containerStyle}>
         <div className={styles.header}>
           <h3>🎁 Create Custom Reward</h3>
@@ -436,6 +444,8 @@ export const CustomRewardBuilder: React.FC<CustomRewardBuilderProps> = ({
             </div>
           )}
         </div>
+
+        {exclusiveError ? <p className={styles.exclusiveError}>{exclusiveError}</p> : null}
 
         <div className={styles.footer}>
           <button type="button" onClick={onClose} className={styles.cancelButton}>

@@ -9,6 +9,7 @@ import {
     QuestSubtasks, 
     QuestNotes 
 } from "./QuestCardComponents";
+import { displayedQuestRewards, overdueRewardHint } from "../../../shared/utils/overdueRewardScale";
 
 interface PluginType {
     app: {
@@ -59,6 +60,7 @@ export const QuestCard: React.FC<QuestCardProps> = ({
     const [isAnimating, setIsAnimating] = useState(false);
     const [bannerDataUrl, setBannerDataUrl] = useState<string | null>(null);
     const [bannerError, setBannerError] = useState(false);
+    const payable = displayedQuestRewards(quest);
 
     // Load banner image from vault (or cache when enhancedQuestSystem is available)
     useEffect(() => {
@@ -473,8 +475,16 @@ export const QuestCard: React.FC<QuestCardProps> = ({
                     {quest.subtasks && quest.subtasks.length > 0 && (
                         <span>{completionProgress}% ({quest.subtasks.filter(st => st.completed).length}/{quest.subtasks.length})</span>
                     )}
-                    {quest.xp && <span>✨{quest.xp} XP</span>}
-                    {quest.cp && <span>⭐{quest.cp} CP</span>}
+                    {quest.xp && (
+                        <span title={overdueRewardHint(payable.daysLate, payable.originalXp, payable.xp, "XP")}>
+                            ✨{payable.xp} XP
+                        </span>
+                    )}
+                    {quest.cp && (
+                        <span title={overdueRewardHint(payable.daysLate, payable.originalCp, payable.cp, "CP")}>
+                            ⭐{payable.cp} CP
+                        </span>
+                    )}
                     {quest.estimatedTime && <span>⏱️{quest.estimatedTime}m</span>}
                     {formatRecur(quest.recur) && <span>Recurring: {formatRecur(quest.recur)}</span>}
                 </div>

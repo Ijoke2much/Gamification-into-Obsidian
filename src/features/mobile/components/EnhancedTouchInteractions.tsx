@@ -35,8 +35,8 @@ export const EnhancedTouchInteractions: React.FC<TouchInteractionProps> = ({
   const { gestureState, handleGestureStart, handleGestureMove, handleGestureEnd, getGestureDelta } = useMobileGestures();
   
   const containerRef = useRef<HTMLDivElement>(null);
-  const longPressTimerRef = useRef<NodeJS.Timeout>();
-  const doubleTapTimerRef = useRef<NodeJS.Timeout>();
+  const longPressTimerRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const doubleTapTimerRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const lastTapTimeRef = useRef<number>(0);
   const touchCountRef = useRef<number>(0);
   const initialDistanceRef = useRef<number>(0);

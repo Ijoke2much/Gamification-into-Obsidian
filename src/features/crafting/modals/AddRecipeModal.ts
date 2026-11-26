@@ -15,11 +15,33 @@ const CATEGORIES = [
 	'mystical',
 	'decoration',
 ] as const;
-const DIFFICULTIES = ['easy', 'medium', 'hard', 'expert'] as const;
-const STATIONS = ['workbench', 'alchemy_lab', 'forge', 'enchanting_table'] as const;
 const RARITIES = ['common', 'uncommon', 'rare', 'epic', 'legendary'] as const;
 
-type MaterialRow = { materialId: string; quantity: number; required: boolean };
+/** Presets write machine-readable inventory effect lines that Use actually applies. */
+const EFFECT_PRESETS: { id: string; label: string; line: string }[] = [
+	{ id: 'energy15', label: '+15 Energy', line: 'energy:+15' },
+	{ id: 'energy25', label: '+25 Energy', line: 'energy:+25' },
+	{ id: 'energy50', label: '+50 Energy', line: 'energy:+50' },
+	{ id: 'xp50', label: '+50 XP', line: 'xp:+50' },
+	{ id: 'xp100', label: '+100 XP', line: 'xp:+100' },
+	{ id: 'coins30', label: '+30 Coins', line: 'coins:+30' },
+	{ id: 'buffXp', label: 'XP ×1.5 · 1h', line: 'buff:xp;mult=1.5;dur=1h' },
+	{ id: 'buffCoins', label: 'Coins ×1.25 · 1h', line: 'buff:coins;mult=1.25;dur=1h' },
+	{ id: 'buffRewards', label: 'Rewards ×1.2 · 30m', line: 'buff:rewards;mult=1.2;dur=30m' },
+	{
+		id: 'artifactWalk',
+		label: 'Real-world: walk 20m',
+		line: 'artifact:Take a walk:20:health',
+	},
+	{
+		id: 'artifactBreak',
+		label: 'Real-world: mindful break 15m',
+		line: 'artifact:Take a mindful break:15:health',
+	},
+	{ id: 'gearFocus', label: 'Gear: Focus +10', line: 'gear:focus:=10' },
+];
+
+type MaterialRow = { materialId: string; quantity: number };
 
 function slugify(name: string): string {
 	return name
@@ -39,14 +61,7 @@ export class AddRecipeModal extends Modal {
 	icon = '📜';
 	description = '';
 	category: CraftingRecipe['category'] = 'consumable';
-	difficulty: CraftingRecipe['difficulty'] = 'easy';
-	craftingTime = 30;
-	skillRequired = 1;
-	craftingStation: CraftingRecipe['craftingStation'] = 'workbench';
-	xpReward = 10;
-	boogersReward = 5;
-	skillXp = 5;
-	materialRows: MaterialRow[] = [{ materialId: 'herb', quantity: 1, required: true }];
+	materialRows: MaterialRow[] = [{ materialId: 'herb', quantity: 1 }];
 	outputName = '';
 	outputCategory = 'consumable';
 	outputRarity: (typeof RARITIES)[number] = 'common';
@@ -73,21 +88,13 @@ export class AddRecipeModal extends Modal {
 			this.icon = recipeToEdit.icon;
 			this.description = recipeToEdit.description;
 			this.category = recipeToEdit.category;
-			this.difficulty = recipeToEdit.difficulty;
-			this.craftingTime = recipeToEdit.craftingTime;
-			this.skillRequired = recipeToEdit.skillRequired;
-			this.craftingStation = recipeToEdit.craftingStation ?? 'workbench';
-			this.xpReward = recipeToEdit.xpReward;
-			this.boogersReward = recipeToEdit.boogersReward;
-			this.skillXp = recipeToEdit.skillXp;
 			this.materialRows =
 				recipeToEdit.materials.length > 0
 					? recipeToEdit.materials.map((m) => ({
 							materialId: m.materialId,
 							quantity: m.quantity,
-							required: m.required,
 						}))
-					: [{ materialId: 'herb', quantity: 1, required: true }];
+					: [{ materialId: 'herb', quantity: 1 }];
 
 			if (recipeToEdit.guaranteedItem) {
 				this.outputName = recipeToEdit.guaranteedItem.name;
@@ -106,7 +113,7 @@ export class AddRecipeModal extends Modal {
 		contentEl.createEl('h2', { text: this.isEdit ? 'Edit recipe' : 'Add recipe' });
 		contentEl.createEl('p', {
 			cls: 'mod-muted',
-			text: 'Defines materials required and the item or artifact produced. Saved to Recipes.md.',
+			text: 'Materials in → usable item out. Saved to Recipes.md (Settings → Game Data Hub).',
 		});
 
 		new Setting(contentEl).setName('Recipe name').addText((text) =>
@@ -116,14 +123,17 @@ export class AddRecipeModal extends Modal {
 			})
 		);
 
-		new Setting(contentEl).setName('Recipe id').addText((text) =>
-			text
-				.setValue(this.id)
-				.setDisabled(this.isEdit)
-				.onChange((v) => {
-					this.id = slugify(v);
-				})
-		);
+		new Setting(contentEl)
+			.setName('Recipe id')
+			.setDesc('Auto-filled from the name. Used to merge with built-in recipes.')
+			.addText((text) =>
+				text
+					.setValue(this.id)
+					.setDisabled(this.isEdit)
+					.onChange((v) => {
+						this.id = slugify(v);
+					})
+			);
 
 		new Setting(contentEl).setName('Icon').addText((text) =>
 			text.setValue(this.icon).onChange((v) => {
@@ -138,44 +148,18 @@ export class AddRecipeModal extends Modal {
 			});
 		});
 
-		new Setting(contentEl).setName('Difficulty').addDropdown((dropdown) => {
-			for (const d of DIFFICULTIES) dropdown.addOption(d, d);
-			dropdown.setValue(this.difficulty).onChange((v) => {
-				this.difficulty = v as CraftingRecipe['difficulty'];
-			});
-		});
-
-		new Setting(contentEl).setName('Craft time (seconds)').addText((text) =>
-			text.setValue(String(this.craftingTime)).onChange((v) => {
-				this.craftingTime = parseInt(v, 10) || 30;
-			})
-		);
-
-		new Setting(contentEl).setName('Skill required').addText((text) =>
-			text.setValue(String(this.skillRequired)).onChange((v) => {
-				this.skillRequired = parseInt(v, 10) || 1;
-			})
-		);
-
-		new Setting(contentEl).setName('Station').addDropdown((dropdown) => {
-			for (const s of STATIONS) dropdown.addOption(s, s);
-			dropdown.setValue(this.craftingStation ?? 'workbench').onChange((v) => {
-				this.craftingStation = v as CraftingRecipe['craftingStation'];
-			});
-		});
-
 		contentEl.createEl('h3', { text: 'Materials' });
 		this.materialsContainerEl = contentEl.createDiv();
 		this.renderMaterialRows();
 
 		new Setting(contentEl).addButton((btn) =>
-			btn.setButtonText('＋ Add material row').onClick(() => {
-				this.materialRows.push({ materialId: 'herb', quantity: 1, required: true });
+			btn.setButtonText('＋ Add material').onClick(() => {
+				this.materialRows.push({ materialId: 'herb', quantity: 1 });
 				this.renderMaterialRows();
 			})
 		);
 
-		contentEl.createEl('h3', { text: 'Output (crafted item / artifact)' });
+		contentEl.createEl('h3', { text: 'Output (crafted item)' });
 
 		new Setting(contentEl).setName('Output name').addText((text) =>
 			text.setValue(this.outputName).onChange((v) => {
@@ -209,14 +193,57 @@ export class AddRecipeModal extends Modal {
 			})
 		);
 
+		const effectsSetting = new Setting(contentEl)
+			.setName('Output effects')
+			.setDesc('Pick presets (recommended). Lines are written as machine form inventory effects.');
+
+		const effectsPreview = effectsSetting.controlEl.createEl('div', {
+			cls: 'mod-muted',
+			attr: { style: 'margin-bottom: 8px; font-size: 12px; width: 100%;' },
+		});
+		const refreshEffectsPreview = () => {
+			const lines = this.outputEffects
+				.split('\n')
+				.map((l) => l.trim())
+				.filter(Boolean);
+			effectsPreview.setText(
+				lines.length > 0 ? `Active: ${lines.join(' · ')}` : 'No effects yet — add a preset below.'
+			);
+		};
+		refreshEffectsPreview();
+
+		let effectsTextArea: { setValue: (v: string) => unknown } | null = null;
+
+		new Setting(contentEl).setName('Add effect preset').addDropdown((dropdown) => {
+			dropdown.addOption('', 'Choose a preset…');
+			for (const p of EFFECT_PRESETS) dropdown.addOption(p.id, p.label);
+			dropdown.onChange((v) => {
+				const preset = EFFECT_PRESETS.find((p) => p.id === v);
+				if (!preset) return;
+				const existing = this.outputEffects
+					.split('\n')
+					.map((l) => l.trim())
+					.filter(Boolean);
+				if (!existing.includes(preset.line)) {
+					existing.push(preset.line);
+					this.outputEffects = existing.join('\n');
+					effectsTextArea?.setValue(this.outputEffects);
+					refreshEffectsPreview();
+				}
+				dropdown.setValue('');
+			});
+		});
+
 		new Setting(contentEl)
-			.setName('Output effects (one per line)')
-			.setDesc('e.g. Restore 25 Energy, Focus +50% for 1 hour')
-			.addTextArea((text) =>
+			.setName('Effect lines (advanced)')
+			.setDesc('Optional edit. Format: energy:+25 · xp:+100 · buff:xp;mult=1.5;dur=1h')
+			.addTextArea((text) => {
+				effectsTextArea = text;
 				text.setValue(this.outputEffects).onChange((v) => {
 					this.outputEffects = v;
-				})
-			);
+					refreshEffectsPreview();
+				});
+			});
 
 		new Setting(contentEl).setName('Recipe description').addTextArea((text) =>
 			text.setValue(this.description).onChange((v) => {
@@ -253,23 +280,19 @@ export class AddRecipeModal extends Modal {
 					});
 				})
 				.addText((text) =>
-					text.setValue(String(row.quantity)).onChange((v) => {
-						row.quantity = parseInt(v, 10) || 1;
-					})
+					text
+						.setPlaceholder('qty')
+						.setValue(String(row.quantity))
+						.onChange((v) => {
+							row.quantity = parseInt(v, 10) || 1;
+						})
 				);
-
-			rowSetting.addToggle((toggle) =>
-				toggle.setValue(row.required).onChange((v) => {
-					row.required = v;
-				})
-			);
-			rowSetting.setDesc('Required');
 
 			rowSetting.addButton((btn) =>
 				btn.setButtonText('Remove').onClick(() => {
 					this.materialRows.splice(index, 1);
 					if (this.materialRows.length === 0) {
-						this.materialRows.push({ materialId: 'herb', quantity: 1, required: true });
+						this.materialRows.push({ materialId: 'herb', quantity: 1 });
 					}
 					this.renderMaterialRows();
 				})
@@ -297,6 +320,7 @@ export class AddRecipeModal extends Modal {
 			.map((l) => l.trim())
 			.filter(Boolean);
 
+		// Silent schema defaults — workshop is materials-only; these fields stay for file compat.
 		const recipe: CraftingRecipe = {
 			id,
 			name: this.name.trim(),
@@ -306,12 +330,12 @@ export class AddRecipeModal extends Modal {
 			materials: this.materialRows.map((row) => ({
 				materialId: row.materialId,
 				quantity: row.quantity,
-				required: row.required,
+				required: true,
 			})),
-			craftingTime: this.craftingTime,
-			difficulty: this.difficulty,
-			skillRequired: this.skillRequired,
-			craftingStation: this.craftingStation,
+			craftingTime: 0,
+			difficulty: 'easy',
+			skillRequired: 0,
+			craftingStation: 'workbench',
 			guaranteedItem: {
 				name: this.outputName.trim(),
 				category: this.outputCategory,
@@ -321,9 +345,9 @@ export class AddRecipeModal extends Modal {
 				description: this.outputDescription.trim(),
 				quality: 'basic',
 			},
-			xpReward: this.xpReward,
-			boogersReward: this.boogersReward,
-			skillXp: this.skillXp,
+			xpReward: 10,
+			boogersReward: 5,
+			skillXp: 0,
 		};
 
 		const created = await ensureRecipesFile(this.plugin);

@@ -1,5 +1,8 @@
 import { Notice } from 'obsidian';
 import type { NotificationLevel } from '../../core/settings';
+import { recordNotice, type NoticeLogKind, type NoticePriority } from './noticeLog';
+
+export type { NoticePriority };
 
 /** Class on the inner notice node; matches gamified-notices.css */
 export const GAMIFIED_NOTICE_CLASS = 'gamification-pixel-notice';
@@ -27,16 +30,11 @@ export function wrapSystemNoticeMessage(message: string): DocumentFragment {
 	return wrapNoticeMessage(message, GAMIFIED_SYSTEM_NOTICE_CLASS);
 }
 
-/**
- * Centralized helper for all game/plugin notices.
- *
- * Goal: make notices effectively "click to dismiss" by giving them a
- * very long duration so they don't disappear before the user can read them.
- *
- * Obsidian's Notice API doesn't support true infinite persistence, so we use
- * a large timeout (1 hour) and rely on the user clicking to dismiss.
- */
-export const GAME_NOTICE_MIN_TIMEOUT = 60 * 60 * 1000; // 1 hour in ms
+/** Obsidian: timeout 0 means the notice stays until the user clicks it. */
+export const NOTICE_PERSIST_TIMEOUT = 0;
+
+/** @deprecated Normal notices persist until click. Kept for existing imports. */
+export const GAME_NOTICE_MIN_TIMEOUT = NOTICE_PERSIST_TIMEOUT;
 
 const QUIET_MAX_TIMEOUT = 4000;
 const MINIMAL_MAX_TIMEOUT = 2500;
@@ -64,12 +62,23 @@ function noticeKey(message: string | DocumentFragment): string {
 	return 'fragment';
 }
 
+function messageToText(message: string | DocumentFragment): string {
+	if (typeof message === 'string') {
+		return message;
+	}
+	return message.textContent ?? '';
+}
+
 function shouldSuppressNotice(message: string | DocumentFragment, priority: NoticePriority): boolean {
 	if (priority === 'critical') {
 		return false;
 	}
 
 	if (notificationLevel === 'minimal' && priority !== 'high') {
+		return true;
+	}
+
+	if (notificationLevel === 'quiet' && priority === 'low') {
 		return true;
 	}
 
@@ -89,47 +98,46 @@ function shouldSuppressNotice(message: string | DocumentFragment, priority: Noti
 	return false;
 }
 
-function resolveTimeout(requested: number | undefined, isGameNotice: boolean): number | undefined {
+function resolveTimeout(requested: number | undefined): number | undefined {
 	if (notificationLevel === 'quiet') {
-		const cap = QUIET_MAX_TIMEOUT;
-		if (requested === undefined) {
-			return cap;
-		}
-		return Math.min(requested, cap);
+		const value = requested === undefined || requested === 0 ? QUIET_MAX_TIMEOUT : requested;
+		return Math.min(value, QUIET_MAX_TIMEOUT);
 	}
 
 	if (notificationLevel === 'minimal') {
-		const cap = MINIMAL_MAX_TIMEOUT;
-		if (requested === undefined) {
-			return cap;
-		}
-		return Math.min(requested, cap);
+		const value = requested === undefined || requested === 0 ? MINIMAL_MAX_TIMEOUT : requested;
+		return Math.min(value, MINIMAL_MAX_TIMEOUT);
 	}
 
-	if (requested !== undefined) {
-		return isGameNotice ? Math.max(requested, GAME_NOTICE_MIN_TIMEOUT) : requested;
-	}
-
-	return isGameNotice ? GAME_NOTICE_MIN_TIMEOUT : undefined;
+	return NOTICE_PERSIST_TIMEOUT;
 }
 
-export type NoticePriority = 'critical' | 'high' | 'normal' | 'low';
+function showNotice(
+	message: string | DocumentFragment,
+	timeout: number | undefined,
+	priority: NoticePriority,
+	kind: NoticeLogKind,
+	wrap: (text: string) => DocumentFragment
+): Notice | null {
+	recordNotice(messageToText(message), kind, priority);
+	if (shouldSuppressNotice(message, priority)) {
+		return null;
+	}
+
+	const content = typeof message === 'string' ? wrap(message) : message;
+	return new Notice(content, resolveTimeout(timeout));
+}
 
 /**
  * Gamified Obsidian notice — pixel/RPG field styling (gamified-notices.css).
+ * In Normal notification level, stays until clicked.
  */
 export function pixelNotice(
 	message: string | DocumentFragment,
 	timeout?: number,
 	priority: NoticePriority = 'normal'
 ): Notice | null {
-	if (shouldSuppressNotice(message, priority)) {
-		return null;
-	}
-
-	const content = typeof message === 'string' ? wrapGamifiedNoticeMessage(message) : message;
-	const effectiveTimeout = resolveTimeout(timeout, false);
-	return new Notice(content, effectiveTimeout);
+	return showNotice(message, timeout, priority, 'field', wrapGamifiedNoticeMessage);
 }
 
 /** Field / combat notices — pixel RPG shell. */
@@ -147,17 +155,11 @@ export function systemNotice(
 	timeout?: number,
 	priority: NoticePriority = 'normal'
 ): Notice | null {
-	if (shouldSuppressNotice(message, priority)) {
-		return null;
-	}
-
-	const content = typeof message === 'string' ? wrapSystemNoticeMessage(message) : message;
-	const effectiveTimeout = resolveTimeout(timeout, false);
-	return new Notice(content, effectiveTimeout);
+	return showNotice(message, timeout, priority, 'system', wrapSystemNoticeMessage);
 }
 
 /**
- * Show a long-lived game notice (minimum 1h timeout unless longer requested).
+ * Game notice. In Normal mode, stays until clicked.
  * In quiet/minimal modes, timeouts are capped and duplicates are suppressed.
  */
 export function showGameNotice(
@@ -165,13 +167,5 @@ export function showGameNotice(
 	timeout?: number,
 	priority: NoticePriority = 'normal'
 ): Notice | null {
-	if (shouldSuppressNotice(message, priority)) {
-		return null;
-	}
-
-	const effectiveTimeout = resolveTimeout(timeout, true);
-	const content =
-		typeof message === 'string' ? wrapGamifiedNoticeMessage(message) : message;
-
-	return new Notice(content, effectiveTimeout);
+	return showNotice(message, timeout, priority, 'game', wrapGamifiedNoticeMessage);
 }

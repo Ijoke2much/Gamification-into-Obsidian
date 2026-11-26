@@ -29,7 +29,14 @@ export function getCaptureTagPresets(settings: Pick<GamificationPluginSettings, 
 	return tags.map((t) => t.replace(/^#/, '').trim()).filter(Boolean);
 }
 
-export function buildCaptureLine(text: string, optionalTag?: string): string {
+export type CaptureDescriptionFormat = 'thought' | 'dataview' | 'both';
+
+export function buildCaptureLine(
+	text: string,
+	optionalTag?: string,
+	description?: string,
+	descriptionFormat: CaptureDescriptionFormat = 'thought'
+): string {
 	const trimmed = text.trim();
 	if (!trimmed) return '';
 
@@ -45,7 +52,17 @@ export function buildCaptureLine(text: string, optionalTag?: string): string {
 		}
 	}
 
-	return `- [ ] ${trimmed} ${tags.join(' ')}`;
+	const desc = description?.trim();
+	let line = `- [ ] ${trimmed} ${tags.join(' ')}`;
+	if (desc) {
+		if (descriptionFormat === 'thought' || descriptionFormat === 'both') {
+			line += `\n  💭 ${desc}`;
+		}
+		if (descriptionFormat === 'dataview' || descriptionFormat === 'both') {
+			line += `\n  [description:: ${desc}]`;
+		}
+	}
+	return line;
 }
 
 function toTodayISO(): string {
@@ -64,16 +81,26 @@ export function buildTodayInboxLine(quest: Quest): string {
 		.join(' ');
 	const todayISO = toTodayISO();
 	const tagSuffix = categoryTags ? ` ${categoryTags}` : '';
-	return `- [ ] ${quest.title.trim()} #gamified-task 📅${todayISO} // due: ${todayISO} | today: true | modified: ${new Date().toISOString()} #today/true #status/active${tagSuffix}`;
+	let line = `- [ ] ${quest.title.trim()} #gamified-task 📅${todayISO} // due: ${todayISO} | today: true | modified: ${new Date().toISOString()} #today/true #status/active${tagSuffix}`;
+	const desc = quest.description?.toString().trim();
+	if (desc) {
+		line += `\n  💭 ${desc}`;
+	}
+	return line;
 }
 
 export async function appendCaptureLine(
 	app: App,
-	settings: Pick<GamificationPluginSettings, 'captureFilePath'>,
+	settings: Pick<
+		GamificationPluginSettings,
+		'captureFilePath' | 'captureDescriptionFormat'
+	>,
 	text: string,
-	optionalTag?: string
+	optionalTag?: string,
+	description?: string
 ): Promise<boolean> {
-	const line = buildCaptureLine(text, optionalTag);
+	const format = settings.captureDescriptionFormat ?? 'thought';
+	const line = buildCaptureLine(text, optionalTag, description, format);
 	if (!line) return false;
 
 	const path = getCaptureFilePath(settings);

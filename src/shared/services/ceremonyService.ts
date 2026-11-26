@@ -5,6 +5,7 @@ import { DEFAULT_VISUAL_THEME_SETTINGS, type VisualCeremonyLevel } from '../them
 import { emitCeremony } from '../utils/ceremonyEvents';
 import { fieldNotice, systemNotice } from '../utils/noticeUtils';
 import { getPluginSettingsFromApp } from '../utils/gameplayConfig';
+import { isLikelyMobileDevice } from '../utils/deviceDetect';
 
 function resolveCeremonyLevel(settings?: Partial<GamificationPluginSettings> | null): VisualCeremonyLevel {
 	return settings?.visualTheme?.ceremonyLevel ?? DEFAULT_VISUAL_THEME_SETTINGS.ceremonyLevel ?? 'minimal';
@@ -16,21 +17,28 @@ export function processXPGainCeremonies(
 ): void {
 	const level = resolveCeremonyLevel(settings);
 	if (level === 'off') return;
+	const mobile = isLikelyMobileDevice();
 
 	if (xpGain.rankChanged) {
 		if (level === 'full' || level === 'minimal') {
-			emitCeremony({
-				kind: 'rank_up',
-				oldRank: xpGain.oldRank,
-				newRank: xpGain.newRank,
-				level: xpGain.newLevel,
-			});
+			// Mobile lite host skips rank modal — notice only
+			if (mobile) {
+				showRankUpFallbackNotice(xpGain.oldRank, xpGain.newRank, xpGain.newLevel);
+			} else {
+				emitCeremony({
+					kind: 'rank_up',
+					oldRank: xpGain.oldRank,
+					newRank: xpGain.newRank,
+					level: xpGain.newLevel,
+				});
+			}
 		}
 		return;
 	}
 
 	if (xpGain.leveledUp) {
-		if (level === 'full') {
+		// Mobile always gets a light level-up ceremony (even when settings are "minimal")
+		if (level === 'full' || mobile) {
 			emitCeremony({
 				kind: 'level_up',
 				oldLevel: xpGain.oldLevel,
@@ -76,7 +84,7 @@ export function notifyJourneyHit(
 		fieldNotice(
 			`GRAZE HIT\n−${damage} HP (25% — task missed foe weakness)\nMatch affinity for full damage`,
 			4000,
-			'normal'
+			'low'
 		);
 		return;
 	}
@@ -86,7 +94,7 @@ export function notifyJourneyHit(
 		options?.hpPercentAfter != null && !options?.defeated
 			? `\nFoe at ${options.hpPercentAfter}% HP`
 			: '';
-	fieldNotice(`Journey −${damage} HP${hpLine}${suffix}`, 3200);
+	fieldNotice(`Journey −${damage} HP${hpLine}${suffix}`, 3200, options?.defeated ? 'high' : 'low');
 }
 
 export function notifyBossRaidHit(
@@ -104,7 +112,7 @@ export function notifyBossRaidHit(
 		fieldNotice(
 			`RAID GRAZE\n−${damage} HP vs ${label}\nTag the boss weakness for full damage`,
 			4000,
-			'normal'
+			'low'
 		);
 		return;
 	}
@@ -122,7 +130,7 @@ export function notifyBossRaidHit(
 
 	const hpLine =
 		options?.hpPercentAfter != null ? `\nBoss at ${options.hpPercentAfter}% HP` : '';
-	fieldNotice(`Raid −${damage} HP vs ${label}${hpLine}`, 3200);
+	fieldNotice(`Raid −${damage} HP vs ${label}${hpLine}`, 3200, 'low');
 }
 
 export function notifyDungeonUnlocked(clearedCount?: number, required?: number): void {
@@ -142,5 +150,5 @@ export function notifyJourneyVictory(message: string): void {
 }
 
 export function notifyQuestComplete(message: string): void {
-	systemNotice(message, 5000, 'normal');
+	systemNotice(message, 5000, 'high');
 }

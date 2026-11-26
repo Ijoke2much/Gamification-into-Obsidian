@@ -4,3 +4,4 @@ export { BossAnalyticsIntegration } from './BossAnalyticsIntegration';
 export { EnhancedAnalyticsDashboard } from './EnhancedAnalyticsDashboard';
 export { SimpleAnalyticsDashboard } from './SimpleAnalyticsDashboard';
 export { MobileAnalyticsWidget } from './MobileAnalyticsWidget';
+export { NoticeLogPanel } from './NoticeLogPanel';

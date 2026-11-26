@@ -1,9 +1,14 @@
 import React from 'react';
-import guildBanner from '../../../../assets/projects-guild-banner.png';
+import { getPluginAssetUrl, PLUGIN_ASSETS } from '../../../shared/utils/pluginAssetUrl';
 import hubStyles from './QuestHubPanels.module.css';
 
 export const ProjectsGuildBanner: React.FC = () => (
 	<div className={hubStyles.guildBannerWrap}>
-		<img className={hubStyles.guildBannerImg} src={guildBanner} alt="" aria-hidden="true" />
+		<img
+			className={hubStyles.guildBannerImg}
+			src={getPluginAssetUrl(PLUGIN_ASSETS.projectsGuildBanner)}
+			alt=""
+			aria-hidden="true"
+		/>
 	</div>
 );

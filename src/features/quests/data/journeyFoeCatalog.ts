@@ -44,6 +44,7 @@ export const JOURNEY_FOE_CATALOG: JourneyFoeDefinition[] = [
 		pathWhisper:
 			'The shade blocks the canyon trail. Each quest you finish this week is another step forward—and another cut at its strength.',
 		affinityRule: { kind: 'random-class' },
+		sprite: 'assets/sprites/foes/wandering-shade.png',
 	},
 	{
 		id: 'sloth-ghost',
@@ -57,6 +58,7 @@ export const JOURNEY_FOE_CATALOG: JourneyFoeDefinition[] = [
 		lootTier: 'common',
 		pathWhisper: 'It hums a lullaby. Keep moving—the road clears one checkbox at a time.',
 		affinityRule: { kind: 'neutral' },
+		sprite: 'assets/sprites/foes/sloth-ghost.png',
 	},
 	{
 		id: 'inbox-hydra',
@@ -70,6 +72,7 @@ export const JOURNEY_FOE_CATALOG: JourneyFoeDefinition[] = [
 		lootTier: 'uncommon',
 		pathWhisper: 'Heads turn when you finish something hard. That is the only blade that works here.',
 		affinityRule: { kind: 'random-skill' },
+		sprite: 'assets/sprites/foes/inbox-hydra.png',
 	},
 	{
 		id: 'deadline-wraith',
@@ -83,6 +86,7 @@ export const JOURNEY_FOE_CATALOG: JourneyFoeDefinition[] = [
 		lootTier: 'rare',
 		pathWhisper: 'Time is already moving. Your completed tasks are the only spell that lands.',
 		affinityRule: { kind: 'random' },
+		sprite: 'assets/sprites/foes/deadline-wraith.png',
 	},
 ];
 

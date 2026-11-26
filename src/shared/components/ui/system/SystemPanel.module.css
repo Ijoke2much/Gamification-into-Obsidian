@@ -3,25 +3,14 @@
 .scaffold {
 	position: relative;
 	min-height: 100%;
-	background-color: var(--go-bg, #020408);
+	background-color: var(--go-bg, #071527);
 	background-image:
-		radial-gradient(ellipse at 50% 0%, rgba(34, 200, 255, 0.22) 0%, transparent 58%),
-		linear-gradient(180deg, rgba(13, 39, 72, 0.95), rgba(7, 21, 39, 0.98)),
-		repeating-linear-gradient(
-			0deg,
-			transparent,
-			transparent 2px,
-			rgba(255, 255, 255, 0.045) 2px,
-			rgba(255, 255, 255, 0.045) 3px
-		),
-		linear-gradient(rgba(34, 200, 255, 0.065) 1px, transparent 1px),
-		linear-gradient(90deg, rgba(34, 200, 255, 0.055) 1px, transparent 1px);
-	background-size:
-		100% 100%,
-		100% 100%,
-		100% 4px,
-		22px 22px,
-		22px 22px;
+		linear-gradient(rgba(34, 200, 255, 0.045) 1px, transparent 1px),
+		linear-gradient(90deg, rgba(34, 200, 255, 0.04) 1px, transparent 1px),
+		var(--go-energy-field, none);
+	background-repeat: repeat, repeat, no-repeat;
+	background-size: 22px 22px, 22px 22px, cover;
+	background-position: center, center, center;
 	color: var(--go-text, #e0f2fe);
 	font-family: var(--go-font-ui, "Inter", "Segoe UI", system-ui, sans-serif);
 }
@@ -37,7 +26,7 @@
 		radial-gradient(circle at 40% 80%, rgba(255, 255, 255, 0.08) 0 1px, transparent 1px);
 	background-size: 120px 120px, 180px 180px, 34px 34px;
 	mix-blend-mode: screen;
-	opacity: 0.55;
+	opacity: 0.28;
 	animation: systemStaticDrift 1.4s steps(2) infinite;
 }
 
@@ -71,8 +60,8 @@
 	padding: 20px 18px 18px;
 	border: 1px solid var(--go-border, rgba(79, 195, 247, 0.55));
 	background:
-		linear-gradient(180deg, rgba(18, 55, 96, 0.62), rgba(7, 21, 39, 0.94)),
-		var(--go-panel, rgba(2, 4, 8, 0.94));
+		linear-gradient(180deg, rgba(34, 200, 255, 0.18), transparent 32%),
+		rgba(8, 24, 46, 0.62);
 	box-shadow:
 		0 0 0 1px rgba(79, 195, 247, 0.12),
 		0 0 24px var(--go-shadow, rgba(34, 211, 238, 0.18)),
@@ -555,9 +544,19 @@
 }
 
 .resourceBarEXP {
-	--resource-fill: var(--go-exp-progress-fill, #ffffff);
-	--resource-fill-strong: var(--go-exp-progress-fill-strong, #d7e7ff);
-	--resource-glow: var(--go-exp-progress-glow, rgba(255, 255, 255, 0.42));
+	--resource-fill: #ffffff;
+	--resource-fill-strong: #ffffff;
+	--resource-glow: rgba(255, 255, 255, 0.5);
+}
+
+.resourceBarEXP .resourceBarIcon {
+	color: inherit;
+	filter: drop-shadow(0 0 6px rgba(143, 217, 168, 0.45));
+}
+
+.resourceBarEXP .resourceBarIconCol {
+	justify-content: flex-end;
+	padding-bottom: 2px;
 }
 
 .resourceBarIconCol {

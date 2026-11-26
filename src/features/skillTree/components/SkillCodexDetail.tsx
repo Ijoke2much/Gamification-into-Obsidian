@@ -1,6 +1,7 @@
 import React from 'react';
 import type { SkillMetadata, ClassMetadata } from '../../../shared/utils/skillDiscovery';
 import { skillToProgressView } from '../utils/skillProgressView';
+import { useMobileOptimizations } from '../../../shared/hooks/useMobileOptimizations';
 import styles from './SkillCodexDetail.module.css';
 
 export interface SkillCodexDetailProps {
@@ -16,6 +17,7 @@ export const SkillCodexDetail: React.FC<SkillCodexDetailProps> = ({
     onClose,
     onOpenInVault
 }) => {
+    const { isMobile } = useMobileOptimizations();
     const displayIcon = (skill.icon || '').trim() || '📜';
     const statNames = Object.keys(skill.stats || {}).filter(Boolean);
     const p = skillToProgressView(skill);
@@ -25,14 +27,18 @@ export const SkillCodexDetail: React.FC<SkillCodexDetailProps> = ({
 
     return (
         <div
-            className={styles.backdrop}
+            className={`${styles.backdrop}${isMobile ? ` ${styles.backdropMobile}` : ''}`}
+            data-skill-codex-detail="true"
             role="dialog"
             aria-modal="true"
             aria-labelledby="codex-skill-title"
             onClick={onClose}
             onKeyDown={(e) => e.key === 'Escape' && onClose()}
         >
-            <div className={styles.panel} onClick={(e) => e.stopPropagation()}>
+            <div
+                className={`${styles.panel}${isMobile ? ` ${styles.panelMobile}` : ''}`}
+                onClick={(e) => e.stopPropagation()}
+            >
                 <div className={styles.headerRow}>
                     <div className={styles.iconBox}>{displayIcon}</div>
                     <div className={styles.titleBlock}>
@@ -91,7 +97,9 @@ export const SkillCodexDetail: React.FC<SkillCodexDetailProps> = ({
                     </p>
                 )}
 
-                <p className={styles.pathNote}>{skill.filePath}</p>
+                {!isMobile ? (
+                    <p className={styles.pathNote}>{skill.filePath}</p>
+                ) : null}
 
                 <div className={styles.actions}>
                     <button

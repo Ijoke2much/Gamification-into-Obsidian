@@ -8,9 +8,10 @@
 # npm
 node_modules
 
-# Don't include the compiled main.js file in the repo.
-# They should be uploaded to GitHub releases instead.
+# Don't include compiled plugin files. Upload them to GitHub releases (BRAT).
 main.js
+main.css
+styles.css
 
 # Exclude sourcemaps
 *.map

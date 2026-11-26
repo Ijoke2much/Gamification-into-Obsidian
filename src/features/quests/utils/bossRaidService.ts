@@ -10,7 +10,6 @@ import {
 	resetBossStrikeTasks,
 	resetBossTasksInFile,
 	setBossTaskCompleted,
-	settleArmorRegen,
 	writeBossState,
 	BOSS_UPDATED_EVENT,
 	type BossFileData,
@@ -23,6 +22,7 @@ import {
 	type JourneyAffinity,
 } from './journeyAffinity';
 import { getAllSkills } from '../../../shared/utils/skillDiscovery';
+import { playerStore } from '../../../shared/state/playerStore';
 import { getJourneyQuestKey } from './journeyRunService';
 import {
 	RAID_FOCUS_MAX,
@@ -127,18 +127,52 @@ export function migrateBossRaidFilePath(oldPath: string, newPath: string): void 
 export async function prepareBossForNewRaid(app: App, boss: BossFileData): Promise<BossFileData> {
 	const now = Date.now();
 	const armed = activateBoss(boss);
+	const boosted = await applyStoredHealthBoost(armed);
 	const fresh: BossFileData = scheduleInitialBossStrike(
 		{
-			...armed,
+			...boosted,
 			status: 'active',
-			currentHp: armed.maxHp,
-			currentArmor: armed.maxArmor,
+			currentHp: boosted.maxHp,
+			currentArmor: boosted.maxArmor,
 			lastArmorRegenAt: now,
 		},
 		now
 	);
 	await writeBossState(app, fresh);
 	return resetBossStrikeTasks(app, fresh);
+}
+
+/** A late fight stores a percent on the player. The next arm spends it on the note. */
+async function applyStoredHealthBoost(boss: BossFileData): Promise<BossFileData> {
+	const boosts = playerStore.getSync()?.bossHealthBoosts;
+	if (!boosts) return boss;
+	const key = Object.keys(boosts).find((candidate) => {
+		const id = candidate.trim().toLowerCase();
+		return id === boss.bossId.toLowerCase() || id === boss.name.trim().toLowerCase() || id === boss.filePath.toLowerCase();
+	});
+	if (!key) return boss;
+	const percent = Math.min(50, Math.max(0, Number(boosts[key]) || 0));
+	await playerStore.update((data) => {
+		const next = { ...(data.bossHealthBoosts || {}) };
+		delete next[key];
+		return { ...data, bossHealthBoosts: next };
+	});
+	if (percent <= 0) return boss;
+	const extraHp = Math.max(1, Math.round(boss.maxHp * (percent / 100)));
+	const extraArmor = Math.max(1, Math.round(boss.maxArmor * (percent / 100)));
+	return {
+		...boss,
+		maxHp: boss.maxHp + extraHp,
+		maxArmor: boss.maxArmor + extraArmor,
+	};
+}
+
+/** Thrown when a standalone boss fight is started without a Boss Key. */
+export class BossKeyRequiredError extends Error {
+	constructor() {
+		super('A Boss Key is required to challenge this boss. Win a dungeon raid to earn one.');
+		this.name = 'BossKeyRequiredError';
+	}
 }
 
 export interface StartBossFileRaidOptions {
@@ -184,6 +218,17 @@ export async function startBossFileRaid(
 	const boss = await readBoss(app, normalized);
 	if (!boss) {
 		throw new Error(`Boss note not found: ${normalized}`);
+	}
+
+	// Standalone boss fights cost a Boss Key (earned from dungeon raid wins).
+	// Dungeon gate raids (lockDungeon) stay free — they're the key *source*.
+	// Spent only after the boss note is validated; no refund once the raid starts.
+	if (!lockDungeon) {
+		const { consumeKey, BOSS_KEY_NAME } = await import('../../../shared/utils/keyItems');
+		const spent = await consumeKey(app, BOSS_KEY_NAME);
+		if (!spent) {
+			throw new BossKeyRequiredError();
+		}
 	}
 
 	await prepareBossForNewRaid(app, boss);
@@ -258,9 +303,8 @@ export async function recordBossFileQuestCompletion(
 	if (raid.damageLog.some((e) => e.questId === questKey)) return noop;
 
 	const matched = questMatchesAffinity(quest, raid.affinity);
-	const settled = settleArmorRegen(boss);
-	const hpBefore = settled.currentHp;
-	const result = applyTaskCompletion(boss, matched);
+	const hpBefore = boss.currentHp;
+	const result = applyTaskCompletion(boss, matched, Date.now(), { settleRegen: false });
 
 	raid.damageLog = [
 		{

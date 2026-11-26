@@ -147,8 +147,8 @@ export const BatteryProgressBar: React.FC<BatteryProgressBarProps> = ({
       className={rootClass}
       style={{
         width: width ? `${width}px` : '100%',
-        maxWidth: width ? `${width}px` : '400px',
-        minWidth: '120px',
+        maxWidth: width ? `${width}px` : '100%',
+        minWidth: width ? `${width}px` : 0,
         height: `${height}px`,
       }}
       aria-label={`${a11yName} ${clamped}%`}

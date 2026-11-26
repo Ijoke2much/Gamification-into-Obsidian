@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type { Quest } from '../../../features/quests/utils/taskParser';
 import {
 	buildProjectSummaries,
@@ -47,6 +48,7 @@ export interface NewContractInput {
 	difficulty: '' | 'easy' | 'medium' | 'hard';
 	priority: string;
 	skill: string;
+	projectKind: 'standing' | 'campaign';
 }
 
 export interface TurnInResult {
@@ -95,6 +97,7 @@ const BADGE_ICONS: Record<ContractBadge['variant'], string> = {
 	stalled: '⏳',
 	urgent: '⚠',
 	reward: '★',
+	life: '∞',
 };
 
 function badgeClass(variant: ContractBadge['variant']): string {
@@ -109,6 +112,8 @@ function badgeClass(variant: ContractBadge['variant']): string {
 			return hubStyles.contractBadgeUrgent;
 		case 'reward':
 			return hubStyles.contractBadgeReward;
+		case 'life':
+			return hubStyles.contractBadgeLife;
 	}
 }
 
@@ -636,9 +641,12 @@ const RosterContractCard: React.FC<{
 			<div className={hubStyles.rosterText}>
 				<div className={hubStyles.rosterTitle}>{contract.title}</div>
 				<div className={hubStyles.rosterSubtitle}>
-					{contract.subtitle ?? `${contract.completedCount}/${contract.totalCount} steps`}
+					{contract.kind === 'standing'
+						? contract.metaLine
+						: contract.subtitle ?? `${contract.completedCount}/${contract.totalCount} steps`}
 				</div>
 			</div>
+			{contract.kind !== 'standing' && (
 			<div className={hubStyles.rosterProgress}>
 				<span className={percentClass(contract.percentTone)}>
 					{contract.progressPercent}
@@ -651,6 +659,7 @@ const RosterContractCard: React.FC<{
 					/>
 				</div>
 			</div>
+			)}
 			{primaryBadge && (
 				<span className={`${hubStyles.contractBadge} ${badgeClass(primaryBadge.variant)}`}>
 					<span aria-hidden="true">{BADGE_ICONS[primaryBadge.variant]}</span> {primaryBadge.label}
@@ -682,9 +691,11 @@ const CelebrationOverlay: React.FC<{
 	onDismiss: () => void;
 }> = ({ celebration, onDismiss }) => {
 	React.useEffect(() => {
-		const timer = window.setTimeout(onDismiss, 6000);
+		const timer = window.setTimeout(() => onDismiss(), 2800);
 		return () => window.clearTimeout(timer);
-	}, [onDismiss]);
+		// One timer per celebration open — don't reset when parent re-renders
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [celebration.title, celebration.rewards.xp, celebration.rewards.coins, celebration.rewards.cp]);
 
 	const { rewards } = celebration;
 	const rewardParts: string[] = [];
@@ -692,10 +703,33 @@ const CelebrationOverlay: React.FC<{
 	if (rewards.coins > 0) rewardParts.push(`🪙 +${rewards.coins}`);
 	if (rewards.cp > 0) rewardParts.push(`⭐ +${rewards.cp} CP`);
 
-	return (
-		<div className={hubStyles.celebrationOverlay} onClick={onDismiss} role="presentation">
-			<div className={hubStyles.celebrationCard}>
-				<div className={hubStyles.celebrationStars} aria-hidden="true">★ ★ ★</div>
+	return createPortal(
+		<div
+			className={hubStyles.celebrationOverlay}
+			onClick={onDismiss}
+			role="presentation"
+		>
+			<div
+				className={hubStyles.celebrationCard}
+				role="dialog"
+				aria-modal="true"
+				aria-label="Contract complete"
+				onClick={onDismiss}
+			>
+				<button
+					type="button"
+					className={hubStyles.celebrationClose}
+					aria-label="Close"
+					onClick={(e) => {
+						e.stopPropagation();
+						onDismiss();
+					}}
+				>
+					✕
+				</button>
+				<div className={hubStyles.celebrationStars} aria-hidden="true">
+					★ ★ ★
+				</div>
 				<div className={hubStyles.celebrationHeading}>CONTRACT COMPLETE</div>
 				<div className={hubStyles.celebrationTitle}>{celebration.title}</div>
 				{rewardParts.length > 0 && (
@@ -707,9 +741,12 @@ const CelebrationOverlay: React.FC<{
 						))}
 					</div>
 				)}
-				<div className={hubStyles.celebrationHint}>The guild thanks you, adventurer.</div>
+				<div className={hubStyles.celebrationHint}>
+					The guild thanks you, adventurer. Tap to close.
+				</div>
 			</div>
-		</div>
+		</div>,
+		document.body
 	);
 };
 
@@ -720,6 +757,7 @@ const BASE_CONTRACT_INPUT = {
 	difficulty: 'medium' as NewContractInput['difficulty'],
 	priority: 'Medium',
 	skill: '',
+	projectKind: 'campaign' as NewContractInput['projectKind'],
 };
 
 const NewContractForm: React.FC<{
@@ -775,6 +813,17 @@ const NewContractForm: React.FC<{
 	return (
 		<form className={hubStyles.newContractForm} onSubmit={handleSubmit}>
 			<div className={hubStyles.newContractTitle}>POST A NEW CONTRACT</div>
+
+			<label className={hubStyles.newContractField}>
+				<span>Lifetime</span>
+				<select
+					value={input.projectKind}
+					onChange={(e) => update('projectKind', e.target.value as NewContractInput['projectKind'])}
+				>
+					<option value="campaign">Campaign — can finish</option>
+					<option value="standing">Standing — stays open</option>
+				</select>
+			</label>
 
 			<label className={hubStyles.newContractField}>
 				<span>Name</span>
@@ -989,6 +1038,65 @@ const ProjectDebugPanel: React.FC<{ debug: ProjectDebugModel }> = ({ debug }) =>
 	</details>
 );
 
+const StandingProjectCard: React.FC<{
+	project: ProjectSummary;
+	onQuestClick?: (quest: Quest) => void;
+	onToggleSubtask?: (quest: Quest, subtaskIndex: number) => void;
+	onCompleteQuest?: (quest: Quest) => void;
+	onAddChecklistItem?: (waypoint: Quest, title: string) => Promise<boolean>;
+	onAddWaypoint?: (title: string) => Promise<boolean>;
+	onOpenContract?: () => void;
+}> = ({
+	project,
+	onQuestClick,
+	onToggleSubtask,
+	onCompleteQuest,
+	onAddChecklistItem,
+	onAddWaypoint,
+	onOpenContract,
+}) => {
+	const contract = toContractDisplay(project);
+	const waypointQuest = getNextWaypointQuest(project);
+	return (
+		<article className={hubStyles.activeContract}>
+			<div className={hubStyles.activeContractLabel}>STANDING</div>
+			<div className={hubStyles.contractHead}>
+				<span className={hubStyles.contractName}>{contract.title}</span>
+			</div>
+			<ContractBadges badges={contract.badges} />
+			{contract.subtitle && <div className={hubStyles.contractMeta}>{contract.subtitle}</div>}
+			<NextWaypoint
+				key={`${waypointQuest?.id || contract.id}-${waypointQuest?.subtasks?.length ?? 0}`}
+				contract={contract}
+				project={project}
+				waypointQuest={waypointQuest}
+				onToggleSubtask={onToggleSubtask}
+				onCompleteQuest={onCompleteQuest}
+				onOpenDetails={onQuestClick}
+				onAddChecklistItem={
+					onAddChecklistItem && waypointQuest
+						? (title) => onAddChecklistItem(waypointQuest, title)
+						: undefined
+				}
+			/>
+			{onAddWaypoint && (
+				<div className={hubStyles.contractFooter}>
+					<AddWaypointForm onSubmit={onAddWaypoint} />
+					{onOpenContract && (
+						<button
+							type="button"
+							className={`${hubStyles.contractCta} ${hubStyles.contractCtaGold}`}
+							onClick={onOpenContract}
+						>
+							OPEN PROJECT <span aria-hidden="true">▸</span>
+						</button>
+					)}
+				</div>
+			)}
+		</article>
+	);
+};
+
 export const QuestProjectsPanel: React.FC<QuestProjectsPanelProps> = ({
 	allQuests,
 	onQuestClick,
@@ -1011,10 +1119,28 @@ export const QuestProjectsPanel: React.FC<QuestProjectsPanelProps> = ({
 	const [celebration, setCelebration] = useState<CelebrationState | null>(null);
 
 	const projects = useMemo(() => buildProjectSummaries(allQuests), [allQuests]);
-	const activeProject = useMemo(() => pickActiveProject(projects, pinnedId), [projects, pinnedId]);
+	const standingProjects = useMemo(
+		() => projects.filter((project) => project.kind === 'standing'),
+		[projects]
+	);
+	const campaignProjects = useMemo(
+		() => projects.filter((project) => project.kind !== 'standing'),
+		[projects]
+	);
+	const pinnedIsStanding = standingProjects.some((project) => project.id === pinnedId);
+	const featuredStanding =
+		standingProjects.find((project) => project.id === pinnedId) ??
+		standingProjects.find((project) => getNextWaypointQuest(project)) ??
+		standingProjects[0] ??
+		null;
+	const otherStanding = standingProjects.filter((project) => project.id !== featuredStanding?.id);
+	const activeProject = useMemo(
+		() => pickActiveProject(campaignProjects, pinnedIsStanding ? null : pinnedId),
+		[campaignProjects, pinnedId, pinnedIsStanding]
+	);
 	const otherProjects = useMemo(
-		() => pickOtherProjects(projects, activeProject),
-		[projects, activeProject]
+		() => pickOtherProjects(campaignProjects, activeProject),
+		[campaignProjects, activeProject]
 	);
 	const isArchivedProject = (p: ProjectSummary) => isClosedContract(p);
 	const openRoster = otherProjects.filter((p) => !isArchivedProject(p));
@@ -1110,11 +1236,43 @@ export const QuestProjectsPanel: React.FC<QuestProjectsPanelProps> = ({
 					<div className={hubStyles.projectsEmptyEmoji}>📜</div>
 					<p>No contracts posted yet.</p>
 					<p className={hubStyles.projectsEmptyHint}>
-						Tag tasks with <code>[project:: My Project]</code> or add a header with <code>[type:: project]</code>.
+						Link a TaskNotes task with <code>projects: [[Project Name]]</code>, or post a contract below.
 					</p>
 				</div>
 			) : (
 				<div className={hubStyles.projectsHubBody}>
+					{standingProjects.length > 0 && (
+						<div className={hubStyles.rosterHeading}>STANDING</div>
+					)}
+					{featuredStanding && (
+						<StandingProjectCard
+							project={featuredStanding}
+							onQuestClick={onQuestClick}
+							onToggleSubtask={onToggleSubtask}
+							onCompleteQuest={onCompleteQuest}
+							onAddChecklistItem={
+								onAddChecklistItem
+									? (waypoint, title) => onAddChecklistItem(featuredStanding, waypoint, title)
+									: undefined
+							}
+							onAddWaypoint={
+								onAddWaypoint ? (title) => onAddWaypoint(featuredStanding, title) : undefined
+							}
+							onOpenContract={onOpenContract ? () => onOpenContract(featuredStanding) : undefined}
+						/>
+					)}
+					{otherStanding.map((project) => (
+						<RosterContractCard
+							key={project.id}
+							contract={toContractDisplay(project)}
+							onPin={() => pinContract(project)}
+							onOpenDetails={onQuestClick ? () => openProjectDetails(project) : undefined}
+						/>
+					))}
+
+					{campaignProjects.length > 0 && (
+						<div className={hubStyles.rosterHeading}>CAMPAIGNS</div>
+					)}
 					{activeProject && activeContract && (
 						<ActiveContractCard
 							contract={activeContract}

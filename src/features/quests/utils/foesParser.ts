@@ -8,7 +8,7 @@ export const FOES_FILE_BASENAME = 'foes';
 
 const FOES_FILE_HEADER = `# Journey Foes
 
-// Managed by Gamification — custom entries merge with built-in defaults by id.
+// Managed by Gamification — custom entries override boss notes by id.
 // affinity values: neutral | random | random-skill | random-class | skill:<Skill Name> | class:<Class Name>
 // Example:
 // 🏋️ Gym Demon #foe #hard
@@ -216,7 +216,7 @@ export async function writeVaultFoes(
 	const body = [
 		'# Journey Foes',
 		'',
-		'// Managed by Gamification — custom entries merge with built-in defaults by id.',
+		'// Managed by Gamification — custom entries override boss notes by id.',
 		'// affinity values: neutral | random | random-skill | random-class | skill:<Skill Name> | class:<Class Name>',
 		'',
 		...foes.flatMap((f, idx) => (idx === 0 ? serializeFoe(f) : ['', ...serializeFoe(f)])),

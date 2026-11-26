@@ -107,14 +107,11 @@ export class AchievementEventService {
     private async handleQuestCompleted(event: GameEvent): Promise<void> {
         const questData = event.data.questData as { difficulty?: string; completion?: number } | undefined;
 
-        // First Quest
-        this.updateAchievementProgress('first_quest', 1);
-
-        // Quest Master achievements (milestone-based)
-        const questCount = this.countEventsByType('quest_completed');
-        this.updateAchievementProgress('quest_master_5', questCount);
-        this.updateAchievementProgress('quest_master_25', questCount);
-        this.updateAchievementProgress('quest_master_100', questCount);
+        const questCount = Math.max(1, this.countEventsByType('quest_completed'));
+        this.updateAchievementProgress('first_steps', questCount);
+        this.updateAchievementProgress('quest_apprentice', questCount);
+        this.updateAchievementProgress('quest_journeyman', questCount);
+        this.updateAchievementProgress('quest_master', questCount);
 
         // Check for specific quest types
         if (questData?.difficulty === 'hard') {
@@ -145,9 +142,20 @@ export class AchievementEventService {
         const pomodoroData = event.data.pomodoroData as { duration?: number } | undefined;
 
         // Pomodoro achievement tracking
-        const pomodoroCount = this.countEventsByType('pomodoro_completed');
-        this.updateAchievementProgress('pomodoro_starter', pomodoroCount);
-        this.updateAchievementProgress('focus_master', pomodoroCount);
+        const reportedTotal = typeof event.data.totalSessions === 'number' ? event.data.totalSessions : 0;
+        const pomodoroCount = Math.max(reportedTotal, this.countEventsByType('pomodoro_completed'));
+        this.updateAchievementProgress('pomodoro_first_session', pomodoroCount);
+        this.updateAchievementProgress('pomodoro_focused_mind', pomodoroCount);
+        this.updateAchievementProgress('pomodoro_productivity_master', pomodoroCount);
+        this.updateAchievementProgress('pomodoro_focus_champion', pomodoroCount);
+        const streak = typeof event.data.currentStreak === 'number' ? event.data.currentStreak : 0;
+        this.updateAchievementProgress('pomodoro_streak_3', streak);
+        this.updateAchievementProgress('pomodoro_streak_7', streak);
+        this.updateAchievementProgress('pomodoro_streak_14', streak);
+        this.updateAchievementProgress('pomodoro_streak_30', streak);
+        const pomodoroXp = typeof event.data.totalPomodoroXP === 'number' ? event.data.totalPomodoroXP : 0;
+        this.updateAchievementProgress('pomodoro_xp_500', pomodoroXp);
+        this.updateAchievementProgress('pomodoro_xp_2000', pomodoroXp);
 
         // Long focus sessions
         if (typeof pomodoroData?.duration === 'number' && pomodoroData.duration >= 50) {
@@ -204,19 +212,11 @@ export class AchievementEventService {
         const habitData = event.data.habitData as { streak?: number } | undefined;
 
         // Habit achievements
-        const habitCount = this.countEventsByType('habit_completed');
-        this.updateAchievementProgress('habit_former', habitCount);
-        this.updateAchievementProgress('routine_master', habitCount);
-
-        // Streak-based achievements
-        if (typeof habitData?.streak === 'number') {
-            if (habitData.streak >= 7) {
-                this.updateAchievementProgress('week_warrior', 1);
-            }
-            if (habitData.streak >= 30) {
-                this.updateAchievementProgress('habit_legend', 1);
-            }
-        }
+        const streak = typeof habitData?.streak === 'number' ? habitData.streak : 0;
+        this.updateAchievementProgress('habit_starter', streak);
+        this.updateAchievementProgress('habit_builder', streak);
+        this.updateAchievementProgress('habit_master', streak);
+        this.updateAchievementProgress('habit_legend', streak);
     }
 
     private async handleEnergyDepleted(event: GameEvent): Promise<void> {
@@ -228,13 +228,14 @@ export class AchievementEventService {
         const bossData = event.data.bossData as { difficulty?: string } | undefined;
 
         // Boss achievements
-        const bossCount = this.countEventsByType('boss_defeated');
-        this.updateAchievementProgress('first_boss', bossCount);
+        const reportedBosses = typeof event.data.totalBossVictories === 'number' ? event.data.totalBossVictories : 0;
+        const bossCount = Math.max(reportedBosses, this.countEventsByType('boss_defeated'));
         this.updateAchievementProgress('boss_slayer', bossCount);
+        this.updateAchievementProgress('boss_hunter', bossCount);
+        this.updateAchievementProgress('boss_legend', bossCount);
 
-        // Difficulty-based achievements
         if (bossData?.difficulty === 'legendary') {
-            this.updateAchievementProgress('legendary_hunter', 1);
+            this.updateAchievementProgress('legendary_boss_slayer', 1);
         }
     }
 
@@ -409,6 +410,10 @@ export class AchievementEventService {
     /**
      * Get achievement statistics
      */
+    getTracker(): AchievementTracker {
+        return this.tracker;
+    }
+
     getAchievementStats() {
         return {
             totalUnlocked: this.tracker.getCompletedAchievements().length,

@@ -1,5 +1,5 @@
 import { Vault, TFile } from 'obsidian';
-import { PlayerData } from '../../data/models/PlayerData';
+import { PlayerData, DEFAULT_PLAYER, createStarterPlayerData } from '../../data/models/PlayerData';
 
 /**
  * Mobile-optimized PlayerData loader with enhanced error handling and retry logic
@@ -200,11 +200,11 @@ export class MobilePlayerDataLoader {
 
             // Create PlayerData object with defaults
             const playerData: PlayerData = {
-                name: data.name || 'Player',
-                avatar: data.avatar || 'assets/sonic.png',
-                rank: data.rank || 'E',
-                masterClass: data.masterClass || 'Jester',
-                description: data.description || 'A mobile player',
+                name: data.name || DEFAULT_PLAYER.name,
+                avatar: data.avatar || DEFAULT_PLAYER.avatar,
+                rank: data.rank || DEFAULT_PLAYER.rank,
+                masterClass: data.masterClass || DEFAULT_PLAYER.masterClass,
+                description: data.description || DEFAULT_PLAYER.description,
                 level: data.level || 1,
                 xp: data.xp || 0,
                 xpRequired: data.xpRequired || 100,
@@ -234,33 +234,14 @@ export class MobilePlayerDataLoader {
      */
     private async createDefaultPlayerData(vault: Vault): Promise<PlayerData | null> {
         try {
-            const defaultData: PlayerData = {
-                name: 'Mobile Player',
-                avatar: 'assets/sonic.png',
-                rank: 'E',
-                masterClass: 'Jester',
-                description: 'A mobile player',
-                level: 1,
-                xp: 0,
-                xpRequired: 100,
-                total_exp: 0,
-                coins: 0,
-                inventory: [],
-                stats: {
-                    energy: 80,
-                    focus: 75,
-                    motivation: 85,
-                    calm: 70,
-                    stress: 20
-                }
-            };
+            const defaultData: PlayerData = createStarterPlayerData();
 
             const content = `---
-name: ${defaultData.name}
-avatar: ${defaultData.avatar}
-rank: ${defaultData.rank}
-masterClass: ${defaultData.masterClass}
-description: ${defaultData.description}
+name: "${defaultData.name}"
+avatar: "${defaultData.avatar}"
+rank: "${defaultData.rank}"
+masterClass: "${defaultData.masterClass}"
+description: "${defaultData.description}"
 level: ${defaultData.level}
 xp: ${defaultData.xp}
 xpRequired: ${defaultData.xpRequired}

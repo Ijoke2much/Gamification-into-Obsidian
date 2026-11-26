@@ -23,11 +23,25 @@ import { addOrIncrementInventoryItem } from "../../inventory/utils/updateInvento
 import { readPlayerData, writePlayerData } from "src/features/player/utils/playerDataUtils";
 import { currencyDisplay } from "../../../shared/services/currencyDisplayService";
 import shopStyles from "./ShopTab.module.css";
+import { getAppliedVisualTheme } from "../../../shared/utils/visualThemeManager";
+import { onSettingsUpdated } from "../../../shared/utils/settingsEvents";
+import type { VisualThemePresetId } from "../../../shared/themes/types";
+import { SystemFrame, SystemHeader, SystemScaffold } from "../../../shared/components/ui/system";
+import { useMobileOptimizations } from "../../../shared/hooks/useMobileOptimizations";
+import { getLootboxKeyCount, openLootbox, type LootboxReward } from "../utils/lootboxService";
+import { PixelIcon } from "../../../shared/components/ui/PixelIcon";
+import { getRarityColor } from "../../quests/utils/questRewardsSystem";
 
 interface Props {
     plugin: GamifiedObsidianPlugin;
     rebuildShopTab: () => void; // callback to refresh parent
+    /** Passed from TabView so shop chrome tracks the active gameplay visual theme. */
+    visualThemePreset?: VisualThemePresetId;
+    /** Skip vault coin read on first paint when TabView already has player data */
+    initialCoins?: number;
 }
+
+const MOBILE_PAGE_SIZE = 12;
 
 // Fixed category tabs with icons (transferred from Shop/Artifacts)
 const SHOP_CATEGORIES = [
@@ -36,6 +50,7 @@ const SHOP_CATEGORIES = [
     { key: "Equipment", label: "Equipment", icon: "⚔️" },
     { key: "Artifacts", label: "Artifacts", icon: "🏺" },
     { key: "Weapons", label: "Weapons", icon: "🗡️" },
+    { key: "Lootboxes", label: "Lootboxes", icon: "🎁" },
     { key: "Misc", label: "Misc", icon: "📋" },
 ] as const;
 
@@ -59,18 +74,24 @@ function getCategoryColor(category: string): string {
         case "Equipment": return "#22c55e";   // green
         case "Artifacts": return "#a855f7";  // purple
         case "Weapons": return "#ef4444";    // red
+        case "Lootboxes": return "#f9ca24";  // gold
         default: return "#64748b";            // gray for Misc
     }
 }
 
 // Typewriter effect hook - guards against undefined char to prevent "undefined" in output
-function useTypewriter(text: string, speed = 30) {
+function useTypewriter(text: string, speed = 30, instant = false) {
     const [displayed, setDisplayed] = useState("");
     const [isAnimating, setIsAnimating] = useState(false);
     const timeoutRef = useRef<NodeJS.Timeout | null>(null);
     const safeText = String(text ?? "").replace(/undefined/g, "");
 
     useEffect(() => {
+        if (instant) {
+            setDisplayed(safeText);
+            setIsAnimating(false);
+            return;
+        }
         setDisplayed("");
         setIsAnimating(true);
         let i = 0;
@@ -88,7 +109,7 @@ function useTypewriter(text: string, speed = 30) {
         return () => {
             if (timeoutRef.current) clearTimeout(timeoutRef.current);
         };
-    }, [safeText, speed]);
+    }, [safeText, speed, instant]);
 
     const revealAll = () => {
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -99,7 +120,13 @@ function useTypewriter(text: string, speed = 30) {
     return { displayed, isAnimating, revealAll };
 }
 
-export default function ShopTab({ plugin, rebuildShopTab }: Props) {
+export default function ShopTab({
+    plugin,
+    rebuildShopTab,
+    visualThemePreset: visualThemePresetProp,
+    initialCoins,
+}: Props) {
+    const { isMobile } = useMobileOptimizations();
     // Ensure currency display service is initialized for consistent labels
     currencyDisplay.initialize(plugin.settings);
     const currencyName = currencyDisplay.getCurrencyName();
@@ -113,9 +140,73 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
     const [rarityFilter, setRarityFilter] = useState<string>("All");
     const [sortBy, setSortBy] = useState<string>("Price (Low → High)");
     const [customImagePath, setCustomImagePath] = useState<string | null>(null);
+    const [themeRevision, setThemeRevision] = useState(0);
+    const [mobileVisibleCount, setMobileVisibleCount] = useState(MOBILE_PAGE_SIZE);
+    const itemsLoadedRef = useRef(false);
+
+    useEffect(() => onSettingsUpdated(() => setThemeRevision((n) => n + 1)), []);
+
+    const appliedVisualTheme = useMemo(
+        () => getAppliedVisualTheme(),
+        [themeRevision, visualThemePresetProp]
+    );
+
+    const htmlVisualTheme =
+        typeof document !== "undefined"
+            ? (document.documentElement.getAttribute("data-gamification-visual-theme") as VisualThemePresetId | null)
+            : null;
+
+    const visualThemePreset: VisualThemePresetId =
+        visualThemePresetProp === "system-hunter" ||
+        appliedVisualTheme.preset === "system-hunter" ||
+        htmlVisualTheme === "system-hunter" ||
+        plugin.settings.visualTheme?.preset === "system-hunter"
+            ? "system-hunter"
+            : (visualThemePresetProp ?? appliedVisualTheme.preset ?? "classic");
+
+    const isSystemTheme = visualThemePreset === "system-hunter";
+
+    const shopShellAttrs = {
+        "data-pixel-shell": "shop" as const,
+        "data-gamification-shell": isSystemTheme ? "system" : "pixel",
+        "data-gamification-visual-theme": visualThemePreset,
+    };
+
+    const shopInnerClass = isSystemTheme
+        ? `gami-shop-tab gami-shop-system ${shopStyles.shopLayout} ${shopStyles.systemShopShell} ${shopStyles.systemShopInner}`
+        : `gami-shop-tab ${shopStyles.shopLayout} ${shopStyles.shopRoot}`;
+
+    const renderShopShell = (children: React.ReactNode, extraClass = "") => {
+        const mobileClass = isMobile ? shopStyles.mobileShopShell : "";
+        const inner = (
+            <div
+                className={[shopInnerClass, extraClass, mobileClass].filter(Boolean).join(" ")}
+                {...shopShellAttrs}
+                data-gamification-mobile={isMobile ? "true" : "false"}
+                {...(isSystemTheme && !isMobile ? { "data-shop-system-inner": "" as const } : {})}
+            >
+                {children}
+            </div>
+        );
+
+        // Mobile: skip SystemScaffold/Frame (backdrop + drift) — keep flat content
+        if (!isSystemTheme || isMobile) {
+            return inner;
+        }
+
+        return (
+            <SystemScaffold className={shopStyles.shopSystemRoot}>
+                <SystemFrame className={shopStyles.shopSystemFrame}>
+                    {inner}
+                </SystemFrame>
+            </SystemScaffold>
+        );
+    };
 
     // Add coins state and fetchCoins function
-    const [coins, setCoins] = useState(0);
+    const [coins, setCoins] = useState(() =>
+        typeof initialCoins === "number" && Number.isFinite(initialCoins) ? initialCoins : 0
+    );
     const fetchCoins = async () => {
         const playerData = await readPlayerData(plugin.app.vault);
         setCoins(playerData?.coins ?? 0);
@@ -143,12 +234,18 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
         displayed: animatedDialogue,
         isAnimating,
         revealAll,
-    } = useTypewriter(safeDialogue, 24);
+    } = useTypewriter(safeDialogue, 24, isMobile);
 
     const imagePath =
         customImagePath || plugin.settings.shopkeeperImagePath || "assets/shopkeeper.jpg";
 
     useEffect(() => {
+        // Mobile: skip vault binary → base64 shopkeeper (emoji fallback)
+        if (isMobile) {
+            setShopkeeperImg("");
+            setImgError(true);
+            return;
+        }
         async function loadShopkeeperImage() {
             setImgError(false);
             if (imagePath.startsWith("http")) {
@@ -188,27 +285,27 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
             }
             return window.btoa(binary);
         }
-        loadShopkeeperImage();
-    }, [imagePath, plugin]);
+        void loadShopkeeperImage();
+    }, [imagePath, plugin, isMobile]);
 
     useEffect(() => {
-        loadItems();
+        void loadItems(false);
     }, []);
 
-    // Migration: clear corrupted dialogue overrides (e.g. "undefined", "elcooe") and reset to defaults
+    // Migration: clear corrupted dialogue once (avoid saveSettings thrash / iCloud churn on mobile)
     useEffect(() => {
+        if (isMobile) return;
         if (isDialogueCorrupted(plugin.settings.shopkeeperDialogueOverrides)) {
             plugin.settings.shopkeeperDialogueOverrides = {};
-            plugin.saveSettings();
+            void plugin.saveSettings();
             setDialogue(getResolvedGreeting());
         }
-    }, []);
+    }, [isMobile]);
 
     // Listen for shop data updates and refresh
     useEffect(() => {
         const handleShopDataUpdate = () => {
-            console.log("Shop data updated, reloading items...");
-            loadItems();
+            void loadItems(true);
         };
 
         document.addEventListener("shop-data-updated", handleShopDataUpdate);
@@ -221,17 +318,22 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
         };
     }, []);
 
-    const loadItems = async () => {
-        setLoading(true);
+    const loadItems = async (soft = false) => {
+        // Soft refresh: keep showing current list (no full-screen loading flash)
+        if (!soft || !itemsLoadedRef.current) {
+            setLoading(true);
+        }
         try {
             const allItems = await getAllShopItems(plugin);
             setItems(allItems);
+            itemsLoadedRef.current = true;
         } catch (e) {
             console.error("Failed to load shop items", e);
             setItems([]);
         }
         setLoading(false);
-        await fetchCoins();
+        // Coins already seeded from TabView — refresh in background
+        void fetchCoins();
     };
 
     const openDebugDialogueModal = () => {
@@ -459,140 +561,73 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
         return sorted;
     }, [items, categoryFilter, rarityFilter, sortBy]);
 
-    if (loading) {
-        return (
-            <p className={`gami-shop-tab ${shopStyles.pixelShopShell} ${shopStyles.shopLoading}`} data-pixel-shell="shop">
-                Loading shop...
-            </p>
-        );
+    const visibleItems = useMemo(() => {
+        if (!isMobile) return filteredSortedItems;
+        return filteredSortedItems.slice(0, mobileVisibleCount);
+    }, [filteredSortedItems, isMobile, mobileVisibleCount]);
+
+    // Reset page size when filters change
+    useEffect(() => {
+        setMobileVisibleCount(MOBILE_PAGE_SIZE);
+    }, [categoryFilter, rarityFilter, sortBy]);
+
+    if (loading && !itemsLoadedRef.current) {
+        return renderShopShell("Loading shop...", shopStyles.shopLoading);
     }
 
-    return (
+    return renderShopShell(
         <>
-            <style>{`
-                .gami-shop-card {
-                    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-                }
-                .gami-shop-card:hover {
-                    border-color: #f97316;
-                    box-shadow: 0 4px 12px rgba(249, 115, 22, 0.25);
-                }
-                [data-pixel-shell="shop"] .gami-shop-card:hover {
-                    border-color: inherit;
-                    box-shadow: inherit;
-                }
-                .gami-shop-grid {
-                    display: grid;
-                    grid-template-columns: repeat(2, minmax(0, 1fr));
-                    gap: 8px;
-                }
-                @media (min-width: 500px) {
-                    .gami-shop-grid {
-                        grid-template-columns: repeat(3, minmax(0, 1fr));
-                    }
-                }
-            `}</style>
-        <div
-            className={`gami-shop-tab ${shopStyles.pixelShopShell}`}
-            data-pixel-shell="shop"
-            style={{ maxWidth: 800, margin: "0 auto", padding: 12 }}
-        >
-            {/* Gradient header: Shop title + currency badge (sidebar-friendly) */}
-            <div
-                className="gami-shop-header"
-                style={{
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "space-between",
-                    background: "linear-gradient(90deg, #7c3aed 0%, #a78bfa 50%, #c4b5fd 100%)",
-                    borderRadius: 10,
-                    padding: "10px 14px",
-                    marginBottom: 12,
-                    boxShadow: "0 2px 8px rgba(124,58,237,0.4)",
-                }}
-            >
-                <span style={{ fontWeight: 700, fontSize: "1.1em", color: "#fff", letterSpacing: "0.04em" }}>
-                    🛒 Shop
-                </span>
-                <div
-                    style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
-                        background: "rgba(255,255,255,0.25)",
-                        padding: "4px 10px",
-                        borderRadius: 999,
-                        fontWeight: 600,
-                        color: "#ffd700",
-                    }}
-                >
-                    <span>{currencySymbol}</span>
-                    <span>{coins.toLocaleString()}</span>
+            {isSystemTheme ? (
+                <>
+                    <SystemHeader icon="🛒" label="MERCHANT" title="Shop" />
+                    <div className={shopStyles.shopSystemCurrencyRow}>
+                        <span className={shopStyles.shopSystemCurrencyLabel}>Balance</span>
+                        <span className={shopStyles.shopSystemCurrencyValue}>
+                            <span aria-hidden="true">{currencySymbol}</span>
+                            <span>{coins.toLocaleString()}</span>
+                        </span>
+                    </div>
+                </>
+            ) : (
+                <div className="gami-shop-header">
+                    <span className={shopStyles.shopHeaderTitle}>🛒 Shop</span>
+                    <div className={shopStyles.shopCurrencyBadge}>
+                        <span>{currencySymbol}</span>
+                        <span>{coins.toLocaleString()}</span>
+                    </div>
                 </div>
-            </div>
+            )}
 
-            {/* Shopkeeper/NPC Banner – compact */}
-            <div style={{ textAlign: "center", marginBottom: 10 }}>
-                {imgError ? (
-                    <div style={{ fontSize: "1.8em", color: "#888" }}>🧙‍♂️</div>
+            {/* Desktop: shopkeeper + dialogue. Mobile: skip — was a major hitch on open. */}
+            {!isMobile && (
+            <>
+            <div className={shopStyles.shopkeeperSection}>
+                {imgError || !shopkeeperImg ? (
+                    <div className={shopStyles.shopkeeperFallback}>🧙‍♂️</div>
                 ) : (
-                    <img
-                        src={shopkeeperImg}
-                        alt="Shopkeeper"
-                        style={{
-                            maxHeight: 100,
-                            maxWidth: "100%",
-                            objectFit: "contain",
-                            borderRadius: 10,
-                            boxShadow: "0 2px 6px #0003",
-                        }}
-                    />
+                    <img src={shopkeeperImg} alt="Shopkeeper" />
                 )}
-                <div style={{ display: "flex", gap: 6, justifyContent: "center", marginTop: 6, flexWrap: "wrap" }}>
+                <div className={shopStyles.shopkeeperActions}>
                     <button
+                        type="button"
                         onClick={openShopkeeperPicker}
                         className="gami-shop-keeper-btn"
-                        style={{
-                            padding: "4px 10px",
-                            fontSize: "0.75em",
-                            borderRadius: 6,
-                            border: "none",
-                            background: "#374151",
-                            color: "#e5e7eb",
-                            cursor: "pointer",
-                        }}
                         title="Change the shopkeeper image"
                     >
                         Change image
                     </button>
                     <button
+                        type="button"
                         onClick={openEditDialogueModal}
                         className="gami-shop-keeper-btn"
-                        style={{
-                            padding: "4px 10px",
-                            fontSize: "0.75em",
-                            borderRadius: 6,
-                            border: "none",
-                            background: "#374151",
-                            color: "#e5e7eb",
-                            cursor: "pointer",
-                        }}
                         title="Edit shopkeeper dialogue"
                     >
                         Edit dialogue
                     </button>
                     <button
+                        type="button"
                         onClick={openDebugDialogueModal}
-                        className="gami-shop-keeper-btn"
-                        style={{
-                            padding: "4px 10px",
-                            fontSize: "0.75em",
-                            borderRadius: 6,
-                            border: "none",
-                            background: "#1e3a5f",
-                            color: "#93c5fd",
-                            cursor: "pointer",
-                        }}
+                        className="gami-shop-keeper-btn debugBtn"
                         title="Debug dialogue (diagnostic info)"
                     >
                         Debug
@@ -600,20 +635,8 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
                 </div>
             </div>
 
-            {/* Dialogue Box */}
             <div
-                className="shop-dialogue-box"
-                style={{
-                    margin: "10px 0",
-                    padding: "10px",
-                    background: "#222",
-                    color: "#fff",
-                    borderRadius: "8px",
-                    minHeight: "48px",
-                    fontFamily: "monospace",
-                    cursor: isAnimating ? "pointer" : "default",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.2)",
-                }}
+                className={`shop-dialogue-box ${isAnimating ? shopStyles.dialogueAnimating : ""}`}
                 onClick={() => {
                     if (isAnimating) revealAll();
                 }}
@@ -623,75 +646,40 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
             </div>
 
             {dialogueOptions && (
-                <div
-                    className="gami-shop-dialogue-options"
-                    style={{
-                        display: "flex",
-                        gap: "8px",
-                        marginBottom: "12px",
-                    }}
-                >
+                <div className={`gami-shop-dialogue-options ${shopStyles.dialogueOptions}`}>
                     {dialogueOptions.map((opt, i) => (
-                        <button
-                            key={i}
-                            onClick={opt.onClick}
-                            style={{
-                                padding: "6px 16px",
-                                borderRadius: "6px",
-                                border: "none",
-                                background: "#444",
-                                color: "#fff",
-                                cursor: "pointer",
-                            }}
-                        >
+                        <button key={i} type="button" onClick={opt.onClick}>
                             {opt.label}
                         </button>
                     ))}
                 </div>
             )}
+            </>
+            )}
 
-            <div
-                className="gami-shop-category-tabs"
-                style={{
-                    display: "flex",
-                    flexWrap: "wrap",
-                    gap: 6,
-                    marginBottom: 10,
-                    justifyContent: "center",
-                }}
-            >
+            <div className={`gami-shop-category-tabs ${shopStyles.categoryTabs}`}>
                 {SHOP_CATEGORIES.map((cat) => (
                     <button
                         key={cat.key}
                         type="button"
                         data-active={categoryFilter === cat.key ? "true" : "false"}
                         onClick={() => setCategoryFilter(cat.key)}
-                        style={{
-                            padding: "5px 10px",
-                            borderRadius: 4,
-                            border: `1px solid ${categoryFilter === cat.key ? "#7c3aed" : "#4b5563"}`,
-                            background: categoryFilter === cat.key ? "#7c3aed" : "transparent",
-                            color: categoryFilter === cat.key ? "#fff" : "#e5e7eb",
-                            fontSize: "0.8em",
-                            fontWeight: 500,
-                            cursor: "pointer",
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 4,
-                        }}
                     >
                         <span>{cat.icon}</span>
                         <span>{cat.label}</span>
                     </button>
                 ))}
             </div>
-            {/* Rarity + Sort dropdowns */}
-            <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap", justifyContent: "center" }}>
+
+            {categoryFilter === "Lootboxes" ? (
+                <LootboxPanel plugin={plugin} />
+            ) : (
+            <>
+            <div className={shopStyles.filterRow}>
                 <select
                     className="gami-shop-select"
                     value={rarityFilter}
                     onChange={(e) => setRarityFilter(e.target.value)}
-                    style={{ padding: "4px 8px", fontSize: "0.8em", borderRadius: 4, background: "#1f2937", color: "#e5e7eb", border: "1px solid #374151" }}
                 >
                     {rarities.map((rar) => (
                         <option key={rar} value={rar}>{rar}</option>
@@ -701,7 +689,6 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
                     className="gami-shop-select"
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value)}
-                    style={{ padding: "4px 8px", fontSize: "0.8em", borderRadius: 4, background: "#1f2937", color: "#e5e7eb", border: "1px solid #374151" }}
                 >
                     <option>Price (Low → High)</option>
                     <option>Price (High → Low)</option>
@@ -712,246 +699,65 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
                 </select>
             </div>
 
-            {/* Main content: unified grid */}
             {items.length === 0 ? (
-                <div className="gami-shop-empty-wrap" style={{ textAlign: "center", marginTop: 16 }}>
-                    <div
-                        className="gami-shop-empty-msg"
-                        style={{
-                            background: "#222",
-                            color: "#ffd700",
-                            borderRadius: 10,
-                            padding: "14px 18px",
-                            margin: "14px auto",
-                            maxWidth: 400,
-                            fontSize: "0.95em",
-                            boxShadow: "0 2px 6px #0003",
-                        }}
-                    >
+                <div className={`gami-shop-empty-wrap ${shopStyles.emptyWrap}`}>
+                    <div className="gami-shop-empty-msg">
                         Sorry, the shop is empty! Come back later for more items.
                     </div>
-                    <div style={{ fontSize: "0.8em", color: "#94a3b8", marginTop: 12, maxWidth: 400, marginLeft: "auto", marginRight: "auto", lineHeight: 1.4 }}>
-                        To add or edit listings, open <strong>Gamification</strong> settings → <strong>Rewards &amp; Progression</strong> → <strong>Game data hub</strong>.
+                    <div className={shopStyles.emptyHint}>
+                        To add or edit listings, open <strong>Gamification</strong> settings → <strong>Economy &amp; Content</strong> → <strong>Game data hub</strong>.
                     </div>
                 </div>
             ) : (
                 <div className="gami-shop-grid">
-                    {filteredSortedItems.map((item) => {
+                    {visibleItems.map((item) => {
                         const itemCategory = normalizeCategoryForFilter(item.category);
                         const categoryColor = getCategoryColor(itemCategory);
                         const rawEffects = getRawEffectLines(item);
                         const hasEffects = (item.effects && item.effects.length > 0) || (rawEffects && rawEffects.length > 0);
                         const isNew = item.tags?.some(t => t.toLowerCase() === "new") ?? false;
                         return (
-                            <div
-                                key={item.name}
-                                className="gami-shop-card"
-                                style={{
-                                    background: "#1e1e1e",
-                                    borderRadius: 8,
-                                    overflow: "hidden",
-                                    boxShadow: "0 2px 6px #0003",
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    alignItems: "stretch",
-                                    minHeight: 225,
-                                    border: "1px solid #333",
-                                    position: "relative",
-                                }}
-                            >
-                                {/* NEW badge */}
+                            <div key={item.name} className="gami-shop-card">
                                 {isNew && (
-                                    <div
-                                        className="gami-shop-card-new"
-                                        style={{
-                                            position: "absolute",
-                                            top: 6,
-                                            right: 6,
-                                            background: "linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)",
-                                            color: "#1f2937",
-                                            fontSize: "0.6em",
-                                            fontWeight: 800,
-                                            padding: "2px 6px",
-                                            borderRadius: 4,
-                                            letterSpacing: "0.05em",
-                                            zIndex: 1,
-                                            boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
-                                        }}
-                                    >
-                                        NEW
-                                    </div>
+                                    <div className="gami-shop-card-new">NEW</div>
                                 )}
-                                {/* Category strip – top */}
                                 <div
                                     className="gami-shop-card-category"
-                                    style={{
-                                        background: categoryColor,
-                                        color: "#fff",
-                                        fontSize: "0.7em",
-                                        fontWeight: 600,
-                                        padding: "4px 8px",
-                                        textAlign: "center",
-                                        textTransform: "uppercase",
-                                        letterSpacing: "0.05em",
-                                    }}
+                                    style={{ "--shop-cat-color": categoryColor } as React.CSSProperties}
                                 >
                                     {itemCategory}
                                 </div>
-                                {/* Main icon area – takes most of the space, centered and bigger */}
-                                <div
-                                    style={{
-                                        flex: 1,
-                                        display: "flex",
-                                        flexDirection: "column",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        padding: "6px 8px 4px",
-                                        minHeight: 72,
-                                    }}
-                                >
-                                    {item.icon &&
-                                    (item.icon.match(/^https?:\/\//) || item.icon.match(/\.(png|jpe?g|gif|svg)$/i)) ? (
-                                        <div
-                                            style={{
-                                                display: "flex",
-                                                justifyContent: "center",
-                                                alignItems: "center",
-                                                width: "100%",
-                                                flex: 1,
-                                                minHeight: 64,
-                                            }}
-                                        >
-                                            <img
-                                                src={item.icon}
-                                                alt=""
-                                                style={{ width: 72, height: 72, objectFit: "contain" }}
-                                            />
-                                        </div>
-                                    ) : item.icon ? (
-                                        <div
-                                            style={{
-                                                display: "flex",
-                                                justifyContent: "center",
-                                                alignItems: "center",
-                                                width: "100%",
-                                                flex: 1,
-                                                minHeight: 64,
-                                                fontSize: 64,
-                                                lineHeight: 1,
-                                            }}
-                                        >
-                                            {item.icon}
-                                        </div>
-                                    ) : (
-                                        <div
-                                            style={{
-                                                display: "flex",
-                                                justifyContent: "center",
-                                                alignItems: "center",
-                                                width: "100%",
-                                                flex: 1,
-                                                minHeight: 64,
-                                                fontSize: 48,
-                                                color: "#4b5563",
-                                            }}
-                                        >
-                                            🎁
-                                        </div>
-                                    )}
-                                    <div
-                                        className="gami-shop-card-title"
-                                        style={{
-                                            fontWeight: 600,
-                                            fontSize: "0.85em",
-                                            textAlign: "center",
-                                            lineHeight: 1.2,
-                                            overflow: "hidden",
-                                            textOverflow: "ellipsis",
-                                            maxHeight: "2.2em",
-                                            marginTop: 4,
-                                        }}
-                                    >
-                                        {item.name}
+                                <div className={shopStyles.cardBody}>
+                                    <div className={shopStyles.cardIconWrap}>
+                                        <PixelIcon
+                                            item={item}
+                                            fallback="🎁"
+                                            className={shopStyles.cardIconEmoji}
+                                            imgClassName={shopStyles.cardIconImg}
+                                        />
                                     </div>
+                                    <div className="gami-shop-card-title">{item.name}</div>
                                     {item.stock != null && item.stock > 0 && (
-                                        <div style={{ fontSize: "0.65em", color: "#6b7280", marginTop: 2 }}>
-                                            Stock: {item.stock}
-                                        </div>
+                                        <div className={shopStyles.cardStock}>Stock: {item.stock}</div>
                                     )}
                                 </div>
-                                {/* Description section – dedicated area below icon/name */}
-                                <div
-                                    className="gami-shop-card-desc"
-                                    style={{
-                                        minHeight: 44,
-                                        padding: "8px 8px",
-                                        background: "rgba(0,0,0,0.2)",
-                                        borderTop: "1px solid #333",
-                                        borderBottom: "1px solid #333",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                    }}
-                                >
-                                    <div
-                                        style={{
-                                            fontSize: "0.75em",
-                                            color: "#9ca3af",
-                                            textAlign: "center",
-                                            lineHeight: 1.3,
-                                            overflow: "hidden",
-                                            textOverflow: "ellipsis",
-                                            maxHeight: "2.6em",
-                                            width: "100%",
-                                        }}
-                                    >
+                                <div className="gami-shop-card-desc">
+                                    <div>
                                         {item.description ||
                                             (hasEffects
                                                 ? (item.effects?.map(e => renderEffect(e)).join(" • ") ||
                                                     rawEffects?.slice(0, 1).map(r => renderRawEffect(r, currencyName)).join(" • ") ||
                                                     "")
-                                                : <span style={{ opacity: 0.5 }}>No description</span>)}
+                                                : <span className={shopStyles.descEmpty}>No description</span>)}
                                     </div>
                                 </div>
-                                {/* Bottom – price strip + actions */}
-                                <div
-                                    className="gami-shop-card-footer"
-                                    style={{
-                                        background: "#252525",
-                                        borderTop: "1px solid #333",
-                                        padding: "6px 8px",
-                                    }}
-                                >
-                                    <div
-                                        style={{
-                                            display: "flex",
-                                            alignItems: "center",
-                                            justifyContent: "center",
-                                            gap: 6,
-                                            marginBottom: 8,
-                                            color: "#ffd700",
-                                            fontWeight: 600,
-                                            fontSize: "0.9em",
-                                        }}
-                                    >
+                                <div className="gami-shop-card-footer">
+                                    <div className={shopStyles.cardPrice}>
                                         <span>{currencySymbol}</span>
                                         <span>{item.price} {currencyNameLower}</span>
                                     </div>
-                                    <div style={{ display: "flex", gap: 6 }}>
-                                        <button
-                                            onClick={() => handleBuyClick(item)}
-                                            style={{
-                                                flex: 1,
-                                                padding: "6px 8px",
-                                                fontSize: "0.8em",
-                                                borderRadius: 4,
-                                                border: "none",
-                                                background: "#16a34a",
-                                                color: "#fff",
-                                                fontWeight: 600,
-                                                cursor: "pointer",
-                                            }}
-                                        >
+                                    <div className={shopStyles.cardActions}>
+                                        <button type="button" onClick={() => handleBuyClick(item)}>
                                             Buy
                                         </button>
                                     </div>
@@ -961,8 +767,122 @@ export default function ShopTab({ plugin, rebuildShopTab }: Props) {
                     })}
                 </div>
             )}
-        </div>
+            {isMobile && filteredSortedItems.length > mobileVisibleCount && (
+                <button
+                    type="button"
+                    className={shopStyles.mobileShowMore}
+                    onClick={() => setMobileVisibleCount((n) => n + MOBILE_PAGE_SIZE)}
+                >
+                    Show more ({filteredSortedItems.length - mobileVisibleCount} left)
+                </button>
+            )}
+            </>
+            )}
         </>
+    );
+}
+
+/* ── Lootbox redemption counter ─────────────────────────────────────────────
+   Supply Caches aren't bought — they're opened with Lootbox Keys earned by
+   defeating journey foes. One key per cache, guaranteed drop. */
+function LootboxPanel({ plugin }: { plugin: GamifiedObsidianPlugin }) {
+    const [keys, setKeys] = useState<number | null>(null);
+    const [opening, setOpening] = useState(false);
+    const [reveal, setReveal] = useState<LootboxReward | null>(null);
+
+    useEffect(() => {
+        let cancelled = false;
+        void getLootboxKeyCount(plugin.app).then((n) => {
+            if (!cancelled) setKeys(n);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, [plugin]);
+
+    const handleOpen = async () => {
+        if (opening) return;
+        setOpening(true);
+        setReveal(null);
+        try {
+            const result = await openLootbox(plugin.app);
+            if (!result.ok) {
+                pixelNotice(result.error ?? 'Could not open the cache.', 3500);
+                setKeys(result.keysLeft);
+                return;
+            }
+            setKeys(result.keysLeft);
+            // Small suspense beat before the reveal.
+            await new Promise((r) => window.setTimeout(r, 650));
+            setReveal(result.reward ?? null);
+            if (result.reward) {
+                pixelNotice(
+                    `🎁 ${result.reward.icon} ${result.reward.name} (${result.reward.rarity})`,
+                    3500
+                );
+            }
+        } catch (error) {
+            console.error('[LootboxPanel] open failed:', error);
+            pixelNotice('Something jammed the cache — try again.', 3000);
+        } finally {
+            setOpening(false);
+        }
+    };
+
+    const noKeys = (keys ?? 0) <= 0;
+
+    return (
+        <div className={shopStyles.lootboxPanel}>
+            <div className={shopStyles.lootboxKeyCount}>
+                🗝️ Lootbox Keys: <strong>{keys ?? '…'}</strong>
+            </div>
+
+            <div className={`${shopStyles.lootboxCard} ${opening ? shopStyles.lootboxShaking : ''}`}>
+                <div className={shopStyles.lootboxIcon}>🎁</div>
+                <div className={shopStyles.lootboxName}>Supply Cache</div>
+                <div className={shopStyles.lootboxDesc}>
+                    Sealed field spoils. Mostly crafting materials, sometimes a booster —
+                    rarely something special.
+                </div>
+                <button
+                    type="button"
+                    className={shopStyles.lootboxOpenBtn}
+                    disabled={noKeys || opening}
+                    onClick={() => void handleOpen()}
+                >
+                    {opening ? 'Opening…' : 'Open · 1 🗝️'}
+                </button>
+                {noKeys && keys !== null && (
+                    <div className={shopStyles.lootboxHint}>
+                        Defeat foes on your Journey to earn Lootbox Keys.
+                    </div>
+                )}
+            </div>
+
+            {reveal && (
+                <div
+                    className={shopStyles.lootboxReveal}
+                    style={{ borderColor: getRarityColor(reveal.rarity) }}
+                >
+                    <div className={shopStyles.lootboxRevealIcon}>{reveal.icon}</div>
+                    <div
+                        className={shopStyles.lootboxRevealName}
+                        style={{ color: getRarityColor(reveal.rarity) }}
+                    >
+                        {reveal.name}
+                    </div>
+                    <div className={shopStyles.lootboxRevealRarity}>
+                        ✦ {reveal.rarity.toUpperCase()} ✦
+                    </div>
+                    {reveal.description && (
+                        <div className={shopStyles.lootboxRevealDesc}>{reveal.description}</div>
+                    )}
+                    <div className={shopStyles.lootboxRevealFooter}>
+                        Added to your inventory{reveal.slot === 'artifact' ? ' — activate it when the moment is right.' : '.'}
+                    </div>
+                </div>
+            )}
+        </div>
     );
 }
 

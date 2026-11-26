@@ -4,16 +4,16 @@ import type GamifiedObsidianPlugin from "src/core/main";
 import { TFile } from 'obsidian';
 import { ErrorBoundary } from "../../shared/components/ErrorBoundary";
 import { safeAsync } from "../../shared/utils/errorHandler";
-import { ProgressBar } from "src/shared/components/ui/ProgressBar";
 import { getStatsFromFolder, Stat, StatDebugInfo } from "src/shared/utils/readStatsFile";
 import { updatePlayerData } from "src/features/player/utils/playerDataUtils";
 import { AvatarPickerModal } from "../../features/player/modals/AvatarPickerModal";
 import { PlayerData } from "src/data/models/PlayerData";
-import { AchievementTracker } from "../../data/models/AchievementSystem";
+import { achievementEventService } from "../../features/achievements/services/achievementEventService";
 import { PlayerInfoCard } from "../../features/player/components/PlayerInfoCard";
 import { PenaltyStatusCard } from "../../features/player/components/PenaltyStatusCard";
 import { ActiveArtifactsCard } from "../../features/player/components/ActiveArtifactsCard";
 import { ActiveBuffsCard } from "../../features/player/components/ActiveBuffsCard";
+import { WeeklySkillsCard } from "../../features/player/components/WeeklySkillsCard";
 import { ClickableTooltip } from "../../shared/components/ui/ClickableTooltip";
 import { GlobalNotificationSystem } from "../../shared/components/ui/GlobalNotificationSystem";
 import { CeremonyHost } from "../../shared/components/ui/CeremonyHost";
@@ -21,16 +21,23 @@ import { AchievementUnlockHost } from "../../features/achievements/components/Ac
 import { onAchievementGalleryOpen } from "../../shared/utils/achievementGalleryEvents";
 
 import { pixelNotice } from '../../shared/utils/noticeUtils';
+import { simulateDebugQuestRewards } from '../../features/quests/utils/debugQuestSimulator';
+import { openFocusCheckInModal } from '../../features/focus/modals/FocusCheckInModal';
+import {
+	debugSimulateCheckInDue,
+	isFocusCheckInDue,
+	subscribeFocusCheckInChanges,
+} from '../../features/focus/utils/focusCheckInService';
 import {
     getResolvedGameplayConfig,
     isEnergySystemEnabled,
-    isPlayerTabEnabled,
+    isPlayerTabEnabledForDevice,
     type PlayerTabKey,
 } from '../../shared/utils/gameplayConfig';
 import { resolveEnergyHudConfig } from '../../shared/utils/energyHudConfig';
 import { onSettingsUpdated } from '../../shared/utils/settingsEvents';
 import { getAppliedVisualTheme } from '../../shared/utils/visualThemeManager';
-import { SystemResourceBar } from '../../shared/components/ui/system';
+import { FOCUS_SESSION_EVENT } from '../../features/pomodoro/utils/focusSessionSurface';
 import {
     PlayerIcon,
     ShopIcon,
@@ -100,33 +107,6 @@ const SettingsIcon = (
     </svg>
 );
 
-const SkillTreeCardIcon = (
-    <svg
-        width="16"
-        height="16"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-        focusable="false"
-    >
-        <circle cx="12" cy="7" r="4.5" fill="#16a34a" />
-        <circle cx="9" cy="8" r="3.5" fill="#22c55e" />
-        <circle cx="15" cy="8" r="3.5" fill="#22c55e" />
-        <path
-            d="M12 11v6"
-            stroke="#bbf7d0"
-            strokeWidth="2"
-            strokeLinecap="round"
-        />
-        <path
-            d="M12 13l-3 2.5M12 14.5l3 2"
-            stroke="#bbf7d0"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-        />
-        <circle cx="12" cy="19" r="1.3" fill="#15803d" />
-    </svg>
-);
-
 // Mobile-optimized loading component
 const TabLoadingState: React.FC<{ tabName: string }> = ({ tabName }) => {
     const { isMobile, mobileClasses } = useMobileOptimizations();
@@ -185,11 +165,23 @@ interface PlayerTabViewProps {
  * It displays the player's information and quests.
  */
 const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
-    // Use localStorage to persist tab state
+    // Use localStorage to persist tab state — mobile first-open defaults to Quests (Today's Run)
     const [selectedTab, setSelectedTab] = useState<string>(() => {
         const saved = localStorage.getItem('gamification-selected-tab');
         if (saved === 'stats' || saved === 'boss') return 'player';
-        return saved || 'player';
+        if (saved) return saved;
+        const ua = typeof navigator !== 'undefined' ? navigator.userAgent.toLowerCase() : '';
+        const body = typeof document !== 'undefined' ? document.body : null;
+        const isMobileDevice = Boolean(
+            body?.classList.contains('is-mobile') ||
+            body?.classList.contains('is-phone') ||
+            body?.classList.contains('is-tablet') ||
+            /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(ua) ||
+            (typeof navigator !== 'undefined' &&
+                navigator.platform === 'MacIntel' &&
+                navigator.maxTouchPoints > 1)
+        );
+        return isMobileDevice ? 'quests' : 'player';
     });
     const [playerData, setPlayerData] = useState<PlayerData | null>(null);
     const [loading, setLoading] = useState(true);
@@ -197,6 +189,8 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
     const tabRibbonRef = useRef<HTMLDivElement>(null);
     const [showStats, setShowStats] = useState(false);
     const [saving, setSaving] = useState(false);
+    const [debugRunning, setDebugRunning] = useState(false);
+    const [checkInDue, setCheckInDue] = useState(false);
     const [visible, setVisible] = useState(!document.hidden);
     const [pinned] = useState<string[]>(() => {
         try { return JSON.parse(localStorage.getItem('gamification-pinned-tabs') || '[]'); } catch { return []; }
@@ -204,6 +198,11 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
     const [showSkillTreeModal, setShowSkillTreeModal] = useState(false);
     // Keep Pomodoro mounted after first open so the timer doesn't reset on tab switch
     const [hasMountedPomodoro, setHasMountedPomodoro] = useState(() => selectedTab === 'pomodoro');
+    const [focusSessionLive, setFocusSessionLive] = useState(false);
+    // Keep Shop/Crafting/Achievements mounted after first open — remounting feels like a reload
+    const [hasMountedShop, setHasMountedShop] = useState(() => selectedTab === 'shop');
+    const [hasMountedCrafting, setHasMountedCrafting] = useState(() => selectedTab === 'crafting');
+    const [hasMountedAchievements, setHasMountedAchievements] = useState(() => selectedTab === 'achievements');
     const [visualThemeRevision, setVisualThemeRevision] = useState(0);
     const appliedVisualTheme = useMemo(
         () => getAppliedVisualTheme(),
@@ -212,13 +211,6 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
 
     useEffect(() => onSettingsUpdated(() => setVisualThemeRevision((n) => n + 1)), []);
 
-    // Debug logging
-    console.log('🎮 PlayerTabView component loaded, selectedTab:', selectedTab);
-    console.log('=== PLAYER TAB VIEW RENDER ===');
-    console.log('Selected tab:', selectedTab);
-    console.log('Plugin exists:', !!plugin);
-    console.log('============================');
-
     // Mobile optimizations
     const { 
         isMobile, 
@@ -226,24 +218,58 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
         useSwipe
     } = useMobileOptimizations();
 
-    // Simple mobile initialization - let Obsidian handle viewport
+    if (process.env.NODE_ENV === 'development') {
+        console.log('🎮 PlayerTabView render, selectedTab:', selectedTab);
+    }
+
+    // Energy Management uses battery bars. Clay gets a molded skin; other presets stay pixel.
+    const energyHudVariant = appliedVisualTheme.preset === 'clay' ? 'clay' : 'pixel';
+
+    const openMobileDesktopOnlyNotice = useCallback((feature: string) => {
+        pixelNotice(`📱 ${feature} is desktop-only for now. Use Player, Quests, Habits, Skills, Items, Shop, Crafting, or Achievements on mobile.`, 4500);
+    }, []);
+
+    const [mobileHeavyReady, setMobileHeavyReady] = useState(!isMobile);
+
     useEffect(() => {
-        if (isMobile) {
-            console.log('📱 Mobile device detected, applying light mobile optimizations...');
-            
-            // Add mobile class to body for global mobile styles (non-intrusive)
-            document.body.classList.add('gamification-mobile');
-            
-            // Let Obsidian handle its own viewport settings - don't override
-            
-            return () => {
-                document.body.classList.remove('gamification-mobile');
-            };
+        if (!isMobile) return;
+        if (sessionStorage.getItem('gamification-mobile-welcome-notice') === '1') return;
+        sessionStorage.setItem('gamification-mobile-welcome-notice', '1');
+        pixelNotice('📱 Today\'s Run — Quests, Habits & check-ins. Open Player tab from the command palette anytime.', 5000);
+    }, [isMobile]);
+
+    useEffect(() => {
+        if (!isMobile) {
+            setMobileHeavyReady(true);
+            return;
+        }
+        // Only warm heavy Player cards while that tab is visible
+        if (selectedTab !== 'player' || loading || !playerData) {
+            setMobileHeavyReady(false);
+            return;
+        }
+        const idle =
+            typeof window !== 'undefined' && 'requestIdleCallback' in window
+                ? (window as Window & {
+                        requestIdleCallback: (cb: () => void, opts?: { timeout: number }) => number;
+                        cancelIdleCallback: (id: number) => void;
+                  })
+                : null;
+        if (idle) {
+            const id = idle.requestIdleCallback(() => setMobileHeavyReady(true), { timeout: 900 });
+            return () => idle.cancelIdleCallback(id);
+        }
+        const id = window.setTimeout(() => setMobileHeavyReady(true), 800);
+        return () => window.clearTimeout(id);
+    }, [isMobile, loading, playerData, selectedTab]);
+
+    // Simple mobile initialization — container class only (never body; avoids global touch side effects)
+    useEffect(() => {
+        if (isMobile && process.env.NODE_ENV === 'development') {
+            console.log('📱 Mobile device detected');
         }
     }, [isMobile]);
 
-    // Create achievement tracker instance for AchievementsTab
-    const [achievementTracker] = useState(() => new AchievementTracker());
     const [highlightAchievementId, setHighlightAchievementId] = useState<string | null>(null);
     const [settingsRevision, setSettingsRevision] = useState(0);
 
@@ -258,6 +284,33 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
         return onSettingsUpdated(() => setSettingsRevision((v) => v + 1));
     }, []);
 
+    const refreshCheckInDue = useCallback(async () => {
+        if (plugin.settings.enableFocusCheckIns === false) {
+            setCheckInDue(false);
+            return;
+        }
+        const due = await isFocusCheckInDue(plugin.app, plugin.settings);
+        setCheckInDue(due);
+    }, [plugin.app, plugin.settings]);
+
+    useEffect(() => {
+        void refreshCheckInDue();
+        const unsub = subscribeFocusCheckInChanges(() => {
+            void refreshCheckInDue();
+        });
+        const interval = window.setInterval(() => {
+            if (visible) void refreshCheckInDue();
+        }, isMobile ? 60_000 : 30_000);
+        return () => {
+            unsub();
+            window.clearInterval(interval);
+        };
+    }, [refreshCheckInDue, visible, settingsRevision, isMobile]);
+
+    const handleOpenCheckIn = useCallback(() => {
+        openFocusCheckInModal(plugin.app, plugin.settings);
+    }, [plugin.app, plugin.settings]);
+
     const gameplayConfig = useMemo(
         () => getResolvedGameplayConfig(plugin.app),
         [plugin.settings, settingsRevision]
@@ -270,7 +323,7 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
     const penaltiesUiOn = gameplayConfig.penaltiesEnabled;
 
     const filteredTabs = TABS.filter((t) =>
-        isPlayerTabEnabled(gameplayConfig, t.key as PlayerTabKey)
+        isPlayerTabEnabledForDevice(gameplayConfig, t.key as PlayerTabKey, isMobile)
     );
     useEffect(() => {
         const tabExists = filteredTabs.some(t => t.key === selectedTab);
@@ -298,12 +351,38 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
         localStorage.setItem('gamification-selected-tab', selectedTab);
     }, [selectedTab]);
 
-    // Once Pomodoro has been opened, keep it mounted (hidden when inactive)
     useEffect(() => {
-        if (selectedTab === 'pomodoro') {
+        const onFocusSession = (event: Event) => {
+            const live = Boolean((event as CustomEvent<{ live?: boolean }>).detail?.live);
+            setFocusSessionLive(live);
+        };
+        window.addEventListener(FOCUS_SESSION_EVENT, onFocusSession);
+        return () => window.removeEventListener(FOCUS_SESSION_EVENT, onFocusSession);
+    }, []);
+
+    // Pomodoro: mount when selected; on mobile unmount when leaving unless a focus session is live
+    useEffect(() => {
+        if (selectedTab === 'pomodoro' || focusSessionLive) {
             setHasMountedPomodoro(true);
+            return;
         }
-    }, [selectedTab]);
+        if (isMobile) {
+            setHasMountedPomodoro(false);
+        }
+    }, [selectedTab, isMobile, focusSessionLive]);
+
+    // Shop / Crafting / Achievements:
+    // Desktop keeps them mounted after first visit; mobile unmounts on leave (iOS freezes under keep-alive).
+    useEffect(() => {
+        if (selectedTab === 'shop') setHasMountedShop(true);
+        else if (isMobile) setHasMountedShop(false);
+
+        if (selectedTab === 'crafting') setHasMountedCrafting(true);
+        else if (isMobile) setHasMountedCrafting(false);
+
+        if (selectedTab === 'achievements') setHasMountedAchievements(true);
+        else if (isMobile) setHasMountedAchievements(false);
+    }, [selectedTab, isMobile]);
 
     // Listen for tab switch requests from other components
     useEffect(() => {
@@ -311,14 +390,29 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
             const { targetTab } = event.detail ?? {};
             window.console.log('🔄 TabView: Received tab switch request for:', targetTab);
             if (targetTab === 'boss') {
-                void plugin.activateBossView();
+                void (async () => {
+                    const { getActiveBossFileRaid } = await import('../../features/quests/utils/bossRaidService');
+                    if (getActiveBossFileRaid()) {
+                        void plugin.activateBossView();
+                        return;
+                    }
+                    await plugin.focusQuestHubSection('dungeon');
+                })();
                 return;
             }
             if (targetTab === 'stats') {
+                if (isMobile) {
+                    openMobileDesktopOnlyNotice('Stats');
+                    return;
+                }
                 setShowStats(true);
                 return;
             }
             if (targetTab && targetTab !== selectedTab) {
+                if (isMobile && !isPlayerTabEnabledForDevice(gameplayConfig, targetTab as PlayerTabKey, true)) {
+                    openMobileDesktopOnlyNotice(String(targetTab));
+                    return;
+                }
                 setSelectedTab(targetTab);
                 window.console.log('🔄 TabView: Switched to tab:', targetTab);
             }
@@ -329,7 +423,7 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
         return () => {
             window.removeEventListener('requestActiveTabChange', handleTabSwitchRequest as EventListener);
         };
-    }, [selectedTab, plugin]);
+    }, [selectedTab, plugin, isMobile, gameplayConfig, openMobileDesktopOnlyNotice]);
 
     // Saving indicator events
     useEffect(() => {
@@ -353,7 +447,14 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
     const selectTabKey = useCallback(
         (tabKey: string) => {
             if (tabKey === 'boss') {
-                void plugin.activateBossView();
+                void (async () => {
+                    const { getActiveBossFileRaid } = await import('../../features/quests/utils/bossRaidService');
+                    if (getActiveBossFileRaid()) {
+                        void plugin.activateBossView();
+                        return;
+                    }
+                    await plugin.focusQuestHubSection('dungeon');
+                })();
                 return;
             }
             setSelectedTab(tabKey);
@@ -361,8 +462,8 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
         [plugin]
     );
 
-    // Mobile swipe navigation - disable for tabs that have their own internal navigation
-    const swipeHandlers = useSwipe(
+    // Mobile swipe navigation - handlers omitted on mobile (conflicts with vertical scroll)
+    const swipeHandlersRaw = useSwipe(
         () => {
             if (selectedTab === 'analytics') return;
             const n = displayTabs.length;
@@ -390,6 +491,7 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
             }
         }
     );
+    const swipeHandlers = isMobile ? {} : swipeHandlersRaw;
 
     // Let Obsidian handle zoom behavior - don't interfere
     // useEffect(() => {
@@ -425,54 +527,55 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
 
     useEffect(() => {
         let unsubscribe: (() => void) | undefined;
+        let cancelled = false;
+        let retryTimer: number | undefined;
         
-        const initializePlayerData = async () => {
+        const initializePlayerData = async (attempt = 0) => {
             setLoading(true);
             try {
-                if (isMobile) {
-                    console.log('📱 Initializing player data for mobile device...');
-                }
-                
-                // Initialize playerStore with the vault from the plugin
-                // PlayerStore now has guards to prevent multiple initializations
                 const { playerStore } = await import('../../shared/state/playerStore');
-                await playerStore.setVault(plugin.app.vault);
-                
-                // Ensure currency display service is initialized with current settings
-                currencyDisplay.initialize(plugin.settings);
-                
-                // Get initial data
-                const data = await playerStore.get();
-                setPlayerData(data);
-                
-                if (isMobile) {
-                    console.log('📱 Player data loaded successfully on mobile:', data ? 'Data found' : 'No data');
+
+                const cached = playerStore.getSync();
+                if (cached && !cancelled) {
+                    setPlayerData(cached);
+                    setLoading(false);
                 }
-                
-                // Subscribe to changes
-                unsubscribe = playerStore.onChange((change) => {
-                    if (change.type === 'data-updated') {
-                        setPlayerData(change.payload);
-                        if (isMobile) {
-                            console.log('📱 Player data updated on mobile');
-                        }
-                    }
-                });
-                
+
+                await playerStore.setVault(plugin.app.vault);
+                currencyDisplay.initialize(plugin.settings);
+
+                const data = await playerStore.get();
+                if (cancelled) return;
+
+                setPlayerData(data);
                 setLoading(false);
+
+                // iPad/iCloud: vault may still be indexing — retry a couple times
+                if (!data && attempt < 6) {
+                    retryTimer = window.setTimeout(() => {
+                        void initializePlayerData(attempt + 1);
+                    }, Math.min(1000 * (attempt + 1), 4000));
+                }
+
+                if (!unsubscribe) {
+                    unsubscribe = playerStore.onChange((change) => {
+                        if (change.type === 'data-updated') {
+                            setPlayerData(change.payload);
+                        }
+                    });
+                }
             } catch (error) {
                 console.error("Error initializing player data:", error);
-                if (isMobile) {
-                    console.error("📱 Mobile-specific error details:", error);
-                }
-                setLoading(false);
+                if (!cancelled) setLoading(false);
             }
         };
         
-        initializePlayerData();
+        void initializePlayerData();
         
         // Cleanup on unmount
         return () => {
+            cancelled = true;
+            if (retryTimer) window.clearTimeout(retryTimer);
             if (unsubscribe && typeof unsubscribe === 'function') {
                 unsubscribe();
             }
@@ -482,10 +585,11 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
     // NOTE: Removed player-data-updated event listener to prevent infinite loops
     // since we're using playerStore directly in reloadPlayerData
 
-    // Listen for stats updates
+    // Listen for stats updates (desktop + when stats modal is open on mobile)
     useEffect(() => {
+        if (isMobile && !showStats) return;
+
         const handleStatsUpdate = () => {
-            console.log("[PlayerTabView] Stats update event received, reloading stats...");
             const loadStats = async () => {
                 const folderPath = plugin.settings.statFolder || "SkillTree/Master-Class/Stats";
                 try {
@@ -505,10 +609,12 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
 
         document.addEventListener("stats-updated", handleStatsUpdate);
         return () => document.removeEventListener("stats-updated", handleStatsUpdate);
-    }, [plugin]);
+    }, [plugin, isMobile, showStats]);
 
-    // Initial stats loading
+    // Initial stats loading — skip on mobile until stats modal opens
     useEffect(() => {
+        if (isMobile && !showStats) return;
+
         const loadStats = async () => {
             const folderPath = plugin.settings.statFolder || "SkillTree/Master-Class/Stats";
             try {
@@ -524,7 +630,7 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
             }
         };
         loadStats();
-    }, [plugin]);
+    }, [plugin, isMobile, showStats]);
 
     // Handler for avatar change with enhanced mobile debugging
     const handleAvatarChange = async (newAvatarPath: string) => {
@@ -594,30 +700,35 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
         console.log("[PlayerTabView] Stats passed to StatsTab:", stats);
     }
 
+    const showDebugChrome = plugin.settings.betaMode === true && !isMobile;
+
     return (
         <MobileErrorBoundary>
+            {/* Outside mobile animation-nuke subtree so lite ceremonies/toasts can animate */}
+            <CeremonyHost lite={isMobile} />
+            <AchievementUnlockHost lite={isMobile} />
             <div
-                className={`${styles.container} ${isMobile ? mobileClasses.container : ''} gamification-container gamification-plugin`}
+                className={`${styles.container} ${isMobile ? mobileClasses.container : ''} gamification-container gamification-plugin gamification-player-shell`}
                 data-gamification-plugin
+                data-gamification-mobile={isMobile ? 'true' : 'false'}
                 data-gamification-visual-theme={appliedVisualTheme.preset}
                 data-gamification-shell={appliedVisualTheme.shell}
+                data-clay-shell={appliedVisualTheme.preset === 'clay' ? 'player' : undefined}
+                data-pixel-shell={appliedVisualTheme.preset === 'classic' ? 'player' : undefined}
                 {...swipeHandlers}
             >
-            {/* Global Notification System */}
-            <GlobalNotificationSystem />
-            <CeremonyHost />
-            <AchievementUnlockHost />
-            
-            {/* Debug reload button - hidden on mobile in production */}
-            {(!isMobile || process.env.NODE_ENV === 'development') && (
+            {/* Global Notification System — desktop only (heavy) */}
+            {!isMobile && <GlobalNotificationSystem />}
+
+            {showDebugChrome && (
+            <div className={styles.debugRow}>
                 <button
                     onClick={reloadPlayerData}
                     className={`${styles.reloadButton} ${mobileClasses.button}`}
                     aria-label="Reload player data"
                 >
-                    {isMobile ? '🔄' : 'Reload Player Data'}
+                    Reload Player Data
                 </button>
-            )}
             
             {/* Manual level check button - hidden on mobile in production */}
             {(!isMobile || process.env.NODE_ENV === 'development') && (
@@ -663,6 +774,43 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
                     {isMobile ? '🧪' : 'Test Notice'}
                 </button>
             )}
+            {(!isMobile || process.env.NODE_ENV === 'development') && (
+                <button
+                    disabled={debugRunning}
+                    onClick={() => {
+                        if (debugRunning) return;
+                        setDebugRunning(true);
+                        void simulateDebugQuestRewards(plugin.app)
+                            .catch((err) => {
+                                console.error('Debug quest simulation failed:', err);
+                                pixelNotice('❌ Debug simulation failed', 3000);
+                            })
+                            .finally(() => setDebugRunning(false));
+                    }}
+                    className={`${styles.reloadButton} ${mobileClasses.button}`}
+                    style={{ marginLeft: isMobile ? "8px" : "10px", opacity: debugRunning ? 0.6 : 1 }}
+                    aria-label="Simulate debug quest rewards"
+                >
+                    {debugRunning ? 'Simulating…' : isMobile ? '🎮' : 'Debug Quests'}
+                </button>
+            )}
+            {(!isMobile || process.env.NODE_ENV === 'development') && (
+                <button
+                    onClick={() => {
+                        void debugSimulateCheckInDue(plugin.app).catch((err) => {
+                            console.error('Debug check-in simulation failed:', err);
+                            pixelNotice('❌ Could not simulate check-in', 3000);
+                        });
+                    }}
+                    className={`${styles.reloadButton} ${mobileClasses.button}`}
+                    style={{ marginLeft: isMobile ? "8px" : "10px" }}
+                    aria-label="Simulate check-in button due"
+                >
+                    {isMobile ? '⏱️' : 'Debug Check-In'}
+                </button>
+            )}
+            </div>
+            )}
             {saving && (
                 <span style={{ marginLeft: 8, color: 'var(--text-muted)' }}>Saving…</span>
             )}
@@ -679,8 +827,8 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
                     border: '1px solid var(--background-modifier-border)',
                     margin: '1rem 0'
                 }}>
-                    <h3>Player Data Not Found</h3>
-                    <p>Please create SkillTree/PlayerData.md with the correct YAML format.</p>
+                    <h3>No player file yet</h3>
+                    <p>Enable the plugin once so it can create SkillTree/PlayerData.md, then reload this tab.</p>
                     {isMobile && (
                                         <>
                                             <p style={{ fontSize: '12px', opacity: 0.7, marginTop: '1rem' }}>
@@ -903,7 +1051,7 @@ ${testResults.join('\n')}`;
                 </div>
             ) : (
                 <>
-                    <div className={styles.tabNavBar}>
+                    <div className={`${styles.tabNavBar} gamify-tab-nav`}>
                         <div
                             ref={tabRibbonRef}
                             className={styles.tabRibbon}
@@ -929,6 +1077,17 @@ ${testResults.join('\n')}`;
                                 </button>
                             ))}
                         </div>
+                        {checkInDue && plugin.settings.enableFocusCheckIns !== false && (
+                            <button
+                                type="button"
+                                onClick={handleOpenCheckIn}
+                                className={`${styles.checkInNavChip} ${isMobile ? mobileClasses.touchTarget : ''}`}
+                                aria-label="Open focus check-in"
+                                title="Focus check-in due"
+                            >
+                                ⏱ Check-in
+                            </button>
+                        )}
                         <div className={styles.tabNavDivider} aria-hidden="true" />
                         <button
                             type="button"
@@ -942,87 +1101,64 @@ ${testResults.join('\n')}`;
                     </div>
 
                     {/* Mobile-optimized tab content */}
-                    <div className={`${styles.tabContent} ${isMobile ? mobileClasses.scrollable : ''}`}>
+                    <div className={`${styles.tabContent} ${isMobile ? `${mobileClasses.scrollable} ${styles.tabContentMobile}` : ''}`}>
                         {selectedTab === "player" && (
-                            <div className={`${styles.gridCol} ${isMobile ? mobileClasses.container : ''} ${appliedVisualTheme.preset === 'system-hunter' ? cardStyles.playerTabSystem : ''}`}>
+                            <div className={`${styles.gridCol} gamification-player-grid ${appliedVisualTheme.preset === 'system-hunter' ? cardStyles.playerTabSystem : ''} ${appliedVisualTheme.preset === 'clay' ? cardStyles.playerTabClay : ''}`}>
                                 {/* Avatar & Main Info Card */}
                                 <PlayerInfoCard
                                     playerData={playerData}
                                     plugin={plugin}
                                     openAvatarPicker={openAvatarPicker}
-                                />
-                                {/* Player Level + EXP row (below Player card) */}
-                                <div
-                                    className={cardStyles.cardRow}
-                                    style={{
-                                        flexDirection: 'row',
-                                        flexWrap: 'nowrap',
-                                        gap: isMobile ? '10px' : '16px',
-                                        alignItems: 'stretch',
+                                    lightweight={isMobile}
+                                    showActivityStreak={isMobile}
+                                    onOpenStats={() => setShowStats(true)}
+                                    onOpenSkills={() => setShowSkillTreeModal(true)}
+                                    onUpdateIdentity={async (patch) => {
+                                        const updatedData = { ...playerData, ...patch };
+                                        await updatePlayerData(plugin.app.vault, updatedData);
+                                        setPlayerData(updatedData);
+                                        document.dispatchEvent(new Event('player-data-updated'));
                                     }}
-                                >
-                                    <div className={`${cardStyles.levelCard} ${isMobile ? mobileClasses.card : ''}`}>
-                                        <div className={cardStyles.cardLabel}>LEVEL</div>
-                                        <div className={cardStyles.levelValue}>{playerData.level}</div>
-                                    </div>
+                                />
 
-                                    <div className={`${cardStyles.expCard} ${isMobile ? mobileClasses.card : ''} ${appliedVisualTheme.preset === 'system-hunter' ? cardStyles.expCardSystem : ''}`}>
-                                        {appliedVisualTheme.preset === 'system-hunter' ? (
-                                            <SystemResourceBar
-                                                label="EXP"
-                                                icon="exp"
-                                                current={Number(playerData.xp || 0)}
-                                                max={Math.max(1, Number(playerData.xpRequired || 1))}
-                                            />
-                                        ) : (
-                                            <>
-                                                <div className={cardStyles.cardLabel} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                                                    <span style={{ display: 'inline-flex', alignItems: 'center' }} aria-hidden="true">
-                                                        <svg
-                                                            width="14"
-                                                            height="14"
-                                                            viewBox="0 0 24 24"
-                                                            fill="none"
-                                                            stroke="currentColor"
-                                                            strokeWidth="2"
-                                                            strokeLinecap="round"
-                                                            strokeLinejoin="round"
-                                                            xmlns="http://www.w3.org/2000/svg"
-                                                        >
-                                                            <title>Experience</title>
-                                                            <rect x="4" y="4" width="16" height="16" rx="4" />
-                                                            <text x="12" y="16" textAnchor="middle" fontSize="10" fill="currentColor">
-                                                                XP
-                                                            </text>
-                                                        </svg>
+                                {/* Currency + inventory */}
+                                {isMobile ? (
+                                    <>
+                                        <div className={`${cardStyles.coinsCard} ${cardStyles.coinsCardInline} ${mobileClasses.card}`}>
+                                            <ClickableTooltip
+                                                icon={
+                                                    <span style={{ fontSize: "16px", paddingRight: "2px" }}>
+                                                        {currencyDisplay.getCurrencySymbol()}
                                                     </span>
-                                                    EXP
-                                                </div>
-                                                <ProgressBar
-                                                    progress={Math.min(
-                                                        100,
-                                                        Math.max(
-                                                            0,
-                                                            Math.round(
-                                                                (Number(playerData.xp || 0) /
-                                                                    Math.max(1, Number(playerData.xpRequired || 1))) *
-                                                                    100
-                                                            )
-                                                        )
-                                                    )}
-                                                    height={16}
-                                                    labelPosition="center"
-                                                    appearance="pixel"
-                                                    label={`${Number(playerData.xp || 0)}/${Math.max(1, Number(playerData.xpRequired || 1))}`}
-                                                />
-                                            </>
-                                        )}
-                                    </div>
-                                </div>
-                                {/* Currency, Skill Tree & Inventory Side by Side */}
-                                <div className={`${cardStyles.cardRow} ${isMobile ? styles.mobileCardRow : ''}`} style={{
-                                  flexDirection: isMobile ? 'column' : 'row',
-                                  gap: isMobile ? '12px' : '16px',
+                                                }
+                                                label={currencyDisplay.getCurrencyName()}
+                                                tooltipContent={
+                                                    <div>
+                                                        Your current {currencyDisplay.getCurrencyNameLowercase()} balance.
+                                                        Spend {currencyDisplay.getCurrencyNameLowercase()} in the shop!
+                                                    </div>
+                                                }
+                                            />
+                                            <div className={cardStyles.coinsValue}>
+                                                {playerData.coins}
+                                            </div>
+                                        </div>
+                                        <div className={cardStyles.mobileActionRow}>
+                                            <button
+                                                type="button"
+                                                className={`${cardStyles.inventoryCard} ${mobileClasses.card}`}
+                                                onClick={() => new InventoryModalClass(plugin.app).open()}
+                                                aria-label="Open Inventory"
+                                            >
+                                                <span className={cardStyles.actionIcon}>🎒</span>
+                                                <span className={cardStyles.actionLabel}>Items</span>
+                                            </button>
+                                        </div>
+                                    </>
+                                ) : (
+                                <div className={cardStyles.cardRow} style={{
+                                  flexDirection: 'row',
+                                  gap: '16px',
                                   alignItems: 'stretch',
                                 }}>
                                     {/* Currency Card */}
@@ -1045,18 +1181,6 @@ ${testResults.join('\n')}`;
                                             {playerData.coins}
                                         </div>
                                     </div>
-                                    {/* Skill Tree Card - outer card is the button */}
-                                    <button
-                                        type="button"
-                                        className={`${cardStyles.skillTreeCard} ${mobileClasses.card}`}
-                                        onClick={() => setShowSkillTreeModal(true)}
-                                        aria-label="Open Skill Tree"
-                                    >
-                                        <span className={cardStyles.actionIcon} style={{ display: 'inline-flex', alignItems: 'center' }}>
-                                            {SkillTreeCardIcon}
-                                        </span>
-                                        <span className={cardStyles.actionLabel}>Skill Tree</span>
-                                    </button>
                                     {/* Inventory Card - outer card is the button */}
                                     <button
                                         type="button"
@@ -1067,47 +1191,58 @@ ${testResults.join('\n')}`;
                                         <span className={cardStyles.actionIcon}>🎒</span>
                                         <span className={cardStyles.actionLabel}>Inventory</span>
                                     </button>
-                                    {/* Stats Button Card - outer card is the button */}
-                                    <button
-                                        type="button"
-                                        className={`${cardStyles.inventoryCard} ${mobileClasses.card}`}
-                                        onClick={() => setShowStats(true)}
-                                        aria-label="View Stats"
-                                    >
-                                        <span className={cardStyles.actionIcon} style={{ display: 'inline-flex', alignItems: 'center' }}>
-                                            {StatsIcon}
-                                        </span>
-                                        <span className={cardStyles.actionLabel}>Stats</span>
-                                    </button>
                                 </div>
-                                {energySystemOn && energyHudConfig.showHud && (
+                                )}
+                                {energySystemOn && energyHudConfig.showHud && mobileHeavyReady && (
                                 <div
                                     className={`${cardStyles.energyCard} ${cardStyles.energyCardFlush} ${mobileClasses.card}`}
                                 >
                                     <EnhancedEnergyHUD
-                                        variant="pixel"
-                                        showRecommendations={energyHudConfig.showRecommendations}
+                                        variant={energyHudVariant}
+                                        showRecommendations={!isMobile && energyHudConfig.showRecommendations}
                                         compact={false}
-                                        autoRefresh={visible}
+                                        autoRefresh={!isMobile && visible}
                                         visibleStats={energyHudConfig.visibleStats}
                                         hudTitle={energyHudConfig.hudTitle}
+                                        playerData={playerData}
                                     />
                                 </div>
                                 )}
 
-                                <ActiveBuffsCard />
+                                {(!isMobile || mobileHeavyReady) && (
+                                    <WeeklySkillsCard
+                                        vault={plugin.app.vault}
+                                    />
+                                )}
 
-                                {penaltiesUiOn && <PenaltyStatusCard />}
-                                
-                                {/* Active Artifacts */}
-                                <ActiveArtifactsCard />
+                                {/* Buffs / Recovery / Artifacts: mobile collapsed + lazy after heavy-ready */}
+                                {(!isMobile || mobileHeavyReady) && (
+                                    <ActiveBuffsCard collapsed={isMobile} />
+                                )}
+
+                                {penaltiesUiOn && (!isMobile || mobileHeavyReady) && (
+                                    <PenaltyStatusCard collapsed={isMobile} />
+                                )}
+
+                                {(!isMobile || mobileHeavyReady) && (
+                                    <ActiveArtifactsCard collapsed={isMobile} />
+                                )}
                             </div>
                         )}
 
                         {/* Mobile-optimized tab content with Suspense and Error Boundaries */}
                         <ErrorBoundary componentName="Shop Tab">
-                            <Suspense fallback={<TabLoadingState tabName={currentTab.label} />}>
-                                {selectedTab === "shop" && (<ShopTab plugin={plugin} rebuildShopTab={() => {}} />)}
+                            <Suspense fallback={<TabLoadingState tabName="Shop" />}>
+                                {hasMountedShop && (
+                                    <div style={{ display: selectedTab === 'shop' ? 'block' : 'none' }}>
+                                        <ShopTab
+                                            plugin={plugin}
+                                            rebuildShopTab={() => {}}
+                                            visualThemePreset={appliedVisualTheme.preset}
+                                            initialCoins={playerData?.coins}
+                                        />
+                                    </div>
+                                )}
                             </Suspense>
                         </ErrorBoundary>
 
@@ -1125,7 +1260,11 @@ ${testResults.join('\n')}`;
 
                         <ErrorBoundary componentName="Crafting Tab">
                             <Suspense fallback={<TabLoadingState tabName="Crafting" />}>
-                                {selectedTab === "crafting" && (<CraftingTab plugin={plugin} playerData={playerData} reloadPlayerData={reloadPlayerData} />)}
+                                {hasMountedCrafting && (
+                                    <div style={{ display: selectedTab === 'crafting' ? 'block' : 'none' }}>
+                                        <CraftingTab plugin={plugin} playerData={playerData} reloadPlayerData={reloadPlayerData} />
+                                    </div>
+                                )}
                             </Suspense>
                         </ErrorBoundary>
 
@@ -1133,12 +1272,16 @@ ${testResults.join('\n')}`;
 
                         <ErrorBoundary componentName="Achievements Tab">
                             <Suspense fallback={<TabLoadingState tabName="Achievements" />}>
-                                {selectedTab === "achievements" && (
-                                    <AchievementsTab
-                                        tracker={achievementTracker}
-                                        onRefresh={reloadPlayerData}
-                                        highlightAchievementId={highlightAchievementId}
-                                    />
+                                {hasMountedAchievements && (
+                                    <div style={{ display: selectedTab === 'achievements' ? 'block' : 'none' }}>
+                                        <AchievementsTab
+                                            tracker={achievementEventService.getTracker()}
+                                            playerData={playerData}
+                                            app={plugin.app}
+                                            onRefresh={reloadPlayerData}
+                                            highlightAchievementId={highlightAchievementId}
+                                        />
+                                    </div>
                                 )}
                             </Suspense>
                         </ErrorBoundary>
@@ -1199,12 +1342,13 @@ ${testResults.join('\n')}`;
             document.body
         )}
 
-        {/* Skill Tree Modal */}
+        {/* Skills modal — phone progress list; desktop Canvas / Manage / Create */}
         {showSkillTreeModal && (
             <SkillTreeModal
                 isOpen={showSkillTreeModal}
                 onClose={() => setShowSkillTreeModal(false)}
                 plugin={plugin}
+                initialTab={isMobile ? 'mobile' : 'overview'}
             />
         )}
         </div>

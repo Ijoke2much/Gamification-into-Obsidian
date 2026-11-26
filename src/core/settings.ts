@@ -1,6 +1,10 @@
 import { TreeRewardConfig, DEFAULT_TREE_REWARD_CONFIG } from '../features/habits/utils/treeRewardSystem';
 import type { GameItemDefinition } from '../features/inventory/types/EnhancedInventoryTypes';
 import {
+	DEFAULT_ACTIVITY_ENERGY_RULES,
+	type ActivityEnergyRule,
+} from '../shared/utils/activityEnergy';
+import {
 	DEFAULT_VISUAL_THEME_SETTINGS,
 	type VisualThemeSettings,
 } from '../shared/themes/types';
@@ -26,6 +30,23 @@ export interface QuestSaveLocation {
   filePath: string;
 }
 
+/** Player-defined loot that can drop on quest complete (rarity-weighted). */
+export interface QuestCustomRewardSetting {
+  name: string;
+  type: 'item' | 'material' | 'effect';
+  category?: string;
+  rarity: 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
+  icon: string;
+  description: string;
+  quantity: number;
+  materialData?: {
+    category: 'herb' | 'mineral' | 'essence' | 'crystal' | 'organic' | 'mystical';
+    quality: 'fresh' | 'normal' | 'dried' | 'refined' | 'masterwork';
+    baseValue: number;
+  };
+  effects?: string[];
+}
+
 // ============================================================================
 // ENHANCED SETTINGS CATEGORIES WITH GROUPED PANELS
 // ============================================================================
@@ -44,7 +65,7 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
     id: 'quests',
     name: 'Quests & Timeline',
     icon: '📋',
-    description: 'Quest management, timeline view, and task tracking',
+    description: 'Quest board, timeline view, and task tracking',
     color: '#4CAF50',
     categories: [
       {
@@ -53,7 +74,7 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
         icon: '🎯',
         description: 'Quest board, auto-refresh, and display settings',
         color: '#4CAF50',
-        settings: ['enableSidebarQuestBoard', 'questBoardPosition', 'autoRefreshTasks', 'hideCompletedQuests', 'questRefreshInterval']
+        settings: ['enableSidebarQuestBoard', 'questBoardPosition', 'autoRefreshTasks', 'hideCompletedQuests', 'questRefreshInterval', 'questCustomRewardPool']
       },
       {
         id: 'timeline',
@@ -66,25 +87,74 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
     ]
   },
   {
-    id: 'rewards',
-    name: 'Rewards & Progression',
-    icon: '🏆',
-    description: 'Currency, rewards, shop system, and progression mechanics',
-    color: '#FFD700',
+    id: 'gameplay',
+    name: 'Gameplay',
+    icon: '🎮',
+    description: 'Profiles, tabs, notifications, currency, penalties, and achievements',
+    color: '#7C4DFF',
     categories: [
+      {
+        id: 'game-modules',
+        name: 'Feature Modules',
+        icon: '🧩',
+        description: 'Gameplay profile, key items, and which tabs / systems are enabled',
+        color: '#7C4DFF',
+        settings: ['gameplayProfile', 'modules', 'bookOfEasy']
+      },
+      {
+        id: 'experience-feel',
+        name: 'Experience & Feel',
+        icon: '✨',
+        description: 'Notifications, quest filters, and optional boss battles',
+        color: '#26A69A',
+        settings: ['notificationLevel', 'preferQuickComplete']
+      },
       {
         id: 'currency',
         name: 'Currency & Rewards',
         icon: '🪙',
-        description: 'Configure XP, coins, and reward systems',
+        description: 'XP, coins, and reward amounts',
         color: '#FFD700',
         settings: ['xpPerTask', 'coinPerTask', 'currencyName', 'currencySymbol', 'levelingFormula']
+      },
+      {
+        id: 'penalties',
+        name: 'Penalties & Consequences',
+        icon: '⚠️',
+        description: 'Failure penalties and debt management',
+        color: '#FF5722',
+        settings: ['gameplayProfile', 'modules', 'penaltyLowPct', 'penaltyMediumPct', 'penaltyHighPct', 'dailyDebtCapXP', 'dailyDebtCapCoins', 'pomodoroFailOnlyOnReset']
+      },
+      {
+        id: 'achievements',
+        name: 'Achievements',
+        icon: '🏅',
+        description: 'Make a badge and the rule that unlocks it',
+        color: '#5bb8b0',
+        settings: ['custom achievements', 'skill uses']
+      }
+    ]
+  },
+  {
+    id: 'economy',
+    name: 'Economy & Content',
+    icon: '🧰',
+    description: 'Shop, crafting data, and habit tree rewards',
+    color: '#9C27B0',
+    categories: [
+      {
+        id: 'game-data-hub',
+        name: 'Game data hub',
+        icon: '🧰',
+        description: 'Edit shop items, materials, and recipes in vault markdown',
+        color: '#673AB7',
+        settings: ['shop', 'materials', 'recipes', 'Shop.md', 'Materials.md', 'Recipes.md']
       },
       {
         id: 'shop',
         name: 'Shop System',
         icon: '🛒',
-        description: 'Seasonal shop, events, and inventory rotation',
+        description: 'Seasonal shop, rotation, and special events',
         color: '#9C27B0',
         settings: ['enableSeasonalShop', 'shopRotationDays', 'enableSpecialEvents', 'dragonFestivalEnabled', 'mysticalMarketEnabled']
       },
@@ -102,122 +172,153 @@ export const SETTINGS_GROUPS: SettingsGroup[] = [
         icon: '🌳',
         description: 'Habit tree growth and reward multipliers',
         color: '#8BC34A',
-        settings: ['treeRewardConfig']
+        settings: ['treeRewardConfig', 'habits']
       }
     ]
   },
   {
-    id: 'performance',
-    name: 'Performance & Energy',
+    id: 'energy',
+    name: 'Energy & Focus',
     icon: '⚡',
-    description: 'Performance optimization, energy system, and focus mechanics',
-    color: '#FF9800',
+    description: 'HUD, daily restore, and quest energy costs',
+    color: '#2196F3',
     categories: [
       {
         id: 'energy',
         name: 'Energy & Focus',
         icon: '⚡',
-        description: 'Energy system, daily resets, and recovery rates',
+        description: 'Energy HUD, daily reset, restore values, and quest costs',
         color: '#2196F3',
-        settings: ['enableEnergyHUD', 'energyHudMode', 'dailyResetHour', 'dailyRestoreEnergy', 'dailyRestoreFocus', 'dailyRestoreMotivation', 'dailyRestoreCalm', 'dailyRestoreStressReduce']
-      },
+        settings: [
+          'enableEnergyHUD',
+          'energyHudMode',
+          'dailyResetHour',
+          'dailyRestoreEnergy',
+          'dailyRestoreFocus',
+          'dailyRestoreMotivation',
+          'dailyRestoreCalm',
+          'dailyRestoreStressReduce',
+          'questCostEasyMental',
+          'questCostEasyPhysical',
+          'questCostEasyEmotional',
+          'questCostMediumMental',
+          'questCostMediumPhysical',
+          'questCostMediumEmotional',
+          'questCostHardMental',
+          'questCostHardPhysical',
+          'questCostHardEmotional',
+          'pomoCostPerMinMental',
+          'pomoCostPerMinPhysical',
+          'pomoCostPerMinEmotional'
+        ]
+      }
+    ]
+  },
+  {
+    id: 'appearance',
+    name: 'Appearance',
+    icon: '🎨',
+    description: 'Visual theme, localization, and accessibility',
+    color: '#8B5CF6',
+    categories: [
+      {
+        id: 'appearance',
+        name: 'Appearance & Localization',
+        icon: '🎨',
+        description: 'Theme, accent colors, language, and date/time formats',
+        color: '#8B5CF6',
+        settings: [
+          'themeMode',
+          'accentColor',
+          'colorPalette',
+          'accessibilitySettings',
+          'locale',
+          'dateFormat',
+          'timeFormat',
+          'numberFormat',
+          'visualTheme',
+          'solo leveling',
+          'clay'
+        ]
+      }
+    ]
+  },
+  {
+    id: 'performance',
+    name: 'Performance',
+    icon: '🚀',
+    description: 'Caching, workers, and optimization toggles',
+    color: '#FF9800',
+    categories: [
       {
         id: 'performance',
         name: 'Performance',
         icon: '🚀',
         description: 'Performance optimization and caching settings',
         color: '#FF9800',
-        settings: ['performanceSettings']
+        settings: ['performanceSettings', 'cache', 'workers', 'betaMode']
       }
     ]
   },
   {
-    id: 'appearance',
-    name: 'Appearance & Localization',
-    icon: '🎨',
-    description: 'Theming, internationalization, and accessibility settings',
-    color: '#8B5CF6',
+    id: 'vault',
+    name: 'Vault & Files',
+    icon: '📁',
+    description: 'File paths and vault storage locations',
+    color: '#607D8B',
     categories: [
-      {
-        id: 'theming',
-        name: 'Theming',
-        icon: '🎨',
-        description: 'Dark/light mode, accent colors, and visual customization',
-        color: '#8B5CF6',
-        settings: ['themeMode', 'accentColor', 'colorPalette', 'accessibilitySettings']
-      },
-      {
-        id: 'internationalization',
-        name: 'Internationalization',
-        icon: '🌍',
-        description: 'Language, date/time formatting, and regional settings',
-        color: '#06B6D4',
-        settings: ['locale', 'dateFormat', 'timeFormat', 'numberFormat']
-      }
-    ]
-  },
-  {
-    id: 'advanced',
-    name: 'Advanced & Management',
-    icon: '🔧',
-    description: 'Advanced settings, penalties, and system management',
-    color: '#795548',
-    categories: [
-      {
-        id: 'game-modules',
-        name: 'Feature Modules',
-        icon: '🧩',
-        description: 'Enable or hide tabs and major game systems',
-        color: '#7C4DFF',
-        settings: ['gameplayProfile', 'modules']
-      },
-      {
-        id: 'experience-feel',
-        name: 'Experience & Feel',
-        icon: '✨',
-        description: 'Notifications, quest filters, and optional boss battles',
-        color: '#26A69A',
-        settings: ['notificationLevel', 'preferQuickComplete']
-      },
-      {
-        id: 'penalties',
-        name: 'Penalties & Consequences',
-        icon: '⚠️',
-        description: 'Failure penalties and debt management',
-        color: '#FF5722',
-        settings: ['gameplayProfile', 'modules', 'penaltyLowPct', 'penaltyMediumPct', 'penaltyHighPct', 'dailyDebtCapXP', 'dailyDebtCapCoins', 'pomodoroFailOnlyOnReset']
-      },
-      {
-        id: 'advanced-config',
-        name: 'Advanced Configuration',
-        icon: '🔧',
-        description: 'Advanced configuration and system settings',
-        color: '#795548',
-        settings: ['questCostEasyMental', 'questCostEasyPhysical', 'questCostEasyEmotional', 'questCostMediumMental', 'questCostMediumPhysical', 'questCostMediumEmotional', 'questCostHardMental', 'questCostHardPhysical', 'questCostHardEmotional', 'pomoCostPerMinMental', 'pomoCostPerMinPhysical', 'pomoCostPerMinEmotional', 'breakRestEnergy', 'breakRestFocus', 'breakRestMotivation', 'breakWalkEnergy', 'breakWalkFocus', 'breakWalkMotivation', 'breakMeditationEnergy', 'breakMeditationFocus', 'breakMeditationMotivation', 'breakYogaEnergy', 'breakYogaFocus', 'breakYogaMotivation']
-      },
       {
         id: 'files',
         name: 'File Paths',
         icon: '📁',
-        description: 'Customize folder and file locations',
+        description: 'Quest files, inventory, images, and skill tree folders',
         color: '#607D8B',
-        settings: ['shopkeeperImagePath', 'questGiverImagePath', 'avatarFolder', 'inventoryFilePath', 'skillTreeRoot', 'masterClassFolder', 'classFolder', 'skillFolder', 'statFolder']
-      },
+        settings: [
+          'shopkeeperImagePath',
+          'questGiverImagePath',
+          'avatarFolder',
+          'inventoryFilePath',
+          'skillTreeRoot',
+          'masterClassFolder',
+          'classFolder',
+          'skillFolder',
+          'statFolder',
+          'defaultQuestFilePath',
+          'questSaveLocations'
+        ]
+      }
+    ]
+  },
+  {
+    id: 'help',
+    name: 'Help & Reset',
+    icon: '🎓',
+    description: 'Tutorials, onboarding, and danger-zone resets',
+    color: '#6366F1',
+    categories: [
       {
         id: 'tutorials',
         name: 'Tutorials & Help',
         icon: '🎓',
-        description: 'Interactive tutorials and onboarding system',
+        description: 'Interactive tutorials and onboarding',
         color: '#6366F1',
-        settings: ['tutorialSettings']
+        settings: ['tutorialSettings', 'onboarding']
+      },
+      {
+        id: 'data-backup',
+        name: 'Backup & Restore',
+        icon: '💾',
+        description: 'Snapshot plugin settings and restore game data files',
+        color: '#0EA5E9',
+        settings: ['backup', 'restore', 'export', 'import', 'data.json']
       },
       {
         id: 'reset',
         name: 'Reset & Management',
         icon: '🔄',
-        description: 'Reset individual systems and player progress',
+        description: 'Reset systems and restore player backups',
         color: '#F44336',
-        settings: ['resetOptions']
+        settings: ['resetOptions', 'backup', 'player progress']
       }
     ]
   }
@@ -247,7 +348,7 @@ export const SETTINGS_CATEGORIES: SettingsCategory[] = [
     icon: '⚡',
     description: 'Energy system, daily resets, and recovery rates',
     color: '#2196F3',
-    settings: ['enableEnergyHUD', 'energyHudMode', 'dailyResetHour', 'dailyRestoreEnergy', 'dailyRestoreFocus', 'dailyRestoreMotivation', 'dailyRestoreCalm', 'dailyRestoreStressReduce']
+    settings: ['enableEnergyHUD', 'energyHudMode', 'activityEnergyRules', 'dailyResetHour', 'dailyRestoreEnergy', 'dailyRestoreFocus', 'dailyRestoreMotivation', 'dailyRestoreCalm', 'dailyRestoreStressReduce']
   },
   {
     id: 'penalties',
@@ -416,6 +517,10 @@ export interface GamificationModules {
   enableEnergySystem?: boolean;
   /** Productivity equipment in inventory modal */
   enableProductivityGear?: boolean;
+  /** Calendar, timeline, unified quest views, and Advanced dashboard */
+  enableExtraQuestSurfaces?: boolean;
+  /** Journey + Dungeon hub tabs (second boss loops). Projects stay the main boss path. */
+  enableJourneyDungeonHub?: boolean;
 }
 
 /** Lite: quests + pomodoro + energy only */
@@ -434,6 +539,8 @@ export const LITE_GAMEPLAY_MODULES: Required<GamificationModules> = {
   enableBossBattles: false,
   enableEnergySystem: true,
   enableProductivityGear: false,
+  enableExtraQuestSurfaces: false,
+  enableJourneyDungeonHub: false,
 };
 
 /** Balanced default: core loop without shop/crafting/analytics clutter */
@@ -452,6 +559,8 @@ export const BALANCED_GAMEPLAY_MODULES: Required<GamificationModules> = {
   enableBossBattles: true,
   enableEnergySystem: true,
   enableProductivityGear: false,
+  enableExtraQuestSurfaces: false,
+  enableJourneyDungeonHub: true,
 };
 
 /** Hardcore: all features + penalties */
@@ -470,6 +579,8 @@ export const HARDCORE_GAMEPLAY_MODULES: Required<GamificationModules> = {
   enableBossBattles: true,
   enableEnergySystem: true,
   enableProductivityGear: true,
+  enableExtraQuestSurfaces: true,
+  enableJourneyDungeonHub: true,
 };
 
 /** @deprecated alias — use BALANCED_GAMEPLAY_MODULES */
@@ -494,14 +605,16 @@ export const SETTINGS_PRESETS: SettingsPreset[] = [
     settings: {
       gameplayProfile: 'balanced',
       modules: { ...BALANCED_GAMEPLAY_MODULES },
-      notificationLevel: 'normal',
+      notificationLevel: 'quiet',
       preferQuickComplete: true,
       energyHudMode: 'simple',
+      visualTheme: { preset: 'clay', ceremonyLevel: 'minimal' },
       xpPerTask: 10,
       coinPerTask: 5,
       penaltyLowPct: 0.10,
       penaltyMediumPct: 0.20,
       penaltyHighPct: 0.30,
+      bookOfEasy: true,
       enableSidebarQuestBoard: true,
       autoRefreshTasks: false,
       hideCompletedQuests: false,
@@ -517,11 +630,13 @@ export const SETTINGS_PRESETS: SettingsPreset[] = [
       notificationLevel: 'quiet',
       preferQuickComplete: true,
       energyHudMode: 'simple',
+      visualTheme: { preset: 'clay', ceremonyLevel: 'minimal' },
       xpPerTask: 15,
       coinPerTask: 8,
       penaltyLowPct: 0.05,
       penaltyMediumPct: 0.10,
       penaltyHighPct: 0.15,
+      bookOfEasy: true,
       enableSidebarQuestBoard: true,
       autoRefreshTasks: false,
       hideCompletedQuests: false,
@@ -555,6 +670,7 @@ export const SETTINGS_PRESETS: SettingsPreset[] = [
       penaltyHighPct: 0.50,
       dailyDebtCapXP: 1000,
       dailyDebtCapCoins: 100,
+      bookOfEasy: false,
       enableSidebarQuestBoard: true,
       autoRefreshTasks: true,
       questRefreshInterval: 15,
@@ -699,6 +815,35 @@ export interface GamificationPluginSettings {
   captureTags?: string[];
   /** Remember last selected capture tag between sessions. */
   captureRememberLastTag?: boolean;
+  /** Show optional description field in brain dump modal. */
+  captureIncludeDescription?: boolean;
+  /** How capture descriptions are written to markdown. */
+  captureDescriptionFormat?: 'thought' | 'dataview' | 'both';
+
+  /** Award XP/CP/currency when tasks are checked off outside the plugin UI. */
+  externalCompletionSync?: boolean;
+  /** Show a batch summary when external completions are detected. */
+  externalCompletionSummary?: boolean;
+  /** Detect TaskNotes-style frontmatter (status) and load that folder as quests. */
+  taskNotesCompatibility?: boolean;
+  /** Folder scanned and written for TaskNotes / TaskForge (overrides per-note folder when set). */
+  taskNotesFolder?: string;
+  /** Extra vault paths (files or folders) to watch for quest completions. */
+  externalWatchPaths?: string[];
+
+  /** Periodic focus check-in prompts while Obsidian is open. */
+  enableFocusCheckIns?: boolean;
+  /** Minutes between check-in button appearances. */
+  focusCheckInIntervalMinutes?: number;
+  /** Markdown file for check-in log entries. */
+  focusCheckInLogPath?: string;
+  /** Minutes to snooze when user clicks Snooze. */
+  focusCheckInSnoozeMinutes?: number;
+  /** Show an action notice when a check-in is due (in addition to the tab chip). */
+  enableFocusCheckInNotices?: boolean;
+
+  /** Custom loot table rolled on quest complete. */
+  questCustomRewardPool?: QuestCustomRewardSetting[];
 
   // Custom game item definitions (e.g., weapons and real-world artifacts)
   // These are configuration-level definitions which can be rendered in the
@@ -757,6 +902,12 @@ export interface GamificationPluginSettings {
   /** Set after first-run experience picker (Phase 3 onboarding) */
   gameplayOnboardingComplete?: boolean;
 
+  /**
+   * Key item: The Book of Easy.
+   * When true (default), dream equipment never breaks.
+   */
+  bookOfEasy?: boolean;
+
   /** Phase 4 — toast volume: normal | quiet (shorter/deduped) | minimal (errors only) */
   notificationLevel?: NotificationLevel;
   /** Phase 4 — allow completing quests without finishing tactical boss UI */
@@ -774,6 +925,8 @@ export interface GamificationPluginSettings {
   enableEnergyHUD?: boolean;
   /** HUD complexity preset — hidden stats are not updated by quests or daily reset */
   energyHudMode?: EnergyHudMode;
+  /** Energy spent (positive) or restored (negative) when a quest of that type is finished. */
+  activityEnergyRules?: ActivityEnergyRule[];
   dailyResetHour?: number; // 0-23
   // Daily restore values
   dailyRestoreEnergy?: number;
@@ -934,6 +1087,19 @@ export const DEFAULT_SETTINGS: GamificationPluginSettings = {
   captureFilePath: 'Capture.md',
   captureTags: ['idea', 'work', 'plugin', 'personal', 'read-later'],
   captureRememberLastTag: true,
+  captureIncludeDescription: true,
+  captureDescriptionFormat: 'thought',
+  externalCompletionSync: true,
+  externalCompletionSummary: true,
+  taskNotesCompatibility: true,
+  taskNotesFolder: '',
+  externalWatchPaths: [],
+  enableFocusCheckIns: true,
+  focusCheckInIntervalMinutes: 120,
+  focusCheckInLogPath: 'CheckIns.md',
+  focusCheckInSnoozeMinutes: 30,
+  enableFocusCheckInNotices: true,
+  questCustomRewardPool: [],
 
   // Timeline & Calendar Default Settings
   timelineViewSettings: {
@@ -963,8 +1129,9 @@ export const DEFAULT_SETTINGS: GamificationPluginSettings = {
   gameplayProfile: 'balanced',
   modules: { ...BALANCED_GAMEPLAY_MODULES },
   gameplayOnboardingComplete: false,
-  notificationLevel: 'normal',
+  notificationLevel: 'quiet',
   preferQuickComplete: true,
+  bookOfEasy: true,
 
   // Failure penalty defaults
   penaltyLowPct: 0.10,
@@ -977,6 +1144,7 @@ export const DEFAULT_SETTINGS: GamificationPluginSettings = {
   // Energy/Focus defaults (mirror runtime defaults)
   enableEnergyHUD: true,
   energyHudMode: 'simple',
+  activityEnergyRules: DEFAULT_ACTIVITY_ENERGY_RULES.map((rule) => ({ ...rule })),
   dailyResetHour: 6,
   dailyRestoreEnergy: 30,
   dailyRestoreFocus: 20,
@@ -1058,7 +1226,7 @@ export const DEFAULT_SETTINGS: GamificationPluginSettings = {
   },
 
   // Beta / Feature Flags defaults
-  betaMode: true,
+  betaMode: false,
   featureFlags: {
     enableAnalyticsTab: false,
     enableEnergyDebug: false

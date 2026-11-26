@@ -411,6 +411,13 @@
     isolation: isolate;
 }
 
+.clayQuestShell {
+    isolation: isolate;
+    background: transparent;
+    color: var(--clay-text, #3a342c);
+    font-family: var(--go-font-ui, "Nunito", "Segoe UI", system-ui, sans-serif);
+}
+
 .shortcutsHint {
     position: absolute;
     top: 8px;

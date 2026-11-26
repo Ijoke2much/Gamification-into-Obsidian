@@ -89,34 +89,41 @@
 
 .classTabs {
 	display: flex;
-	gap: 6px;
-	overflow-x: auto;
+	flex-wrap: wrap;
+	gap: 8px;
 	margin-bottom: 12px;
 	padding-bottom: 4px;
-	scrollbar-width: thin;
 }
 
 .classTab {
-	flex: 0 0 auto;
+	flex: 1 1 88px;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
+	justify-content: center;
 	gap: 4px;
-	min-width: 72px;
-	padding: 8px 10px;
+	min-width: 88px;
+	max-width: 140px;
+	min-height: 0;
+	padding: 10px 8px 12px;
+	box-sizing: border-box;
+	overflow: visible;
 	font-family: inherit;
-	font-size: 9px;
+	font-size: 10px;
 	font-weight: 700;
-	letter-spacing: 0.08em;
+	letter-spacing: 0.06em;
 	text-transform: uppercase;
 	color: rgba(125, 215, 255, 0.82);
 	background:
 		linear-gradient(180deg, rgba(35, 83, 132, 0.64), rgba(12, 36, 68, 0.78));
 	border: 1px solid rgba(34, 200, 255, 0.32);
-	border-radius: 2px;
+	border-radius: 8px;
 	box-shadow: inset 0 0 14px rgba(34, 200, 255, 0.05);
 	text-shadow: 0 0 8px rgba(34, 200, 255, 0.28);
 	cursor: pointer;
+	height: auto;
+	appearance: none;
+	-webkit-appearance: none;
 }
 
 .classTab:hover {
@@ -136,20 +143,143 @@
 }
 
 .classTabIcon {
-	font-size: 20px;
+	font-size: 22px;
 	line-height: 1;
 }
 
 .classTabLabel {
-	max-width: 72px;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
+	width: 100%;
+	font-size: 10px;
+	line-height: 1.25;
+	text-align: center;
+	word-break: break-word;
+	hyphens: auto;
 }
 
 .classTabCount {
+	display: block;
+	width: 100%;
 	font-size: 8px;
+	font-weight: 600;
+	letter-spacing: 0.04em;
+	line-height: 1.2;
+	text-align: center;
 	color: var(--go-accent, #4fc3f7);
+	opacity: 0.9;
+}
+
+/* ── Master class hub + connector to sub-classes ── */
+.masterHub {
+	margin-bottom: 14px;
+}
+
+.masterCard {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 12px 14px;
+	border: 1px solid var(--go-accent, rgba(79, 195, 247, 0.65));
+	border-radius: 2px;
+	background:
+		linear-gradient(180deg, rgba(18, 55, 96, 0.55), rgba(6, 24, 48, 0.88));
+	box-shadow:
+		0 0 16px rgba(34, 200, 255, 0.18),
+		inset 0 0 20px rgba(34, 200, 255, 0.06);
+}
+
+.masterIcon {
+	font-size: 28px;
+	line-height: 1;
+	filter: drop-shadow(0 0 8px rgba(79, 195, 247, 0.45));
+	flex-shrink: 0;
+}
+
+.masterMeta {
+	min-width: 0;
+	flex: 1;
+}
+
+.masterKicker {
+	margin: 0 0 4px;
+	font-size: 9px;
+	font-weight: 700;
+	letter-spacing: 0.2em;
+	text-transform: uppercase;
+	color: var(--go-accent, #4fc3f7);
+}
+
+.masterKicker::before {
+	content: '[ ';
+	opacity: 0.85;
+}
+
+.masterKicker::after {
+	content: ' ]';
+	opacity: 0.85;
+}
+
+.masterName {
+	margin: 0 0 4px;
+	font-size: 14px;
+	font-weight: 700;
+	letter-spacing: 0.12em;
+	text-transform: uppercase;
+	color: var(--go-text-bright, #f0f9ff);
+}
+
+.masterSub {
+	margin: 0;
+	font-size: 11px;
+	color: var(--go-muted, #94a3b8);
+}
+
+.masterCpBar {
+	margin-top: 10px;
+	padding: 10px 12px 8px;
+	border: 1px solid var(--go-border-strong, rgba(34, 200, 255, 0.55));
+	border-radius: 2px;
+	background: rgba(5, 16, 32, 0.72);
+	box-shadow: 0 0 12px rgba(34, 200, 255, 0.18);
+}
+
+.masterConnector {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	margin-top: 6px;
+	margin-bottom: 4px;
+}
+
+.masterConnectorStem {
+	display: block;
+	width: 2px;
+	height: 14px;
+	background: linear-gradient(
+		180deg,
+		var(--go-accent, #4fc3f7),
+		rgba(34, 200, 255, 0.35)
+	);
+	box-shadow: 0 0 8px rgba(34, 200, 255, 0.35);
+}
+
+.masterConnectorBar {
+	display: block;
+	width: min(100%, 420px);
+	height: 2px;
+	margin-top: 0;
+	background: linear-gradient(
+		90deg,
+		transparent,
+		rgba(34, 200, 255, 0.55) 15%,
+		rgba(34, 200, 255, 0.55) 85%,
+		transparent
+	);
+	box-shadow: 0 0 10px rgba(34, 200, 255, 0.2);
+}
+
+.classBannerMaster {
+	color: var(--go-gold, #ffd83d);
+	font-weight: 600;
 }
 
 .layout {
@@ -411,6 +541,44 @@
 	animation: nodePulse 2s ease-in-out infinite;
 }
 
+.nodeGate {
+	box-shadow:
+		0 0 0 2px var(--clay-accent, #5bb8b0),
+		0 0 16px color-mix(in srgb, var(--clay-accent, #5bb8b0) 45%, transparent);
+}
+
+.nodeName {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	min-width: 0;
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+}
+
+.gateChip {
+	padding: 1px 6px;
+	border-radius: 999px;
+	background: var(--clay-accent-gradient, linear-gradient(180deg, #6ac9c1, #4aa8a0));
+	color: #fff;
+	font-size: 8px;
+	font-weight: 800;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+
+.gateBanner {
+	margin: 0 0 12px;
+	padding: 8px 12px;
+	border-radius: 16px;
+	background: color-mix(in srgb, var(--clay-accent, #5bb8b0) 18%, var(--clay-surface, #f7f3ec));
+	color: var(--clay-accent-deep, #3fa39a);
+	font-size: 12px;
+	font-weight: 700;
+	line-height: 1.35;
+}
+
 @keyframes nodePulse {
 	0%,
 	100% {
@@ -430,12 +598,6 @@
 	font-size: 28px;
 	line-height: 1;
 	filter: drop-shadow(0 0 8px rgba(34, 200, 255, 0.35));
-}
-
-.nodeName {
-	font-size: 12px;
-	font-weight: 700;
-	letter-spacing: 0.06em;
 }
 
 .nodeLevel {
@@ -533,52 +695,34 @@
 	display: block;
 	width: 100%;
 	margin-top: 18px;
-	padding: 18px 16px;
+	padding: 12px 14px;
 	text-align: center;
 	font-family: inherit;
-	font-size: 14px;
-	font-weight: 800;
-	letter-spacing: 0.2em;
-	color: color-mix(in srgb, var(--go-success, #48f59b) 70%, white);
-	border: 3px solid color-mix(in srgb, var(--go-success, #48f59b) 88%, transparent);
-	border-radius: 1px;
-	background:
-		linear-gradient(
-			180deg,
-			color-mix(in srgb, var(--go-success, #48f59b) 18%, transparent),
-			rgba(16, 114, 72, 0.46)
-		),
-		rgba(12, 82, 58, 0.5);
-	box-shadow:
-		0 0 18px rgba(72, 245, 155, 0.34),
-		inset 0 0 22px rgba(72, 245, 155, 0.14),
-		inset 0 0 0 1px rgba(202, 255, 224, 0.12);
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.14em;
+	color: var(--go-accent, #4fc3f7);
+	border: 1px solid var(--go-accent, #4fc3f7);
+	border-radius: 2px;
+	background: rgba(79, 195, 247, 0.08);
+	box-shadow: 0 0 14px rgba(79, 195, 247, 0.15);
 	cursor: pointer;
-	text-shadow:
-		0 0 9px rgba(72, 245, 155, 0.62),
-		0 1px 0 rgba(0, 0, 0, 0.6);
 	text-transform: uppercase;
 }
 
 .codexBtn::before {
-	content: '♡ ';
-	font-size: 18px;
-	letter-spacing: 0.08em;
+	content: '✦ [ ';
+	opacity: 0.9;
+}
+
+.codexBtn::after {
+	content: ' ]';
+	opacity: 0.9;
 }
 
 .codexBtn:hover {
-	color: color-mix(in srgb, var(--go-success, #48f59b) 45%, white);
-	background:
-		linear-gradient(
-			180deg,
-			color-mix(in srgb, var(--go-success, #48f59b) 24%, transparent),
-			rgba(16, 130, 78, 0.56)
-		),
-		rgba(12, 92, 64, 0.58);
-	box-shadow:
-		0 0 28px rgba(72, 245, 155, 0.48),
-		inset 0 0 26px rgba(72, 245, 155, 0.18),
-		inset 0 0 0 1px rgba(202, 255, 224, 0.16);
+	background: rgba(79, 195, 247, 0.18);
+	box-shadow: 0 0 20px rgba(79, 195, 247, 0.28);
 }
 
 .emptyState {
@@ -586,4 +730,115 @@
 	text-align: center;
 	font-size: 12px;
 	color: var(--go-muted, #94a3b8);
+}
+
+/* Phone lite — real mobile only (class set from isMobile hook) */
+.realmRootMobile {
+	min-height: auto;
+	padding: 10px 10px 28px;
+	overflow: visible;
+}
+
+.realmRootMobile::before,
+.realmRootMobile::after {
+	animation: none;
+	opacity: 0.04;
+}
+
+.realmRootMobile .classTabs {
+	flex-wrap: nowrap;
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: thin;
+	margin-bottom: 10px;
+	padding-bottom: 8px;
+	gap: 8px;
+}
+
+.realmRootMobile .classTab {
+	flex: 0 0 auto;
+	min-width: 108px;
+	min-height: 0;
+	max-width: 150px;
+	padding: 10px 8px 12px;
+	color: #c8f0ff;
+	border-color: rgba(34, 200, 255, 0.55);
+	background:
+		linear-gradient(180deg, rgba(45, 100, 150, 0.78), rgba(14, 42, 78, 0.92));
+}
+
+.realmRootMobile .classTabActive {
+	color: #fff;
+	border-color: #4fc3f7;
+}
+
+.realmRootMobile .classTabLabel {
+	color: inherit;
+	font-size: 9px;
+	line-height: 1.25;
+	white-space: normal;
+	overflow: visible;
+	text-overflow: unset;
+	text-align: center;
+	max-width: 100%;
+}
+
+.realmRootMobile .classTabCount {
+	color: rgba(200, 240, 255, 0.9);
+	opacity: 1;
+}
+
+.realmRootMobile .layout {
+	grid-template-columns: 1fr;
+}
+
+.realmRootMobile .pathPanel {
+	overflow: visible;
+}
+
+.realmRootMobile .pathScroll {
+	max-height: none;
+	overflow: visible;
+	padding-right: 0;
+	padding-bottom: 12px;
+}
+
+.realmRootMobile .nodeBtn {
+	min-height: 52px;
+	padding: 12px 10px;
+	touch-action: manipulation;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.realmRootMobile .searchInput {
+	min-height: 44px;
+	font-size: 16px; /* avoid iOS zoom */
+}
+
+.realmRootMobile .masterHub {
+	margin-bottom: 10px;
+}
+
+.mobileShowMore {
+	display: block;
+	width: 100%;
+	margin: 12px 0 4px;
+	padding: 12px 14px;
+	min-height: 44px;
+	font-family: inherit;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	color: var(--go-accent, #4fc3f7);
+	background: rgba(79, 195, 247, 0.08);
+	border: 1px solid rgba(34, 200, 255, 0.42);
+	border-radius: 2px;
+	cursor: pointer;
+	touch-action: manipulation;
+	-webkit-tap-highlight-color: transparent;
+}
+
+.mobileShowMore:active {
+	background: rgba(79, 195, 247, 0.18);
 }

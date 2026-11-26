@@ -4,7 +4,9 @@ import { ShopItem, ShopLikeItem } from "../../shop/utils/ShopParser";
 import { readPlayerData, updatePlayerData } from "../../player/utils/playerDataUtils";
 import type { PlayerData, Artifact } from "../../../data/models/PlayerData";
 import { addBuff, addDebuff, parseDurationToMs, BuffKind } from "../../../shared/utils/buffEngine";
+import { applyDreamHeal, buildDreamCombatStats, HEALTH_POTION_HEAL } from "../../player/utils/dreamCombat";
 import { EnhancedInventoryParser } from "./enhancedInventoryParser";
+import { modifyWithBackup } from "../../../shared/utils/vaultDataBackup";
 // Remove: import { InventoryItem } from "./InventoryParser";
 
 // --- Add a simple InventoryItem type and parser for now ---
@@ -42,6 +44,26 @@ function shopItemToShopLikeItem(item: ShopItem): ShopLikeItem {
 
 // Centralized inventory file path constant
 export const INVENTORY_FILE_PATH = 'Inventory.md';
+
+/** Deduped machine effect lines from shop-like item fields. */
+function collectEffectLines(shopLikeItem: ShopLikeItem): string[] {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  const push = (raw: string) => {
+    const line = String(raw).trim();
+    if (!line || seen.has(line)) return;
+    seen.add(line);
+    out.push(line);
+  };
+  if (Array.isArray(shopLikeItem.effects)) {
+    for (const eff of shopLikeItem.effects) push(String(eff));
+  }
+  const rawLines = (shopLikeItem as ShopLikeItem & { rawEffectLines?: string[] }).rawEffectLines;
+  if (Array.isArray(rawLines)) {
+    for (const raw of rawLines) push(String(raw));
+  }
+  return out;
+}
 
 function dispatchInventoryUpdatedEvent(): void {
   try {
@@ -150,12 +172,26 @@ export async function addOrIncrementInventoryItem(app: App, item: ShopItem | Sho
       // Replace the line with updated quantity
       const baseLine = line.replace(/ x\d+/, "").replace(/\s+$/, "");
       updatedLines.push(`${baseLine} x${newQty}`);
-      // Copy associated comments
+      // Copy associated comments; backfill machine effect lines if stack lacked them
+      const commentBlock: string[] = [];
       let j = i + 1;
       while (j < lines.length && lines[j].trim().startsWith("//")) {
-        updatedLines.push(lines[j]);
+        commentBlock.push(lines[j]);
         j++;
       }
+      const existingEffects = new Set(
+        commentBlock
+          .map((c) => c.match(/^\s*\/\/\s*effect:\s*(.+)$/i)?.[1]?.trim())
+          .filter((v): v is string => Boolean(v))
+      );
+      const incomingEffects = collectEffectLines(shopLikeItem);
+      for (const eff of incomingEffects) {
+        if (!existingEffects.has(eff)) {
+          commentBlock.push(`// effect:${eff}`);
+          existingEffects.add(eff);
+        }
+      }
+      updatedLines.push(...commentBlock);
       i = j - 1;
     } else {
       updatedLines.push(line);
@@ -171,20 +207,12 @@ export async function addOrIncrementInventoryItem(app: App, item: ShopItem | Sho
       newEntry += `\n// price:${shopLikeItem.price}`;
       newEntry += `\n// value:${sellValue}`;
     }
-    if (Array.isArray(shopLikeItem.effects)) {
-      for (const eff of shopLikeItem.effects!) {
-        newEntry += `\n// effect:${eff}`;
-      }
-    }
-    const rawLines = (shopLikeItem as ShopLikeItem & { rawEffectLines?: string[] }).rawEffectLines;
-    if (Array.isArray(rawLines) && rawLines.length) {
-      for (const raw of rawLines) {
-        newEntry += `\n// effect:${raw}`;
-      }
+    for (const eff of collectEffectLines(shopLikeItem)) {
+      newEntry += `\n// effect:${eff}`;
     }
     updatedLines.push(newEntry);
   }
-  await app.vault.modify(inventoryFile, updatedLines.join("\n"));
+  await modifyWithBackup(app.vault, inventoryFile, updatedLines.join("\n"));
   dispatchInventoryUpdatedEvent();
 }
 
@@ -241,7 +269,7 @@ export async function addItemToInventory(vault: Vault, item: InventoryItem, inve
     if (item.icon) newEntry += `\n// icon:${item.icon}`;
     updatedLines.push(newEntry);
   }
-  await vault.modify(inventoryFile, updatedLines.join("\n"));
+  await modifyWithBackup(vault, inventoryFile, updatedLines.join("\n"));
   dispatchInventoryUpdatedEvent();
 }
 
@@ -268,7 +296,7 @@ export async function removeItemFromInventory(vault: Vault, itemName: string, in
       updatedLines.push(line);
     }
   }
-  await vault.modify(inventoryFile, updatedLines.join("\n"));
+  await modifyWithBackup(vault, inventoryFile, updatedLines.join("\n"));
   dispatchInventoryUpdatedEvent();
 }
 
@@ -292,7 +320,7 @@ export async function writeInventory(vault: Vault, inventory: InventoryItem[], i
   }));
 
   const content = EnhancedInventoryParser.generateInventoryContent(enhancedItems);
-  await vault.modify(inventoryFile, content);
+  await modifyWithBackup(vault, inventoryFile, content);
   dispatchInventoryUpdatedEvent();
 }
 
@@ -316,6 +344,16 @@ export async function dropItem(app: App, itemName: string): Promise<void> {
   await writeInventory(app.vault, inventory);
 }
 
+function healthPotionHealAmount(item: InventoryItem): number | null {
+  for (const effect of item.effects ?? []) {
+    const match = effect.toLowerCase().match(/^hp:\+?(\d+)/);
+    if (match) return parseInt(match[1], 10);
+  }
+  const blob = `${item.name} ${(item.effects ?? []).join(' ')}`.toLowerCase();
+  if (blob.includes('health potion') || blob.includes('restores health')) return HEALTH_POTION_HEAL;
+  return null;
+}
+
 export async function useItem(app: App, itemName: string): Promise<void> {
   const inventory = await readInventory(app.vault);
   const item = inventory.find((it) => it.name === itemName);
@@ -332,6 +370,28 @@ export async function useItem(app: App, itemName: string): Promise<void> {
   // Apply immediate effects (coins/xp) and timed buffs
   let appliedSomething = false;
   const player = await readPlayerData(app.vault);
+
+  const potionHeal = healthPotionHealAmount(item);
+  if (potionHeal != null && potionHeal > 0 && player) {
+    const { getHunterKitItems } = await import('./gearFile');
+    const { look } = await getHunterKitItems(app);
+    const stats = buildDreamCombatStats(player.level ?? 1, look, player.dream);
+    if (stats.hp >= stats.maxHp) {
+      try { showGameNotice('Dream HP is already full.', 1500); } catch {}
+      return;
+    }
+    const { hp, healed } = applyDreamHeal(stats.hp, stats.maxHp, potionHeal);
+    await updatePlayerData(app.vault, {
+      ...player,
+      dream: {
+        ...player.dream,
+        hp,
+        lastOutcome: hp > 0 ? 'survived' : player.dream?.lastOutcome ?? null,
+      },
+    });
+    try { showGameNotice(`Drink water or take a short rest. +${healed} Dream HP`, 2500); } catch {}
+    appliedSomething = true;
+  }
 
   for (const e of effects) {
     const effectStr = e.toLowerCase();
@@ -376,6 +436,27 @@ export async function useItem(app: App, itemName: string): Promise<void> {
           // Ignore notice errors silently
         }
         appliedSomething = true;
+      }
+      continue;
+    }
+
+    // energy:+N (restore player energy stat)
+    const mEnergy = effectStr.match(/^energy:\+?(\d+)/);
+    if (mEnergy) {
+      const amount = parseInt(mEnergy[1], 10);
+      if (amount > 0) {
+        // Re-read so earlier effects in this Use don't get overwritten
+        const latest = (await readPlayerData(app.vault)) ?? player;
+        if (latest) {
+          const stats = { ...(latest.stats || {}) };
+          const cur = typeof stats.energy === 'number' ? stats.energy : 50;
+          stats.energy = Math.max(0, Math.min(100, cur + amount));
+          await updatePlayerData(app.vault, { ...latest, stats });
+          try { showGameNotice(`⚡ +${amount} Energy`, 2000); } catch {
+            // Ignore notice errors silently
+          }
+          appliedSomething = true;
+        }
       }
       continue;
     }
@@ -456,6 +537,19 @@ export async function useItem(app: App, itemName: string): Promise<void> {
         appliedSomething = true;
       }
       continue;
+    }
+  }
+
+  if (!appliedSomething) {
+    try {
+      const { productivityEquipmentSystem } = await import('../../quests/systems/productivityEquipmentSystem');
+      const line = await productivityEquipmentSystem.applyNamedConsumable(itemName);
+      if (line) {
+        try { showGameNotice(line, 2500); } catch {}
+        appliedSomething = true;
+      }
+    } catch (error) {
+      console.warn('[useItem] Consumable effect failed:', error);
     }
   }
 

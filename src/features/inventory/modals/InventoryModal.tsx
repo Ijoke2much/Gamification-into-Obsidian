@@ -16,7 +16,7 @@ const InventoryModal: React.FC<InventoryModalProps> = ({ app, onClose }) => {
 				className={modalStyles.inventoryModal}
 				data-inventory-modal="true"
 			>
-				<InventoryModalContent />
+				<InventoryModalContent onClose={onClose} />
 			</div>
 		</InventoryModalProvider>
 	);

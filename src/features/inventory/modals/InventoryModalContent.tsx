@@ -5,14 +5,43 @@ import {
     getRarityDisplayName,
 } from "../../../features/quests/utils/questRewardsSystem";
 import type { InventoryItem } from "../utils/updateInventoryFile";
-import { dropItem, useItem, equipItem, sellItem } from "../utils/updateInventoryFile";
+import { dropItem, useItem, equipItem, sellItem, computeSellValue } from "../utils/updateInventoryFile";
+import { getAllowedActions, getItemKind } from "../utils/itemActions";
 import type { ShopItemEffect } from "../../shop/utils/ShopParser";
 import { MaterialUtils } from "../../../shared/utils/materialUtils";
 import { EnhancedInventoryItem, InventoryFilter, InventorySortOptions, BulkOperation, InventoryState } from "../types/EnhancedInventoryTypes";
 import { InventoryOperations } from "../utils/inventoryOperations";
+import { useMobileOptimizations } from "../../../shared/hooks/useMobileOptimizations";
+import { useVisualThemeShell } from "../../../shared/hooks/useVisualThemeShell";
+import {
+    SystemHeader,
+} from "../../../shared/components/ui/system/SystemPanel";
+import { readPlayerData } from "../../player/utils/playerDataUtils";
+import { HunterLookPortrait, type KitMode } from "../components/HunterLookPortrait";
+import { EquippedGearPanel } from "../components/EquippedGearPanel";
+import { isBookOfEasyEnabled } from "../../../shared/utils/gameplayConfig";
+import {
+    equipInventoryItemToGearSlot,
+    equipInventoryItemToLoadoutSlot,
+    getHunterKitItems,
+    inferGearSlot,
+    kitItemNames,
+    syncKitEquippedTags,
+    unequipGearSlot,
+    unequipLoadoutSlot,
+    GEAR_SLOTS,
+    type EquippedGearItem,
+    type EquippedLoadoutItem,
+    type GearSlot,
+    type HunterKit,
+    type LoadoutSlot,
+} from "../utils/gearFile";
 
 // Import CSS modules
 import inventoryStyles from '../../../shared/components/ui/Inventory.module.css';
+import { PixelIcon } from '../../../shared/components/ui/PixelIcon';
+
+const MOBILE_INV_PAGE = 24;
 
 // Enhanced BotW-style category mapping with better organization
 const CATEGORIES = {
@@ -62,6 +91,23 @@ const getItemDescription = (item: InventoryItem): string => {
     const name = item.name.toLowerCase();
     const rarity = item.rarity || "common";
     
+    // Real-life breaks. The item counts something you already did.
+    if (name.includes("energy drink")) {
+        return "Take a real drink — water, tea, or what you have — then use this. It adds 50 energy and a 2-hour rewards buff for that break.";
+    }
+    if (name.includes("health potion")) {
+        return "Drink water or take a short rest, then use this. Restores 20 dream HP.";
+    }
+    if (name.includes("inspirational quote") || name.includes("scroll of motivation")) {
+        return "Read one real line that helps, then use this.";
+    }
+    if (name.includes("stamina")) {
+        return "Stand up and stretch, then use this. It marks that break.";
+    }
+    if (name.includes("incense") || name.includes("focus elixir") || name.includes("deep focus")) {
+        return "Step away from the screen for one quiet minute, then use this.";
+    }
+
     // Specific item descriptions
     if (name.includes("crystal")) {
         return "A fragment of pure magical crystal that radiates with mystical energy. Its surface shimmers with otherworldly light.";
@@ -153,9 +199,16 @@ const getMaterialIcon = (itemName: string): string => {
     return "💎";
 };
 
-const InventoryModalContent: React.FC = () => {
+interface InventoryModalContentProps {
+    onClose?: () => void;
+}
+
+const InventoryModalContent: React.FC<InventoryModalContentProps> = ({ onClose }) => {
     console.log('🎒 InventoryModalContent component loaded!');
+    const { isMobile } = useMobileOptimizations();
+    const { isSystemTheme, isClayTheme } = useVisualThemeShell();
     const { app, inventory, reloadInventory } = useInventoryModalContext();
+    const useSystemChrome = !isClayTheme && (isMobile || isSystemTheme);
     const [selectedItem, setSelectedItem] = useState<string | null>(null);
     const [hoveredItem, setHoveredItem] = useState<string | null>(null);
     const [searchTerm, setSearchTerm] = useState("");
@@ -163,8 +216,23 @@ const InventoryModalContent: React.FC = () => {
     const [activeTab, setActiveTab] = useState<"all" | "materials" | "equipment" | "artifact">("all");
     const [sortMethod, setSortMethod] = useState<"name" | "rarity" | "quantity" | "value">("name");
     const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
-    const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+    const [viewMode, setViewMode] = useState<"grid" | "list">(() =>
+        typeof document !== "undefined" &&
+        (document.body.classList.contains("is-mobile") ||
+            document.body.classList.contains("is-phone") ||
+            document.body.classList.contains("is-tablet"))
+            ? "list"
+            : "grid"
+    );
     const [showFilters, setShowFilters] = useState(false);
+    const [mobileVisibleCount, setMobileVisibleCount] = useState(MOBILE_INV_PAGE);
+    const [kitMode, setKitMode] = useState<KitMode>("look");
+    const [selectedLookSlot, setSelectedLookSlot] = useState<GearSlot | null>(null);
+    const [selectedLoadoutSlot, setSelectedLoadoutSlot] = useState<LoadoutSlot | null>("a");
+    const [look, setLook] = useState<EquippedGearItem[]>([]);
+    const [loadout, setLoadout] = useState<EquippedLoadoutItem[]>([]);
+    const [hunterKit, setHunterKit] = useState<HunterKit | null>(null);
+    const [avatarSrc, setAvatarSrc] = useState("");
     
     // Enhanced modal state
     const [enhancedState, setEnhancedState] = useState<InventoryState>({
@@ -181,56 +249,144 @@ const InventoryModalContent: React.FC = () => {
     const plugin = obsidianApp?.plugins?.plugins?.["Gamification-into-Obsidian"];
     const currencyName = plugin?.settings?.currencyName || "Coins";
     const currencySymbol = plugin?.settings?.currencySymbol || "🪙";
+    const bookOfEasy = isBookOfEasyEnabled(plugin?.settings);
+
+    useEffect(() => {
+        let cancelled = false;
+        const loadKit = async () => {
+            try {
+                const packed = await getHunterKitItems(app);
+                if (cancelled) return;
+                setHunterKit(packed.kit);
+                setLook(packed.look);
+                setLoadout(packed.loadout);
+            } catch {
+                if (!cancelled) {
+                    setHunterKit(null);
+                    setLook([]);
+                    setLoadout([]);
+                }
+            }
+        };
+        const loadAvatar = async () => {
+            try {
+                const player = await readPlayerData(app.vault);
+                const path = player?.avatar || "assets/avatar-default.png";
+                if (!cancelled) setAvatarSrc(app.vault.adapter.getResourcePath(path));
+            } catch {
+                if (!cancelled) setAvatarSrc(app.vault.adapter.getResourcePath("assets/avatar-default.png"));
+            }
+        };
+        void loadKit();
+        void loadAvatar();
+        const refresh = () => {
+            void loadKit();
+        };
+        window.addEventListener("gear-updated", refresh);
+        window.addEventListener("inventory-updated", refresh);
+        window.addEventListener("avatar-changed", refresh);
+        return () => {
+            cancelled = true;
+            window.removeEventListener("gear-updated", refresh);
+            window.removeEventListener("inventory-updated", refresh);
+            window.removeEventListener("avatar-changed", refresh);
+        };
+    }, [app]);
 
     // Get all available categories from inventory
     const availableCategories = useMemo(() => {
         return [...new Set(inventory.map((item: InventoryItem) => item.category).filter(Boolean))];
     }, [inventory]);
 
-    // Process inventory based on selected tab and category
+    // Process inventory based on selected tab, search, filters, and sort
     const processedInventory = useMemo(() => {
-        let filtered = inventory;
+        let filtered = [...inventory];
 
         // Filter by tab (simplified to All, Materials, Equipment, Artifacts)
         if (activeTab === "materials") {
-            filtered = inventory.filter(item => MaterialUtils.isCraftingMaterial(item));
+            filtered = filtered.filter(item => MaterialUtils.isCraftingMaterial(item));
         } else if (activeTab === "equipment") {
-            filtered = inventory.filter(item =>
+            filtered = filtered.filter(item =>
                 item.category === 'equipment' ||
                 item.tags?.includes('weapon') ||
                 item.tags?.includes('armor')
             );
         } else if (activeTab === "artifact") {
-            filtered = inventory.filter(item =>
+            filtered = filtered.filter(item =>
                 item.category === 'artifact' ||
                 item.tags?.includes('artifact') ||
                 item.tags?.includes('key')
             );
         }
 
-        // Filter by search term
-        if (searchTerm) {
-            filtered = filtered.filter(item =>
-                item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                item.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                item.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+        // Material quality chip (desktop materials tab) — must match the same
+        // rarity→quality mapping the chip counts use, not raw tag text.
+        if (selectedCategory && selectedCategory !== "all") {
+            const q = selectedCategory.toLowerCase();
+            filtered = filtered.filter(
+                item => MaterialUtils.getItemQuality(item).toLowerCase() === q
             );
         }
 
-        // Sort inventory based on selected method
-        const rarityOrder = { common: 1, uncommon: 2, rare: 3, epic: 4, legendary: 5, mythic: 6 };
-        
+        // Search (search bar + enhanced filter search stay in sync)
+        const qSearch = (enhancedState.filter.search || searchTerm || "").trim().toLowerCase();
+        if (qSearch) {
+            filtered = filtered.filter(item =>
+                item.name.toLowerCase().includes(qSearch) ||
+                item.description?.toLowerCase().includes(qSearch) ||
+                item.tags?.some(tag => tag.toLowerCase().includes(qSearch))
+            );
+        }
+
+        // Enhanced panel filters (were written but never applied)
+        const ef = enhancedState.filter;
+        if (ef.category) {
+            filtered = filtered.filter(item => item.category === ef.category);
+        }
+        if (ef.rarity) {
+            filtered = filtered.filter(
+                item => (item.rarity || "common").toLowerCase() === ef.rarity!.toLowerCase()
+            );
+        }
+        if (ef.equipped) {
+            filtered = filtered.filter(item => item.tags?.includes("equipped"));
+        }
+        if (ef.hasEffects) {
+            filtered = filtered.filter(
+                item => Array.isArray(item.effects) && item.effects.length > 0
+            );
+        }
+
+        if (activeTab === "equipment" && kitMode === "look" && selectedLookSlot) {
+            filtered = filtered.filter(item => inferGearSlot(item) === selectedLookSlot);
+        }
+
+        // Sort — prefer list controls; fall back to enhanced sort field
+        const rarityOrder: Record<string, number> = {
+            common: 1,
+            uncommon: 2,
+            rare: 3,
+            epic: 4,
+            legendary: 5,
+            mythic: 6,
+        };
+        const field =
+            sortMethod ||
+            (enhancedState.sort.field === "rarity" ||
+            enhancedState.sort.field === "quantity" ||
+            enhancedState.sort.field === "value" ||
+            enhancedState.sort.field === "name"
+                ? enhancedState.sort.field
+                : "name");
+        const order = sortOrder || enhancedState.sort.order || "asc";
+
         filtered.sort((a, b) => {
             let comparison = 0;
-            
-            switch (sortMethod) {
-                case "name":
-                    comparison = a.name.localeCompare(b.name);
-                    break;
+            switch (field) {
                 case "rarity":
-                    const rarityA = rarityOrder[a.rarity as keyof typeof rarityOrder] || 0;
-                    const rarityB = rarityOrder[b.rarity as keyof typeof rarityOrder] || 0;
-                    comparison = rarityA - rarityB;
+                    comparison =
+                        (rarityOrder[a.rarity || "common"] || 0) -
+                        (rarityOrder[b.rarity || "common"] || 0);
                     break;
                 case "quantity":
                     comparison = (Number(a.quantity) || 1) - (Number(b.quantity) || 1);
@@ -238,15 +394,27 @@ const InventoryModalContent: React.FC = () => {
                 case "value":
                     comparison = (Number(a.value) || 0) - (Number(b.value) || 0);
                     break;
+                case "name":
                 default:
                     comparison = a.name.localeCompare(b.name);
             }
-            
-            return sortOrder === "desc" ? -comparison : comparison;
+            return order === "desc" ? -comparison : comparison;
         });
 
         return filtered;
-    }, [inventory, activeTab, selectedCategory, searchTerm, sortMethod, sortOrder]);
+    }, [
+        inventory,
+        activeTab,
+        selectedCategory,
+        searchTerm,
+        sortMethod,
+        sortOrder,
+        enhancedState.filter,
+        enhancedState.sort.field,
+        enhancedState.sort.order,
+        kitMode,
+        selectedLookSlot,
+    ]);
 
     // Get materials with quality information
     const materials = useMemo(() => {
@@ -269,6 +437,88 @@ const InventoryModalContent: React.FC = () => {
         return foundItem;
     }, [selectedItem, inventory]);
 
+    // Per-type action gating: materials craft, gear equips, keys are auto-spent, etc.
+    const allowedActions = useMemo(
+        () => (selectedItemData ? getAllowedActions(selectedItemData) : null),
+        [selectedItemData]
+    );
+
+    // Sell price, always resolvable — most items never get a stored `value`,
+    // which left mobile selling blind. Falls back to the live computed price.
+    const displaySellValue = useMemo(() => {
+        if (!selectedItemData) return 0;
+        const stored = Number(selectedItemData.value ?? 0);
+        if (stored > 0) return stored;
+        return computeSellValue({
+            price: selectedItemData.price,
+            rarity: selectedItemData.rarity,
+            category: selectedItemData.category,
+        });
+    }, [selectedItemData]);
+
+    const wornNames = useMemo(
+        () => (hunterKit ? kitItemNames(hunterKit) : new Set<string>()),
+        [hunterKit]
+    );
+
+    const handleEquipToKit = async (itemName: string) => {
+        const item = inventory.find((candidate) => candidate.name === itemName);
+        if (!item) return;
+
+        try {
+            if (kitMode === "loadout") {
+                const slot = selectedLoadoutSlot ?? "a";
+                const already = hunterKit?.loadout[slot] === itemName;
+                if (already) {
+                    const next = await unequipLoadoutSlot(app.vault, slot);
+                    await syncKitEquippedTags(app, next);
+                } else {
+                    const next = await equipInventoryItemToLoadoutSlot(app, itemName, slot);
+                    await syncKitEquippedTags(app, next);
+                }
+            } else {
+                const wornSlot = GEAR_SLOTS.find((lookSlot) => hunterKit?.look[lookSlot] === itemName);
+                const slot = selectedLookSlot ?? wornSlot ?? inferGearSlot(item);
+                if (wornSlot && slot === wornSlot) {
+                    await unequipGearSlot(app.vault, wornSlot);
+                    const packed = await getHunterKitItems(app);
+                    await syncKitEquippedTags(app, packed.kit);
+                } else {
+                    await equipInventoryItemToGearSlot(app, itemName, slot);
+                    setSelectedLookSlot(slot);
+                    const packed = await getHunterKitItems(app);
+                    await syncKitEquippedTags(app, packed.kit);
+                }
+            }
+        } catch (error) {
+            console.error("Failed to update hunter kit:", error);
+        }
+        await reloadInventory();
+    };
+
+    useEffect(() => {
+        setMobileVisibleCount(MOBILE_INV_PAGE);
+    }, [activeTab, selectedCategory, searchTerm, sortMethod, sortOrder]);
+
+    // Quality chips only exist on the Materials tab — a lingering selection
+    // would silently filter the other tabs down to nothing.
+    useEffect(() => {
+        if (activeTab !== "materials") {
+            setSelectedCategory("all");
+        }
+    }, [activeTab]);
+
+    useEffect(() => {
+        if (isMobile && viewMode !== "list") {
+            setViewMode("list");
+        }
+    }, [isMobile, viewMode]);
+
+    const visibleInventory = useMemo(() => {
+        if (!isMobile) return processedInventory;
+        return processedInventory.slice(0, mobileVisibleCount);
+    }, [isMobile, processedInventory, mobileVisibleCount]);
+
     // Debug inventory data
     console.log('📦 Inventory data:', { inventoryCount: inventory?.length, inventory: inventory?.slice(0, 3) });
 
@@ -288,18 +538,42 @@ const InventoryModalContent: React.FC = () => {
     }
 
     const handleItemClick = (itemName: string) => {
-        console.log('🔍 Item clicked:', itemName);
-        setSelectedItem(itemName);
-        console.log('✅ Selected item set to:', itemName);
+        // Clicking the selected item again deselects it (desktop has no detail X).
+        setSelectedItem((prev) => (prev === itemName ? null : itemName));
     };
 
     return (
-        <div className={inventoryStyles.inventoryModalContent}>
+        <div
+            className={`${inventoryStyles.inventoryModalContent}${isMobile ? ` ${inventoryStyles.inventoryModalContentMobile}` : ""}${useSystemChrome && !isMobile ? ` ${inventoryStyles.inventoryModalContentSystem}` : ""}${useSystemChrome && !isMobile && selectedItemData ? ` ${inventoryStyles.inventoryModalContentSystemSplit}` : ""}`}
+            data-gamification-mobile={isMobile ? "true" : "false"}
+            data-inventory-system={useSystemChrome ? "true" : "false"}
+        >
+            {useSystemChrome && (
+                <div className={inventoryStyles.mobileSystemHeader}>
+                    <SystemHeader
+                        icon="🎒"
+                        label="SYSTEM: INVENTORY"
+                        title="Hunter storage"
+                    />
+                    {/* The one inventory X. Mobile hides it while the bottom sheet is open
+                        (the sheet has its own); desktop keeps it always. */}
+                    {onClose && (!isMobile || !selectedItemData) ? (
+                        <button
+                            type="button"
+                            className={inventoryStyles.mobileInvClose}
+                            onClick={onClose}
+                            aria-label="Close inventory"
+                        >
+                            ✕
+                        </button>
+                    ) : null}
+                </div>
+            )}
             {/* Left Panel - Categories & Items Grid */}
             <div
                 className={`${inventoryStyles.inventoryLeftPanel} ${
                     selectedItemData ? inventoryStyles.inventoryLeftPanelSplit : ""
-                }`}
+                } ${activeTab === "equipment" && !isMobile ? inventoryStyles.inventoryLeftPanelKit : ""}`}
             >
                 {/* Tab Navigation */}
                 <div className={inventoryStyles.tabNavigation}>
@@ -308,14 +582,14 @@ const InventoryModalContent: React.FC = () => {
                         onClick={() => setActiveTab("all")}
                     >
                         <span className={inventoryStyles.tabIcon}>📦</span>
-                        All Items
+                        {isMobile ? "All" : "All Items"}
                     </button>
                     <button
                         className={`${inventoryStyles.tabButton} ${activeTab === "materials" ? inventoryStyles.activeTab : ""}`}
                         onClick={() => setActiveTab("materials")}
                     >
                         <span className={inventoryStyles.tabIcon}>💎</span>
-                        Materials
+                        {isMobile ? "Mats" : "Materials"}
                         {materials.length > 0 && (
                             <span className={inventoryStyles.tabBadge}>{materials.length}</span>
                         )}
@@ -325,35 +599,99 @@ const InventoryModalContent: React.FC = () => {
                         onClick={() => setActiveTab("equipment")}
                     >
                         <span className={inventoryStyles.tabIcon}>⚔️</span>
-                        Equipment
+                        {isMobile ? "Gear" : "Equipment"}
                     </button>
                     <button
                         className={`${inventoryStyles.tabButton} ${activeTab === "artifact" ? inventoryStyles.activeTab : ""}`}
                         onClick={() => setActiveTab("artifact")}
                     >
                         <span className={inventoryStyles.tabIcon}>🗝️</span>
-                        Artifacts
+                        {isMobile ? "Keys" : "Artifacts"}
                     </button>
                     
-                    {/* Refresh Button */}
+                    {/* Refresh — icon-only on phone to save tab space */}
                     <button
-                        className={inventoryStyles.tabButton}
+                        className={`${inventoryStyles.tabButton} ${inventoryStyles.tabRefresh}`}
                         onClick={async () => {
                             console.log('🎒 [Inventory] Manual refresh triggered');
                             await reloadInventory();
                         }}
-                        style={{ marginLeft: 'auto' }}
                         title="Refresh Inventory"
+                        aria-label="Refresh Inventory"
                     >
                         <span className={inventoryStyles.tabIcon}>🔄</span>
-                        Refresh
                     </button>
                 </div>
 
+                {activeTab === "equipment" && (
+                    <div className={inventoryStyles.kitStage}>
+                    <div className={inventoryStyles.kitDressing}>
+                        <div className={inventoryStyles.kitModeRow}>
+                            <button
+                                type="button"
+                                className={`${inventoryStyles.kitModeButton} ${kitMode === "look" ? inventoryStyles.kitModeActive : ""}`}
+                                onClick={() => setKitMode("look")}
+                            >
+                                Look
+                            </button>
+                            <button
+                                type="button"
+                                className={`${inventoryStyles.kitModeButton} ${kitMode === "loadout" ? inventoryStyles.kitModeActive : ""}`}
+                                onClick={() => setKitMode("loadout")}
+                            >
+                                Loadout
+                            </button>
+                        </div>
+                        <p className={inventoryStyles.kitHint}>
+                            {kitMode === "look"
+                                ? "Look is dream equipment on the hunter. Tap a slot, then Equip."
+                                : "Loadout is what you bring to work. It does not change the doll."}
+                        </p>
+                        <HunterLookPortrait
+                            avatarSrc={avatarSrc}
+                            look={look}
+                            loadout={loadout}
+                            mode={kitMode}
+                            showEmptyLook
+                            forceIntact={bookOfEasy}
+                            clayUi={isClayTheme}
+                            selectedLookSlot={selectedLookSlot}
+                            selectedLoadoutSlot={selectedLoadoutSlot}
+                            onLookSlotClick={(slot) => {
+                                setKitMode("look");
+                                setSelectedLookSlot((prev) => (prev === slot ? null : slot));
+                            }}
+                            onLoadoutSlotClick={(slot) => {
+                                setKitMode("loadout");
+                                setSelectedLoadoutSlot(slot);
+                            }}
+                        />
+                    </div>
+                    <EquippedGearPanel
+                        look={look}
+                        loadout={loadout}
+                        kitMode={kitMode}
+                        selectedLookSlot={selectedLookSlot}
+                        selectedLoadoutSlot={selectedLoadoutSlot}
+                        unbreaking={bookOfEasy}
+                        clayUi={isClayTheme}
+                        onSelectLookSlot={(slot) => {
+                            setKitMode("look");
+                            setSelectedLookSlot(slot);
+                        }}
+                        onSelectLoadoutSlot={(slot) => {
+                            setKitMode("loadout");
+                            setSelectedLoadoutSlot(slot);
+                        }}
+                    />
+                    </div>
+                )}
+
+                <div className={inventoryStyles.kitMain}>
                 {/* Category chips removed for simplified tab layout */}
 
-                {/* Materials Quality Filter (only show for Materials tab) */}
-                {activeTab === "materials" && (
+                {/* Materials Quality Filter — desktop chrome; phone keeps tabs + search only */}
+                {activeTab === "materials" && !isMobile && (
                     <div className={inventoryStyles.qualityFilter}>
                         <div className={inventoryStyles.qualityTitle}>Quality Filter:</div>
                         <div className={inventoryStyles.qualityButtons}>
@@ -362,7 +700,9 @@ const InventoryModalContent: React.FC = () => {
                                     <button
                                         key={quality}
                                         className={inventoryStyles.qualityButton}
-                                        onClick={() => setSelectedCategory(quality)}
+                                        onClick={() =>
+                                            setSelectedCategory((prev) => (prev === quality ? "all" : quality))
+                                        }
                                         style={{
                                             background: selectedCategory === quality 
                                                 ? "rgba(69, 183, 209, 0.3)" 
@@ -414,11 +754,11 @@ const InventoryModalContent: React.FC = () => {
                     </div>
                 )}
 
-                {/* Enhanced Search Bar */}
+                {/* Search + filters */}
                 <div className={inventoryStyles.searchContainer}>
                     <input
-                        type="text"
-                        placeholder="🔍 Search items, descriptions, tags..."
+                        type="search"
+                        placeholder={isMobile ? "Search items…" : "🔍 Search items, descriptions, tags..."}
                         value={enhancedState.filter.search || searchTerm}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                             const value = e.target.value;
@@ -432,7 +772,54 @@ const InventoryModalContent: React.FC = () => {
                     />
                 </div>
 
-                {/* Enhanced Filtering Controls */}
+                {/* Phone: compact sort that actually drives the list */}
+                {isMobile ? (
+                    <div className={inventoryStyles.mobileSortRow}>
+                        <label className={inventoryStyles.mobileSortLabel} htmlFor="inv-mobile-sort">
+                            Sort
+                        </label>
+                        <select
+                            id="inv-mobile-sort"
+                            className={inventoryStyles.mobileSortSelect}
+                            value={sortMethod}
+                            onChange={(e) => {
+                                const field = e.target.value as typeof sortMethod;
+                                setSortMethod(field);
+                                setEnhancedState(prev => ({
+                                    ...prev,
+                                    sort: { ...prev.sort, field: field as InventorySortOptions['field'] }
+                                }));
+                            }}
+                        >
+                            <option value="name">Name</option>
+                            <option value="rarity">Rarity</option>
+                            <option value="quantity">Quantity</option>
+                            <option value="value">Value</option>
+                        </select>
+                        <button
+                            type="button"
+                            className={inventoryStyles.mobileSortOrder}
+                            onClick={() => {
+                                const next = sortOrder === "asc" ? "desc" : "asc";
+                                setSortOrder(next);
+                                setEnhancedState(prev => ({
+                                    ...prev,
+                                    sort: { ...prev.sort, order: next }
+                                }));
+                            }}
+                            aria-label="Toggle sort order"
+                        >
+                            {sortOrder === "asc" ? "↑" : "↓"}
+                        </button>
+                        <button
+                            type="button"
+                            className={`${inventoryStyles.filterToggle} ${showFilters ? inventoryStyles.active : ""}`}
+                            onClick={() => setShowFilters(!showFilters)}
+                        >
+                            Filters
+                        </button>
+                    </div>
+                ) : (
                 <div className={inventoryStyles.filterControls}>
                     <div className={inventoryStyles.filterSection}>
                         <button
@@ -525,10 +912,21 @@ const InventoryModalContent: React.FC = () => {
                                 <label>Sort by:</label>
                                 <select
                                     value={enhancedState.sort.field}
-                                    onChange={(e) => setEnhancedState(prev => ({
-                                        ...prev,
-                                        sort: { ...prev.sort, field: e.target.value as InventorySortOptions['field'] }
-                                    }))}
+                                    onChange={(e) => {
+                                        const field = e.target.value as InventorySortOptions['field'];
+                                        setEnhancedState(prev => ({
+                                            ...prev,
+                                            sort: { ...prev.sort, field }
+                                        }));
+                                        if (
+                                            field === "name" ||
+                                            field === "rarity" ||
+                                            field === "quantity" ||
+                                            field === "value"
+                                        ) {
+                                            setSortMethod(field);
+                                        }
+                                    }}
                                     className={inventoryStyles.sortSelect}
                                 >
                                     <option value="name">Name</option>
@@ -541,10 +939,14 @@ const InventoryModalContent: React.FC = () => {
                                 </select>
                                 <button
                                     className={`${inventoryStyles.sortOrderButton} ${enhancedState.sort.order === 'desc' ? inventoryStyles.active : ''}`}
-                                    onClick={() => setEnhancedState(prev => ({
-                                        ...prev,
-                                        sort: { ...prev.sort, order: prev.sort.order === 'asc' ? 'desc' : 'asc' }
-                                    }))}
+                                    onClick={() => {
+                                        const next = enhancedState.sort.order === 'asc' ? 'desc' : 'asc';
+                                        setEnhancedState(prev => ({
+                                            ...prev,
+                                            sort: { ...prev.sort, order: next }
+                                        }));
+                                        setSortOrder(next);
+                                    }}
                                 >
                                     {enhancedState.sort.order === 'asc' ? '↑' : '↓'}
                                 </button>
@@ -578,7 +980,8 @@ const InventoryModalContent: React.FC = () => {
                                 </select>
                             </div>
 
-                            {/* View Mode */}
+                            {/* View Mode — desktop only (phone stays list) */}
+                            {!isMobile && (
                             <div className={inventoryStyles.filterGroup}>
                                 <label className={inventoryStyles.filterLabel}>View:</label>
                                 <div className={inventoryStyles.viewModeButtons}>
@@ -596,12 +999,86 @@ const InventoryModalContent: React.FC = () => {
                                     </button>
                                 </div>
                             </div>
+                            )}
                         </div>
                     )}
                 </div>
+                )}
 
-                {/* Enhanced Selection Controls */}
-                {enhancedState.selectedItems.size > 0 && (
+                {/* Phone filter panel — same state, now wired into the list */}
+                {isMobile && showFilters && (
+                    <div className={inventoryStyles.mobileFilterPanel}>
+                        <select
+                            value={enhancedState.filter.category || "all"}
+                            onChange={(e) =>
+                                setEnhancedState((prev) => ({
+                                    ...prev,
+                                    filter: {
+                                        ...prev.filter,
+                                        category:
+                                            e.target.value === "all"
+                                                ? undefined
+                                                : e.target.value,
+                                    },
+                                }))
+                            }
+                            className={inventoryStyles.filterSelect}
+                        >
+                            <option value="all">All Categories</option>
+                            <option value="equipment">Equipment</option>
+                            <option value="material">Materials</option>
+                            <option value="consumable">Consumables</option>
+                            <option value="artifact">Artifacts</option>
+                            <option value="tool">Tools</option>
+                            <option value="treasure">Treasures</option>
+                            <option value="misc">Misc</option>
+                        </select>
+                        <select
+                            value={enhancedState.filter.rarity || "all"}
+                            onChange={(e) =>
+                                setEnhancedState((prev) => ({
+                                    ...prev,
+                                    filter: {
+                                        ...prev.filter,
+                                        rarity:
+                                            e.target.value === "all"
+                                                ? undefined
+                                                : e.target.value,
+                                    },
+                                }))
+                            }
+                            className={inventoryStyles.filterSelect}
+                        >
+                            <option value="all">All Rarities</option>
+                            <option value="common">Common</option>
+                            <option value="uncommon">Uncommon</option>
+                            <option value="rare">Rare</option>
+                            <option value="epic">Epic</option>
+                            <option value="legendary">Legendary</option>
+                        </select>
+                        <label className={inventoryStyles.toggleFilter}>
+                            <input
+                                type="checkbox"
+                                checked={enhancedState.filter.equipped === true}
+                                onChange={(e) =>
+                                    setEnhancedState((prev) => ({
+                                        ...prev,
+                                        filter: {
+                                            ...prev.filter,
+                                            equipped: e.target.checked
+                                                ? true
+                                                : undefined,
+                                        },
+                                    }))
+                                }
+                            />
+                            Equipped only
+                        </label>
+                    </div>
+                )}
+
+                {/* Enhanced Selection Controls — desktop bulk only */}
+                {!isMobile && enhancedState.selectedItems.size > 0 && (
                     <div className={inventoryStyles.selectionBar}>
                         <div className={inventoryStyles.selectionInfo}>
                             {enhancedState.selectedItems.size} item(s) selected
@@ -634,8 +1111,8 @@ const InventoryModalContent: React.FC = () => {
                     </div>
                 )}
 
-                {/* Bulk Actions */}
-                {enhancedState.showBulkActions && (
+                {/* Bulk Actions — desktop only */}
+                {!isMobile && enhancedState.showBulkActions && (
                     <div className={inventoryStyles.bulkActions}>
                         <button 
                             onClick={async () => {
@@ -757,15 +1234,28 @@ const InventoryModalContent: React.FC = () => {
                             </div>
                         </div>
                     ) : (
-                        <div className={inventoryStyles.inventoryGrid}>
-                            {processedInventory.map((item: InventoryItem) => {
+                        <div className={`${inventoryStyles.inventoryGrid}${isMobile ? ` ${inventoryStyles.inventoryGridMobileList}` : ""}`}>
+                            {visibleInventory.map((item: InventoryItem) => {
                                 const isSelected = selectedItem === item.name;
-                                const isHovered = hoveredItem === item.name;
-                                const isEnhancedSelected = enhancedState.selectedItems.has(item.name);
+                                const isHovered = !isMobile && hoveredItem === item.name;
+                                const isEnhancedSelected = !isMobile && enhancedState.selectedItems.has(item.name);
                                 const rarityColor = getRarityColor(item.rarity || "common");
                                 const isMaterial = item.category === "material";
-                                const isEquipped = item.tags?.includes('equipped') || false;
+                                const isEquipped = wornNames.has(item.name) || item.tags?.includes('equipped') || false;
                                 const isFavorite = false; // Will be populated from enhanced data
+                                const itemKind = getItemKind(item);
+                                const kindLabel =
+                                    itemKind === 'gear' ? 'equipment' :
+                                    itemKind === 'key' ? 'key' :
+                                    itemKind === 'artifact' ? 'artifact' :
+                                    itemKind === 'consumable' ? 'consumable' :
+                                    item.tags?.find(tag => ['organic', 'mineral', 'crystal', 'essence', 'mystical'].includes(tag)) || 'material';
+                                const qualityMark = isMaterial
+                                    ? (item.tags?.some(tag => tag.includes('masterwork')) ? '⭐' :
+                                       item.tags?.some(tag => tag.includes('refined')) ? '✨' :
+                                       item.tags?.some(tag => tag.includes('fresh')) ? '🌱' :
+                                       item.tags?.some(tag => tag.includes('dried')) ? '🍂' : null)
+                                    : null;
 
                                 return (
                                     <div
@@ -778,15 +1268,16 @@ const InventoryModalContent: React.FC = () => {
                                             isEquipped ? inventoryStyles.equipped : ""
                                         }`}
                                         onClick={() => handleItemClick(item.name)}
-                                        onMouseEnter={() => setHoveredItem(item.name)}
-                                        onMouseLeave={() => setHoveredItem("")}
+                                        onMouseEnter={() => !isMobile && setHoveredItem(item.name)}
+                                        onMouseLeave={() => !isMobile && setHoveredItem("")}
                                         style={{
                                             borderColor: isSelected || isHovered || isEnhancedSelected
                                                 ? rarityColor 
                                                 : "rgba(255, 255, 255, 0.15)"
                                         }}
                                     >
-                                        {/* Enhanced Selection Checkbox */}
+                                        {/* Enhanced Selection Checkbox — desktop only */}
+                                        {!isMobile && (
                                         <div className={inventoryStyles.itemCheckbox}>
                                             <input
                                                 type="checkbox"
@@ -807,6 +1298,7 @@ const InventoryModalContent: React.FC = () => {
                                                 }}
                                             />
                                         </div>
+                                        )}
 
                                         {/* Favorite Indicator */}
                                         {isFavorite && (
@@ -825,13 +1317,9 @@ const InventoryModalContent: React.FC = () => {
                                             </div>
                                         )}
 
-                                        {/* Quality Badge for Materials */}
-                                        {isMaterial && (
+                                        {qualityMark && (
                                             <div className={inventoryStyles.qualityBadge}>
-                                                {item.tags?.some(tag => tag.includes('masterwork')) ? '⭐' :
-                                                 item.tags?.some(tag => tag.includes('refined')) ? '✨' :
-                                                 item.tags?.some(tag => tag.includes('fresh')) ? '🌱' :
-                                                 item.tags?.some(tag => tag.includes('dried')) ? '🍂' : '⚪'}
+                                                {qualityMark}
                                             </div>
                                         )}
 
@@ -839,14 +1327,21 @@ const InventoryModalContent: React.FC = () => {
                                         <div 
                                             className={inventoryStyles.rarityIndicator}
                                             style={{ color: rarityColor }}
+                                            aria-hidden="true"
                                         />
 
                                         {/* Item Icon - No click handler to avoid conflicts */}
                                         <div className={inventoryStyles.itemIcon}>
-                                            {item.icon || (isMaterial ? getMaterialIcon(item.name) : getItemIcon(item.name))}
+                                            <PixelIcon
+                                                item={item}
+                                                fallback={isMaterial ? getMaterialIcon(item.name) : getItemIcon(item.name)}
+                                                className={inventoryStyles.itemIconEmoji}
+                                                imgClassName={inventoryStyles.itemIconImg}
+                                            />
                                         </div>
 
-                                        {/* Mobile-friendly change icon button */}
+                                        {/* Change icon — desktop only */}
+                                        {!isMobile && (
                                         <button
                                             className={inventoryStyles.changeIconButton}
                                             onClick={(e) => {
@@ -862,6 +1357,7 @@ const InventoryModalContent: React.FC = () => {
                                         >
                                             ✏️
                                         </button>
+                                        )}
 
                                         {/* Item Name */}
                                         <div className={inventoryStyles.itemName}>
@@ -876,10 +1372,10 @@ const InventoryModalContent: React.FC = () => {
                                             {getRarityDisplayName(item.rarity || "common")}
                                         </div>
 
-                                        {/* Material Category for Materials */}
-                                        {isMaterial && (
+                                        {/* Kind chip — gear/artifacts get the same chrome as materials */}
+                                        {!isMobile && (
                                             <div className={inventoryStyles.materialCategory}>
-                                                {item.tags?.find(tag => ['organic', 'mineral', 'crystal', 'essence', 'mystical'].includes(tag)) || 'material'}
+                                                {kindLabel}
                                             </div>
                                         )}
 
@@ -887,26 +1383,63 @@ const InventoryModalContent: React.FC = () => {
                                     </div>
                                 );
                             })}
+                            {isMobile && processedInventory.length > mobileVisibleCount && (
+                                <button
+                                    type="button"
+                                    className={inventoryStyles.mobileShowMore}
+                                    onClick={() =>
+                                        setMobileVisibleCount((n) => n + MOBILE_INV_PAGE)
+                                    }
+                                >
+                                    Show more ({processedInventory.length - mobileVisibleCount} left)
+                                </button>
+                            )}
                         </div>
                     )}
                 </div>
+                </div>
             </div>
 
-            {/* Right Panel - Enhanced Item Details */}
-            {(() => {
-                console.log('🎯 Rendering details panel check:', { selectedItemData: !!selectedItemData, selectedItem });
-                return null;
-            })()}
+            {/* Item details — bottom sheet on phone, side panel on desktop */}
             {selectedItemData && (
-                <div className={inventoryStyles.itemDetailsPanel}>
+                <div
+                    className={isMobile ? inventoryStyles.itemDetailBackdrop : undefined}
+                    onClick={isMobile ? () => setSelectedItem(null) : undefined}
+                    role={isMobile ? "presentation" : undefined}
+                    style={isMobile ? undefined : { display: "contents" }}
+                >
+                <div
+                    className={`${inventoryStyles.itemDetailsPanel}${isMobile ? ` ${inventoryStyles.itemDetailsPanelMobile}` : ""}`}
+                    onClick={isMobile ? (e) => e.stopPropagation() : undefined}
+                >
                     {/* Enhanced Item Header with Close Button */}
                     <div className={inventoryStyles.selectedItemHeader}>
                         <div className={inventoryStyles.selectedItemIcon}>
-                            {selectedItemData.icon || getItemIcon(selectedItemData.name)}
+                            <PixelIcon
+                                item={selectedItemData}
+                                fallback={getItemIcon(selectedItemData.name)}
+                                className={inventoryStyles.itemIconEmoji}
+                                imgClassName={inventoryStyles.itemIconImg}
+                            />
                         </div>
                         
-                        <div className={inventoryStyles.selectedItemName}>
-                            {selectedItemData.name}
+                        <div className={inventoryStyles.selectedItemNameRow}>
+                            <div className={inventoryStyles.selectedItemName}>
+                                {selectedItemData.name}
+                            </div>
+                            {!isMobile && (
+                                <button
+                                    type="button"
+                                    className={inventoryStyles.favoriteStar}
+                                    onClick={() => {
+                                        console.log('Toggle favorite for:', selectedItemData.name);
+                                    }}
+                                    title="Toggle favorite"
+                                    aria-label="Toggle favorite"
+                                >
+                                    ⭐
+                                </button>
+                            )}
                         </div>
                         
                         <div 
@@ -919,14 +1452,18 @@ const InventoryModalContent: React.FC = () => {
                             ✦ {getRarityDisplayName(selectedItemData.rarity || "common")} ✦
                         </div>
 
-                        {/* Close Button */}
-                        <button 
+                        {/* Bottom-sheet dismiss — mobile only; desktop keeps the single header X */}
+                        {isMobile && (
+                        <button
+                            type="button"
                             className={inventoryStyles.closeItemButton}
                             onClick={() => setSelectedItem(null)}
                             title="Close item details"
+                            aria-label="Close item details"
                         >
                             ✕
                         </button>
+                        )}
                     </div>
 
                     {/* Item Description */}
@@ -950,7 +1487,7 @@ const InventoryModalContent: React.FC = () => {
                                                 background: '#1f3b4d',
                                                 color: '#cbe9ff',
                                                 border: '1px solid #2c5b73',
-                                                borderRadius: 9999,
+                                                borderRadius: 2,
                                                 padding: '2px 8px',
                                                 fontSize: '0.8em'
                                             }}>
@@ -1000,7 +1537,7 @@ const InventoryModalContent: React.FC = () => {
                         </div>
 
                         {/* Item Tags (if available) */}
-                        {selectedItemData.tags && selectedItemData.tags.length > 0 && (
+                        {!isMobile && selectedItemData.tags && selectedItemData.tags.length > 0 && (
                             <div className={inventoryStyles.detailItem}>
                                 <div className={inventoryStyles.detailLabel}>
                                     <span className={inventoryStyles.detailIcon}>🏷️</span>
@@ -1012,24 +1549,32 @@ const InventoryModalContent: React.FC = () => {
                             </div>
                         )}
 
-                        {/* Item Value (if available) */}
-                        {typeof selectedItemData.value === 'number' && (
+                        {/* Sell price — always shown for sellable items (was invisible on mobile) */}
+                        {allowedActions?.sell && (
                             <div className={inventoryStyles.detailItem}>
                                 <div className={inventoryStyles.detailLabel}>
                                     <span className={inventoryStyles.detailIcon}>💰</span>
-                                    Value (Sell Price)
+                                    Sell Price
                                 </div>
                                 <div className={inventoryStyles.detailValue}>
-                                    {currencySymbol} {selectedItemData.value} {currencyName.toLowerCase()}
+                                    {currencySymbol} {displaySellValue} {currencyName.toLowerCase()}
                                 </div>
                             </div>
                         )}
                     </div>
 
-                    {/* Action Buttons */}
+                    {/* Why some actions are hidden (material / key / equipped-gear guidance) */}
+                    {allowedActions?.hint && (
+                        <div className={inventoryStyles.itemActionHint}>
+                            {allowedActions.hint}
+                        </div>
+                    )}
+
+                    {/* Action Buttons — gated per item type */}
                     <div className={inventoryStyles.itemActions}>
+                        {allowedActions?.use && (
                         <button 
-                            className={inventoryStyles.actionButton}
+                            className={`${inventoryStyles.actionButton} ${inventoryStyles.actionPrimary} gamifySystemAction gamifySystemActionPrimary`}
                             onClick={async () => {
                                 const usesLeft = (selectedItemData as any).usesRemaining;
                                 const willRemove = typeof usesLeft === 'number'
@@ -1043,11 +1588,46 @@ const InventoryModalContent: React.FC = () => {
                             }}
                         >
                             <span>⚡</span>
-                            Use Item
+                            {allowedActions.useLabel}
                         </button>
-                        
+                        )}
+
+                        {allowedActions?.equip && (
                         <button 
-                            className={inventoryStyles.actionButton}
+                            className={`${inventoryStyles.actionButton} ${inventoryStyles.actionPrimary} gamifySystemAction gamifySystemActionPrimary`}
+                            onClick={async () => {
+                                await handleEquipToKit(selectedItemData.name);
+                            }}
+                        >
+                            <span>🛡️</span>
+                            {kitMode === "loadout"
+                                ? (hunterKit?.loadout[selectedLoadoutSlot ?? "a"] === selectedItemData.name
+                                    ? "Unequip"
+                                    : "Equip")
+                                : (wornNames.has(selectedItemData.name) ? "Unequip" : "Equip")}
+                        </button>
+                        )}
+
+                        {allowedActions?.sell && (
+                        <button 
+                            className={`${inventoryStyles.actionButton} gamifySystemAction`}
+                            onClick={async () => {
+                                const confirmMsg = `Sell ${selectedItemData.name} for ${displaySellValue} ${currencyName.toLowerCase()}?`;
+                                const confirmed = confirm(confirmMsg);
+                                if (!confirmed) return;
+                                await sellItem(app, selectedItemData.name);
+                                await reloadInventory();
+                                setSelectedItem(null);
+                            }}
+                        >
+                            <span>💰</span>
+                            Sell · {displaySellValue}
+                        </button>
+                        )}
+
+                        {allowedActions?.drop && (
+                        <button 
+                            className={`${inventoryStyles.actionButton} gamifySystemAction`}
                             onClick={async () => {
                                 await dropItem(app, selectedItemData.name);
                                 await reloadInventory();
@@ -1057,58 +1637,19 @@ const InventoryModalContent: React.FC = () => {
                             <span>🗑️</span>
                             Drop
                         </button>
-
-                        <button 
-                            className={inventoryStyles.actionButton}
-                            onClick={async () => {
-                                await equipItem(app, selectedItemData.name);
-                                await reloadInventory();
-                            }}
-                        >
-                            <span>🛡️</span>
-                            {selectedItemData.tags?.includes('equipped') ? 'Unequip' : 'Equip'}
-                        </button>
-
-                        <button 
-                            className={inventoryStyles.actionButton}
-                            onClick={async () => {
-                                const saleValue = Math.max(0, Number(selectedItemData.value ?? 0));
-                                const confirmMsg = saleValue > 0
-                                  ? `Sell ${selectedItemData.name} for ${saleValue} ${currencyName.toLowerCase()}?`
-                                  : `Sell ${selectedItemData.name}?`;
-                                const confirmed = confirm(confirmMsg);
-                                if (!confirmed) return;
-                                await sellItem(app, selectedItemData.name);
-                                await reloadInventory();
-                                setSelectedItem(null);
-                            }}
-                        >
-                            <span>💰</span>
-                            Sell
-                        </button>
-
-                        {/* Favorite Button */}
-                        <button 
-                            className={`${inventoryStyles.actionButton} ${inventoryStyles.favoriteActionButton}`}
-                            onClick={async () => {
-                                // Toggle favorite functionality
-                                console.log('Toggle favorite for:', selectedItemData.name);
-                                // TODO: Implement favorite toggle
-                            }}
-                            title="Toggle favorite"
-                        >
-                            <span>⭐</span>
-                            Favorite
-                        </button>
+                        )}
                     </div>
 
-                    {/* Item Lore/Flavor Text */}
+                    {/* Item Lore — desktop only */}
+                    {!isMobile && (
                     <div className={inventoryStyles.itemLore}>
                         <div className={inventoryStyles.loreTitle}>✨ Item Lore</div>
                         <div className={inventoryStyles.loreText}>
                             {getItemLore(selectedItemData)}
                         </div>
                     </div>
+                    )}
+                </div>
                 </div>
             )}
 

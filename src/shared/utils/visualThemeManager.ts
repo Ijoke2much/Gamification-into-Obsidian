@@ -11,10 +11,10 @@ import { CLASSIC_PRESET, getVisualThemePreset, VISUAL_THEME_PRESET_LIST } from '
 const STYLE_ELEMENT_ID = 'gamification-visual-theme-vars';
 
 const TOKEN_SCOPES = [
-	':root',
 	'[data-gamification-plugin]',
 	'[data-gamification-theme-root]',
 	'.gamification-plugin',
+	'[data-clay-shell]',
 ].join(',\n');
 
 class VisualThemeManager {
@@ -174,6 +174,10 @@ class VisualThemeManager {
   font-family: ${resolved.typography.ui};`;
 
 		styleElement.textContent = `
+:root {
+${tokenLines}
+}
+
 ${TOKEN_SCOPES} {
 ${tokenLines}
 ${typographyLines}
@@ -222,12 +226,30 @@ export function getVisualThemePresets() {
 	return visualThemeManager.getPresetList();
 }
 
-/** Normalize settings on load — existing installs without visualTheme get Classic. */
+const LEGACY_CLASSIC_THEME: VisualThemeSettings = {
+	preset: 'classic',
+	ceremonyLevel: 'minimal',
+};
+
+function isNewSettingsPayload(
+	loaded: Partial<GamificationPluginSettings> | null | undefined
+): boolean {
+	return !loaded || Object.keys(loaded).length === 0;
+}
+
+/** New vaults get Clay. Existing installs without visualTheme stay Classic. */
 export function migrateVisualThemeSettings(
 	loaded: Partial<GamificationPluginSettings> | null | undefined
 ): VisualThemeSettings {
-	if (!loaded?.visualTheme?.preset) {
+	if (isNewSettingsPayload(loaded)) {
 		return { ...DEFAULT_VISUAL_THEME_SETTINGS };
+	}
+	if (!loaded?.visualTheme?.preset) {
+		return {
+			...LEGACY_CLASSIC_THEME,
+			...(loaded?.visualTheme ?? {}),
+			preset: 'classic',
+		};
 	}
 
 	return {

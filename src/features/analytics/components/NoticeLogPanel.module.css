@@ -1,0 +1,110 @@
+.panel {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	padding: 4px 0 12px;
+}
+
+.header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 12px;
+}
+
+.title {
+	margin: 0;
+	font-size: 1.15rem;
+	font-weight: 700;
+	color: var(--go-text, var(--text-normal));
+}
+
+.subtitle {
+	margin: 6px 0 0;
+	font-size: 0.85rem;
+	line-height: 1.4;
+	color: var(--go-muted, var(--text-muted));
+}
+
+.clearBtn {
+	flex-shrink: 0;
+	border: none;
+	border-radius: var(--clay-radius-sm, 16px);
+	padding: 8px 14px;
+	cursor: pointer;
+	font: inherit;
+	font-size: 0.85rem;
+	font-weight: 650;
+	color: var(--go-text, var(--text-normal));
+	background: var(--clay-surface-2, var(--background-secondary));
+	box-shadow: var(--clay-shadow, 0 2px 8px rgba(0, 0, 0, 0.08));
+}
+
+.clearBtn:hover {
+	background: var(--clay-surface, var(--background-modifier-hover));
+}
+
+.emptyCard {
+	padding: 20px;
+	border-radius: var(--clay-radius, 24px);
+	background: var(--clay-gradient, var(--background-secondary));
+	box-shadow: var(--clay-shadow, none);
+}
+
+.empty {
+	margin: 0;
+	color: var(--go-muted, var(--text-muted));
+	text-align: center;
+}
+
+.list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.item {
+	padding: 14px 16px;
+	border-radius: var(--clay-radius, 22px);
+	background: var(--clay-gradient, var(--background-secondary));
+	box-shadow: var(--clay-shadow, 0 2px 10px rgba(0, 0, 0, 0.06));
+}
+
+.meta {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 6px;
+}
+
+.time {
+	font-size: 0.75rem;
+	font-weight: 700;
+	color: var(--go-muted, var(--text-muted));
+}
+
+.kind {
+	font-size: 0.7rem;
+	font-weight: 700;
+	letter-spacing: 0.02em;
+	padding: 2px 8px;
+	border-radius: 999px;
+	background: var(--clay-surface-2, var(--background-modifier-hover));
+	color: var(--go-muted, var(--text-muted));
+}
+
+.kind[data-kind='system'] {
+	color: var(--go-accent, #5bb8b0);
+}
+
+.message {
+	margin: 0;
+	white-space: pre-wrap;
+	word-break: break-word;
+	font-size: 0.92rem;
+	line-height: 1.4;
+	color: var(--go-text, var(--text-normal));
+}

@@ -2,6 +2,7 @@ import { App } from 'obsidian';
 import { Quest } from '../utils/taskParser';
 import { addOrIncrementInventoryItem } from '../../inventory/utils/updateInventoryFile';
 import type { EnhancedCustomReward } from '../components/CustomRewardBuilder';
+import { isShopExclusiveCustomReward } from './shopExclusiveRewards';
 import { CraftingEngine } from '../../crafting/utils/craftingEngine';
 import type { CraftingMaterial } from '../../crafting/types/CraftingTypes';
 
@@ -25,9 +26,9 @@ export const QUEST_REWARD_ITEMS: QuestRewardItem[] = [
   { name: 'Wooden Shield', category: 'equipment', rarity: 'common', description: 'Basic protection for beginners', icon: '🛡️', value: 25, effects: ['Provides basic defense'] },
 
   // Potions - Common to Rare
-  { name: 'Health Potion', category: 'potion', rarity: 'common', description: 'Restores vitality and energy', icon: '🧪', value: 20, effects: ['Restores health', 'Instant use'] },
+  { name: 'Health Potion', category: 'potion', rarity: 'common', description: 'Drink water or take a short rest, then use this. Restores 20 dream HP.', icon: '🧪', value: 20, effects: ['hp:+20', 'Restores health', 'Instant use'] },
   { name: 'Mana Elixir', category: 'potion', rarity: 'uncommon', description: 'Replenishes magical energy', icon: '💙', value: 35, effects: ['Restores mana', 'Enhances focus'] },
-  { name: 'Stamina Draught', category: 'potion', rarity: 'uncommon', description: 'Boosts endurance for demanding tasks', icon: '🟢', value: 40, effects: ['Increases stamina', 'Reduces fatigue'] },
+  { name: 'Stamina Draught', category: 'potion', rarity: 'uncommon', description: 'Stand up and stretch, then use this. It marks that break.', icon: '🟢', value: 40, effects: ['Increases stamina', 'Reduces fatigue'] },
   { name: 'Elixir of Wisdom', category: 'potion', rarity: 'rare', description: 'Temporarily enhances learning ability', icon: '🔮', value: 75, effects: ['Boosts XP gain', 'Improves problem-solving'] },
 
   // Materials - Various rarities
@@ -41,11 +42,11 @@ export const QUEST_REWARD_ITEMS: QuestRewardItem[] = [
   { name: 'Crown of the Eternal', category: 'artifact', rarity: 'legendary', description: 'A crown worn by the greatest of heroes', icon: '👑', value: 500, effects: ['Massive stat boost', 'Leadership abilities'] },
 
   // Consumables
-  { name: 'Focus Incense', category: 'consumable', rarity: 'common', description: 'Helps maintain concentration', icon: '🕯️', value: 15, effects: ['Improves focus', 'Single use'] },
+  { name: 'Focus Incense', category: 'consumable', rarity: 'common', description: 'Step away from the screen for one quiet minute, then use this.', icon: '🕯️', value: 15, effects: ['Improves focus', 'Single use'] },
   { name: 'Lucky Charm', category: 'consumable', rarity: 'uncommon', description: 'Increases fortune for a short time', icon: '🍀', value: 60, effects: ['Boosts luck', 'Better quest rewards'] },
 
   // Scrolls
-  { name: 'Scroll of Motivation', category: 'scroll', rarity: 'uncommon', description: 'Inspires the reader to greater achievements', icon: '📃', value: 55, effects: ['Motivation boost', 'Temporary stat increase'] },
+  { name: 'Scroll of Motivation', category: 'scroll', rarity: 'uncommon', description: 'Read one real sentence that helps, then use this.', icon: '📃', value: 55, effects: ['Motivation boost', 'Temporary stat increase'] },
   { name: 'Ancient Spell Scroll', category: 'scroll', rarity: 'rare', description: 'Contains a powerful forgotten spell', icon: '📋', value: 120, effects: ['Magical abilities', 'Single use spell'] },
 ];
 
@@ -127,7 +128,9 @@ export function parseEnhancedCustomRewards(quest: Quest): EnhancedCustomReward[]
   const rewards: EnhancedCustomReward[] = [];
 
   // Check for enhanced custom rewards metadata
-  const enhancedRewardMetadata = (quest as unknown as Record<string, unknown>)['enhancedRewards'];
+  const enhancedRewardMetadata =
+    (quest as unknown as Record<string, unknown>)['enhancedRewards'] ??
+    (quest as unknown as Record<string, unknown>)['enhancedCustomRewards'];
 
   if (Array.isArray(enhancedRewardMetadata)) {
     enhancedRewardMetadata.forEach((rewardData: any) => {
@@ -138,6 +141,53 @@ export function parseEnhancedCustomRewards(quest: Quest): EnhancedCustomReward[]
   }
 
   return rewards;
+}
+
+export async function grantAttachedQuestLoot(app: App, quest: Quest): Promise<void> {
+  const enhancedRewards = parseEnhancedCustomRewards(quest).filter(
+    (reward) => !isShopExclusiveCustomReward(reward)
+  );
+  const customRewards = parseQuestCustomRewards(quest);
+  if (enhancedRewards.length === 0 && customRewards.length === 0) {
+    return;
+  }
+
+  for (const enhancedReward of enhancedRewards) {
+    if (enhancedReward.type === 'material') {
+      await addCraftingMaterialReward(app, enhancedReward);
+      continue;
+    }
+    const questItem = convertEnhancedRewardToQuestItem(enhancedReward);
+    await addOrIncrementInventoryItem(
+      app,
+      {
+        name: questItem.name,
+        category: questItem.category,
+        rarity: questItem.rarity,
+        description: questItem.description,
+        icon: questItem.icon,
+        price: questItem.value || 0,
+        tags: [questItem.category, questItem.rarity],
+      },
+      questItem.quantity || 1
+    );
+  }
+
+  for (const reward of customRewards) {
+    await addOrIncrementInventoryItem(
+      app,
+      {
+        name: reward.name,
+        category: reward.category,
+        rarity: reward.rarity,
+        description: reward.description,
+        icon: reward.icon,
+        price: reward.value || 0,
+        tags: [reward.category, reward.rarity],
+      },
+      reward.quantity || 1
+    );
+  }
 }
 
 // Convert enhanced custom reward to quest reward item for processing
@@ -313,7 +363,9 @@ export async function processQuestRewards(app: App, quest: Quest): Promise<Quest
   const rewards: QuestRewardItem[] = [];
 
   // 1. Process enhanced custom rewards first
-  const enhancedRewards = parseEnhancedCustomRewards(quest);
+  const enhancedRewards = parseEnhancedCustomRewards(quest).filter(
+    (reward) => !isShopExclusiveCustomReward(reward)
+  );
   for (const enhancedReward of enhancedRewards) {
     if (enhancedReward.type === 'material') {
       // Add to crafting system

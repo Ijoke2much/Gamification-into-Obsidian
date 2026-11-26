@@ -2,7 +2,10 @@ import esbuild from "esbuild";
 import cssModulesPlugin from "esbuild-css-modules-plugin";
 import process from "process";
 import builtins from "builtin-modules";
-import { readFile } from "fs/promises";
+import { copyFileSync, existsSync } from "fs";
+import { execSync } from "child_process";
+import { dirname, join } from "path";
+import { fileURLToPath } from "url";
 
 const banner =
 	`/*
@@ -12,38 +15,7 @@ if you want to view the source, please visit the github repository of this plugi
 `;
 
 const prod = (process.argv[2] === "production");
-
-// File loader plugin for handling PNG files
-const fileLoaderPlugin = {
-	name: 'file-loader',
-	setup(build) {
-		build.onLoad({ filter: /\.(png|jpg|jpeg|gif|svg)$/ }, async (args) => {
-			try {
-				const contents = await readFile(args.path);
-				const base64 = contents.toString('base64');
-				const ext = args.path.split('.').pop();
-				const mimeType = {
-					png: 'image/png',
-					jpg: 'image/jpeg',
-					jpeg: 'image/jpeg',
-					gif: 'image/gif',
-					svg: 'image/svg+xml'
-				}[ext];
-
-				return {
-					contents: `export default "data:${mimeType};base64,${base64}";`,
-					loader: 'js'
-				};
-			} catch (error) {
-				console.error(`Error loading file ${args.path}:`, error);
-				return {
-					contents: `export default "";`,
-					loader: 'js'
-				};
-			}
-		});
-	}
-};
+const rootDir = join(dirname(fileURLToPath(import.meta.url)));
 
 const context = await esbuild.context({
 	banner: {
@@ -72,32 +44,46 @@ const context = await esbuild.context({
 	sourcemap: prod ? false : "inline",
 	treeShaking: true,
 	outfile: "main.js",
-	minify: prod, // Re-enable minification for desktop builds
-	splitting: false, // Obsidian doesn't support code splitting
+	minify: prod,
+	splitting: false,
 	chunkNames: 'chunks/[name]-[hash]',
 	define: {
 		'process.env.NODE_ENV': prod ? '"production"' : '"development"'
 	},
-	metafile: true, // Enable metafile for CSS modules plugin
-	// Enhanced optimization settings
-	drop: prod ? ['console', 'debugger'] : [], // Remove console logs in production
-	keepNames: true, // Always keep function names to avoid mobile constructor issues
-	legalComments: 'none', // Remove legal comments to reduce bundle size
-	// Performance optimizations
-	mainFields: ['module', 'main'], // Prefer ES modules when available
-	resolveExtensions: ['.tsx', '.ts', '.jsx', '.js', '.json'], // Optimize module resolution
+	metafile: true,
+	drop: prod ? ['console', 'debugger'] : [],
+	keepNames: true,
+	legalComments: 'none',
+	mainFields: ['module', 'main'],
+	resolveExtensions: ['.tsx', '.ts', '.jsx', '.js', '.json'],
+	// Inline images so BRAT / Community Plugin installs (main.js + styles.css) still have sprites.
+	loader: {
+		'.png': 'dataurl',
+		'.jpg': 'dataurl',
+		'.jpeg': 'dataurl',
+		'.gif': 'dataurl',
+		'.svg': 'dataurl',
+	},
 	plugins: [
 		cssModulesPlugin({
 			inject: true,
-			localsConvention: 'camelCase', // Convert kebab-case to camelCase
+			localsConvention: 'camelCase',
 			generateScopedName: prod ? '[hash:base64:5]' : '[name]__[local]'
 		}),
-		fileLoaderPlugin,
-		// Performance optimization plugin (simplified)
+		{
+			name: 'copy-obsidian-styles',
+			setup(build) {
+				build.onEnd(() => {
+					const css = join(rootDir, 'main.css');
+					if (existsSync(css)) {
+						copyFileSync(css, join(rootDir, 'styles.css'));
+					}
+				});
+			}
+		},
 		{
 			name: 'performance-optimizer',
 			setup(build) {
-				// Add performance markers for development only
 				if (!prod) {
 					build.onLoad({ filter: /\.(ts|tsx)$/ }, (args) => {
 						return {
@@ -112,7 +98,9 @@ const context = await esbuild.context({
 });
 
 if (prod) {
+	execSync('node scripts/copy-plugin-assets.mjs', { cwd: rootDir, stdio: 'inherit' });
 	await context.rebuild();
+	execSync('node scripts/verify-plugin-build.mjs', { cwd: rootDir, stdio: 'inherit' });
 	console.log("✅ Production build completed successfully!");
 	process.exit(0);
 } else {

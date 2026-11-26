@@ -107,7 +107,10 @@ export const PomodoroRewardDisplay: React.FC<PomodoroRewardDisplayProps> = ({
   if (!isVisible) return null;
 
   return (
-    <div className={`${styles.rewardDisplay} ${isVisible ? styles.visible : ''}`}>
+    <div
+      className={`${styles.rewardDisplay} ${isVisible ? styles.visible : ''}`}
+      data-reward-panel="pomodoro"
+    >
       <div className={styles.rewardsHeading}>REWARDS</div>
       <div className={styles.rewardGrid}>
         <div className={styles.rewardItem}>

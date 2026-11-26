@@ -1,10 +1,11 @@
 import type GamifiedObsidianPlugin from '../../../core/main';
 import type { CraftingRecipe } from '../types/CraftingTypes';
 import { DEFAULT_CRAFTING_RECIPES } from '../data/defaultRecipes';
-import { getVaultRecipes } from './recipesParser';
+import { getRemovedRecipeIds, getVaultRecipes } from './recipesParser';
 
 let mergedCache: CraftingRecipe[] | null = null;
 let vaultCache: CraftingRecipe[] | null = null;
+let removedIds = new Set<string>();
 
 function mergeRecipes(defaults: CraftingRecipe[], custom: CraftingRecipe[]): CraftingRecipe[] {
 	const map = new Map<string, CraftingRecipe>();
@@ -14,7 +15,8 @@ function mergeRecipes(defaults: CraftingRecipe[], custom: CraftingRecipe[]): Cra
 }
 
 export function getCraftingRecipes(): CraftingRecipe[] {
-	return mergedCache ?? DEFAULT_CRAFTING_RECIPES;
+	const list = mergedCache ?? DEFAULT_CRAFTING_RECIPES;
+	return list.filter((recipe) => !removedIds.has(recipe.id));
 }
 
 export function getVaultRecipeOverrides(): CraftingRecipe[] {
@@ -28,6 +30,7 @@ export function isVaultRecipe(recipeId: string): boolean {
 export function invalidateCraftingRecipeCache(): void {
 	mergedCache = null;
 	vaultCache = null;
+	removedIds = new Set();
 }
 
 export async function refreshCraftingRecipes(
@@ -35,7 +38,10 @@ export async function refreshCraftingRecipes(
 ): Promise<CraftingRecipe[]> {
 	const custom = await getVaultRecipes(plugin);
 	vaultCache = custom;
-	mergedCache = mergeRecipes(DEFAULT_CRAFTING_RECIPES, custom);
+	removedIds = new Set(await getRemovedRecipeIds(plugin));
+	mergedCache = mergeRecipes(DEFAULT_CRAFTING_RECIPES, custom).filter(
+		(recipe) => !removedIds.has(recipe.id)
+	);
 	return mergedCache;
 }
 

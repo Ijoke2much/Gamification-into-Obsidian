@@ -1,7 +1,7 @@
 import type { Quest } from './taskParser';
-import type { ProjectSummary } from './questProjectUtils';
+import type { ProjectKind, ProjectSummary } from './questProjectUtils';
 
-export type ContractBadgeVariant = 'momentum' | 'due' | 'stalled' | 'urgent' | 'reward';
+export type ContractBadgeVariant = 'momentum' | 'due' | 'stalled' | 'urgent' | 'reward' | 'life';
 
 export interface ContractBadge {
 	variant: ContractBadgeVariant;
@@ -18,6 +18,7 @@ export interface ContractWaypoint {
 
 export interface ContractDisplayModel {
 	id: string;
+	kind: ProjectKind;
 	title: string;
 	subtitle: string | null;
 	progressPercent: number;
@@ -53,6 +54,7 @@ export function getNextWaypointQuest(project: ProjectSummary): Quest | null {
  * Turning in completes the header and pays out its reward metadata.
  */
 export function isReadyForTurnIn(project: ProjectSummary): boolean {
+	if (project.kind === 'standing') return false;
 	const header = project.headerQuest;
 	if (!header || header.completed) return false;
 
@@ -129,6 +131,9 @@ function difficultyLabel(project: ProjectSummary): string | null {
 }
 
 function buildBadges(project: ProjectSummary): ContractBadge[] {
+	if (project.kind === 'standing') {
+		return [{ variant: 'life', label: 'FOR LIFE' }];
+	}
 	const badges: ContractBadge[] = [];
 	const due = project.headerQuest?.due;
 	const days = daysUntilDue(due);
@@ -180,6 +185,11 @@ function percentTone(project: ProjectSummary): 'gold' | 'amber' | 'muted' | 'gre
 }
 
 function metaLine(project: ProjectSummary): string {
+	if (project.kind === 'standing') {
+		const next = firstIncompleteTask(project);
+		if (!next) return 'Nothing due right now';
+		return next.recur ? `${next.title} · ${next.recur}` : next.title;
+	}
 	const parts: string[] = [];
 	const totalWaypoints = project.tasks.length;
 	if (totalWaypoints > 0) {
@@ -214,6 +224,7 @@ function subtitleLine(project: ProjectSummary): string | null {
 export function toContractDisplay(project: ProjectSummary): ContractDisplayModel {
 	return {
 		id: project.id,
+		kind: project.kind,
 		title: project.title,
 		subtitle: subtitleLine(project),
 		progressPercent: project.progressPercent,
@@ -232,6 +243,7 @@ export function toContractDisplay(project: ProjectSummary): ContractDisplayModel
 
 /** Header turned in or abandoned — exclude from active slot and open roster. */
 export function isClosedContract(project: ProjectSummary): boolean {
+	if (project.kind === 'standing') return false;
 	return Boolean(project.headerQuest?.completed);
 }
 

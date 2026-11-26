@@ -12,6 +12,19 @@ export type Rank =
 	| 'SSS+'
 	| '???';
 
+const RANK_CAPS: Array<{ rank: Rank; maxLevel: number }> = [
+	{ rank: 'E', maxLevel: 15 },
+	{ rank: 'D', maxLevel: 25 },
+	{ rank: 'C', maxLevel: 50 },
+	{ rank: 'B', maxLevel: 75 },
+	{ rank: 'A', maxLevel: 100 },
+	{ rank: 'S', maxLevel: 200 },
+	{ rank: 'SS', maxLevel: 500 },
+	{ rank: 'SSS', maxLevel: 700 },
+	{ rank: 'SSS+', maxLevel: 999 },
+	{ rank: '???', maxLevel: Number.POSITIVE_INFINITY },
+];
+
 export function getRankFromLevel(level: number): Rank {
 	const lv = Math.max(1, Math.floor(level || 1));
 	if (lv <= 15) return 'E';
@@ -24,6 +37,28 @@ export function getRankFromLevel(level: number): Rank {
 	if (lv <= 700) return 'SSS';
 	if (lv <= 999) return 'SSS+';
 	return '???';
+}
+
+export function getRankProgress(level: number): {
+	rank: Rank;
+	nextRank: Rank | null;
+	percent: number;
+} {
+	const lv = Math.max(1, Math.floor(level || 1));
+	const rank = getRankFromLevel(lv);
+	const index = RANK_CAPS.findIndex((band) => band.rank === rank);
+	const prevMax = index <= 0 ? 0 : RANK_CAPS[index - 1].maxLevel;
+	const thisMax = RANK_CAPS[index]?.maxLevel ?? Number.POSITIVE_INFINITY;
+	if (!Number.isFinite(thisMax)) {
+		return { rank, nextRank: null, percent: 100 };
+	}
+	const span = Math.max(1, thisMax - prevMax);
+	const percent = Math.min(100, Math.max(0, Math.round(((lv - prevMax) / span) * 100)));
+	return {
+		rank,
+		nextRank: RANK_CAPS[index + 1]?.rank ?? null,
+		percent,
+	};
 }
 
 export function getRankWhisper(rank: Rank): string {

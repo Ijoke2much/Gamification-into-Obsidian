@@ -3,8 +3,14 @@ import { playerStore } from '../../../shared/state/playerStore';
 import { PlayerData, Artifact } from '../../../data/models/PlayerData';
 import styles from './ActiveArtifactsCard.module.css';
 
-export const ActiveArtifactsCard: React.FC = () => {
+export interface ActiveArtifactsCardProps {
+    /** Mobile: start collapsed — header only until expand */
+    collapsed?: boolean;
+}
+
+export const ActiveArtifactsCard: React.FC<ActiveArtifactsCardProps> = ({ collapsed = false }) => {
     const [playerData, setPlayerData] = useState<PlayerData | null>(null);
+    const [expanded, setExpanded] = useState(!collapsed);
 
     useEffect(() => {
         // Get initial data
@@ -58,10 +64,20 @@ export const ActiveArtifactsCard: React.FC = () => {
 
     return (
         <div className={styles.statusCard}>
-            <div className={styles.statusHeader}>
-                <h3 className={styles.statusTitle}>🏺 Active Real-World Activities</h3>
-            </div>
-            
+            <button
+                type="button"
+                className={styles.statusHeader}
+                onClick={collapsed ? () => setExpanded((v) => !v) : undefined}
+                style={collapsed ? { width: '100%', cursor: 'pointer', background: 'transparent', border: 'none', textAlign: 'left' } : undefined}
+                aria-expanded={collapsed ? expanded : undefined}
+            >
+                <h3 className={styles.statusTitle}>
+                    {collapsed ? `${expanded ? '▾' : '▸'} ` : ''}🏺 Active Real-World Activities
+                    {collapsed ? ` (${activeArtifacts.length})` : ''}
+                </h3>
+            </button>
+
+            {(!collapsed || expanded) && (
             <div className={styles.statusContent}>
                 {activeArtifacts.map((artifact, index) => (
                     <div key={index} className={styles.artifactItem}>
@@ -82,10 +98,13 @@ export const ActiveArtifactsCard: React.FC = () => {
                     </div>
                 ))}
                 
+                {!collapsed && (
                 <div className={styles.artifactsTip}>
                     <small>💡 Use artifact items from your inventory to enable real-world activities that show here!</small>
                 </div>
+                )}
             </div>
+            )}
         </div>
     );
 };

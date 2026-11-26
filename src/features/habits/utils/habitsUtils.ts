@@ -684,20 +684,12 @@ export const loadHabitsFromFile = async (vault: Vault): Promise<HabitData[]> => 
                         const content = await vault.read(file);
                         const { frontmatter, body } = extractFrontmatter(content);
 
-                        // Backfill sortOrder into frontmatter if missing/invalid (one-time migration)
+                        // Backfill sortOrder in memory only during load (avoid iCloud write storms on mobile)
                         if (frontmatter && typeof frontmatter === 'object') {
                             const existing = Number((frontmatter as any).sortOrder);
                             if (!Number.isFinite(existing)) {
                                 (frontmatter as any).sortOrder = nextDefaultOrder;
                                 nextDefaultOrder += 10;
-
-                                try {
-                                    const yaml = stringifyYaml(frontmatter);
-                                    const nextContent = `---\n${yaml}---\n${body}`;
-                                    await vault.modify(file, nextContent);
-                                } catch (e) {
-                                    console.warn('Failed to backfill sortOrder for habit:', file.path, e);
-                                }
                             }
                         }
 

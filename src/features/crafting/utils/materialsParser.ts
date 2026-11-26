@@ -1,5 +1,10 @@
 import type GamifiedObsidianPlugin from '../../../core/main';
 import type { CraftingMaterial } from '../types/CraftingTypes';
+import {
+	clearVaultMarkdownFileCache,
+	resolveVaultMarkdownFile,
+} from '../../../shared/utils/resolveVaultMarkdownFile';
+import { modifyWithBackup } from '../../../shared/utils/vaultDataBackup';
 
 const MATERIAL_RARITIES = ['common', 'uncommon', 'rare', 'epic', 'legendary'] as const;
 const MATERIAL_CATEGORIES = ['herb', 'mineral', 'essence', 'crystal', 'organic', 'mystical', 'component'] as const;
@@ -18,14 +23,18 @@ export const MATERIALS_FILE_BASENAME = 'materials';
 
 const MATERIALS_FILE_HEADER = `# Crafting Materials
 
-// Managed by Gamification — custom entries merge with built-in defaults by id.
-// Example:
-// 🌙 Moonleaf #material #herb #uncommon
-// // id: moonleaf
-// // baseValue: 8
-// // quality: fresh
-// // source: quest
+Managed by Gamification — custom entries merge with built-in defaults by id.
+
+Format (title line must include the material tag; meta lines use // key: value):
+
+\`\`\`
+🌙 Moonleaf #material #herb #uncommon
+// id: moonleaf
+// baseValue: 8
 // Gathers only under moonlight.
+\`\`\`
+
+Add your materials below this line.
 `;
 
 function slugify(name: string): string {
@@ -44,6 +53,7 @@ function parseMetaLine(line: string): { key: string; value: string } | null {
 
 function parseMaterialHeaderLine(line: string): Partial<CraftingMaterial> & { tags: string[] } | null {
 	if (!line.includes('#material')) return null;
+	if (line.startsWith('//')) return null;
 
 	const iconMatch = line.match(/^([\p{Emoji}\p{So}\p{Sk}\p{Sc}\p{Sm}])\s+/u);
 	let icon: string | undefined;
@@ -52,9 +62,15 @@ function parseMaterialHeaderLine(line: string): Partial<CraftingMaterial> & { ta
 		icon = iconMatch[1];
 		rest = line.slice(iconMatch[0].length);
 	}
+	// Corrupted / pasted example lines like "📦 // 🌙 Moonleaf #material"
+	if (rest.trimStart().startsWith('//')) return null;
 
-	const name = rest.split(' #')[0].trim();
-	if (!name) return null;
+	const name = rest
+		.split(' #')[0]
+		.trim()
+		.replace(/^\/\/\s*/, '')
+		.trim();
+	if (!name || name.startsWith('//')) return null;
 
 	const tagMatches = [...rest.matchAll(/#(\w+)/g)].map((m) => m[1].toLowerCase());
 	const rarity =
@@ -76,9 +92,17 @@ function parseMaterialHeaderLine(line: string): Partial<CraftingMaterial> & { ta
 export function parseMaterialsFromLines(lines: string[]): CraftingMaterial[] {
 	const materials: CraftingMaterial[] = [];
 
+	let inFence = false;
 	for (let i = 0; i < lines.length; i++) {
 		const line = lines[i].trim();
+		if (line.startsWith('```')) {
+			inFence = !inFence;
+			continue;
+		}
+		if (inFence) continue;
 		if (!line) continue;
+		// Comment lines are never material titles (avoids header examples becoming ghosts)
+		if (line.startsWith('//')) continue;
 		if (line.startsWith('#') && !line.includes('#material')) continue;
 
 		const header = parseMaterialHeaderLine(line);
@@ -134,9 +158,32 @@ export function parseMaterialsFromLines(lines: string[]): CraftingMaterial[] {
 }
 
 export function findMaterialsFile(plugin: GamifiedObsidianPlugin) {
-	return plugin.app.vault
-		.getMarkdownFiles()
-		.find((f) => f.basename.toLowerCase() === MATERIALS_FILE_BASENAME);
+	return resolveVaultMarkdownFile(plugin.app, MATERIALS_FILE_BASENAME, [
+		'Materials.md',
+		'materials.md',
+		'Gamification/Materials.md',
+		'Gamified/Materials.md',
+	]);
+}
+
+export function parseRemovedMaterialIds(content: string): string[] {
+	const ids: string[] = [];
+	for (const line of content.split('\n')) {
+		const match = line.match(/^\/\/\s*removed:\s*(.+)$/i);
+		if (!match) continue;
+		for (const part of match[1].split(',')) {
+			const id = part.trim();
+			if (id) ids.push(id);
+		}
+	}
+	return ids;
+}
+
+export async function getRemovedMaterialIds(plugin: GamifiedObsidianPlugin): Promise<string[]> {
+	const file = findMaterialsFile(plugin);
+	if (!file) return [];
+	const content = await plugin.app.vault.read(file);
+	return parseRemovedMaterialIds(content);
 }
 
 export async function getVaultMaterials(plugin: GamifiedObsidianPlugin): Promise<CraftingMaterial[]> {
@@ -153,7 +200,9 @@ export async function ensureMaterialsFile(plugin: GamifiedObsidianPlugin): Promi
 	if (existing) return true;
 
 	try {
+		clearVaultMarkdownFileCache(MATERIALS_FILE_BASENAME);
 		await plugin.app.vault.create('Materials.md', MATERIALS_FILE_HEADER);
+		clearVaultMarkdownFileCache(MATERIALS_FILE_BASENAME);
 		return true;
 	} catch (error) {
 		console.error('[materialsParser] Failed to create Materials.md', error);
@@ -181,21 +230,43 @@ export function serializeMaterial(material: CraftingMaterial): string[] {
 
 export async function writeVaultMaterials(
 	plugin: GamifiedObsidianPlugin,
-	materials: CraftingMaterial[]
+	materials: CraftingMaterial[],
+	removedIds?: string[]
 ): Promise<void> {
 	await ensureMaterialsFile(plugin);
 	const file = findMaterialsFile(plugin);
 	if (!file) return;
 
+	const prior = removedIds ?? (await getRemovedMaterialIds(plugin));
+	const writing = new Set(materials.map((material) => material.id));
+	const keptRemoved = [...new Set(prior.filter((id) => id && !writing.has(id)))];
+	const removedLines = keptRemoved.map((id) => `// removed: ${id}`);
+
 	const body = [
 		'# Crafting Materials',
 		'',
 		'// Managed by Gamification — custom entries merge with built-in defaults by id.',
+		...(removedLines.length ? ['', ...removedLines] : []),
 		'',
 		...materials.flatMap((m, idx) => (idx === 0 ? serializeMaterial(m) : ['', ...serializeMaterial(m)])),
 	].join('\n');
 
-	await plugin.app.vault.modify(file, body);
+	await modifyWithBackup(plugin.app.vault, file, body);
+}
+
+export async function deleteCraftingMaterial(
+	plugin: GamifiedObsidianPlugin,
+	materialId: string
+): Promise<void> {
+	await ensureMaterialsFile(plugin);
+	const file = findMaterialsFile(plugin);
+	const content = file ? await plugin.app.vault.read(file) : '';
+	const removed = new Set(parseRemovedMaterialIds(content));
+	removed.add(materialId);
+	const materials = parseMaterialsFromLines(content.split('\n')).filter(
+		(material) => material.id !== materialId
+	);
+	await writeVaultMaterials(plugin, materials, [...removed]);
 }
 
 export async function upsertVaultMaterial(

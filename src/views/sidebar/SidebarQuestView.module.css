@@ -81,6 +81,20 @@
   gap: 6px;
 }
 
+.actionColumnCompact {
+  flex-direction: row;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.actionColumnCompact .addButton,
+.actionColumnCompact .captureButton {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 8px;
+  font-size: 11px;
+}
+
 .addButton {
   width: 100%;
   border: 1px solid rgba(91, 156, 255, 0.5);
@@ -876,21 +890,22 @@
 }
 
 .inboxGroupTitle {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: rgba(231, 210, 149, 0.9);
-  margin-bottom: 5px;
+  font-size: 12px;
+  text-transform: none;
+  letter-spacing: 0.02em;
+  color: #7dd3fc;
+  margin-bottom: 6px;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  font-weight: 650;
 }
 
 .inboxGroupHeaderButton {
   width: 100%;
   border: none;
   background: transparent;
-  padding: 0;
+  padding: 4px 0;
   text-align: left;
   cursor: pointer;
 }
@@ -902,17 +917,25 @@
 }
 
 .groupChevron {
-  color: rgba(210, 223, 245, 0.75);
+  color: rgba(34, 200, 255, 0.65);
   font-size: 11px;
   width: 10px;
 }
 
 .groupCount {
-  font-size: 10px;
-  border: 1px solid rgba(126, 146, 183, 0.35);
-  border-radius: 999px;
-  padding: 0 6px;
-  color: rgba(196, 210, 234, 0.76);
+  font-size: 11px;
+  font-weight: 700;
+  border: 1px solid rgba(34, 200, 255, 0.28);
+  border-radius: 6px;
+  min-width: 22px;
+  height: 18px;
+  padding: 0 7px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(12, 28, 48, 0.85);
+  color: rgba(200, 220, 245, 0.9);
+  font-variant-numeric: tabular-nums;
 }
 
 .inboxList {
@@ -935,6 +958,18 @@
   color: rgba(201, 223, 255, 0.92);
   background: rgba(37, 67, 120, 0.22);
   text-align: center;
+}
+
+.inboxItemHasFile {
+  flex-wrap: wrap;
+}
+
+.sprintFileRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  flex: 1 0 100%;
+  margin-top: 8px;
 }
 
 .inboxItem {
@@ -996,6 +1031,32 @@
   align-items: center;
   gap: 4px;
   flex-shrink: 0;
+}
+
+.inboxScheduleBtn {
+  appearance: none;
+  -webkit-appearance: none;
+  flex-shrink: 0;
+  margin: 0;
+  padding: 4px 8px;
+  border: none;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--clay-accent, #5bb8b0) 22%, var(--clay-surface, #f7f3ec));
+  box-shadow: var(--clay-shadow);
+  color: var(--clay-accent-deep, #3fa39a);
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+
+.container.pixelSidebarQuestShell .inboxScheduleBtn {
+  border-radius: 0;
+  border: 1px solid rgba(34, 200, 255, 0.55);
+  background: rgba(8, 28, 54, 0.98);
+  box-shadow: none;
+  color: #22c8ff;
 }
 
 .badgePriority {
@@ -1068,13 +1129,147 @@
   isolation: isolate;
 }
 
+.claySidebarQuestShell {
+  isolation: isolate;
+}
+
+.container.claySidebarQuestShell {
+  padding: 12px;
+  gap: 12px;
+  background: transparent;
+  color: var(--clay-text, #3a342c);
+  font-family: var(--go-font-ui, "Nunito", "Segoe UI", system-ui, sans-serif);
+  font-size: 13px;
+  line-height: 1.45;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  box-sizing: border-box;
+}
+
+.container.claySidebarQuestShell .panelTitle {
+  font-family: inherit;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--clay-text-strong, #2c2722);
+  text-shadow: none;
+}
+
+.container.claySidebarQuestShell .section {
+  border: none;
+  border-radius: var(--clay-radius, 24px);
+  background: var(--clay-gradient);
+  box-shadow: var(--clay-shadow);
+}
+
+.container.claySidebarQuestShell .sectionTitle {
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--clay-accent-deep, #3fa39a);
+  text-shadow: none;
+  letter-spacing: 0.06em;
+}
+
+.container.claySidebarQuestShell .timelineNowBtn,
+.container.claySidebarQuestShell .calendarCollapseBtn,
+.container.claySidebarQuestShell .filterSelect {
+  border: none;
+  border-radius: 16px;
+  background: var(--clay-button-gradient);
+  color: var(--clay-text, #3a342c);
+  font-family: inherit;
+  box-shadow: var(--clay-shadow);
+}
+
+.container.claySidebarQuestShell .timelineTrack,
+.container.claySidebarQuestShell .calendarSection {
+  border: none;
+  border-radius: var(--clay-radius, 24px);
+  background: var(--clay-gradient);
+  box-shadow: var(--clay-shadow);
+}
+
+.container.claySidebarQuestShell .inboxItem {
+  border: none;
+  border-radius: 16px;
+  background: var(--clay-surface-2, #efe6d8);
+  box-shadow: var(--clay-recessed-soft);
+  color: var(--clay-text, #3a342c);
+}
+
+.container.claySidebarQuestShell .inboxItemTitle,
+.container.claySidebarQuestShell .inboxItemLeft,
+.container.claySidebarQuestShell .rowChevron {
+  color: var(--clay-text, #3a342c) !important;
+}
+
+.container.claySidebarQuestShell .badgeDue,
+.container.claySidebarQuestShell .badgeEnergy,
+.container.claySidebarQuestShell .badgeXpCompact,
+.container.claySidebarQuestShell .badgeCoinCompact,
+.container.claySidebarQuestShell .badgeTagCompact {
+  color: var(--clay-text, #3a342c) !important;
+  background: color-mix(in srgb, var(--clay-accent, #5bb8b0) 16%, var(--clay-surface, #f7f3ec)) !important;
+  border-color: transparent !important;
+}
+
+.container.claySidebarQuestShell .inboxGroupHeaderButton.inboxGroupTitle,
+.container.claySidebarQuestShell.mobileTodayRun .inboxGroupHeaderButton.inboxGroupTitle,
+.container.claySidebarQuestShell[data-gamification-mobile='true'] .inboxGroupHeaderButton.inboxGroupTitle {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  min-height: 40px !important;
+  margin: 0 0 8px !important;
+  padding: 8px 14px !important;
+  border: none !important;
+  border-radius: 18px !important;
+  background: var(--clay-surface-2, #efe6d8) !important;
+  box-shadow: var(--clay-recessed) !important;
+  color: var(--clay-text, #3a342c) !important;
+  font-family: inherit !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  letter-spacing: 0.02em !important;
+  text-transform: none !important;
+  text-shadow: none !important;
+}
+
+.container.claySidebarQuestShell .inboxGroupHeaderButton .groupTitleText,
+.container.claySidebarQuestShell.mobileTodayRun .inboxGroupHeaderButton .groupTitleText {
+  color: var(--clay-text, #3a342c) !important;
+}
+
+.container.claySidebarQuestShell .inboxGroupHeaderButton .groupChevron {
+  color: var(--clay-accent-deep, #3fa39a) !important;
+}
+
+.container.claySidebarQuestShell .inboxGroupHeaderButton .groupCount,
+.container.claySidebarQuestShell.mobileTodayRun .inboxGroupHeaderButton .groupCount {
+  border: none !important;
+  border-radius: 999px !important;
+  background: color-mix(in srgb, var(--clay-accent, #5bb8b0) 22%, var(--clay-surface, #f7f3ec)) !important;
+  color: var(--clay-accent-deep, #3fa39a) !important;
+}
+
+.container.claySidebarQuestShell .emptyState {
+  color: var(--clay-text-light, #8a8278);
+}
+
+.container.claySidebarQuestShell[data-quests-density='wide'] .boardInbox {
+  border: none;
+  background: var(--clay-gradient);
+  box-shadow: var(--clay-shadow);
+  border-radius: var(--clay-radius, 24px);
+}
+
 /* Pixel / RPG shell — tokens from visualThemeManager (Classic preset by default) */
 .container.pixelSidebarQuestShell {
   padding: 10px;
   gap: 10px;
-  background: var(--pixel-bg);
-  color: var(--pixel-text);
-  font-family: var(--gamify-font-ui, "Press Start 2P", "VT323", "Courier New", monospace);
+  background: var(--go-bg, var(--pixel-bg));
+  color: var(--go-text, var(--pixel-text));
+  font-family: var(--go-font-ui, var(--gamify-font-ui, "Press Start 2P", "VT323", "Courier New", monospace));
   font-size: 11px;
   line-height: 1.6;
   border: 2px solid var(--pixel-border-dark);
@@ -1084,9 +1279,9 @@
 }
 
 .container.pixelSidebarQuestShell .panelTitle {
-  font-family: "Press Start 2P", "VT323", monospace;
+  font-family: var(--go-font-ui, "Press Start 2P", "VT323", monospace);
   font-size: 12px;
-  color: var(--pixel-text);
+  color: var(--go-text, var(--pixel-text));
   text-shadow: 2px 2px 0 var(--pixel-border-dark);
 }
 
@@ -1095,7 +1290,7 @@
   border: 2px solid var(--pixel-border-dark);
   background: var(--pixel-panel-alt);
   color: var(--pixel-muted);
-  font-family: "Press Start 2P", monospace;
+  font-family: var(--go-font-ui, "Press Start 2P", monospace);
   font-size: 7px;
   box-shadow: var(--pixel-shadow-pressed);
 }
@@ -1105,7 +1300,7 @@
   border: 2px solid var(--pixel-border-dark);
   background: var(--pixel-panel-alt);
   color: var(--pixel-accent);
-  font-family: "Press Start 2P", monospace;
+  font-family: var(--go-font-ui, "Press Start 2P", monospace);
   font-size: 8px;
   box-shadow: var(--pixel-shadow);
 }
@@ -1120,7 +1315,7 @@
   border: 2px solid var(--pixel-border-dark);
   background: var(--pixel-panel-alt);
   color: var(--pixel-text, var(--text-normal));
-  font-family: "Press Start 2P", monospace;
+  font-family: var(--go-font-ui, "Press Start 2P", monospace);
   font-size: 7px;
   box-shadow: var(--pixel-shadow);
 }
@@ -1143,7 +1338,7 @@
 }
 
 .container.pixelSidebarQuestShell .sectionTitle {
-  font-family: "Press Start 2P", monospace;
+  font-family: var(--go-font-ui, "Press Start 2P", monospace);
   font-size: 8px;
   color: var(--pixel-accent);
   text-shadow: 1px 1px 0 var(--pixel-border-dark);
@@ -1153,12 +1348,12 @@
   border-radius: var(--pixel-card-radius);
   border: 2px solid var(--pixel-border-dark);
   background: var(--pixel-panel-alt);
-  color: var(--pixel-text);
+  color: var(--go-text, var(--pixel-text));
   box-shadow: var(--pixel-shadow-pressed);
 }
 
 .container.pixelSidebarQuestShell .timelineHeader {
-  font-family: "Press Start 2P", monospace;
+  font-family: var(--go-font-ui, "Press Start 2P", monospace);
   font-size: 9px;
 }
 
@@ -1167,7 +1362,7 @@
   border: 2px solid var(--pixel-border-dark);
   background: var(--pixel-panel-alt);
   color: #86efac;
-  font-family: "Press Start 2P", monospace;
+  font-family: var(--go-font-ui, "Press Start 2P", monospace);
   font-size: 7px;
   box-shadow: var(--pixel-shadow-pressed);
 }
@@ -1180,14 +1375,14 @@
 .container.pixelSidebarQuestShell .timelineNowMarkerLabel {
   border-radius: var(--pixel-card-radius);
   border: 2px solid var(--pixel-border-dark);
-  font-family: "Press Start 2P", monospace;
+  font-family: var(--go-font-ui, "Press Start 2P", monospace);
   font-size: 6px;
 }
 
 .container.pixelSidebarQuestShell .timelineEmptyAdd {
   border-radius: var(--pixel-card-radius);
   border: 2px solid var(--pixel-border-dark);
-  font-family: "Press Start 2P", monospace;
+  font-family: var(--go-font-ui, "Press Start 2P", monospace);
   font-size: 8px;
   box-shadow: var(--pixel-shadow-pressed);
 }
@@ -1199,7 +1394,7 @@
 }
 
 .container.pixelSidebarQuestShell .timelineQuestTitle {
-  font-family: "Press Start 2P", monospace;
+  font-family: var(--go-font-ui, "Press Start 2P", monospace);
   font-size: 9px !important;
 }
 
@@ -1212,13 +1407,13 @@
   border-radius: var(--pixel-card-radius);
   border: 2px solid var(--pixel-border-dark);
   background: var(--pixel-panel-alt);
-  color: var(--pixel-text);
+  color: var(--go-text, var(--pixel-text));
   font-family: "VT323", monospace;
   font-size: 14px;
 }
 
 .container.pixelSidebarQuestShell .inboxGroupTitle {
-  font-family: "Press Start 2P", monospace;
+  font-family: var(--go-font-ui, "Press Start 2P", monospace);
   font-size: 8px;
 }
 
@@ -1238,5 +1433,656 @@
 }
 
 .container.pixelSidebarQuestShell .timelinePlanner::-webkit-scrollbar-track {
+  border-radius: 0;
+}
+
+/* System Hunter shell */
+:global([data-gamification-shell='system']) .container.pixelSidebarQuestShell {
+  border-width: 1px !important;
+  border-color: var(--go-border, rgba(34, 200, 255, 0.42)) !important;
+  border-radius: var(--go-radius, 2px) !important;
+  box-shadow: var(--go-shadow, 0 0 22px rgba(34, 200, 255, 0.24)) !important;
+  font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+}
+
+:global([data-gamification-shell='system']) .container.pixelSidebarQuestShell .panelTitle,
+:global([data-gamification-shell='system']) .container.pixelSidebarQuestShell .sectionTitle {
+  font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+  text-shadow: none !important;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--go-accent, #22c8ff) !important;
+}
+
+:global([data-gamification-shell='system']) .container.pixelSidebarQuestShell .addButton,
+:global([data-gamification-shell='system']) .container.pixelSidebarQuestShell .captureButton,
+:global([data-gamification-shell='system']) .container.pixelSidebarQuestShell .linkButton {
+  font-family: var(--go-font-ui, ui-monospace, "SF Mono", Menlo, Consolas, monospace) !important;
+  font-size: 0.78rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+  border-width: 2px !important;
+  border-style: solid !important;
+  border-color: var(--go-accent, #22c8ff) !important;
+  border-radius: 0 !important;
+  background: rgba(12, 70, 98, 0.72) !important;
+  color: var(--go-accent, #22c8ff) !important;
+  box-shadow: inset 0 0 0 1px rgba(34, 200, 255, 0.18),
+    0 0 14px rgba(34, 200, 255, 0.22) !important;
+  text-shadow: 0 0 8px rgba(34, 200, 255, 0.35) !important;
+  min-height: 44px !important;
+  padding: 10px 12px !important;
+}
+
+:global([data-gamification-shell='system']) .container.pixelSidebarQuestShell .addButton:hover,
+:global([data-gamification-shell='system']) .container.pixelSidebarQuestShell .captureButton:hover {
+  transform: none !important;
+  background: rgba(18, 96, 130, 0.85) !important;
+  border-color: #7dd3fc !important;
+  color: #e0f2fe !important;
+}
+
+:global([data-gamification-shell='system']) .container.pixelSidebarQuestShell .mobileFilterChip {
+  font-family: var(--go-font-ui, ui-monospace, "SF Mono", Menlo, Consolas, monospace) !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  border-radius: 0 !important;
+  border-width: 2px !important;
+  border-color: rgba(34, 200, 255, 0.55) !important;
+  background: rgba(8, 28, 54, 0.85) !important;
+  color: var(--go-accent, #22c8ff) !important;
+  box-shadow: 0 0 10px rgba(34, 200, 255, 0.12) !important;
+}
+
+:global([data-gamification-shell='system']) .container.pixelSidebarQuestShell .mobileFilterChipActive {
+  border-color: var(--go-accent, #22c8ff) !important;
+  background: rgba(12, 70, 98, 0.9) !important;
+  color: #e0f2fe !important;
+  box-shadow: inset 0 0 0 1px rgba(34, 200, 255, 0.25),
+    0 0 14px rgba(34, 200, 255, 0.28) !important;
+}
+
+/* Mobile Quests — Solo Leveling system buttons even if shell attr misses */
+.container[data-gamification-mobile='true'] .addButton,
+.container[data-gamification-mobile='true'] .captureButton {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: 2px solid #22c8ff;
+  border-radius: 0;
+  background: rgba(12, 70, 98, 0.72);
+  color: #22c8ff;
+  box-shadow: inset 0 0 0 1px rgba(34, 200, 255, 0.18),
+    0 0 14px rgba(34, 200, 255, 0.22);
+  text-shadow: 0 0 8px rgba(34, 200, 255, 0.35);
+  min-height: 46px;
+  padding: 12px;
+}
+
+.container[data-gamification-mobile='true'] .mobileFilterChip {
+  font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border-radius: 0;
+  border: 2px solid rgba(34, 200, 255, 0.55);
+  background: rgba(8, 28, 54, 0.85);
+  color: #22c8ff;
+}
+
+.container[data-gamification-mobile='true'] .mobileFilterChipActive {
+  border-color: #22c8ff;
+  background: rgba(12, 70, 98, 0.9);
+  color: #e0f2fe;
+}
+
+/* Mobile inbox group headers — match System calendar chrome (not Obsidian default buttons) */
+.mobileTodayRun .inboxGroupHeaderButton.inboxGroupTitle,
+.container[data-gamification-mobile='true'] .inboxGroupHeaderButton.inboxGroupTitle {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  width: 100% !important;
+  min-height: 44px !important;
+  margin: 0 0 6px !important;
+  padding: 10px 12px !important;
+  border-radius: 0 !important;
+  border: 1px solid rgba(34, 200, 255, 0.55) !important;
+  background: linear-gradient(180deg, rgba(10, 40, 72, 0.92), rgba(4, 16, 34, 0.96)) !important;
+  color: #22c8ff !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(34, 200, 255, 0.12),
+    0 0 12px rgba(34, 200, 255, 0.12) !important;
+  font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.1em !important;
+  text-transform: uppercase !important;
+  text-shadow: 0 0 8px rgba(34, 200, 255, 0.25) !important;
+}
+
+.mobileTodayRun .inboxGroupHeaderButton .groupTitleText,
+.container[data-gamification-mobile='true'] .inboxGroupHeaderButton .groupTitleText {
+  color: #baf0ff !important;
+  gap: 8px;
+}
+
+.mobileTodayRun .inboxGroupHeaderButton .groupChevron,
+.container[data-gamification-mobile='true'] .inboxGroupHeaderButton .groupChevron {
+  color: #22c8ff !important;
+}
+
+.mobileTodayRun .inboxGroupHeaderButton .groupCount,
+.container[data-gamification-mobile='true'] .inboxGroupHeaderButton .groupCount {
+  border-radius: 0 !important;
+  border: 1px solid rgba(34, 200, 255, 0.45) !important;
+  background: rgba(2, 10, 22, 0.65) !important;
+  color: #7dd3fc !important;
+  padding: 2px 8px !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  min-width: 22px;
+  text-align: center;
+}
+
+.mobileTodayRun .inboxGroupHeaderButton:active,
+.container[data-gamification-mobile='true'] .inboxGroupHeaderButton:active {
+  border-color: #22c8ff !important;
+  background: rgba(16, 60, 100, 0.95) !important;
+  color: #e0f2fe !important;
+}
+
+:global([data-gamification-shell='system']) .container.pixelSidebarQuestShell .inboxGroupHeaderButton.inboxGroupTitle {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  border-radius: 0 !important;
+  border: 1px solid rgba(34, 200, 255, 0.5) !important;
+  background: linear-gradient(180deg, rgba(10, 40, 72, 0.88), rgba(4, 16, 34, 0.94)) !important;
+  color: var(--go-accent, #22c8ff) !important;
+  box-shadow: inset 0 0 0 1px rgba(34, 200, 255, 0.1) !important;
+  font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.1em !important;
+  padding: 10px 12px !important;
+  min-height: 40px !important;
+}
+
+:global([data-gamification-shell='system']) .container.pixelSidebarQuestShell .groupCount {
+  border-radius: 0 !important;
+  border-color: rgba(34, 200, 255, 0.4) !important;
+  color: #7dd3fc !important;
+  background: rgba(2, 10, 22, 0.55) !important;
+}
+
+/* Mobile Today's Run — tighter rhythm so strip + next-up stay above the fold */
+.mobileTodayRun {
+  padding: 8px;
+  gap: 8px;
+}
+
+.mobileTodayRun .panelHeader {
+  margin-bottom: 0;
+}
+
+.mobileTodayRun .panelTitle {
+  font-size: 1.05rem;
+}
+
+.mobileFilterRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 4px;
+}
+
+.mobileFilterChip {
+  min-height: 40px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--background-modifier-border);
+  background: var(--background-secondary);
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.mobileFilterChipActive {
+  border-color: rgba(125, 211, 252, 0.65);
+  background: rgba(56, 189, 248, 0.22);
+  color: #e0f2fe;
+}
+
+.mobileQuestsLoading {
+  padding: 10px 4px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.dayPlanCollapsedHint {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 8px;
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px dashed var(--background-modifier-border);
+  background: var(--background-secondary);
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dayPlanSectionMobile {
+  margin: 4px -6px 0;
+  padding: 8px 4px 10px;
+  border-radius: 10px;
+  border: 1px solid var(--go-border, rgba(34, 200, 255, 0.28));
+  background: var(--go-panel, linear-gradient(180deg, rgba(8, 22, 42, 0.55), rgba(4, 12, 24, 0.35)));
+  box-shadow: var(--go-shadow-soft, 0 0 18px rgba(34, 200, 255, 0.08));
+  width: calc(100% + 12px);
+  max-width: none;
+  box-sizing: border-box;
+}
+
+.dayPlanSectionDesktop {
+  margin-top: 8px;
+  padding: 10px 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--go-border, rgba(34, 200, 255, 0.22));
+  background: var(--go-panel, linear-gradient(180deg, rgba(8, 22, 42, 0.45), rgba(4, 12, 24, 0.28)));
+  box-shadow: var(--go-shadow-soft, 0 0 16px rgba(34, 200, 255, 0.06));
+  box-sizing: border-box;
+}
+
+/*
+ * Mission board — fill the pane when wide (optimize layout, don't shrink away).
+ * Soft ceiling keeps ultra-wide monitors from becoming unreadably stretched.
+ */
+.desktopMissionBoard {
+  width: 100%;
+  max-width: 1100px;
+  box-sizing: border-box;
+}
+
+.boardMain {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+}
+
+.boardDayPlan,
+.boardInbox {
+  min-width: 0;
+}
+
+.container[data-quests-density='wide'] .boardMain {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(280px, 1fr);
+  gap: 16px;
+  align-items: start;
+  width: 100%;
+}
+
+/* Wide: actions sit as a pair under the full-width HUD */
+.container[data-quests-density='wide'] .actionColumn {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  width: 100%;
+}
+
+.container[data-quests-density='wide'] .actionColumn .addButton,
+.container[data-quests-density='wide'] .actionColumn .captureButton {
+  width: 100%;
+}
+
+.container[data-quests-density='wide'] .calendarSection {
+  width: 100%;
+}
+
+.container[data-quests-density='wide'] .boardDayPlan {
+  grid-column: 1;
+}
+
+.container[data-quests-density='wide'] .boardInbox {
+  grid-column: 2;
+  position: sticky;
+  top: 8px;
+  max-height: calc(100vh - 96px);
+  overflow-y: auto;
+  padding: 10px 10px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--go-border, rgba(34, 200, 255, 0.18));
+  background: var(--go-panel, linear-gradient(180deg, rgba(8, 22, 42, 0.4), rgba(4, 12, 24, 0.25)));
+  box-sizing: border-box;
+}
+
+.container[data-quests-density='wide'] .boardDayPlan.dayPlanSectionDesktop {
+  margin-top: 0;
+}
+
+.container[data-quests-density='wide'] [data-mobile-day-agenda] {
+  max-height: min(72vh, 780px);
+}
+
+.container[data-gamification-mobile='false'] [data-mobile-day-agenda] {
+  min-height: 380px;
+  max-height: min(68vh, 720px);
+}
+
+/* Beat Obsidian default button chrome inside the agenda (mobile + desktop) */
+.container [data-mobile-day-agenda] button {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  background-image: none !important;
+}
+
+/* Beat Obsidian button chrome inside Today's Run HUD */
+.container [data-today-run-strip] button {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  background-image: none !important;
+  box-shadow: none;
+}
+
+:global([data-gamification-visual-theme='system-hunter']) .container [data-today-run-strip] button {
+  border: 1px solid rgba(34, 200, 255, 0.42) !important;
+  border-radius: 2px !important;
+  color: var(--go-text, #e0f2fe) !important;
+  background-color: rgba(8, 24, 46, 0.62) !important;
+  background-image: linear-gradient(180deg, rgba(34, 200, 255, 0.16), transparent 40%) !important;
+  box-shadow: inset 0 0 12px rgba(34, 200, 255, 0.05) !important;
+  font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+  text-shadow: none !important;
+}
+
+:global([data-gamification-visual-theme='system-hunter']) .container [data-today-run-strip] button:hover {
+  border-color: rgba(34, 200, 255, 0.7) !important;
+  color: var(--go-text-bright, #f0f9ff) !important;
+  background-color: rgba(8, 32, 58, 0.7) !important;
+  background-image: linear-gradient(180deg, rgba(34, 200, 255, 0.22), transparent 42%) !important;
+}
+
+.container [data-mobile-day-agenda] button[data-agenda-check] {
+  border-radius: 999px !important;
+  width: 34px !important;
+  height: 34px !important;
+  min-width: 34px !important;
+  min-height: 34px !important;
+  padding: 0 !important;
+  background: var(--go-bg, #071222) !important;
+  border: 2px solid color-mix(in srgb, var(--go-accent, #22c8ff) 60%, transparent) !important;
+  box-shadow: none !important;
+}
+
+.container [data-mobile-day-agenda] button[data-agenda-menu] {
+  border-radius: 10px !important;
+  width: 32px !important;
+  height: 32px !important;
+  min-width: 32px !important;
+  min-height: 32px !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+
+.container[data-gamification-mobile='true'] [data-mobile-day-agenda] button[data-agenda-add] {
+  border-radius: 10px !important;
+  background: var(--go-card-soft, rgba(8, 28, 54, 0.85)) !important;
+  border: 1px dashed color-mix(in srgb, var(--go-accent, #22c8ff) 50%, transparent) !important;
+  color: var(--go-text, #e0f2fe) !important;
+  box-shadow: none !important;
+}
+
+.timelinePlannerMobile {
+  max-height: min(52vh, 420px);
+  min-height: 220px;
+}
+
+.timelinePlannerMobile .timelineQuestBlock {
+  min-height: 52px;
+  font-size: 12px;
+  padding: 8px 108px 8px 10px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  overflow: visible;
+}
+
+.timelinePlannerMobile .timelineQuestTitle {
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+.timelinePlannerMobile .timelineQuestTime {
+  font-size: 11px;
+  opacity: 0.9;
+}
+
+.timelineQuestActionsMobile {
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  top: 50% !important;
+  right: 6px !important;
+  transform: translateY(-50%) !important;
+  flex-wrap: nowrap;
+  max-width: none;
+  gap: 4px;
+  z-index: 3;
+}
+
+.timelineActionBtnMobile {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  min-width: 34px !important;
+  width: 34px !important;
+  height: 34px !important;
+  min-height: 34px !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  border: 1px solid rgba(34, 200, 255, 0.55) !important;
+  background: rgba(6, 22, 44, 0.95) !important;
+  color: #22c8ff !important;
+  box-shadow: none !important;
+  font-size: 14px !important;
+  font-weight: 700 !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  touch-action: manipulation;
+}
+
+.timelineActionBtnActive {
+  border-color: #22c8ff !important;
+  background: rgba(34, 200, 255, 0.18) !important;
+  color: #baf0ff !important;
+  box-shadow: 0 0 10px rgba(34, 200, 255, 0.25) !important;
+}
+
+.timelineMobileMenu {
+  display: none; /* replaced by portaled action sheet */
+}
+
+.timelineActionSheetBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100090;
+  background: rgba(2, 8, 18, 0.82);
+  display: flex;
+  align-items: flex-end;
+  justify-content: stretch;
+  isolation: isolate;
+}
+
+.timelineActionSheet {
+  width: 100%;
+  max-height: min(70dvh, 70vh);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid rgba(34, 200, 255, 0.55);
+  border-radius: 12px 12px 0 0;
+  background: linear-gradient(180deg, rgba(12, 40, 72, 0.98), rgba(2, 10, 22, 0.99));
+  box-shadow: 0 -12px 32px rgba(0, 0, 0, 0.5), 0 0 24px rgba(34, 200, 255, 0.18);
+  font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif);
+  animation: timelineSheetUp 0.2s ease-out;
+}
+
+@keyframes timelineSheetUp {
+  from {
+    transform: translateY(24px);
+    opacity: 0.6;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.timelineActionSheetHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 14px 10px;
+  border-bottom: 1px solid rgba(34, 200, 255, 0.28);
+}
+
+.timelineActionSheetEyebrow {
+  display: block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #22c8ff;
+}
+
+.timelineActionSheetTitle {
+  margin: 4px 0 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: #e0f2fe;
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+.timelineActionSheetClose {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  flex-shrink: 0;
+  width: 44px !important;
+  height: 44px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  border: 1px solid rgba(34, 200, 255, 0.7) !important;
+  background: rgba(8, 28, 54, 0.98) !important;
+  color: #22c8ff !important;
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  box-shadow: none !important;
+  touch-action: manipulation;
+}
+
+.timelineActionSheetBody {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px 14px calc(16px + env(safe-area-inset-bottom, 0px));
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.timelineActionSheetBtn {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  width: 100% !important;
+  min-height: 48px !important;
+  margin: 0 !important;
+  padding: 0 14px !important;
+  border-radius: 0 !important;
+  border: 1px solid rgba(34, 200, 255, 0.45) !important;
+  background: rgba(6, 22, 44, 0.95) !important;
+  color: #c8f0ff !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.08em !important;
+  text-transform: uppercase !important;
+  text-align: left !important;
+  box-shadow: inset 0 0 0 1px rgba(34, 200, 255, 0.1) !important;
+  touch-action: manipulation;
+}
+
+.timelineActionSheetBtn:active {
+  border-color: #22c8ff !important;
+  background: rgba(20, 70, 120, 0.9) !important;
+  color: #e0f2fe !important;
+}
+
+.timelineActionSheetBtnPrimary {
+  border-color: rgba(125, 220, 150, 0.55) !important;
+  background: rgba(20, 60, 40, 0.55) !important;
+  color: #9dffb8 !important;
+}
+
+.timelineMobileMenuItem {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  margin: 0 !important;
+  padding: 12px 14px !important;
+  min-height: 44px !important;
+  border: none !important;
+  border-bottom: 1px solid rgba(34, 200, 255, 0.22) !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: #c8f0ff !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.06em !important;
+  text-transform: uppercase !important;
+  text-align: left !important;
+  cursor: pointer;
+  touch-action: manipulation;
+  box-shadow: none !important;
+}
+
+.timelineMobileMenuItem:last-child {
+  border-bottom: none !important;
+}
+
+.timelineMobileMenuItem:active {
+  background: rgba(34, 200, 255, 0.14) !important;
+  color: #22c8ff !important;
+}
+
+.mobileTodayRun .timelineNowBtn {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  border-radius: 0 !important;
+  border: 1px solid rgba(34, 200, 255, 0.55) !important;
+  background: rgba(6, 22, 44, 0.92) !important;
+  color: #7dffa0 !important;
+  box-shadow: none !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.04em;
+}
+
+:global([data-pixel-shell='quests']) .mobileFilterChip,
+:global([data-pixel-shell='quests']) .dayPlanCollapsedHint {
   border-radius: 0;
 }

@@ -1,12 +1,20 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
 	SystemHeader,
+	SystemResourceBar,
 	SystemScaffold,
 } from '../../../shared/components/ui/system/SystemPanel';
+import { useMobileOptimizations } from '../../../shared/hooks/useMobileOptimizations';
 import styles from './SkillRealmMap.module.css';
+
+const MOBILE_SKILL_PAGE = 20;
 
 function normClass(c: string | undefined): string {
 	return (c ?? '').trim();
+}
+
+function normKey(c: string | undefined): string {
+	return normClass(c).toLowerCase();
 }
 
 export interface VaultClassBrief {
@@ -18,6 +26,15 @@ export interface VaultClassBrief {
 	currentCP?: number;
 	requiredCP?: number;
 	totalCP?: number;
+	masterClass?: string;
+}
+
+export interface MasterClassBrief {
+	name: string;
+	icon?: string;
+	level?: number;
+	currentCP?: number;
+	requiredCP?: number;
 }
 
 export interface SkillRealmSkill {
@@ -36,14 +53,18 @@ export interface SkillRealmSkill {
 interface SkillRealmMapProps {
 	skills: SkillRealmSkill[];
 	vaultClasses?: VaultClassBrief[];
+	masterClass?: MasterClassBrief | null;
 	onSkillSelect?: (skill: SkillRealmSkill) => void;
 	onClassOpen?: (cls: VaultClassBrief) => void;
+	/** Skill names currently weak to an active journey / dungeon gate raid. */
+	gateSkillNames?: string[];
+	gateBanner?: string | null;
 }
 
 function defaultClassIcon(name: string): string {
 	const n = name.toLowerCase();
 	if (n.includes('physical') || n.includes('body')) return '💪';
-	if (n.includes('mental') || n.includes('mind')) return '🧠';
+	if (n.includes('mental') || n.includes('mind') || n.includes('cognitive')) return '🧠';
 	if (n.includes('creative') || n.includes('art')) return '🎨';
 	if (n.includes('social')) return '🤝';
 	return '⚔️';
@@ -60,38 +81,69 @@ function skillNodeEmoji(skill: SkillRealmSkill): string {
 export const SkillRealmMap: React.FC<SkillRealmMapProps> = ({
 	skills,
 	vaultClasses = [],
+	masterClass,
 	onSkillSelect,
+	gateSkillNames = [],
+	gateBanner = null,
 }) => {
+	const { isMobile } = useMobileOptimizations();
 	const [searchQuery, setSearchQuery] = useState('');
 	const [activeClass, setActiveClass] = useState<string | null>(null);
 	const [selectedSkill, setSelectedSkill] = useState<SkillRealmSkill | null>(null);
+	const [mobileVisibleCount, setMobileVisibleCount] = useState(MOBILE_SKILL_PAGE);
+
+	/** Strip emoji / punctuation so "Jester 🎭" matches "Jester" */
+	const masterKey = masterClass?.name
+		? normKey(masterClass.name).replace(/[^\p{L}\p{N}\s_-]/gu, '').trim()
+		: '';
+
+	const classMasterMap = useMemo(() => {
+		const map = new Map<string, string>();
+		for (const v of vaultClasses) {
+			const n = normClass(v.name);
+			if (!n) continue;
+			const mc = normClass(v.masterClass)
+				.replace(/[^\p{L}\p{N}\s_-]/gu, '')
+				.trim();
+			map.set(normKey(n), mc);
+		}
+		return map;
+	}, [vaultClasses]);
+
+	const belongsToMaster = (className: string): boolean => {
+		if (!masterKey) return true;
+		const mc = classMasterMap.get(normKey(className));
+		if (!mc) return true;
+		const mcKey = normKey(mc);
+		return mcKey === masterKey || mcKey.includes(masterKey) || masterKey.includes(mcKey);
+	};
 
 	const classBrowserItems = useMemo((): VaultClassBrief[] => {
 		const map = new Map<string, VaultClassBrief>();
 		for (const v of vaultClasses) {
 			const n = normClass(v.name);
-			if (!n) continue;
-			map.set(n.toLowerCase(), { ...v, name: n });
+			if (!n || !belongsToMaster(n)) continue;
+			map.set(normKey(n), { ...v, name: n });
 		}
 		for (const s of skills) {
 			const n = normClass(s.class);
-			if (!n) continue;
-			const key = n.toLowerCase();
+			if (!n || !belongsToMaster(n)) continue;
+			const key = normKey(n);
 			if (!map.has(key)) {
-				map.set(key, { name: n, filePath: '' });
+				map.set(key, { name: n, filePath: '', masterClass: classMasterMap.get(key) });
 			}
 		}
 		return Array.from(map.values()).sort((a, b) =>
 			a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
 		);
-	}, [vaultClasses, skills]);
+	}, [vaultClasses, skills, classMasterMap, masterKey]);
 
 	const hubGrouped = useMemo(() => {
 		const q = searchQuery.toLowerCase().trim();
 		const groups: Record<string, SkillRealmSkill[]> = {};
 		for (const s of skills) {
 			const c = normClass(s.class);
-			if (!c) continue;
+			if (!c || !belongsToMaster(c)) continue;
 			if (q && !s.name.toLowerCase().includes(q) && !c.toLowerCase().includes(q)) {
 				continue;
 			}
@@ -102,7 +154,7 @@ export const SkillRealmMap: React.FC<SkillRealmMapProps> = ({
 			groups[k].sort((a, b) => a.name.localeCompare(b.name));
 		}
 		return groups;
-	}, [skills, searchQuery]);
+	}, [skills, searchQuery, masterKey, classMasterMap]);
 
 	const classNames = useMemo(
 		() => Object.keys(hubGrouped).sort(),
@@ -121,6 +173,24 @@ export const SkillRealmMap: React.FC<SkillRealmMapProps> = ({
 
 	const pathSkills = activeClass ? hubGrouped[activeClass] ?? [] : [];
 
+	useEffect(() => {
+		setMobileVisibleCount(MOBILE_SKILL_PAGE);
+	}, [activeClass, searchQuery]);
+
+	const visiblePathSkills = useMemo(() => {
+		if (!isMobile) return pathSkills;
+		return pathSkills.slice(0, mobileVisibleCount);
+	}, [isMobile, pathSkills, mobileVisibleCount]);
+
+	const gateNameSet = useMemo(
+		() => new Set(gateSkillNames.map((n) => n.trim().toLowerCase()).filter(Boolean)),
+		[gateSkillNames]
+	);
+
+	const isGateSkill = (skill: SkillRealmSkill) =>
+		gateNameSet.has(skill.name.trim().toLowerCase()) ||
+		gateNameSet.has(`class:${skill.class.trim().toLowerCase()}`);
+
 	const pathMeta = useMemo(() => {
 		if (pathSkills.length === 0) {
 			return { pct: 0, progressed: 0, total: 0, cp: 0, required: 0 };
@@ -138,6 +208,7 @@ export const SkillRealmMap: React.FC<SkillRealmMapProps> = ({
 	}, [pathSkills]);
 
 	useEffect(() => {
+		if (isMobile) return; // phone opens codex sheet instead of side panel
 		if (pathSkills.length === 0) {
 			setSelectedSkill(null);
 			return;
@@ -146,9 +217,13 @@ export const SkillRealmMap: React.FC<SkillRealmMapProps> = ({
 			if (prev && pathSkills.some((s) => s.name === prev.name)) return prev;
 			return pathSkills[0];
 		});
-	}, [pathSkills, activeClass]);
+	}, [pathSkills, activeClass, isMobile]);
 
 	const handleSelectSkill = (skill: SkillRealmSkill) => {
+		if (isMobile) {
+			onSkillSelect?.(skill);
+			return;
+		}
 		setSelectedSkill(skill);
 		onSkillSelect?.(skill);
 	};
@@ -158,11 +233,15 @@ export const SkillRealmMap: React.FC<SkillRealmMapProps> = ({
 	);
 
 	return (
-		<SystemScaffold className={styles.realmRoot} data-system-ui="skill-realm">
+		<SystemScaffold
+			className={`${styles.realmRoot}${isMobile ? ` ${styles.realmRootMobile}` : ''}`}
+			data-system-ui="skill-realm"
+			data-gamification-mobile={isMobile ? 'true' : 'false'}
+		>
 			<SystemHeader
 				icon="⚔"
 				label="SYSTEM: SKILL REALM"
-				title="Progress matrix"
+				title={isMobile ? 'Your skills' : 'Progress matrix'}
 			/>
 
 			<div className={styles.searchRow}>
@@ -175,31 +254,78 @@ export const SkillRealmMap: React.FC<SkillRealmMapProps> = ({
 				/>
 			</div>
 
+			{masterClass?.name ? (
+				<div className={styles.masterHub}>
+					<div className={styles.masterCard}>
+						<span className={styles.masterIcon} aria-hidden="true">
+							{(masterClass.icon || '').trim() || '🛡'}
+						</span>
+						<div className={styles.masterMeta}>
+							<p className={styles.masterKicker}>Master class</p>
+							<p className={styles.masterName}>{masterClass.name}</p>
+							<p className={styles.masterSub}>
+								Master Lv {masterClass.level ?? 1}
+							</p>
+						</div>
+					</div>
+					{masterClass.requiredCP ? (
+						<div className={styles.masterCpBar}>
+							<SystemResourceBar
+								label="CP"
+								icon="cp"
+								current={masterClass.currentCP ?? 0}
+								max={masterClass.requiredCP}
+							/>
+						</div>
+					) : null}
+					<div className={styles.masterConnector} aria-hidden="true">
+						<span className={styles.masterConnectorStem} />
+						<span className={styles.masterConnectorBar} />
+					</div>
+				</div>
+			) : null}
+
 			{classNames.length === 0 ? (
 				<div className={styles.emptyState}>
-					No skills found. Create skills under Manage / Create, or clear search.
+					{skills.length === 0 ? (
+						<>
+							No skill notes found in the vault yet.
+							{isMobile
+								? ' Wait for iCloud to finish syncing SkillTree/, then close and reopen Skills.'
+								: ' Create skills under Manage / Create.'}
+						</>
+					) : (
+						<>
+							Found {skills.length} skill(s), but none match this master class
+							{masterClass?.name ? ` (${masterClass.name})` : ''}.
+							{searchQuery ? ' Clear search and try again.' : ''}
+						</>
+					)}
 				</div>
 			) : (
 				<>
 					<div className={styles.classTabs} role="tablist" aria-label="Skill classes">
-						{classNames.map((c) => {
+						{classBrowserItems.map((cls) => {
+							const c = cls.name;
 							const icon =
 								(activeClassMeta?.name === c ? activeClassMeta.icon : undefined) ||
-								classBrowserItems.find((x) => x.name === c)?.icon ||
+								cls.icon ||
 								defaultClassIcon(c);
+							const count = hubGrouped[c]?.length ?? 0;
+							const isActive = activeClass === c;
 							return (
 								<button
 									key={c}
 									type="button"
 									role="tab"
-									aria-selected={activeClass === c}
-									className={`${styles.classTab} ${activeClass === c ? styles.classTabActive : ''}`}
+									aria-selected={isActive}
+									className={`${styles.classTab} ${isActive ? styles.classTabActive : ''}`}
 									onClick={() => setActiveClass(c)}
 								>
 									<span className={styles.classTabIcon}>{icon.trim() || '⚔️'}</span>
 									<span className={styles.classTabLabel}>{c}</span>
 									<span className={styles.classTabCount}>
-										{hubGrouped[c]?.length ?? 0}
+										{count} skill{count === 1 ? '' : 's'}
 									</span>
 								</button>
 							);
@@ -223,9 +349,22 @@ export const SkillRealmMap: React.FC<SkillRealmMapProps> = ({
 									<p className={styles.classBannerSub}>
 										{pathMeta.progressed}/{pathMeta.total} skills active ·{' '}
 										{pathMeta.cp}/{pathMeta.required} CP
+										{masterClass?.name ? (
+											<>
+												{' '}
+												· under{' '}
+												<span className={styles.classBannerMaster}>
+													{masterClass.name}
+												</span>
+											</>
+										) : null}
 									</p>
 								</div>
 							</div>
+
+							{gateBanner ? (
+								<p className={styles.gateBanner}>{gateBanner}</p>
+							) : null}
 
 							<div className={styles.expBlock}>
 								<div className={styles.expLabelRow}>
@@ -249,8 +388,8 @@ export const SkillRealmMap: React.FC<SkillRealmMapProps> = ({
 							<h3 className={styles.sectionTitle}>Skill nodes</h3>
 
 							<div className={styles.pathScroll}>
-								{pathSkills.map((skill, idx) => {
-									const isSel = selectedSkill?.name === skill.name;
+								{visiblePathSkills.map((skill, idx) => {
+									const isSel = !isMobile && selectedSkill?.name === skill.name;
 									const locked =
 										skill.currentCP <= 0 &&
 										skill.progressToNext <= 0 &&
@@ -259,6 +398,7 @@ export const SkillRealmMap: React.FC<SkillRealmMapProps> = ({
 										skill.progressToNext > 0 &&
 										skill.progressToNext < 100 &&
 										!skill.isMastered;
+									const onGate = isGateSkill(skill);
 									return (
 										<div key={skill.name} className={styles.nodeRow}>
 											{idx > 0 ? (
@@ -275,6 +415,7 @@ export const SkillRealmMap: React.FC<SkillRealmMapProps> = ({
 													skill.isMastered ? styles.nodeMastered : '',
 													locked ? styles.nodeLocked : '',
 													training ? styles.nodeTraining : '',
+													onGate ? styles.nodeGate : '',
 												]
 													.filter(Boolean)
 													.join(' ')}
@@ -283,7 +424,12 @@ export const SkillRealmMap: React.FC<SkillRealmMapProps> = ({
 												<span className={styles.nodeEmoji}>
 													{skillNodeEmoji(skill)}
 												</span>
-												<span className={styles.nodeName}>{skill.name}</span>
+												<span className={styles.nodeName}>
+													{skill.name}
+													{onGate ? (
+														<span className={styles.gateChip}>Gate</span>
+													) : null}
+												</span>
 												<span className={styles.nodeLevel}>
 													Lv {skill.currentLevel}
 												</span>
@@ -299,9 +445,21 @@ export const SkillRealmMap: React.FC<SkillRealmMapProps> = ({
 										</div>
 									);
 								})}
+								{isMobile && pathSkills.length > mobileVisibleCount && (
+									<button
+										type="button"
+										className={styles.mobileShowMore}
+										onClick={() =>
+											setMobileVisibleCount((n) => n + MOBILE_SKILL_PAGE)
+										}
+									>
+										Show more ({pathSkills.length - mobileVisibleCount} left)
+									</button>
+								)}
 							</div>
 						</div>
 
+						{!isMobile && (
 						<div className={styles.detailPanel}>
 							<span className={`${styles.corner} ${styles.cornerTL}`} aria-hidden />
 							<span className={`${styles.corner} ${styles.cornerTR}`} aria-hidden />
@@ -355,6 +513,7 @@ export const SkillRealmMap: React.FC<SkillRealmMapProps> = ({
 								</>
 							)}
 						</div>
+						)}
 					</div>
 				</>
 			)}

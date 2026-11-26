@@ -11,16 +11,6 @@ import { pixelNotice } from '../../../shared/utils/noticeUtils';
 
 const RARITIES = ['common', 'uncommon', 'rare', 'epic', 'legendary'] as const;
 const CATEGORIES = ['herb', 'mineral', 'essence', 'crystal', 'organic', 'mystical', 'component'] as const;
-const QUALITIES = ['fresh', 'normal', 'dried', 'refined', 'masterwork'] as const;
-const SOURCES = ['gathering', 'crafting', 'trading', 'reward', 'quest'] as const;
-
-const QUALITY_MULTIPLIERS: Record<(typeof QUALITIES)[number], number> = {
-	fresh: 1.5,
-	normal: 1.0,
-	dried: 0.8,
-	refined: 1.3,
-	masterwork: 2.0,
-};
 
 function slugify(name: string): string {
 	return name
@@ -43,9 +33,6 @@ export class AddMaterialModal extends Modal {
 	rarity: CraftingMaterial['rarity'] = 'common';
 	description = '';
 	baseValue = 1;
-	quality: CraftingMaterial['quality'] = 'normal';
-	qualityMultiplier = 1.0;
-	source: CraftingMaterial['source'] = 'gathering';
 
 	constructor(
 		app: App,
@@ -66,9 +53,6 @@ export class AddMaterialModal extends Modal {
 			this.rarity = materialToEdit.rarity;
 			this.description = materialToEdit.description || '';
 			this.baseValue = materialToEdit.baseValue;
-			this.quality = materialToEdit.quality;
-			this.qualityMultiplier = materialToEdit.qualityMultiplier;
-			this.source = materialToEdit.source;
 		} else {
 			this.isEdit = false;
 		}
@@ -78,11 +62,11 @@ export class AddMaterialModal extends Modal {
 		const { contentEl } = this;
 		contentEl.empty();
 		contentEl.createEl('h2', {
-			text: this.isEdit ? 'Edit crafting material' : 'Add crafting material',
+			text: this.isEdit ? 'Edit material' : 'Add material',
 		});
 		contentEl.createEl('p', {
 			cls: 'mod-muted',
-			text: 'Saved to Materials.md and merged with built-in defaults by id.',
+			text: 'Materials Workshop can spend. Saved to Materials.md (merge by id).',
 		});
 
 		new Setting(contentEl).setName('Name').addText((text) =>
@@ -95,15 +79,18 @@ export class AddMaterialModal extends Modal {
 				})
 		);
 
-		new Setting(contentEl).setName('Id (slug)').addText((text) =>
-			text
-				.setPlaceholder('moonleaf')
-				.setValue(this.id)
-				.setDisabled(this.isEdit)
-				.onChange((v) => {
-					this.id = slugify(v);
-				})
-		);
+		new Setting(contentEl)
+			.setName('Id')
+			.setDesc('Auto-filled from the name. Used to merge with built-ins.')
+			.addText((text) =>
+				text
+					.setPlaceholder('moonleaf')
+					.setValue(this.id)
+					.setDisabled(this.isEdit)
+					.onChange((v) => {
+						this.id = slugify(v);
+					})
+			);
 
 		new Setting(contentEl).setName('Icon').addText((text) =>
 			text.setPlaceholder('🌙').setValue(this.icon).onChange((v) => {
@@ -125,26 +112,14 @@ export class AddMaterialModal extends Modal {
 			});
 		});
 
-		new Setting(contentEl).setName('Quality').addDropdown((dropdown) => {
-			for (const q of QUALITIES) dropdown.addOption(q, q);
-			dropdown.setValue(this.quality).onChange((v) => {
-				this.quality = v as CraftingMaterial['quality'];
-				this.qualityMultiplier = QUALITY_MULTIPLIERS[this.quality];
-			});
-		});
-
-		new Setting(contentEl).setName('Base value').addText((text) =>
-			text.setValue(String(this.baseValue)).onChange((v) => {
-				this.baseValue = parseInt(v, 10) || 1;
-			})
-		);
-
-		new Setting(contentEl).setName('Source').addDropdown((dropdown) => {
-			for (const s of SOURCES) dropdown.addOption(s, s);
-			dropdown.setValue(this.source).onChange((v) => {
-				this.source = v as CraftingMaterial['source'];
-			});
-		});
+		new Setting(contentEl)
+			.setName('Base value')
+			.setDesc('Sell / trade reference value.')
+			.addText((text) =>
+				text.setValue(String(this.baseValue)).onChange((v) => {
+					this.baseValue = parseInt(v, 10) || 1;
+				})
+			);
 
 		new Setting(contentEl).setName('Description').addTextArea((text) =>
 			text.setValue(this.description).onChange((v) => {
@@ -172,6 +147,7 @@ export class AddMaterialModal extends Modal {
 			return;
 		}
 
+		// Silent schema defaults — quality/source not part of creator UX
 		const material: CraftingMaterial = {
 			id,
 			name: this.name.trim(),
@@ -180,9 +156,9 @@ export class AddMaterialModal extends Modal {
 			rarity: this.rarity,
 			description: this.description.trim(),
 			baseValue: this.baseValue,
-			quality: this.quality,
-			qualityMultiplier: this.qualityMultiplier,
-			source: this.source,
+			quality: 'normal',
+			qualityMultiplier: 1.0,
+			source: 'reward',
 		};
 
 		const created = await ensureMaterialsFile(this.plugin);

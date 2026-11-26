@@ -457,7 +457,7 @@ export class SeasonalInventoryManager {
         // Update the actual shop file
         await this.updateShopFile();
 
-        pixelNotice(`🛒 Shop inventory refreshed for ${this.getCurrentSeason()}!`);
+        pixelNotice(`🛒 Shop inventory refreshed for ${this.getCurrentSeason()}!`, 3000, 'low');
     }
 
     /**
@@ -492,13 +492,13 @@ export class SeasonalInventoryManager {
         await this.generateSeasonalInventory();
         await this.updateShopFile();
 
-        pixelNotice(`🎉 Special Event: ${eventName} has begun!`);
+        pixelNotice(`🎉 Special Event: ${eventName} has begun!`, 4000, 'low');
 
         // Remove event after duration
         setTimeout(() => {
             this.seasonalConfigs = this.seasonalConfigs.filter(c => c !== eventConfig);
             this.refreshInventory();
-            pixelNotice(`🎉 Special Event: ${eventName} has ended.`);
+            pixelNotice(`🎉 Special Event: ${eventName} has ended.`, 3000, 'low');
         }, duration * 24 * 60 * 60 * 1000);
     }
 

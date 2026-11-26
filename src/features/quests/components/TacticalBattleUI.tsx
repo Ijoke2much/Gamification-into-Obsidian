@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { createPortal } from 'react-dom';
 import type { Quest } from '../utils/taskParser';
 import type { PlayerData } from '../../../data/models/PlayerData';
-import type GamifiedObsidianPlugin from '../../../core/main';
+import { getAppliedVisualTheme } from '../../../shared/utils/visualThemeManager';
 import {
   type BattleWeaponId,
   clampBattleWeaponToInventory,
@@ -29,12 +29,11 @@ import {
 } from '../utils/bossRaidService';
 import {
   applyBossRaidStrike,
-  catchUpBossRaidStrikes,
   gainRaidFocus,
+  holdBossRaidWhileAway,
   getBossStrikeCountdownLabel,
   getRaidFocusCooldownMultiplier,
   getRaidFocusDamageMultiplier,
-  RAID_BOSS_STRIKE_CATCHUP_MAX,
   RAID_FOCUS_GAIN_MOVE,
   RAID_FOCUS_GAIN_STRIKE,
   RAID_FOCUS_GAIN_VAULT_HIT,
@@ -137,6 +136,9 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
   bossRaidAffinityLabel,
   bossRaidProgress,
 }) => {
+  const visualPreset = getAppliedVisualTheme().preset;
+  const themeShellClass =
+    visualPreset === 'classic' ? styles.tacticalBattlePixel : styles.tacticalBattleThemed;
   // File-backed boss mode: HP falls to real task completion, armor to moves.
   const bossFileMode = !!bossFile;
   const [fileBoss, setFileBoss] = useState<BossFileData | null>(bossFile ?? null);
@@ -931,32 +933,15 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
     }
   }, [bossFileMode, fileBoss, plugin, battleState.battlePhase, persistRaidFocus]);
 
-  // Catch up boss strikes after time away from the battle UI.
+  // Opening the gate discards time spent away: no queued strikes, no armor catch-up.
   useEffect(() => {
     if (!bossFileMode || !fileBoss || !plugin || raidCatchUpDoneRef.current) return;
     if (battleState.battlePhase !== 'battle') return;
 
     raidCatchUpDoneRef.current = true;
-    const currentFocus = getBossRaidFocus().focus;
-    const { boss, focus, strikes } = catchUpBossRaidStrikes(fileBoss, currentFocus);
-
-    if (strikes.length === 0) return;
-
-    void (async () => {
-      await writeBossState(plugin.app, boss);
-      setFileBoss(boss);
-      persistRaidFocus(focus);
-      for (const strike of strikes) {
-        addBattleLog(`💢 ${strike.message}`, 'boss');
-        if (strike.armorRestored > 0) {
-          addBattleLog(`🛡 Boss fortified +${strike.armorRestored} armor`, 'boss');
-        }
-        addBattleLog(`−${strike.focusDamage} raid focus`, 'system');
-      }
-      if (strikes.length >= RAID_BOSS_STRIKE_CATCHUP_MAX) {
-        addBattleLog('Boss pressure stacked while you were away — rally with real tasks!', 'system');
-      }
-    })();
+    const held = holdBossRaidWhileAway(fileBoss);
+    setFileBoss(held);
+    void writeBossState(plugin.app, held);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bossFileMode, fileBoss?.filePath, plugin, battleState.battlePhase]);
 
@@ -1749,7 +1734,7 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
   // Defeat Screen
   if (battleState.battlePhase === 'defeat') {
     return (
-      <div className={`${styles.defeatScreen} ${styles.tacticalBattlePixel}`}>
+      <div className={`${styles.defeatScreen} ${themeShellClass}`} data-gamification-visual-theme={visualPreset}>
         <div className={styles.defeatContent}>
           <div className={styles.defeatHeader}>
             <h1 className={styles.defeatTitle}>💀 DEFEAT 💀</h1>
@@ -1854,20 +1839,7 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
         };
 
     return (
-      <div className={`${styles.victoryScreen} ${styles.tacticalBattlePixel}`}>
-        {/* Confetti celebration effect */}
-        {Array.from({ length: 50 }).map((_, i) => (
-          <div
-            key={i}
-            className={styles.confetti}
-            style={{
-              left: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 3}s`,
-              animationDuration: `${2 + Math.random() * 2}s`
-            }}
-          />
-        ))}
-        
+      <div className={`${styles.victoryScreen} ${themeShellClass}`} data-gamification-visual-theme={visualPreset}>
         <div className={styles.victoryContent}>
           {victoryPreview && (
             <div className={styles.victoryPreviewTag} aria-hidden="true">
@@ -1875,8 +1847,9 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
             </div>
           )}
           <div className={styles.victoryHeader}>
-            <h1 className={styles.victoryTitle}>🎉 VICTORY! 🎉</h1>
-            <p className={styles.victorySubtitle}>{bossData.name} has been defeated!</p>
+            <p className={styles.systemKicker}>System</p>
+            <h1 className={styles.victoryTitle}>Victory</h1>
+            <p className={styles.victorySubtitle}>{bossData.name} has been defeated.</p>
           </div>
 
           <div className={styles.victoryRecap}>
@@ -1959,7 +1932,7 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
 
           <div className={styles.victoryRewards}>
             <h2 className={styles.rewardsTitle}>
-              {isDungeonRaidVictory ? 'Gate spoils' : 'Rewards Earned'}
+              {isDungeonRaidVictory ? 'Gate spoils' : 'Rewards'}
             </h2>
             <div className={styles.rewardsList}>
               <div className={styles.rewardItem}>
@@ -2076,12 +2049,13 @@ const TacticalBattleUI: React.FC<TacticalBattleUIProps> = ({
   }
 
   return (
-    <div className={`${styles.tacticalBattle} ${styles.tacticalBattlePixel}`} ref={containerRef}>
+    <div className={`${styles.tacticalBattle} ${themeShellClass}`} data-gamification-visual-theme={visualPreset} ref={containerRef}>
       {weaponPickerOpen &&
         createPortal(
           <div className={styles.weaponPickerOverlay} aria-hidden="false">
-            <div className={styles.weaponPickerModal}>
+            <div className={styles.weaponPickerModal} data-gamification-visual-theme={visualPreset}>
               <div className={styles.weaponPickerModalBody}>
+                {visualPreset === 'system-hunter' && <p className={styles.systemKicker}>System</p>}
                 <div className={styles.weaponPickerTitle}>Choose your weapon</div>
                 <p className={styles.weaponPickerSubtitle}>
                   Loadout applies for this battle only. Weapons match your{' '}

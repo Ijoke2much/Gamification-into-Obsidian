@@ -8,8 +8,10 @@ import {
 	getJourneyHpSegmentFill,
 } from '../../../features/quests/utils/journeyRunService';
 import { systemPanelStyles as sys } from '../../../shared/components/ui/system';
-import journeyBanner from '../../../../assets/journey-overworld-banner.png';
-import journeyBattleBanner from '../../../../assets/journey-battle-banner.png';
+import {
+	getPluginAssetUrl,
+	PLUGIN_ASSETS,
+} from '../../../shared/utils/pluginAssetUrl';
 import hubStyles from './QuestHubPanels.module.css';
 
 const HP_SEGMENT_COUNT = 8;
@@ -57,7 +59,9 @@ export const JourneySceneBanner: React.FC<JourneySceneBannerProps> = ({
 						: '— ON THE ROAD —'
 					: '— THE ROAD —';
 
-	const bannerSrc = encounter && !failed ? journeyBattleBanner : journeyBanner;
+	const bannerSrc = encounter && !failed
+		? getPluginAssetUrl(PLUGIN_ASSETS.journeyBattleBanner)
+		: getPluginAssetUrl(PLUGIN_ASSETS.journeyOverworldBanner);
 	const windowClass = [
 		hubStyles.sceneWindow,
 		systemUi ? sys.sceneWindowSystem : '',

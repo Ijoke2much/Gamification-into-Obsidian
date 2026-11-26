@@ -1,7 +1,23 @@
 import { Vault, TFile } from 'obsidian';
 import * as yaml from "js-yaml";
-import { normalizeActivityProfileId } from '../../../shared/utils/questWellbeingProfiles';
+import { storedActivityTypeId } from '../../../shared/utils/questWellbeingProfiles';
+import { appendLockedEnergyMeta } from '../../../shared/utils/activityEnergy';
+import { parseGamifyRewardsLine } from './shopExclusiveRewards';
 
+/**
+ * Parse `key: value` pipe metadata on the first colon only.
+ * Splitting on every `:` truncates ISO datetimes (`due: 2026-07-30T21:17` → `2026-07-30T21`).
+ */
+export function parsePipeMetaPair(pair: string): { key: string; value: string } | null {
+	const trimmed = pair.trim();
+	if (!trimmed) return null;
+	const colon = trimmed.indexOf(':');
+	if (colon <= 0) return null;
+	const key = trimmed.slice(0, colon).trim().toLowerCase();
+	const value = trimmed.slice(colon + 1).trim();
+	if (!key || !value) return null;
+	return { key, value };
+}
 
 // define priority/difficulty XP logic and generate markdown tasks.
 
@@ -69,8 +85,8 @@ export async function parseCompletedTasks(vault: Vault, file: TFile): Promise<Pa
       const pipeMatch = line.match(/\/\/(.*)/);
       if (pipeMatch) {
         pipeMatch[1].split('|').forEach((pair) => {
-          const [k, v] = pair.split(':').map((s) => s.trim());
-          if (k && v) pipeMeta[k.toLowerCase()] = v;
+          const parsed = parsePipeMetaPair(pair);
+          if (parsed) pipeMeta[parsed.key] = parsed.value;
         });
       }
 
@@ -182,12 +198,15 @@ export function generateMarkdownTask({
   xp,
   cp,
   due,
+  start,
   recur,
   estimatedTime,
   customRewards,
   energyCost,
+  energyLocked,
   activityProfile,
   project,
+  customTags,
   metadataStyle = "emoji",
 }: {
   title: string;
@@ -199,14 +218,17 @@ export function generateMarkdownTask({
   xp: number;
   cp: number;
   due?: string;
+  start?: string;
   scheduled?: string;
   recur?: string;
   estimatedTime?: string;
   customRewards?: string[];
-  /** Resolved stamina cost (1–100); embedded as 🔋 in emoji style. */
+  /** Quest override. Written only when energyLocked is set. Positive spends, negative restores. */
   energyCost?: number;
+  energyLocked?: boolean;
   activityProfile?: string;
   project?: string;
+  customTags?: string[];
   metadataStyle?: "emoji" | "tags";
 }): string {
   if (metadataStyle === 'emoji') {
@@ -258,7 +280,10 @@ export function generateMarkdownTask({
     }
     // Add estimated time if present
     if (estimatedTime) emojiParts.push(`⏱️${estimatedTime}`);
-    // Place date last, no space after emoji
+    const dueDay = due?.split('T')[0];
+    const startDay = start?.split('T')[0];
+    if (startDay && dueDay && startDay !== dueDay) emojiParts.push(`🛫${startDay}`);
+    else if (startDay && !dueDay) emojiParts.push(`🛫${startDay}`);
     if (due) emojiParts.push(`📅${due}`);
     // Tags for skill and class
     const skill = skills[0]?.name || '';
@@ -268,15 +293,20 @@ export function generateMarkdownTask({
     if (project?.trim()) {
       taskLine += ` [project:: ${project.trim()}]`;
     }
-    const ap = normalizeActivityProfileId(activityProfile);
+    const ap = storedActivityTypeId(activityProfile);
     if (ap !== 'generic') {
       taskLine += ` #activity/${ap}`;
+    }
+    for (const tag of customTags ?? []) {
+      const slug = normalizeCustomTag(tag);
+      if (slug) taskLine += ` #${slug}`;
     }
 
     // Add custom rewards as metadata comment if present
     if (customRewards && customRewards.length > 0) {
       taskLine += ` // rewards: ${customRewards.join(', ')}`;
     }
+    taskLine = appendLockedEnergyMeta(taskLine, energyCost, energyLocked);
 
     // Add description if provided - with better formatting
     if (description && description.trim()) {
@@ -310,10 +340,10 @@ export function generateMarkdownTask({
     const descriptionLine = description && description.trim() ? `  - Description:: ${description.trim()}` : '';
 
     const energyLine =
+      energyLocked &&
       typeof energyCost === "number" &&
-      Number.isFinite(energyCost) &&
-      energyCost > 0
-        ? `  - Energy:: ${Math.min(100, Math.floor(energyCost))}`
+      Number.isFinite(energyCost)
+        ? `  - Energy:: ${Math.trunc(energyCost)}\n  - EnergyLock:: true`
         : "";
     const result = [
       `- [ ] ${title} ${tags.join(' ')}`,
@@ -382,6 +412,8 @@ export interface Quest {
   priority?: string;
   difficulty?: string;
   due?: string;
+  /** Inclusive range start (`🛫YYYY-MM-DD` / `start:`). */
+  start?: string;
   scheduled?: string;
   recur?: string;
   skills?: string[];
@@ -389,11 +421,33 @@ export interface Quest {
   subtasks: { text: string; completed: boolean; description?: string }[];
   completed: boolean;
   today?: boolean;
+  /** Explicit inbox "Now" pin (`now: true` / `#now/true`) — not a time window. */
+  now?: boolean;
   dependencies?: string[];
   rewards?: string[];
+  /** Quest-attached custom rewards (not shop exclusives). */
+  enhancedRewards?: Array<{
+    name: string;
+    type: 'item' | 'material' | 'effect';
+    category?: string;
+    rarity: string;
+    icon: string;
+    description: string;
+    quantity: number;
+    materialData?: {
+      category: string;
+      quality: string;
+      baseValue: number;
+    };
+    effects?: string[];
+  }>;
   type?: string;
   /** Parent project slug or name (`project:` pipe / `#project/foo`). */
   project?: string;
+  /** Every TaskNotes `projects` link, wikilinks stripped. */
+  projects?: string[];
+  /** Standing projects stay open. Campaigns can be finished. */
+  projectKind?: 'standing' | 'campaign';
   giver?: string;
   filePath?: string;
   status?: string;
@@ -410,8 +464,10 @@ export interface Quest {
   /** Planner time-block palette override (pipe metadata `timelineTheme`). */
   timelineTheme?: QuestTimelineTheme;
   // ADHD Energy System
-  energyCost?: number; // Estimated energy cost (1-50)
-  /** Activity profile for wellbeing effects on complete (`#activity/chore`, etc.) */
+  energyCost?: number; // Signed override when energyLocked. Otherwise the activity type decides.
+  /** True when this quest uses its own energy number instead of its activity type. */
+  energyLocked?: boolean;
+  /** Activity type (`#activity/chore`, `#activity/create`, …). */
   activityProfile?: string;
   // Boss system properties
   bossId?: string;
@@ -431,6 +487,71 @@ export interface Quest {
   totalCP?: number;
   /** Default tactical loadout id from frontmatter: `battle_weapon: rapier` */
   battle_weapon?: string;
+}
+
+/** Skill names from `skills:` metadata and `#skill/...` tags. */
+export function getQuestSkillNames(quest: Pick<Quest, 'skills' | 'tags'>): string[] {
+  const names: string[] = [];
+  if (Array.isArray(quest.skills)) names.push(...quest.skills);
+  for (const tag of quest.tags || []) {
+    const raw = String(tag).replace(/^#/, '');
+    const match = raw.match(/^skill\/(.+)/i);
+    if (match?.[1]) names.push(match[1].replace(/-/g, ' '));
+  }
+  return [...new Set(names.map((name) => name.trim()).filter(Boolean))];
+}
+
+const SYSTEM_QUEST_TAGS = new Set(['gamified-task', 'capture']);
+const SYSTEM_QUEST_TAG_PREFIXES = [
+  'skill/',
+  'activity/',
+  'class/',
+  'priority/',
+  'difficulty/',
+  'today/',
+  'status/',
+  'now/',
+  'project/',
+  'sprint/',
+  'win/',
+];
+
+export function isSystemQuestTag(tag: string): boolean {
+  const normalized = tag.replace(/^#/, '').toLowerCase();
+  if (!normalized || SYSTEM_QUEST_TAGS.has(normalized)) return true;
+  return SYSTEM_QUEST_TAG_PREFIXES.some((prefix) => normalized.startsWith(prefix));
+}
+
+export function normalizeCustomTag(raw: string): string | null {
+  const slug = raw
+    .replace(/^#/, '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^a-z0-9-]/g, '')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+  if (!slug || isSystemQuestTag(slug)) return null;
+  return slug;
+}
+
+export function getQuestCustomTags(quest: Pick<Quest, 'tags'>): string[] {
+  return [...new Set(
+    (quest.tags ?? [])
+      .map((tag) => tag.replace(/^#/, '').trim())
+      .filter((tag) => tag && !isSystemQuestTag(tag))
+  )];
+}
+
+export function applyCustomTagsToLine(line: string, tags: string[]): string {
+  const cleaned = line
+    .replace(/#([\w/-]+)/g, (full, raw: string) => (isSystemQuestTag(raw) ? full : ''))
+    .replace(/[ \t]{2,}/g, ' ')
+    .trimEnd();
+  const extras = [...new Set(tags.map((tag) => normalizeCustomTag(tag)).filter(Boolean))]
+    .map((tag) => `#${tag}`)
+    .join(' ');
+  return extras ? `${cleaned} ${extras}` : cleaned;
 }
 
 /** Stable id for vault list rows — unique per file line even when titles repeat. */
@@ -493,7 +614,7 @@ export function parseQuestsFromMarkdown(md: string): Quest[] {
     const line = lines[i];
     if (line.trim().startsWith("- [")) {
       // --- Main quest line: match #gamified-task, inline, curly, pipe, and tags ---
-      const mainMatch = line.match(/- \[( |x)\] (.+?) #gamified-task(.*)/);
+      const mainMatch = line.match(/- \[( |x|X)\] (.+?) #gamified-task(.*)/);
       if (mainMatch) {
         const questHeaderLineNumber = i + 1;
         const [, checked, titleRaw, afterTask] = mainMatch;
@@ -573,8 +694,8 @@ export function parseQuestsFromMarkdown(md: string): Quest[] {
             pipeMetaStr = pipeMetaStr.replace(/\{[\s\S]+\}$/, "");
           }
           pipeMetaStr.split("|").forEach((pair) => {
-            const [k, v] = pair.split(":").map((s) => s.trim());
-            if (k && v) meta[k.toLowerCase()] = v;
+            const parsed = parsePipeMetaPair(pair);
+            if (parsed) meta[parsed.key] = parsed.value;
           });
         }
 
@@ -596,6 +717,7 @@ export function parseQuestsFromMarkdown(md: string): Quest[] {
         const cleanTitle = title
           .replace(/\{[^}]*\}/g, '') // Remove ALL curly brace metadata like {due: 2025-09-29}
           .replace(/📅\s*\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?)?/gu, '') // Remove date emojis with optional time
+          .replace(/🛫\s*\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?)?/gu, '') // Remove start emojis
           .replace(/⏳\s*\d{4}-\d{2}-\d{2}(T\d{2}:\d{2})?/gu, '') // Remove scheduled emojis
           .replace(/✅\s*\d{4}-\d{2}-\d{2}/gu, '') // Remove completed-date emojis
           .replace(/[🔺⏫🔼🔽⏬]/gu, '') // Remove all Tasks plugin priority emojis
@@ -616,16 +738,27 @@ export function parseQuestsFromMarkdown(md: string): Quest[] {
           .trim();
 
         // --- Extract quest data ---
-        const xp = parseInt(String(getField('xp') || '0'));
-        const cp = parseInt(String(getField('cp') || '0')); // Add CP parsing
+        const xp = parseInt(String(getField('xp') || getField('exp') || '0'));
+        const cp = parseInt(String(getField('cp') || getField('class-points') || '0'));
         const className = String(getField('class') || '');
         const stats = String(getField('stats') || '').split(',').map((s: string) => s.trim()).filter(Boolean);
         const priority = String(getField('priority') || '');
         const difficulty = String(getField('difficulty') || '');
         const due = String(getField('due') || '');
+        const start = String(getField('start') || '');
         const scheduled = String(getField('scheduled') || '');
         const recur = String(getField('recur') || getField('recurrence') || '');
-        const skills = String(getField('skills') || '').split(',').map((s: string) => s.trim()).filter(Boolean);
+        const skillsFromField = String(getField('skills') || getField('skill') || '')
+          .split(',')
+          .map((s: string) => s.trim())
+          .filter(Boolean);
+        const skillsFromTags = tagArr
+          .map((tag) => {
+            const match = String(tag).replace(/^#/, '').match(/^skill\/(.+)/i);
+            return match?.[1] ? match[1].replace(/-/g, ' ').trim() : '';
+          })
+          .filter(Boolean);
+        const skills = [...new Set([...skillsFromField, ...skillsFromTags])];
 
         const description = String(getField('description') || '');
         const rawBanner = String(getField('banner') || '');
@@ -641,15 +774,17 @@ export function parseQuestsFromMarkdown(md: string): Quest[] {
         const giver = String(getField('giver') || '');
         const status = String(getField('status') || '');
         const today = parseBooleanMeta(getField('today'));
+        const nowPin = parseBooleanMeta(getField('now'));
         const isFavorite = Boolean(getField('favorite') || getField('starred') || false);
         const createdDate = String(getField('created') || '');
         const lastModified = String(getField('modified') || '');
         const estimatedTime = String(getField('time') || getField('estimate') || '');
         const notes = String(getField('notes') || '');
-        const energyCost = parseInt(String(getField('energy') || getField('energyCost') || '0')) || undefined;
+        const energyCost = parseSignedEnergy(getField('energy') ?? getField('energyCost') ?? getField('energycost'));
+        const energyLocked = parseBooleanMeta(getField('energylock')) === true;
         const activityRaw = getField('activity') ?? getField('activityprofile');
         const activityNorm = activityRaw
-          ? normalizeActivityProfileId(String(activityRaw))
+          ? storedActivityTypeId(String(activityRaw))
           : 'generic';
         const battleWeaponRaw = getField('battle_weapon') ?? getField('battleweapon');
         const battle_weapon =
@@ -662,16 +797,35 @@ export function parseQuestsFromMarkdown(md: string): Quest[] {
         // --- Parse description and subtasks ---
         const subtasks: { text: string; completed: boolean; description?: string }[] = [];
         let questDescription = description as string;
+        let enhancedRewards: Quest['enhancedRewards'];
         let j = i + 1;
 
-        // Check for description line immediately after quest (starts with 💭 or indented description)
+        // Check for description / custom-reward lines immediately after quest
+        while (j < lines.length) {
+          const nextLine = lines[j];
+          const trimmedNext = nextLine.trim();
+          const parsedRewards = parseGamifyRewardsLine(nextLine);
+          if (parsedRewards) {
+            enhancedRewards = parsedRewards as Quest['enhancedRewards'];
+            j++;
+            continue;
+          }
+          if (trimmedNext.startsWith('💭')) {
+            questDescription = trimmedNext.replace(/^💭\s*/, '');
+            j++;
+            continue;
+          }
+          break;
+        }
+
         if (j < lines.length) {
           const nextLine = lines[j].trim();
-          if (nextLine.startsWith('💭')) {
-            questDescription = nextLine.replace(/^💭\s*/, '');
-            j++;
-          } else if (nextLine && !nextLine.startsWith('-') && !nextLine.startsWith('  -')) {
-            // Plain description line
+          if (
+            nextLine &&
+            !nextLine.startsWith('-') &&
+            !nextLine.startsWith('  -') &&
+            !parseGamifyRewardsLine(lines[j])
+          ) {
             questDescription = nextLine;
             j++;
           }
@@ -692,6 +846,9 @@ export function parseQuestsFromMarkdown(md: string): Quest[] {
                 description: parts.length > 1 ? parts.slice(1).join(' - ').trim() : undefined
               });
             }
+            j++;
+          } else if (parseGamifyRewardsLine(line)) {
+            enhancedRewards = parseGamifyRewardsLine(line) as Quest['enhancedRewards'];
             j++;
           } else if (line.trim() === '' || line.match(/^(\s{2,}|\t+)/)) {
             // Skip empty lines or other indented content (like nested subtasks)
@@ -716,6 +873,7 @@ export function parseQuestsFromMarkdown(md: string): Quest[] {
           priority,
           difficulty,
           due,
+          start: start || undefined,
           scheduled,
           recur,
           skills,
@@ -724,7 +882,7 @@ export function parseQuestsFromMarkdown(md: string): Quest[] {
           bannerAlign: bannerAlign || undefined,
           timelineTheme,
           subtasks,
-          completed: checked === 'x',
+          completed: checked.toLowerCase() === 'x',
           completedAt:
             completedAtDate && !Number.isNaN(completedAtDate.getTime())
               ? completedAtDate
@@ -736,6 +894,7 @@ export function parseQuestsFromMarkdown(md: string): Quest[] {
           giver,
           status,
           today,
+          now: nowPin,
           tags: tagArr,
           isFavorite,
           createdDate,
@@ -743,8 +902,10 @@ export function parseQuestsFromMarkdown(md: string): Quest[] {
           estimatedTime,
           notes,
           energyCost,
+          ...(energyLocked ? { energyLocked: true } : {}),
           activityProfile: activityNorm !== 'generic' ? activityNorm : undefined,
           battle_weapon,
+          enhancedRewards,
         });
       }
     }
@@ -778,6 +939,15 @@ const EMOJI_FIELD_MAP: Record<string, string> = {
   // Add more as needed
 };
 
+function parseSignedEnergy(value: unknown): number | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) return Math.trunc(value);
+  if (typeof value === 'string' && value.trim() !== '') {
+    const n = Number(value);
+    if (Number.isFinite(n)) return Math.trunc(n);
+  }
+  return undefined;
+}
+
 function parseBooleanMeta(value: unknown): boolean | undefined {
   if (typeof value === 'boolean') return value;
   if (typeof value === 'number') return value !== 0;
@@ -790,7 +960,7 @@ function parseBooleanMeta(value: unknown): boolean | undefined {
 
 // Performance: Prefer file paths over inline base64. Skip data URLs and very long banners.
 const MAX_BANNER_LENGTH = 500;
-const EMOJI_AFTER_BANNER = /(🛠️|📅|⏳|✅|✨|⭐|🪙|🔥|⚖️|🌱|⏱️|🔋)/gu;
+const EMOJI_AFTER_BANNER = /(🛠️|📅|🛫|⏳|✅|✨|⭐|🪙|🔥|⚖️|🌱|⏱️|🔋)/gu;
 
 function stripBannerFromLine(line: string): string {
   const emoji = '🖼️';
@@ -841,7 +1011,9 @@ function parseEmojiMetadata(line: string): Record<string, string> {
   // Improved regex to handle Unicode properly and avoid conflicts
   // Exclude date emoji since we already handled it
   // Note: ⚖️ is handled separately below as it's a combined character
-  const emojiRegex = /([🛫🔺⏫🔼🔽⏬🔁✨🪙⭐🔥🌱🛠️])\s*(\[[^\]]+\]|[^\s]+)/gu; // handle combined emoji separately
+  // Emojis that always carry a value. Standalone markers (priority 🔼, difficulty ⚖️,
+  // and 🛠️ skills) are parsed separately so they cannot swallow the next token.
+  const emojiRegex = /([🛫🔁✨🪙⭐])\uFE0F?\s*(\[[^\]]+\]|[^\s]+)/gu;
   let match;
   while ((match = emojiRegex.exec(lineWithoutBanner)) !== null) {
     const emoji = match[1];
@@ -887,6 +1059,11 @@ function parseEmojiMetadata(line: string): Record<string, string> {
     result['due'] = dueMatch[1].trim();
   }
 
+  const startMatch = lineWithoutBanner.match(/🛫\s*(\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?)?)/u);
+  if (startMatch && startMatch[1]) {
+    result['start'] = startMatch[1].trim();
+  }
+
   // Handle ⏳ scheduled date separately - Tasks/Task Genius compatible.
   const scheduledMatch = lineWithoutBanner.match(/⏳\s*(\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?)?)/u);
   if (scheduledMatch && scheduledMatch[1]) {
@@ -901,7 +1078,7 @@ function parseEmojiMetadata(line: string): Record<string, string> {
 
   // Handle 🔁 recurrence separately (combined character) - must have a value
   // Look for 🔁 followed by actual recurrence text (not other emojis)
-  const recurMatch = lineWithoutBanner.match(/🔁\s*([a-zA-Z0-9\s-]+?)(?=\s*[🛠️📅⏳✅✨⭐🪙🔥⚖️🌱⏱️🔋🖼️]|$)/u);
+  const recurMatch = lineWithoutBanner.match(/🔁\s*([a-zA-Z0-9\s-]+?)(?=\s*[🛠️📅🛫⏳✅✨⭐🪙🔥⚖️🌱⏱️🔋🖼️]|$)/u);
   if (recurMatch && recurMatch[1] && recurMatch[1].trim()) {
     let value = recurMatch[1].trim();
     if (value.startsWith('[') && value.endsWith(']')) {
@@ -932,15 +1109,14 @@ function parseEmojiMetadata(line: string): Record<string, string> {
     result['difficulty'] = 'easy';
   }
 
-  // --- Extract skill from 🛠️SkillName pattern if present ---
-  // Make sure we don't capture text that belongs to other emojis
-  const skillEmojiRegex = /🛠️\s*([\w\s-]+?)(?=\s*[🔁📅✨⭐🪙🔥⚖️🌱⏱️🖼️🛠️]|$)/;
-  const skillMatch = line.match(skillEmojiRegex);
-  if (skillMatch) {
-    // Only add if not already present
-    if (!result["skills"]) {
-      result["skills"] = skillMatch[1].trim();
+  // --- Extract skill from 🛠️[Stamina] or 🛠️Stamina ---
+  const skillMatch = lineWithoutBanner.match(/🛠️\s*(\[[^\]]+\]|[^\s]+)/u);
+  if (skillMatch?.[1]) {
+    let value = skillMatch[1].trim();
+    if (value.startsWith('[') && value.endsWith(']')) {
+      value = value.slice(1, -1);
     }
+    if (value) result['skills'] = value;
   }
 
   // Note: Stats are now automatically updated by skills, so no manual stats parsing needed

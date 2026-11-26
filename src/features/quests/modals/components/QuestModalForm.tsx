@@ -1,11 +1,8 @@
-import React, { memo } from 'react';
+import React, { memo, useState } from 'react';
 import type { SkillMetadata } from '../../../../shared/utils/skillDiscovery';
 import { PRIORITY_OPTIONS, DIFFICULTY_OPTIONS } from '../../utils/questUtils';
-import {
-    ACTIVITY_PROFILE_IDS,
-    formatActivityProfileLabel,
-    type ActivityProfileId,
-} from "../../../../shared/utils/questWellbeingProfiles";
+import { normalizeCustomTag } from '../../utils/taskParser';
+import { clampActivityEnergy } from "../../../../shared/utils/activityEnergy";
 import styles from '../QuestModal.module.css';
 
 interface QuestModalFormProps {
@@ -27,12 +24,18 @@ interface QuestModalFormProps {
     setXp: (xp: number) => void;
     cp: number;
     setCp: (cp: number) => void;
-    /** Stamina subtracted on quest completion (resolved default or quest metadata). */
-    energyOnComplete: number;
-    activityProfile: ActivityProfileId;
-    setActivityProfile: (v: ActivityProfileId) => void;
+    energyCost: number;
+    setEnergyCost: (cost: number) => void;
+    energyLocked: boolean;
+    setEnergyLocked: (locked: boolean) => void;
+    onUseTypeEnergy: () => void;
+    activityProfile: string;
+    setActivityProfile: (v: string) => void;
+    activityOptions: { id: string; label: string }[];
     due: string;
     setDue: (due: string) => void;
+    startDate: string;
+    setStartDate: (start: string) => void;
     time: string;
     setTime: (time: string) => void;
     estimatedMinutes: string;
@@ -60,6 +63,8 @@ interface QuestModalFormProps {
     openContracts?: string[];
     attachedContract: string;
     setAttachedContract: (contract: string) => void;
+    customTags: string[];
+    setCustomTags: (tags: string[]) => void;
 }
 
 export const QuestModalForm: React.FC<QuestModalFormProps> = memo(({
@@ -80,11 +85,18 @@ export const QuestModalForm: React.FC<QuestModalFormProps> = memo(({
     setXp,
     cp,
     setCp,
-    energyOnComplete,
+    energyCost,
+    setEnergyCost,
+    energyLocked,
+    setEnergyLocked,
+    onUseTypeEnergy,
     activityProfile,
     setActivityProfile,
+    activityOptions,
     due,
     setDue,
+    startDate,
+    setStartDate,
     time,
     setTime,
     estimatedMinutes,
@@ -105,7 +117,25 @@ export const QuestModalForm: React.FC<QuestModalFormProps> = memo(({
     openContracts = [],
     attachedContract,
     setAttachedContract,
+    customTags,
+    setCustomTags,
 }) => {
+    const [tagDraft, setTagDraft] = useState('');
+
+    const addCustomTag = () => {
+        const slug = normalizeCustomTag(tagDraft);
+        if (!slug) {
+            setTagDraft('');
+            return;
+        }
+        if (customTags.includes(slug)) {
+            setTagDraft('');
+            return;
+        }
+        setCustomTags([...customTags, slug]);
+        setTagDraft('');
+    };
+
     return (
         <>
             {/* Quest Title */}
@@ -139,6 +169,115 @@ export const QuestModalForm: React.FC<QuestModalFormProps> = memo(({
                 />
             </div>
 
+            <div style={{ marginBottom: 16 }}>
+                <label style={{
+                    display: "block",
+                    marginBottom: 8,
+                    fontWeight: 600,
+                    color: "var(--text-normal)",
+                    fontSize: 16,
+                }}>
+                    Dates
+                </label>
+                <div style={{
+                    display: isMobile ? "block" : "flex",
+                    gap: isMobile ? 0 : 12,
+                }}>
+                    <div style={{ flex: 1, marginBottom: isMobile ? 12 : 0 }}>
+                        <label style={{
+                            display: "block",
+                            marginBottom: 6,
+                            fontSize: 12,
+                            color: "var(--text-muted)",
+                            fontWeight: 500,
+                        }}>
+                            Start
+                        </label>
+                        <input
+                            type="date"
+                            value={startDate}
+                            onChange={(e) => {
+                                const next = e.target.value;
+                                setStartDate(next);
+                                if (next && due && next > due) setDue(next);
+                            }}
+                            className={`${styles.input} ${styles.dateInput}`}
+                        />
+                    </div>
+                    <div style={{ flex: 1, marginBottom: isMobile ? 12 : 0 }}>
+                        <label style={{
+                            display: "block",
+                            marginBottom: 6,
+                            fontSize: 12,
+                            color: "var(--text-muted)",
+                            fontWeight: 500,
+                        }}>
+                            Due
+                        </label>
+                        <input
+                            type="date"
+                            value={due}
+                            onChange={(e) => {
+                                const next = e.target.value;
+                                setDue(next);
+                                if (next && startDate && next < startDate) setStartDate(next);
+                            }}
+                            className={`${styles.input} ${styles.dateInput}`}
+                        />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                        <label style={{
+                            display: "block",
+                            marginBottom: 6,
+                            fontSize: 12,
+                            color: "var(--text-muted)",
+                            fontWeight: 500,
+                        }}>
+                            Time on due day
+                        </label>
+                        <input
+                            type="time"
+                            step={60}
+                            value={time}
+                            onChange={(e) => setTime((e.target.value || "").slice(0, 5))}
+                            className={`${styles.input} ${styles.dateInput} ${styles.timeInput}`}
+                        />
+                    </div>
+                </div>
+                <div className={styles.timeChipRow}>
+                    {[
+                        { label: "9 AM", value: "09:00" },
+                        { label: "12 PM", value: "12:00" },
+                        { label: "2 PM", value: "14:00" },
+                        { label: "5 PM", value: "17:00" },
+                        { label: "8 PM", value: "20:00" },
+                    ].map((slot) => (
+                        <button
+                            key={slot.value}
+                            type="button"
+                            className={`${styles.timeChip}${time === slot.value ? ` ${styles.timeChipActive}` : ""}`}
+                            onClick={() => setTime(slot.value)}
+                        >
+                            {slot.label}
+                        </button>
+                    ))}
+                    {time ? (
+                        <button
+                            type="button"
+                            className={styles.timeChip}
+                            onClick={() => setTime("")}
+                        >
+                            Clear
+                        </button>
+                    ) : null}
+                </div>
+                <div className={styles.timeHint}>
+                    {time
+                        ? `Timed at ${formatClockLabel(time)} on the due day`
+                        : "No time — shows as flexible / all-day"}
+                </div>
+            </div>
+
             {/* Skills Selection - Core */}
             <div style={{ marginBottom: 20 }}>
                 <label style={{
@@ -155,15 +294,19 @@ export const QuestModalForm: React.FC<QuestModalFormProps> = memo(({
                 <select
                     value={selectedSkill}
                     onChange={(e) => handleSkillSelection(e.target.value)}
-                    disabled={skillsLoading}
+                    disabled={skillsLoading || (!skillsLoading && allSkills.length === 0)}
                     className={styles.select}
                     style={{ marginBottom: 12 }}
                 >
                     <option value="">
-                        {skillsLoading ? "Loading skills..." : "Select a skill to add..."}
+                        {skillsLoading
+                            ? "Loading skills..."
+                            : allSkills.length === 0
+                                ? "No skills found in SkillTree"
+                                : "Select a skill to add..."}
                     </option>
                     {!skillsLoading && allSkills
-                        .filter(skill => !skills.some(s => s.name === skill.name))
+                        .filter(skill => !skills.some(s => s.name.toLowerCase() === skill.name.toLowerCase()))
                         .map((skill) => (
                             <option key={skill.name} value={skill.name}>
                                 {skill.name} ({skill.class})
@@ -171,6 +314,17 @@ export const QuestModalForm: React.FC<QuestModalFormProps> = memo(({
                         ))
                     }
                 </select>
+
+                {skills.length === 0 && !skillsLoading && (
+                    <div style={{
+                        marginTop: -4,
+                        marginBottom: 8,
+                        fontSize: 12,
+                        color: "var(--text-muted)",
+                    }}>
+                        Pick at least one skill to create or update this quest.
+                    </div>
+                )}
 
                 {/* Selected Skills Display - Enhanced */}
                 {skills.length > 0 && (
@@ -316,6 +470,72 @@ export const QuestModalForm: React.FC<QuestModalFormProps> = memo(({
                 )}
             </div>
 
+            <div style={{ marginBottom: 20 }}>
+                <label style={{
+                    display: "block",
+                    marginBottom: 8,
+                    fontWeight: 600,
+                    color: "var(--text-normal)",
+                    fontSize: 16,
+                }}>
+                    Tags
+                </label>
+                {customTags.length > 0 && (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
+                        {customTags.map((tag) => (
+                            <span
+                                key={tag}
+                                style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 6,
+                                    padding: "4px 8px",
+                                    backgroundColor: "var(--background-secondary)",
+                                    border: "1px solid var(--background-modifier-border)",
+                                    borderRadius: 8,
+                                    fontSize: 13,
+                                }}
+                            >
+                                #{tag}
+                                <button
+                                    type="button"
+                                    onClick={() => setCustomTags(customTags.filter((t) => t !== tag))}
+                                    aria-label={`Remove tag ${tag}`}
+                                    style={{
+                                        background: "transparent",
+                                        border: "none",
+                                        color: "var(--text-muted)",
+                                        cursor: "pointer",
+                                        padding: 0,
+                                        fontSize: 14,
+                                        lineHeight: 1,
+                                    }}
+                                >
+                                    ×
+                                </button>
+                            </span>
+                        ))}
+                    </div>
+                )}
+                <input
+                    type="text"
+                    value={tagDraft}
+                    onChange={(e) => setTagDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                            e.preventDefault();
+                            addCustomTag();
+                        }
+                    }}
+                    placeholder="Add a tag and press Enter"
+                    className={styles.select}
+                    style={{ marginBottom: 4 }}
+                />
+                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                    Your labels only — skills and activity stay on their own tags.
+                </div>
+            </div>
+
             {showContractPicker && (
                 <div style={{ marginBottom: 20 }}>
                     <label style={{
@@ -390,26 +610,24 @@ export const QuestModalForm: React.FC<QuestModalFormProps> = memo(({
                                 color: "var(--text-normal)",
                                 fontSize: 16,
                             }}
-                            title="Physical energy removed when you mark this quest complete. Separate from stress/motivation in Activity type below."
+                            title="Positive spends energy when you finish. Negative gives energy back."
                         >
-                            🔋 Energy cost
+                            🔋 Energy
                         </label>
-                        <div
+                        <input
+                            type="number"
+                            min={-50}
+                            max={50}
+                            value={energyCost}
                             className={styles.select}
-                            style={{
-                                display: "flex",
-                                alignItems: "center",
-                                justifyContent: "center",
-                                fontWeight: 700,
-                                fontSize: 18,
-                                boxSizing: "border-box",
+                            aria-label="Energy change when this quest is finished"
+                            onChange={(e) => {
+                                const next = Number(e.target.value);
+                                if (!Number.isFinite(next)) return;
+                                setEnergyCost(clampActivityEnergy(next));
+                                setEnergyLocked(true);
                             }}
-                            role="status"
-                            aria-live="polite"
-                            aria-label={`Stamina cost when completing this quest: ${energyOnComplete}`}
-                        >
-                            {energyOnComplete}
-                        </div>
+                        />
                     </div>
                     <div style={{ flex: "1 1 140px", minWidth: 0 }}>
                         <label style={{
@@ -432,17 +650,19 @@ export const QuestModalForm: React.FC<QuestModalFormProps> = memo(({
                         </select>
                     </div>
                 </div>
-                <p style={{
-                    margin: "8px 0 0 0",
-                    fontSize: 12,
-                    color: "var(--text-muted)",
-                    lineHeight: 1.4,
-                }}>
-                    Stamina cost defaults to 10 if your task line does not set a custom cost. It is not the same as stress or motivation (see Activity type).
-                </p>
+                {!isMobile && (
+                    <p style={{
+                        margin: "8px 0 0 0",
+                        fontSize: 12,
+                        color: "var(--text-muted)",
+                        lineHeight: 1.4,
+                    }}>
+                        Positive spends energy. Negative gives it back. The number comes from the activity type until you change it.
+                    </p>
+                )}
             </div>
 
-            <div style={{ marginBottom: 20 }}>
+            <div style={{ marginBottom: isMobile ? 14 : 20 }}>
                 <label style={{
                     display: "block",
                     marginBottom: 8,
@@ -450,36 +670,61 @@ export const QuestModalForm: React.FC<QuestModalFormProps> = memo(({
                     color: "var(--text-normal)",
                     fontSize: 16,
                 }}>
-                    🧠 Activity type (wellbeing)
+                    🧠 Activity type
                 </label>
                 <select
                     value={activityProfile}
-                    onChange={(e) => setActivityProfile(e.target.value as ActivityProfileId)}
+                    onChange={(e) => setActivityProfile(e.target.value)}
                     className={styles.select}
                 >
-                    {ACTIVITY_PROFILE_IDS.map((id) => (
-                        <option key={id} value={id}>
-                            {formatActivityProfileLabel(id)}
+                    {(activityOptions.some((option) => option.id === activityProfile)
+                        ? activityOptions
+                        : [...activityOptions, { id: activityProfile, label: activityProfile }]
+                    ).map((option) => (
+                        <option key={option.id} value={option.id}>
+                            {option.label}
                         </option>
                     ))}
                 </select>
-                <span style={{
-                    display: "block",
-                    marginTop: 6,
-                    fontSize: 12,
-                    color: "var(--text-muted)",
-                    lineHeight: 1.35,
-                }}>
-                    On complete, adjusts stress, motivation, focus, and calm (e.g. chores tend to lower stress; exercise raises motivation). “Generic” adds no extra wellbeing change—only energy and rewards, like an untagged task.
-                </span>
+                {energyLocked && (
+                    <button
+                        type="button"
+                        onClick={onUseTypeEnergy}
+                        style={{
+                            marginTop: 8,
+                            background: "transparent",
+                            border: "none",
+                            padding: 0,
+                            color: "var(--text-muted)",
+                            fontSize: 12,
+                            cursor: "pointer",
+                            textDecoration: "underline",
+                        }}
+                    >
+                        Use the type's number
+                    </button>
+                )}
+                {!isMobile && (
+                    <span style={{
+                        display: "block",
+                        marginTop: 6,
+                        fontSize: 12,
+                        color: "var(--text-muted)",
+                        lineHeight: 1.35,
+                    }}>
+                        {energyLocked
+                            ? "This quest uses its own energy number."
+                            : "Energy follows this type. Change the number above to override just this quest."}
+                    </span>
+                )}
             </div>
 
             {/* XP and CP Rewards - Core */}
             <div style={{ 
                 display: "flex", 
-                gap: 16, 
-                marginBottom: 32,
-                padding: 16,
+                gap: isMobile ? 10 : 16, 
+                marginBottom: isMobile ? 12 : 32,
+                padding: isMobile ? 12 : 16,
                 backgroundColor: "rgba(var(--interactive-accent-rgb), 0.1)",
                 borderRadius: 12,
                 border: "1px solid var(--interactive-accent)",
@@ -545,3 +790,13 @@ export const QuestModalForm: React.FC<QuestModalFormProps> = memo(({
         </>
     );
 });
+
+function formatClockLabel(hhmm: string): string {
+    const [hRaw, mRaw] = hhmm.split(":");
+    const h = parseInt(hRaw || "0", 10);
+    const m = parseInt(mRaw || "0", 10);
+    if (!Number.isFinite(h)) return hhmm;
+    const date = new Date();
+    date.setHours(h, Number.isFinite(m) ? m : 0, 0, 0);
+    return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+}

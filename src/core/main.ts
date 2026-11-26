@@ -1,7 +1,16 @@
 import "../shared/styles/gamified-notices.css";
 import "../shared/styles/system-hunter-shell.css";
+import "../shared/styles/tab-system-shell.css";
+import "../shared/styles/tab-clay-shell.css";
+import "../shared/styles/shop-system-hunter.css";
 import "../shared/styles/pixel-enclave.css";
-import { Plugin, App, PluginSettingTab, Setting, Modal } from "obsidian";
+import { Plugin, App, PluginSettingTab, Setting, FuzzySuggestModal, TFile } from "obsidian";
+import {
+	listAllDataBackups,
+	restoreDataBackup,
+	type DataBackupEntry,
+} from "../shared/utils/vaultDataBackup";
+import { prunePlayerDataBackups } from "../features/player/utils/playerDataUtils";
 import React from 'react';
 import { PlayerTab, PLAYER_TAB_VIEW_TYPE } from "../views/tabs/player/PlayerTab";
 import { StatsTab, STATS_TAB_VIEW_TYPE } from "../views/tabs/stats/StatsTab";
@@ -17,7 +26,6 @@ import { TaskTabView, GAMIFIED_TASK_TAB_VIEW_TYPE } from '../views/tabs/quests/T
 import { SidebarQuestBoardView, SIDEBAR_QUEST_VIEW_TYPE } from '../views/sidebar/SidebarQuestView';
 import { SidebarBossView, SIDEBAR_BOSS_VIEW_TYPE } from '../views/sidebar/SidebarBossView';
 import { BossView, BOSS_VIEW_TYPE } from '../views/tabs/boss/BossView';
-import { giveBuffPreset } from '../features/inventory/utils/updateInventoryFile';
 import { playerStore } from '../shared/state/playerStore';
 import { rewardService } from '../shared/services/rewardService';
 import { buffService } from '../shared/services/buffService';
@@ -58,14 +66,11 @@ export default class GamifiedObsidianPlugin extends Plugin {
 	private taskIntegrationService?: TaskIntegrationService;
 	public questSystem: QuestSystemIntegration | null = null;
 	public enhancedQuestSystem?: EnhancedQuestSystem;
-	private advancedQuestDashboard: unknown = null;
-	private performanceOptimizer!: PerformanceOptimizer;
+	private performanceOptimizer?: PerformanceOptimizer;
 	private energyResetService?: EnergyResetService;
 	private energyNotificationService?: EnergyNotificationService;
 	private lastSavedModules: GamificationModules = { ...BALANCED_GAMEPLAY_MODULES };
-
-	// Make AdvancedQuestModal available on the plugin instance
-	public AdvancedQuestModal = AdvancedQuestModal;
+	private playerRibbonEl?: HTMLElement;
 
 	// Mobile detection and optimization methods
 	private detectMobileDevice(): boolean {
@@ -74,9 +79,10 @@ export default class GamifiedObsidianPlugin extends Plugin {
 		const userAgent = navigator.userAgent.toLowerCase();
 		const isMobileDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent);
 		const isSmallScreen = window.innerWidth <= 768;
-		const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
+		const isCoarsePointer = typeof window.matchMedia === 'function'
+			&& window.matchMedia('(pointer: coarse)').matches;
 
-		return isMobileDevice || (isSmallScreen && isTouchDevice);
+		return isMobileDevice || isSmallScreen || isCoarsePointer;
 	}
 
 	private initializeMobileOptimizations(): void {
@@ -147,28 +153,41 @@ export default class GamifiedObsidianPlugin extends Plugin {
 			}
 			
 			/* Only adjust padding within our plugin */
-			.gamification-mobile .gamification-container {
-				padding: 8px !important;
+			.gamification-mobile .gamification-container,
+			[data-gamification-mobile="true"].gamification-container {
+				padding: 4px !important;
+				width: 100% !important;
+				max-width: none !important;
+				box-sizing: border-box !important;
+			}
+
+			.gamification-mobile .gamification-player-grid,
+			[data-gamification-mobile="true"] .gamification-player-grid {
+				width: 100% !important;
+				max-width: none !important;
+				padding: 2px !important;
+				box-sizing: border-box !important;
+			}
+
+			.gamification-mobile .gamification-energy-hud [class*="statRow"],
+			[data-gamification-mobile="true"] .gamification-energy-hud [class*="statRow"] {
+				flex-direction: column !important;
+				align-items: stretch !important;
+				gap: 6px !important;
+			}
+
+			.gamification-mobile .gamification-energy-hud [class*="statBar"],
+			[data-gamification-mobile="true"] .gamification-energy-hud [class*="statBar"] {
+				width: 100% !important;
+				min-width: 0 !important;
+			}
+
+			.gamification-mobile .gamification-energy-hud [class*="quickActions"],
+			[data-gamification-mobile="true"] .gamification-energy-hud [class*="quickActions"] {
+				display: none !important;
 			}
 		`;
 		document.head.appendChild(style);
-
-		// Only prevent zoom within our plugin containers, not globally
-		let lastTouchEnd = 0;
-		this.preventZoomHandler = (event: TouchEvent) => {
-			// Only prevent zoom if the touch is within our plugin
-			const target = event.target as Element;
-			if (target && target.closest('.gamification-mobile')) {
-				const now = (new Date()).getTime();
-				if (now - lastTouchEnd <= 300) {
-					event.preventDefault();
-				}
-				lastTouchEnd = now;
-			}
-		};
-		document.addEventListener('touchend', this.preventZoomHandler, false);
-
-		// Don't modify viewport meta tag - let Obsidian handle it
 	}
 
 	private cleanupMobileOptimizations(): void {
@@ -185,13 +204,16 @@ export default class GamifiedObsidianPlugin extends Plugin {
 			performanceStyle.remove();
 		}
 
-		// Remove touch event listeners
-		if (this.preventZoomHandler) {
-			document.removeEventListener('touchend', this.preventZoomHandler);
-		}
 	}
 
-	private preventZoomHandler?: (event: TouchEvent) => void;
+	private removePlayerRibbon(): void {
+		this.playerRibbonEl?.remove();
+		this.playerRibbonEl = undefined;
+		// Fallback: strip stale ribbon nodes if onunload ran after a crash
+		document.querySelectorAll('.side-dock-ribbon-action[aria-label="Open Player"]').forEach((el) => {
+			el.remove();
+		});
+	}
 
 	private setupMobileErrorHandling(): void {
 		// Add mobile-specific error handling
@@ -261,6 +283,7 @@ export default class GamifiedObsidianPlugin extends Plugin {
 	}
 
 	async onload() {
+		void prunePlayerDataBackups(this.app.vault);
 		try {
 			// Mobile detection and optimization
 			const isMobile = this.detectMobileDevice();
@@ -273,11 +296,14 @@ export default class GamifiedObsidianPlugin extends Plugin {
 			// Failed to initialize mobile optimizations - continue without mobile features
 		}
 
-		// Initialize Performance Optimizer (non-blocking so plugin load stays fast)
-		this.performanceOptimizer = PerformanceOptimizer.getInstance(this.app);
-		this.performanceOptimizer.initialize().catch(() => {
-			// Performance optimizer is optional; continue without it if initialization fails
-		});
+        // Initialize Performance Optimizer (desktop only — timers add mobile WebView pressure)
+        const isMobileLoad = this.detectMobileDevice();
+        if (!isMobileLoad) {
+            this.performanceOptimizer = PerformanceOptimizer.getInstance(this.app);
+            this.performanceOptimizer.initialize().catch(() => {
+                // Performance optimizer is optional; continue without it if initialization fails
+            });
+        }
 
 		// Defer heavy initialization so Obsidian stays responsive while the plugin
 		// finishes loading. This runs in the background without blocking onload.
@@ -292,83 +318,59 @@ export default class GamifiedObsidianPlugin extends Plugin {
 
 		// Defer opening heavy React views until the user explicitly opens them.
 		// We still apply mobile optimizations once the workspace layout is ready.
+		this.registerInterval(
+			window.setInterval(() => {
+				void import('../features/focus/utils/focusCheckInService')
+					.then(({ promptFocusCheckInIfDue }) =>
+						promptFocusCheckInIfDue(this.app, this.settings)
+					)
+					.catch(() => {
+						/* check-in prompt is optional */
+					});
+			}, 60_000)
+		);
+
 		this.app.workspace.onLayoutReady(async () => {
+			void import('../features/focus/utils/focusCheckInService')
+				.then(({ promptFocusCheckInIfDue }) =>
+					promptFocusCheckInIfDue(this.app, this.settings)
+				)
+				.catch(() => {
+					/* check-in prompt is optional */
+				});
 			if (this.detectMobileDevice()) {
 				this.applyMobileOptimizationsAfterLoad();
 			}
+			void import('../features/inventory/utils/starterLookKit')
+				.then(({ ensureStarterLookKit }) => ensureStarterLookKit(this.app))
+				.catch(() => {
+					/* starter kit is optional */
+				});
+			void import('../features/skillTree/utils/ensureSkillTreeSkeleton')
+				.then(({ ensureSkillTreeSkeleton }) => ensureSkillTreeSkeleton(this.app.vault))
+				.catch(() => {
+					/* skill tree skeleton is optional */
+				});
 		});
 
-		this.addRibbonIcon("dice", "Open Player", () => {
+		this.removePlayerRibbon();
+		this.playerRibbonEl = this.addRibbonIcon("dice", "Gamified Obsidian: Player", () => {
 			this.app.workspace.onLayoutReady(async () => {
 				this.activatePlayerTabView();
 			});
 		});
 
-		// Removed the Advanced Quest Dashboard ribbon since it should be accessed through buttons
-		// this.addRibbonIcon('target', 'Advanced Quest Dashboard', async (evt: MouseEvent) => {
-		// 	try {
-		// 		if (!this.questSystem) {
-		// 			pixelNotice('Advanced quest system not initialized');
-		// 			return;
-		// 		}
-		// 
-		// 		const modal = new AdvancedQuestModal(this.app, {
-		// 			questSystem: this.questSystem,
-		// 			onQuestUpdate: (quest) => {
-		// 				pixelNotice('Quest updated successfully');
-		// 			},
-		// 			onQuestCreate: (quest) => {
-		// 				pixelNotice('Quest created successfully');
-		// 			},
-		// 			onQuestDelete: (questId) => {
-		// 				pixelNotice('Quest deleted successfully');
-		// 			}
-		// 		});
-		// 
-		// 		modal.open();
-		// 	} catch (error) {
-		// 		pixelNotice('Failed to open advanced quest dashboard');
-		// 	}
-		// });
-
-		// Removed the Stats ribbon since stats are available in the sidebar
-		// this.addRibbonIcon("bar-chart", "Open Stats", () => {
-		// 	this.app.workspace.onLayoutReady(async () => {
-		// 		this.activateStatsTabView();
-		// 	});
-		// });
+		this.addCommand({
+			id: 'open-player-tab',
+			name: 'Open Player',
+			icon: 'dice',
+			callback: () => {
+				void this.activatePlayerTabView();
+			},
+		});
 
 		// Add settings tab
 		this.addSettingTab(new GamificationSettingTab(this.app, this));
-		// Commands: Give common buff presets
-		this.addCommand({
-			id: 'give-xp-booster-30m',
-			name: 'Give Item: XP Booster (30m)',
-			callback: async () => { await giveBuffPreset(this.app, 'xp_booster_30m', 1); }
-		});
-		this.addCommand({
-			id: 'give-cp-booster-30m',
-			name: 'Give Item: CP Booster (30m)',
-			callback: async () => { await giveBuffPreset(this.app, 'cp_booster_30m', 1); }
-		});
-		this.addCommand({
-			id: 'give-rewards-booster-1h',
-			name: 'Give Item: Rewards Booster (1h)',
-			callback: async () => { await giveBuffPreset(this.app, 'rewards_booster_1h', 1); }
-		});
-		this.addCommand({
-			id: 'give-trade-booster-1h',
-			name: 'Give Item: Trade Booster (1h)',
-			callback: async () => { await giveBuffPreset(this.app, 'trade_booster_1h', 1); }
-		});
-
-		// Register the TaskTab in the tab system (example pattern)
-		// this.addTab({
-		// 	id: 'task-tab',
-		// 	title: 'Tasks',
-		// 	icon: 'check-square', // or any icon you prefer
-		// 	component: TaskTab,
-		// });
 
 		this.registerView(
 			GAMIFIED_TASK_TAB_VIEW_TYPE,
@@ -376,9 +378,15 @@ export default class GamifiedObsidianPlugin extends Plugin {
 		);
 		this.addCommand({
 			id: 'open-gamified-task-tab',
-			name: 'Open Gamified Task Tab',
+			name: 'Open extra quest board',
 			callback: () => {
 				this.app.workspace.onLayoutReady(async () => {
+					const { extraQuestSurfacesEnabled } = await import('../shared/utils/gameplayConfig');
+					if (!extraQuestSurfacesEnabled(this.settings)) {
+						const { pixelNotice } = await import('../shared/utils/noticeUtils');
+						pixelNotice('Use Player → Quests. Extra quest views are off under Gameplay → Feature Modules.', 5000);
+						return;
+					}
 					const leaf = this.app.workspace.getLeaf('tab');
 					await leaf.setViewState({
 						type: GAMIFIED_TASK_TAB_VIEW_TYPE,
@@ -391,7 +399,7 @@ export default class GamifiedObsidianPlugin extends Plugin {
 
 		this.addCommand({
 			id: 'quick-capture-idea',
-			name: 'Brain dump idea',
+			name: 'Capture an idea',
 			callback: () => {
 				void import('../features/quests/modals/QuickCaptureModal').then(({ openQuickCaptureModal }) => {
 					openQuickCaptureModal(this.app, this.settings);
@@ -402,7 +410,7 @@ export default class GamifiedObsidianPlugin extends Plugin {
 		// Boss Battle View Command
 		this.addCommand({
 			id: 'open-boss-battle-view',
-			name: 'Open Boss Battle Arena',
+			name: 'Open dungeon (or resume fight)',
 			callback: () => {
 				this.app.workspace.onLayoutReady(async () => {
 					const { isBossBattlesEnabled } = await import('../shared/utils/gameplayConfig');
@@ -411,7 +419,12 @@ export default class GamifiedObsidianPlugin extends Plugin {
 						pixelNotice('Boss battles are disabled. Enable them in Settings → Feature Modules.', 5000);
 						return;
 					}
-					this.activateBossView();
+					const { getActiveBossFileRaid } = await import('../features/quests/utils/bossRaidService');
+					if (getActiveBossFileRaid()) {
+						void this.activateBossView();
+						return;
+					}
+					await this.focusQuestHubSection('dungeon');
 				});
 			},
 		});
@@ -419,7 +432,7 @@ export default class GamifiedObsidianPlugin extends Plugin {
 		// Forge a file-backed boss (Bosses/ folder)
 		this.addCommand({
 			id: 'create-boss',
-			name: 'Forge a boss',
+			name: 'Create a boss',
 			callback: () => {
 				void this.openCreateBossModal();
 			},
@@ -434,7 +447,7 @@ export default class GamifiedObsidianPlugin extends Plugin {
 
 			this.addCommand({
 				id: 'open-sidebar-quest-board',
-				name: 'Open Sidebar Quest Board',
+				name: 'Open quest board',
 				callback: () => {
 					this.app.workspace.onLayoutReady(async () => {
 						const leaf = this.app.workspace.getRightLeaf(false);
@@ -449,6 +462,14 @@ export default class GamifiedObsidianPlugin extends Plugin {
 			});
 		}
 
+		this.addCommand({
+			id: 'expand-mission-board',
+			name: 'Expand day plan',
+			callback: () => {
+				void this.openMissionBoardExpanded();
+			},
+		});
+
 		// Register Sidebar Boss View
 		this.registerView(
 			SIDEBAR_BOSS_VIEW_TYPE,
@@ -457,9 +478,15 @@ export default class GamifiedObsidianPlugin extends Plugin {
 
 		this.addCommand({
 			id: 'open-sidebar-boss-view',
-			name: 'Open Sidebar Boss Analytics',
+			name: 'Open extra boss analytics',
 			callback: () => {
 				this.app.workspace.onLayoutReady(async () => {
+					const { extraQuestSurfacesEnabled } = await import('../shared/utils/gameplayConfig');
+					if (!extraQuestSurfacesEnabled(this.settings)) {
+						const { pixelNotice } = await import('../shared/utils/noticeUtils');
+						pixelNotice('Start fights from Quests → Dungeon. Extra views are off under Gameplay → Feature Modules.', 5000);
+						return;
+					}
 					const leaf = this.app.workspace.getRightLeaf(false);
 					if (leaf) {
 						leaf.setViewState({
@@ -474,68 +501,76 @@ export default class GamifiedObsidianPlugin extends Plugin {
 		// Add command to manually check and fix player level
 		this.addCommand({
 			id: 'check-player-level',
-			name: 'Check and Fix Player Level',
+			name: 'Recalculate player level',
 			callback: async () => {
 				try {
 					const result = await playerStore.checkLevelAndRefresh();
 					if (result?.leveledUp) {
-						showGameNotice(`🎉 Level up! You are now level ${result.level}!`, 3000);
+						showGameNotice(`Level up — you are now level ${result.level}.`, 3000, 'high');
 					} else {
-						showGameNotice(`✅ Level check complete. Current level: ${result?.level || 'Unknown'}`, 3000);
+						showGameNotice(`Current level: ${result?.level ?? 'unknown'}`, 3000, 'low');
 					}
 				} catch (error) {
-					showGameNotice('❌ Level check failed', 3000);
+					showGameNotice('Could not recalculate level.', 3000, 'high');
 				}
 			},
 		});
 
-		// Add command to show performance monitor
 		this.addCommand({
-			id: 'show-performance-monitor',
-			name: 'Show Performance Monitor',
-			callback: () => {
-				// This will be handled by the TabView component
-				showGameNotice('🔧 Performance monitor available in the Player tab', 3000);
-			},
-		});
-
-		// Add command to get performance stats
-		this.addCommand({
-			id: 'get-performance-stats',
-			name: 'Get Performance Statistics',
-			callback: () => {
-				if (this.performanceOptimizer) {
-					this.performanceOptimizer.getStats();
-					showGameNotice('📊 Performance stats available in console', 3000);
-				} else {
-					showGameNotice('❌ Performance optimizer not initialized', 3000);
+			id: 'restore-data-backup',
+			name: 'Restore vault data from backup',
+			callback: async () => {
+				try {
+					const backups = await listAllDataBackups(this.app.vault);
+					if (backups.length === 0) {
+						showGameNotice('No data backups found yet — backups are created automatically before writes.', 4000);
+						return;
+					}
+					new RestoreBackupModal(this.app, backups, async (entry) => {
+						try {
+							await restoreDataBackup(this.app.vault, entry);
+							showGameNotice(`✅ Restored ${entry.sourcePath} from backup`, 4000);
+						} catch (err) {
+							console.error('Restore from backup failed:', err);
+							showGameNotice('❌ Restore failed — see console for details', 4000);
+						}
+					}).open();
+				} catch (err) {
+					console.error('Could not list backups:', err);
+					showGameNotice('❌ Could not list backups', 3000);
 				}
 			},
 		});
 
-		// Register Datacore Task Analytics View - Disabled for now
-		// if (this.settings.enableDatacoreIntegration) {
-		//	// this.registerView(
-		//	//	DATACORE_TASK_VIEW_TYPE,
-		//	//	(leaf) => new DatacoreTaskBoardView(leaf, this)
-		//	// );
-		//
-		//	this.addCommand({
-		//		id: 'open-datacore-task-analytics',
-		//		name: 'Open Task Analytics (Datacore)',
-		//		callback: () => {
-		//			this.app.workspace.onLayoutReady(async () => {
-		//				const leaf = this.app.workspace.getRightLeaf(false);
-		//				if (leaf) {
-		//					// leaf.setViewState({
-		//					//	type: DATACORE_TASK_VIEW_TYPE,
-		//					//	active: true,
-		//					// });
-		//				}
-		//			});
-		//		},
-		//	});
-		// }
+		this.addCommand({
+			id: 'restore-settings-backup',
+			name: 'Restore plugin settings from backup',
+			callback: async () => {
+				try {
+					const { listSettingsBackups, restoreSettingsBackup, backupPluginSettings } = await import('../shared/utils/settingsBackup');
+					const backups = await listSettingsBackups(this);
+					if (backups.length === 0) {
+						showGameNotice('No settings backups yet — use Settings → Backup & Restore, or save settings once.', 4000);
+						return;
+					}
+					new RestoreSettingsBackupModal(this.app, backups, async (entry) => {
+						try {
+							await backupPluginSettings(this, this.settings, { force: true });
+							await restoreSettingsBackup(this, entry.backupPath);
+							await this.loadSettings();
+							showGameNotice('Settings restored. Disable → enable the plugin if theme or modules look stale.', 5000);
+						} catch (err) {
+							console.error('Settings restore failed:', err);
+							showGameNotice('❌ Settings restore failed', 4000);
+						}
+					}).open();
+				} catch (err) {
+					console.error(err);
+					showGameNotice('❌ Could not list settings backups', 3000);
+				}
+			},
+		});
+
 	}
 
 	async loadSettings() {
@@ -549,13 +584,15 @@ export default class GamifiedObsidianPlugin extends Plugin {
 		// Visual theme: existing installs without visualTheme keep Classic (current look)
 		this.settings.visualTheme = migrateVisualThemeSettings(loaded);
 
+		const existingInstall = Boolean(loaded && Object.keys(loaded).length > 0);
+
 		// Existing installs skip first-run onboarding (Phase 3)
-		if (loaded && loaded.gameplayOnboardingComplete === undefined) {
+		if (existingInstall && loaded?.gameplayOnboardingComplete === undefined) {
 			this.settings.gameplayOnboardingComplete = true;
 		}
 
 		// Preserve full 5-stat HUD for existing users until they choose a mode
-		if (loaded && loaded.energyHudMode === undefined) {
+		if (existingInstall && loaded?.energyHudMode === undefined) {
 			this.settings.energyHudMode = 'full';
 		}
 
@@ -569,7 +606,7 @@ export default class GamifiedObsidianPlugin extends Plugin {
 
 		// Initialize currency display service with current settings
 		currencyDisplay.initialize(this.settings);
-		setNotificationLevel(this.settings.notificationLevel ?? 'normal');
+		setNotificationLevel(this.settings.notificationLevel ?? 'quiet');
 		applyVisualTheme(this.settings);
 	}
 
@@ -579,6 +616,13 @@ export default class GamifiedObsidianPlugin extends Plugin {
 			...BALANCED_GAMEPLAY_MODULES,
 			...(this.settings.modules ?? {}),
 		};
+
+		try {
+			const { backupSettingsBeforeSave } = await import('../shared/utils/settingsBackup');
+			await backupSettingsBeforeSave(this);
+		} catch {
+			/* auto-backup is best-effort */
+		}
 
 		await this.saveData(this.settings);
 
@@ -591,9 +635,10 @@ export default class GamifiedObsidianPlugin extends Plugin {
 		await this.applyModuleRuntimeChanges(previousModules, nextModules);
 		this.lastSavedModules = { ...nextModules };
 
-		setNotificationLevel(this.settings.notificationLevel ?? 'normal');
+		setNotificationLevel(this.settings.notificationLevel ?? 'quiet');
 		applyVisualTheme(this.settings);
 		emitSettingsUpdated();
+		void this.completionTracker?.refreshWatchList();
 	}
 
 	private async applyModuleRuntimeChanges(
@@ -846,6 +891,11 @@ export default class GamifiedObsidianPlugin extends Plugin {
 				resumeClaim: detail.resumeClaim,
 			});
 		} catch (error) {
+			const { BossKeyRequiredError } = await import('../features/quests/utils/bossRaidService');
+			if (error instanceof BossKeyRequiredError) {
+				pixelNotice('🔑 A Boss Key is required. Win a dungeon raid on your Journey to earn one.', 4500);
+				return;
+			}
 			console.error('[openBossRaid] Failed to start boss raid', error);
 		}
 		this.pendingBossRaid = { path: detail.path, lockDungeon: detail.lockDungeon };
@@ -882,6 +932,63 @@ export default class GamifiedObsidianPlugin extends Plugin {
 		}
 	}
 
+	/** Open Quests Mission Board in a wide main tab (expanded day plan + inbox). */
+	async openMissionBoardExpanded(): Promise<void> {
+		const { QUEST_HUB_SECTION_KEY } = await import('../features/quests/utils/questProjectUtils');
+		try {
+			localStorage.setItem(QUEST_HUB_SECTION_KEY, 'tasks');
+			localStorage.setItem('gamification-selected-tab', 'quests');
+		} catch {
+			/* ignore storage failures */
+		}
+
+		await this.app.workspace.onLayoutReady(async () => {
+			const { workspace } = this.app;
+
+			if (this.settings.enableSidebarQuestBoard) {
+				const leaf = workspace.getLeaf('tab');
+				await leaf.setViewState({
+					type: SIDEBAR_QUEST_VIEW_TYPE,
+					active: true,
+				});
+				workspace.revealLeaf(leaf);
+				workspace.setActiveLeaf(leaf, { focus: true });
+				try {
+					window.dispatchEvent(
+						new CustomEvent('gamification-quest-hub-focus', {
+							detail: { section: 'tasks' },
+						})
+					);
+				} catch {
+					/* ignore */
+				}
+				return;
+			}
+
+			let leaf = workspace.getLeavesOfType(PLAYER_TAB_VIEW_TYPE)[0];
+			if (!leaf) {
+				leaf = workspace.getLeaf('tab');
+				await leaf.setViewState({
+					type: PLAYER_TAB_VIEW_TYPE,
+					active: true,
+				});
+			}
+			workspace.revealLeaf(leaf);
+			workspace.setActiveLeaf(leaf, { focus: true });
+			window.setTimeout(() => {
+				try {
+					window.dispatchEvent(
+						new CustomEvent('requestActiveTabChange', {
+							detail: { targetTab: 'quests' },
+						})
+					);
+				} catch {
+					/* ignore */
+				}
+			}, 80);
+		});
+	}
+
 	/** Open the sidebar quest board on a hub section (e.g. Dungeon gate roster). */
 	async focusQuestHubSection(
 		section: import('../features/quests/utils/questProjectUtils').QuestHubSection = 'dungeon'
@@ -899,23 +1006,33 @@ export default class GamifiedObsidianPlugin extends Plugin {
 		} catch {
 			/* ignore dispatch errors outside the browser runtime */
 		}
-		if (!this.settings.enableSidebarQuestBoard) {
-			const { pixelNotice } = await import('../shared/utils/noticeUtils');
-			pixelNotice('Enable the sidebar quest board in plugin settings.', 4000);
+		try {
+			localStorage.setItem('gamification-selected-tab', 'quests');
+			window.dispatchEvent(
+				new CustomEvent('requestActiveTabChange', { detail: { targetTab: 'quests' } })
+			);
+		} catch {
+			/* ignore */
+		}
+		if (this.settings.enableSidebarQuestBoard) {
+			this.app.workspace.onLayoutReady(async () => {
+				const leaf = this.app.workspace.getRightLeaf(false);
+				if (leaf) {
+					await leaf.setViewState({
+						type: SIDEBAR_QUEST_VIEW_TYPE,
+						active: true,
+					});
+				}
+			});
 			return;
 		}
-		this.app.workspace.onLayoutReady(async () => {
-			const leaf = this.app.workspace.getRightLeaf(false);
-			if (leaf) {
-				await leaf.setViewState({
-					type: SIDEBAR_QUEST_VIEW_TYPE,
-					active: true,
-				});
-			}
-		});
+		void this.activatePlayerTabView();
 	}
 
 	onunload() {
+		this.removePlayerRibbon();
+		playerStore.resetForPluginUnload();
+
 		// Clean up mobile optimizations
 		this.cleanupMobileOptimizations();
 
@@ -995,116 +1112,45 @@ export default class GamifiedObsidianPlugin extends Plugin {
 		}
 	}
 
-	private setupAdvancedQuestFeatures() {
-		// Removed ribbon icon - advanced quest dashboard should be accessed through buttons/commands
-		// this.addRibbonIcon('target', 'Advanced Quest Dashboard', async (evt: MouseEvent) => {
-		// 	await this.showAdvancedQuestDashboard();
-		// });
+	private customAchievementSyncTimer: number | null = null;
 
-		// Add advanced quest commands
-		this.addCommand({
-			id: 'show-advanced-quest-dashboard',
-			name: 'Show Advanced Quest Dashboard',
-			callback: async () => {
-				await this.showAdvancedQuestDashboard();
-			}
-		});
-
-		this.addCommand({
-			id: 'generate-quest-analytics',
-			name: 'Generate Quest Analytics',
-			callback: async () => {
-				await this.generateQuestAnalytics();
-			}
-		});
-
-		this.addCommand({
-			id: 'sync-quest-vaults',
-			name: 'Sync Quest Vaults',
-			callback: async () => {
-				await this.syncQuestVaults();
-			}
-		});
-
-		this.addCommand({
-			id: 'show-quest-templates',
-			name: 'Show Quest Templates',
-			callback: async () => {
-				await this.showQuestTemplates();
-			}
-		});
-
-		// Add status bar item for quest system status
-		this.addStatusBarItem().setText('🎯 Quest System Active');
-	}
-
-	private async showAdvancedQuestDashboard() {
-		try {
-			await import('../features/quests/components/AdvancedQuestDashboard');
-
-			const modal = new AdvancedQuestModal(this.app, {
-				questSystem: this.questSystem,
-				onQuestUpdate: () => {
-					// Handle quest updates
-				},
-				onQuestCreate: () => {
-					// Handle quest creation
-				},
-				onQuestDelete: () => {
-					// Handle quest deletion
-				}
-			});
-
-			modal.open();
-		} catch (error) {
-			showGameNotice('Failed to load advanced quest dashboard');
-		}
-	}
-
-	private async generateQuestAnalytics() {
-		try {
-			await QuestSystemIntegration.generateAnalytics();
-
-			// Show analytics in a modal or notification
-			const insights = QuestSystemIntegration.getAnalyticsInsights();
-			if (insights) {
-				showGameNotice(`Analytics generated! Completion rate: ${(insights.overview.completionRate * 100).toFixed(1)}%`);
-			}
-		} catch (error) {
-			showGameNotice('Failed to generate analytics');
-		}
-	}
-
-	private async syncQuestVaults() {
-		try {
-			await QuestSystemIntegration.syncWithVaults();
-			showGameNotice('Quest vaults synced successfully');
-		} catch (error) {
-			showGameNotice('Failed to sync quest vaults');
-		}
-	}
-
-	private async showQuestTemplates() {
-		try {
-			const suggestions = await QuestSystemIntegration.getTemplateSuggestions();
-
-			if (suggestions.length > 0) {
-				showGameNotice(`${suggestions.length} template suggestions available`);
-			} else {
-				showGameNotice('No template suggestions available');
-			}
-		} catch (error) {
-			showGameNotice('Failed to load template suggestions');
-		}
+	/** Quest checks and skill-note edits both refresh custom badges. */
+	private registerCustomAchievementSync(): void {
+		const schedule = () => {
+			if (this.customAchievementSyncTimer != null) window.clearTimeout(this.customAchievementSyncTimer);
+			this.customAchievementSyncTimer = window.setTimeout(() => {
+				this.customAchievementSyncTimer = null;
+				void import('../features/achievements/utils/customAchievements')
+					.then(async ({ syncCustomAchievementsFromVault }) => {
+						await syncCustomAchievementsFromVault(this.app);
+					})
+					.catch(() => {
+						/* custom achievements keep their last saved counts */
+					});
+			}, 700);
+		};
+		this.registerEvent(
+			this.app.vault.on('modify', (file) => {
+				if (file instanceof TFile && file.extension === 'md') schedule();
+			})
+		);
+		this.registerEvent(
+			this.app.vault.on('rename', (file) => {
+				if (file instanceof TFile) schedule();
+			})
+		);
 	}
 
 	private async initializeServicesInBackground() {
 		try {
 			// Load plugin settings
 			await this.loadSettings();
+			const isMobile = this.detectMobileDevice();
 
-			// Set the vault on the player store
-			playerStore.setVault(this.app.vault);
+			// Player store initializes when the Player tab opens on mobile (avoids retry storms at plugin enable).
+			if (!isMobile) {
+				playerStore.setVault(this.app.vault);
+			}
 
 			// Initialize buff service
 			buffService;
@@ -1116,41 +1162,43 @@ export default class GamifiedObsidianPlugin extends Plugin {
 			// Sync settings to runtime config on startup
 			this.syncSettingsToRuntimeConfig();
 
-			// Set up periodic level checking to ensure UI stays in sync
-			this.setupPeriodicLevelCheck();
+			// Desktop-only background services are deliberately not started on mobile.
+			// They scan files/DOM and add timers even when their views are closed, which
+			// can exhaust an iOS WebView and terminate the whole Obsidian app.
+			if (!isMobile) {
+				this.setupPeriodicLevelCheck();
 
-			// Initialize achievement event service for game event tracking (lazy)
-			import('../features/achievements/services/achievementEventService').catch(() => {
-				// Achievement service loading is optional
-			});
-
-			// Initialize quest tracking services
-			this.taskScanner = new GamifiedTaskScanner(this.app);
-			this.completionTracker = new QuestCompletionTracker(this.app);
-
-			// Start automatic tracking
-			// this.taskScanner.startAutoScan(); // Disabled - was causing repetitive notifications every 10 seconds
-			this.completionTracker.startTracking();
-
-			// Initialize shop integration when shop module is enabled
-			const shopEnabled = this.settings.modules?.enableShopTab === true;
-			this.shopIntegration = new ShopIntegration(this);
-			setShopIntegration(this.shopIntegration);
-			if (shopEnabled) {
-				this.shopIntegration.initialize().catch(() => {
-					// Shop integration is optional
+				import('../features/achievements/services/achievementEventService').catch(() => {
+					// Achievement service loading is optional
 				});
+
+				this.taskScanner = new GamifiedTaskScanner(this.app);
+				this.completionTracker = new QuestCompletionTracker(this.app);
+				this.completionTracker.startTracking();
+
+				const shopEnabled = this.settings.modules?.enableShopTab === true;
+				this.shopIntegration = new ShopIntegration(this);
+				setShopIntegration(this.shopIntegration);
+				if (shopEnabled) {
+					this.shopIntegration.initialize().catch(() => {
+						// Shop integration is optional
+					});
+				}
 			}
 
-			// Initialize task integration service
-			this.taskIntegrationService = TaskIntegrationService.getInstance(
-				this.app.vault,
-				this.app.metadataCache
-			);
+			// Task integration and energy timers are deferred on mobile until a view needs them.
+			if (!isMobile) {
+				this.taskIntegrationService = TaskIntegrationService.getInstance(
+					this.app.vault,
+					this.app.metadataCache
+				);
+			}
+
+			this.registerCustomAchievementSync();
 
 			// Initialize Energy Services when energy module is enabled
 			const energyEnabled = this.settings.modules?.enableEnergySystem !== false;
-			if (energyEnabled) {
+			if (energyEnabled && !isMobile) {
 				this.energyResetService = EnergyResetService.getInstance(this.app);
 				this.energyResetService.initialize().catch(() => {
 					// Energy reset service is optional; failures are logged internally
@@ -1162,31 +1210,29 @@ export default class GamifiedObsidianPlugin extends Plugin {
 				});
 			}
 
-			// Initialize Advanced Quest System in the background so it doesn't block plugin load
-			QuestSystemIntegration.initializeQuestSystem(this.app)
-				.then((questSystem) => {
-					this.questSystem = questSystem;
-					// Check if advanced features are enabled
-					if (QuestSystemIntegration.isAdvancedFeaturesEnabled()) {
-						this.setupAdvancedQuestFeatures();
-					}
-				})
-				.catch(() => {
-					// Advanced quest system is optional; fall back to basic quest features
+			if (!isMobile) {
+				// Initialize Advanced Quest System in the background so it doesn't block plugin load
+				QuestSystemIntegration.initializeQuestSystem(this.app)
+					.then((questSystem) => {
+						this.questSystem = questSystem;
+					})
+					.catch(() => {
+						// Advanced quest system is optional; fall back to basic quest features
+					});
+
+				// Banner fallback is desktop-only. It observes only the plugin root.
+				this.enhancedQuestSystem = new EnhancedQuestSystem(this);
+				this.enhancedQuestSystem.initialize().catch((err) => {
+					console.error('Enhanced Quest System init failed:', err);
 				});
 
-			// Initialize Enhanced Quest System for banner caching and display
-			this.enhancedQuestSystem = new EnhancedQuestSystem(this);
-			this.enhancedQuestSystem.initialize().catch((err) => {
-				console.error('Enhanced Quest System init failed:', err);
-			});
-
-			// Migrate legacy habits file into per-habit notes if needed
-			try {
-				const { migrateHabitsToPerFile } = await import('../features/habits/utils/habitsUtils');
-				await migrateHabitsToPerFile(this.app.vault);
-			} catch (e) {
-				// Habit migration is best-effort; failures are logged in the utility
+				// File migrations must not run during iCloud mobile startup.
+				try {
+					const { migrateHabitsToPerFile } = await import('../features/habits/utils/habitsUtils');
+					await migrateHabitsToPerFile(this.app.vault);
+				} catch (e) {
+					// Habit migration is best-effort; failures are logged in the utility
+				}
 			}
 		} catch (error) {
 			// Failed to initialize new services - using defaults
@@ -1196,14 +1242,30 @@ export default class GamifiedObsidianPlugin extends Plugin {
 
 class GamificationSettingTab extends PluginSettingTab {
 	plugin: GamifiedObsidianPlugin;
+	private reactRoot: { unmount: () => void } | null = null;
 
 	constructor(app: App, plugin: GamifiedObsidianPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}
 
+	private unmountSettingsUi() {
+		try {
+			this.reactRoot?.unmount();
+		} catch {
+			/* root may already be detached */
+		}
+		this.reactRoot = null;
+	}
+
+	hide(): void {
+		this.unmountSettingsUi();
+		super.hide();
+	}
+
 	display(): void {
 		const { containerEl } = this;
+		this.unmountSettingsUi();
 		containerEl.empty();
 
 		// Create a container for our React settings UI
@@ -1214,7 +1276,9 @@ class GamificationSettingTab extends PluginSettingTab {
 		import('../features/settings/components/SettingsUI').then(({ SettingsUI }) => {
 			// Create React root and render the settings UI
 			import('react-dom/client').then(({ createRoot }) => {
+				this.unmountSettingsUi();
 				const root = createRoot(settingsContainer);
+				this.reactRoot = root;
 
 				root.render(
 					React.createElement(SettingsUI, {
@@ -2065,170 +2129,53 @@ class GamificationSettingTab extends PluginSettingTab {
 	}
 }
 
-// Advanced Quest Modal Component
-class AdvancedQuestModal extends Modal {
-	private questSystem: QuestSystemIntegration | null;
-	private onQuestUpdate?: () => void;
-	private onQuestCreate?: () => void;
-	private onQuestDelete?: (questId: string) => void;
-
-	constructor(app: App, options: {
-		questSystem: QuestSystemIntegration | null;
-		onQuestUpdate?: () => void;
-		onQuestCreate?: () => void;
-		onQuestDelete?: (questId: string) => void;
-	}) {
-		super(app);
-		this.questSystem = options.questSystem;
-		this.onQuestUpdate = options.onQuestUpdate;
-		this.onQuestCreate = options.onQuestCreate;
-		this.onQuestDelete = options.onQuestDelete;
-	}
-
-	onOpen() {
-		const { contentEl } = this;
-		contentEl.empty();
-
-		// Create a simple native HTML interface instead of React
-		this.createNativeDashboard(contentEl);
-	}
-
-	private createNativeDashboard(container: HTMLElement) {
-		// Create the dashboard container
-		const dashboardContainer = container.createDiv('advanced-quest-dashboard-container');
-		dashboardContainer.style.cssText = `
-			padding: 20px;
-			max-width: 800px;
-			margin: 0 auto;
-			font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-		`;
-
-		// Header
-		const header = dashboardContainer.createDiv();
-		header.innerHTML = `
-			<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #4a9eff;">
-				<span style="font-size: 24px;">🎯</span>
-				<h2 style="margin: 0; color: #4a9eff; font-size: 24px;">Advanced Quest Dashboard</h2>
-			</div>
-		`;
-
-		// Status section
-		const statusSection = dashboardContainer.createDiv();
-		statusSection.innerHTML = `
-			<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 20px; border-radius: 12px; margin-bottom: 24px; color: white;">
-				<h3 style="margin: 0 0 16px 0; font-size: 18px;">System Status</h3>
-				<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
-					<div style="background: rgba(255,255,255,0.1); padding: 12px; border-radius: 8px;">
-						<div style="font-size: 14px; opacity: 0.8;">Total Quests</div>
-						<div style="font-size: 24px; font-weight: bold;">-</div>
-					</div>
-					<div style="background: rgba(255,255,255,0.1); padding: 12px; border-radius: 8px;">
-						<div style="font-size: 14px; opacity: 0.8;">Completed</div>
-						<div style="font-size: 24px; font-weight: bold;">-</div>
-					</div>
-					<div style="background: rgba(255,255,255,0.1); padding: 12px; border-radius: 8px;">
-						<div style="font-size: 14px; opacity: 0.8;">Active</div>
-						<div style="font-size: 24px; font-weight: bold;">-</div>
-					</div>
-				</div>
-			</div>
-		`;
-
-		// Features section
-		const featuresSection = dashboardContainer.createDiv();
-		featuresSection.innerHTML = `
-			<div style="margin-bottom: 24px;">
-				<h3 style="margin: 0 0 16px 0; color: #333;">Advanced Features</h3>
-				<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px;">
-					<div style="background: #f8f9fa; padding: 16px; border-radius: 8px; border-left: 4px solid #4a9eff;">
-						<h4 style="margin: 0 0 8px 0; color: #4a9eff;">🚀 Performance Optimization</h4>
-						<p style="margin: 0; font-size: 14px; color: #666;">Incremental parsing and caching for large quest files</p>
-					</div>
-					<div style="background: #f8f9fa; padding: 16px; border-radius: 8px; border-left: 4px solid #28a745;">
-						<h4 style="margin: 0 0 8px 0; color: #28a745;">📋 Smart Templates</h4>
-						<p style="margin: 0; font-size: 14px; color: #666;">Context-aware quest templates and wizards</p>
-					</div>
-					<div style="background: #f8f9fa; padding: 16px; border-radius: 8px; border-left: 4px solid #ffc107;">
-						<h4 style="margin: 0 0 8px 0; color: #ffc107;">🔄 Cross-Vault Sharing</h4>
-						<p style="margin: 0; font-size: 14px; color: #666;">Share quests between different Obsidian vaults</p>
-					</div>
-					<div style="background: #f8f9fa; padding: 16px; border-radius: 8px; border-left: 4px solid #dc3545;">
-						<h4 style="margin: 0 0 8px 0; color: #dc3545;">🧠 Advanced Analytics</h4>
-						<p style="margin: 0; font-size: 14px; color: #666;">Deep insights and optimization recommendations</p>
-					</div>
-				</div>
-			</div>
-		`;
-
-		// Actions section
-		const actionsSection = dashboardContainer.createDiv();
-		actionsSection.innerHTML = `
-			<div style="margin-bottom: 24px;">
-				<h3 style="margin: 0 0 16px 0; color: #333;">Quick Actions</h3>
-				<div style="display: flex; gap: 12px; flex-wrap: wrap;">
-					<button id="generate-analytics" style="padding: 12px 20px; background: #4a9eff; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500;">
-						📊 Generate Analytics
-					</button>
-					<button id="sync-vaults" style="padding: 12px 20px; background: #28a745; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500;">
-						🔄 Sync Vaults
-					</button>
-					<button id="show-templates" style="padding: 12px 20px; background: #ffc107; color: #333; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500;">
-						📋 Show Templates
-					</button>
-				</div>
-			</div>
-		`;
-
-		// Add event listeners
-		this.addDashboardEventListeners(dashboardContainer);
-	}
-
-	private addDashboardEventListeners(container: HTMLElement) {
-		// Generate Analytics button
-		const analyticsBtn = container.querySelector('#generate-analytics');
-		if (analyticsBtn) {
-			analyticsBtn.addEventListener('click', async () => {
-				try {
-					await QuestSystemIntegration.generateAnalytics();
-					showGameNotice('Analytics generated successfully!');
-				} catch (error) {
-					showGameNotice('Failed to generate analytics');
-				}
-			});
-		}
-
-		// Sync Vaults button
-		const syncBtn = container.querySelector('#sync-vaults');
-		if (syncBtn) {
-			syncBtn.addEventListener('click', async () => {
-				try {
-					await QuestSystemIntegration.syncWithVaults();
-					showGameNotice('Vaults synced successfully!');
-				} catch (error) {
-					showGameNotice('Failed to sync vaults');
-				}
-			});
-		}
-
-		// Show Templates button
-		const templatesBtn = container.querySelector('#show-templates');
-		if (templatesBtn) {
-			templatesBtn.addEventListener('click', async () => {
-				try {
-					const suggestions = await QuestSystemIntegration.getTemplateSuggestions();
-					showGameNotice(`Found ${suggestions.length} template suggestions`);
-				} catch (error) {
-					showGameNotice('Failed to get template suggestions');
-				}
-			});
-		}
-	}
-
-	onClose() {
-		const { contentEl } = this;
-		contentEl.empty();
-	}
-}
 
 // Inventory types and parsing are centralized under
 // `
+
+/** Fuzzy picker over automatic data backups (newest first). */
+class RestoreBackupModal extends FuzzySuggestModal<DataBackupEntry> {
+	constructor(
+		app: App,
+		private backups: DataBackupEntry[],
+		private onPick: (entry: DataBackupEntry) => void | Promise<void>
+	) {
+		super(app);
+		this.setPlaceholder('Pick a backup to restore (overwrites the current file)…');
+	}
+
+	getItems(): DataBackupEntry[] {
+		return this.backups;
+	}
+
+	getItemText(entry: DataBackupEntry): string {
+		return entry.label;
+	}
+
+	onChooseItem(entry: DataBackupEntry): void {
+		void this.onPick(entry);
+	}
+}
+
+class RestoreSettingsBackupModal extends FuzzySuggestModal<{ backupPath: string; label: string }> {
+	constructor(
+		app: App,
+		private backups: { backupPath: string; label: string }[],
+		private onPick: (entry: { backupPath: string; label: string }) => void | Promise<void>
+	) {
+		super(app);
+		this.setPlaceholder('Pick a settings snapshot to restore…');
+	}
+
+	getItems() {
+		return this.backups;
+	}
+
+	getItemText(entry: { backupPath: string; label: string }): string {
+		return entry.label;
+	}
+
+	onChooseItem(entry: { backupPath: string; label: string }): void {
+		void this.onPick(entry);
+	}
+}

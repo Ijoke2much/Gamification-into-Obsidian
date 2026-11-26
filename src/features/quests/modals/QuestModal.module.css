@@ -688,3 +688,403 @@
 .pixelQuestModalPanel .coreFormSection select {
     border-radius: var(--pixel-radius) !important;
 }
+
+/* ========== Mobile full-screen shell (safe area + sticky footer) ========== */
+.mobileShell {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    height: 100% !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+    z-index: 10000;
+}
+
+.mobileOverlay {
+    align-items: stretch !important;
+    justify-content: stretch !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    height: 100dvh !important;
+}
+
+.mobileHeader {
+    flex-shrink: 0;
+    padding: max(10px, env(safe-area-inset-top, 0px)) 12px 10px;
+    border-bottom: 1px solid rgba(34, 200, 255, 0.28);
+    background: rgba(6, 18, 34, 0.96);
+}
+
+.mobileHeaderBar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
+
+.mobileCloseBtn {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    flex-shrink: 0;
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 1px solid rgba(34, 200, 255, 0.55) !important;
+    border-radius: 8px !important;
+    background: rgba(8, 28, 54, 0.95) !important;
+    color: #22c8ff !important;
+    font-size: 22px !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: none !important;
+}
+
+.mobileForm {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.mobileBody {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding: 12px 12px 20px;
+    padding-left: max(12px, env(safe-area-inset-left, 0px));
+    padding-right: max(12px, env(safe-area-inset-right, 0px));
+}
+
+.mobileFooter {
+    flex-shrink: 0;
+    padding: 10px 12px max(12px, env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid rgba(34, 200, 255, 0.28);
+    background: rgba(4, 14, 28, 0.98);
+    box-shadow: 0 -8px 20px rgba(0, 0, 0, 0.35);
+}
+
+.mobileFooterActions {
+    display: grid !important;
+    grid-template-columns: 1fr 1.35fr;
+    gap: 10px !important;
+    margin-top: 0 !important;
+    justify-content: stretch !important;
+}
+
+.mobileFooterActions button {
+    width: 100%;
+    min-height: 48px !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+}
+
+.mobileHintCompact {
+    display: none !important;
+}
+
+@media (max-width: 768px), (pointer: coarse) {
+    .mobileHintCompact {
+        display: none !important;
+    }
+
+    .mobileShell input,
+    .mobileShell select,
+    .mobileShell textarea {
+        min-height: 44px;
+        font-size: 16px !important; /* prevent iOS zoom */
+    }
+}
+
+.durationWheelPicker {
+    width: 100%;
+}
+
+.durationWheelFrame {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    border-radius: 12px;
+    border: 1px solid var(--background-modifier-border);
+    background: var(--background-primary);
+    overflow: hidden;
+}
+
+.durationWheelTrack {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    width: 228px;
+    max-width: 100%;
+    height: 100%;
+}
+
+.durationWheelHighlight {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 36px;
+    transform: translateY(-50%);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.durationWheelFadeTop,
+.durationWheelFadeBottom {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 36%;
+    pointer-events: none;
+    z-index: 4;
+}
+
+.durationWheelFadeTop {
+    top: 0;
+    background: linear-gradient(to bottom, var(--background-primary) 0%, transparent 100%);
+}
+
+.durationWheelFadeBottom {
+    bottom: 0;
+    background: linear-gradient(to top, var(--background-primary) 0%, transparent 100%);
+}
+
+.durationWheelColumn {
+    position: relative;
+    z-index: 2;
+    width: 114px;
+    flex-shrink: 0;
+}
+
+.durationWheelScroller {
+    overflow-y: auto;
+    scroll-snap-type: y mandatory;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+}
+
+.durationWheelScroller::-webkit-scrollbar {
+    display: none;
+}
+
+.durationWheelItem {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 44px 0 8px;
+    scroll-snap-align: center;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    opacity: 0.38;
+    font-size: 20px;
+    font-weight: 500;
+    width: 100%;
+    cursor: pointer;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    user-select: none;
+}
+
+.durationWheelItemSelected {
+    opacity: 1;
+    color: var(--text-normal);
+}
+
+.durationWheelUnit {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+    z-index: 3;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    pointer-events: none;
+    line-height: 1;
+}
+
+.durationWheelFooter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 8px auto 0;
+    width: 228px;
+    max-width: 100%;
+    min-height: 20px;
+    gap: 8px;
+}
+
+.durationWheelPreview {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.durationWheelClear {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    min-height: 0 !important;
+    min-width: 0 !important;
+    height: auto !important;
+    width: auto !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: var(--interactive-accent) !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    cursor: pointer;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: inline !important;
+}
+
+.timeChipRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.timeChip {
+    appearance: none;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--background-modifier-border);
+    background: var(--background-secondary);
+    color: var(--text-normal);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.timeHint {
+    margin-top: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.timeInput {
+    min-height: 42px;
+    color-scheme: light;
+}
+
+.clayQuestModalPanel .timeHint {
+    color: var(--clay-text-light, #8a8278) !important;
+}
+
+.clayQuestModalPanel input[type="time"] {
+    color-scheme: light;
+    min-height: 42px;
+}
+
+.timeChipActive {
+    border-color: var(--interactive-accent);
+    background: var(--interactive-accent);
+    color: #fff;
+}
+
+.clayQuestModalOverlay {
+    background: rgba(58, 52, 44, 0.38);
+    backdrop-filter: blur(6px);
+}
+
+.clayQuestModalPanel {
+    font-family: var(--go-font-ui, "Nunito", "Segoe UI", system-ui, sans-serif) !important;
+    font-size: 14px;
+    line-height: 1.45;
+    color: var(--clay-text, #3a342c) !important;
+    background: var(--clay-gradient, linear-gradient(145deg, #fbf8f2, #efe6d8)) !important;
+    border: none !important;
+    border-radius: var(--clay-radius, 24px) !important;
+    box-shadow: var(--clay-shadow) !important;
+    color-scheme: light;
+}
+
+.clayQuestModalPanel h2,
+.clayQuestModalPanel :global(h2) {
+    font-family: inherit !important;
+    color: var(--clay-text-strong, #2c2722) !important;
+    text-shadow: none !important;
+}
+
+.clayQuestModalPanel label,
+.clayQuestModalPanel .saveLocationTitle,
+.clayQuestModalPanel .saveLocationHint,
+.clayQuestModalPanel .questGiverDialogueText {
+    color: var(--clay-text, #3a342c) !important;
+}
+
+.clayQuestModalPanel textarea,
+.clayQuestModalPanel .input,
+.clayQuestModalPanel .select,
+.clayQuestModalPanel .customPathInput,
+.clayQuestModalPanel input,
+.clayQuestModalPanel select {
+    background: var(--clay-surface, #f7f3ec) !important;
+    color: var(--clay-text, #3a342c) !important;
+    border: none !important;
+    border-radius: 16px !important;
+    box-shadow: var(--clay-recessed) !important;
+    font-family: inherit !important;
+}
+
+.clayQuestModalPanel .buttonCancel,
+.clayQuestModalPanel .buttonSubmit,
+.clayQuestModalPanel .buttonAdd,
+.clayQuestModalPanel .advancedToggle,
+.clayQuestModalPanel .timeChip {
+    font-family: inherit !important;
+    border-radius: 16px !important;
+    border: none !important;
+    box-shadow: var(--clay-shadow) !important;
+    background: var(--clay-button-gradient, linear-gradient(180deg, #f7f3ec, #ebe3d4)) !important;
+    color: var(--clay-text, #3a342c) !important;
+}
+
+.clayQuestModalPanel .buttonSubmit,
+.clayQuestModalPanel .timeChipActive {
+    background: var(--clay-accent-gradient, linear-gradient(180deg, #6ac9c1, #4aa8a0)) !important;
+    color: #fff !important;
+}
+
+.clayQuestModalPanel .questGiverSection,
+.clayQuestModalPanel .saveLocationSection,
+.clayQuestModalPanel .tabNav {
+    background: var(--clay-surface-2, #efe6d8) !important;
+    border: none !important;
+    border-radius: 18px !important;
+    box-shadow: var(--clay-recessed) !important;
+}
+
+.clayQuestModalPanel .tabButtonActive {
+    background: var(--clay-accent-gradient, linear-gradient(180deg, #6ac9c1, #4aa8a0)) !important;
+    color: #fff !important;
+    box-shadow: var(--clay-pressed) !important;
+}

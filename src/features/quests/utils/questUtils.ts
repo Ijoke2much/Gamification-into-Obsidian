@@ -6,15 +6,16 @@ import {
 } from "../../../shared/utils/questCompletionPipeline";
 import {
     applyQuestWellbeingEffects,
-    normalizeActivityProfileId,
     parseActivityProfileFromTaskLine,
+    storedActivityTypeId,
 } from "../../../shared/utils/questWellbeingProfiles";
 import { MaterialInventoryManager } from "../../../shared/services/materialInventoryManager";
 import { pixelNotice } from '../../../shared/utils/noticeUtils';
 import { getPluginSettingsFromApp, isFailureDebtEnabled } from '../../../shared/utils/gameplayConfig';
 import { resolveEnergyHudConfig } from '../../../shared/utils/energyHudConfig';
+import { serializeGamifyRewardsLine } from './shopExclusiveRewards';
 import type { QuestTimelineTheme } from './taskParser';
-import { appendCompletedDate, QUEST_TIMELINE_THEMES } from './taskParser';
+import { appendCompletedDate, normalizeCustomTag, QUEST_TIMELINE_THEMES } from './taskParser';
 
 // Priority and difficulty options
 export const PRIORITY_OPTIONS = ["Lowest", "Low", "Medium", "High", "Highest"];
@@ -94,6 +95,7 @@ export function generateMarkdownTask({
     xp,
     cp,
     due,
+    start,
     recur,
     estimatedTime,
     banner,
@@ -103,10 +105,13 @@ export function generateMarkdownTask({
     enhancedRewards,
     /** Resolved stamina cost (1–100) written as 🔋 in the task line; omit to skip embedding. */
     energyCost,
-    /** Wellbeing activity profile; non-generic appends #activity/<slug> to the line. */
+    energyLocked,
+    /** Activity type; anything other than generic appends #activity/<slug> to the line. */
     activityProfile,
     /** Link to a guild contract (`[project:: Name]`). */
     project,
+    /** User labels only — not `#skill/`, `#activity/`, or `#gamified-task`. */
+    customTags,
     metadataStyle = "emoji",
 }: {
     title: string;
@@ -118,6 +123,7 @@ export function generateMarkdownTask({
     xp: number;
     cp: number;
     due?: string;
+    start?: string;
     recur?: string;
     estimatedTime?: string;
     banner?: string;
@@ -126,9 +132,12 @@ export function generateMarkdownTask({
     timelineTheme?: QuestTimelineTheme;
     customRewards?: string[];
     enhancedRewards?: any[]; // Enhanced custom rewards
+    /** Written only when energyLocked. Positive spends, negative restores. */
     energyCost?: number;
+    energyLocked?: boolean;
     activityProfile?: string;
     project?: string;
+    customTags?: string[];
     metadataStyle?: "emoji" | "tags";
 }): string {
     const sanitizedDifficulty = sanitizeForClassName(difficulty);
@@ -181,7 +190,10 @@ export function generateMarkdownTask({
         if (banner) emojiMeta.push(`🖼️${banner}`);
         // Add estimated time if present
         if (estimatedTime) emojiMeta.push(`⏱️${estimatedTime}`);
-        // Place date last
+        const dueDay = due?.split('T')[0];
+        const startDay = start?.split('T')[0];
+        if (startDay && dueDay && startDay !== dueDay) emojiMeta.push(`🛫${startDay}`);
+        else if (startDay && !dueDay) emojiMeta.push(`🛫${startDay}`);
         if (due) emojiMeta.push(`📅${due}`);
     }
 
@@ -196,6 +208,7 @@ export function generateMarkdownTask({
             ? `energy: ${Math.min(100, Math.floor(energyCost))}`
             : null,
         due ? `due: ${due}` : null,
+        start && start.split('T')[0] !== due?.split('T')[0] ? `start: ${start.split('T')[0]}` : null,
         recur ? `recur: ${recur}` : null,
         estimatedTime ? `time: ${estimatedTime}` : null,
         `skills: ${skills.join(", ")}`,
@@ -253,21 +266,41 @@ export function generateMarkdownTask({
     if (project?.trim()) {
         md += ` [project:: ${project.trim()}]`;
     }
-    const ap = normalizeActivityProfileId(activityProfile);
+    const ap = storedActivityTypeId(activityProfile);
     if (ap !== "generic") {
         md += ` #activity/${ap}`;
     }
+    for (const skillName of skills) {
+        const slug = skillName.trim().replace(/\s+/g, "-");
+        if (slug) md += ` #skill/${slug}`;
+    }
+    for (const tag of customTags ?? []) {
+        const slug = normalizeCustomTag(tag);
+        if (slug) md += ` #${slug}`;
+    }
+    const pipeBits: string[] = [];
     if (
         timelineTheme &&
         (QUEST_TIMELINE_THEMES as readonly string[]).includes(timelineTheme)
     ) {
-        md += ` // timelineTheme:${timelineTheme}`;
+        pipeBits.push(`timelineTheme:${timelineTheme}`);
+    }
+    if (energyLocked && typeof energyCost === "number" && Number.isFinite(energyCost)) {
+        pipeBits.push(`energy: ${Math.trunc(energyCost)}`);
+        pipeBits.push("energyLock: true");
+    }
+    if (pipeBits.length > 0) {
+        md += ` // ${pipeBits.join(" | ")}`;
     }
     // Note: Removed tags/curly braces metadata to prevent duplicate {due:} appearing
 
     // Add description if provided
     if (description && description.trim()) {
         md += `\n  💭 ${description.trim()}`;
+    }
+
+    if (enhancedRewards && enhancedRewards.length > 0) {
+        md += `\n${serializeGamifyRewardsLine(enhancedRewards)}`;
     }
 
     if (subtasks.length > 0) {
@@ -369,9 +402,17 @@ export async function handleCompleteQuestFromPomodoro(
     const hudConfig = resolveEnergyHudConfig(pluginSettings);
 
     const parsedEnergy = parseEnergyCostFromMarkdownLine(line);
+    const activityTag = line.match(/#activity\/([\w-]+)/i);
+    const activitySlug = activityTag ? storedActivityTypeId(activityTag[1]) : "generic";
+    const energyLocked = /energyLock\s*:\s*true/i.test(line);
     if (hudConfig.trackEnergyCost) {
         await applyQuestEnergyCost(
-            typeof parsedEnergy === "number" ? { energyCost: parsedEnergy } : {}
+            {
+                ...(typeof parsedEnergy === "number" ? { energyCost: parsedEnergy } : {}),
+                ...(activitySlug !== "generic" ? { activityProfile: activitySlug } : {}),
+                ...(energyLocked ? { energyLocked: true } : {}),
+            },
+            pluginSettings?.activityEnergyRules
         );
     }
 

@@ -1,7 +1,9 @@
 import { Vault, TFile } from "obsidian";
 const matter = require("gray-matter");
-import { PlayerData, DEFAULT_PLAYER } from "../../../data/models/PlayerData";
+import { PlayerData, DEFAULT_PLAYER, createStarterPlayerData } from "../../../data/models/PlayerData";
+import { dreamFromFrontmatter } from "../../../data/models/DreamPlayer";
 import { readYamlFrontmatter, sanitizeForYaml } from "../../../shared/utils/progressUpdater";
+import { isLikelyMobileDevice } from "../../../shared/utils/deviceDetect";
 
 // ---------------------------------------------------------------------------
 // Reliability: backups, write queue with debounce + lock, schema versioning
@@ -15,53 +17,123 @@ let writeLock = false;
 let queuedData: PlayerData | null = null;
 let debounceTimer: number | null = null;
 const DEBOUNCE_MS = 500;
+type PlayerWriteWaiter = { resolve: () => void; reject: (error: unknown) => void };
+let writeWaiters: PlayerWriteWaiter[] = [];
+
+function findExistingMasterClassName(vault: Vault): string | null {
+  const found = vault.getMarkdownFiles().find((file) => {
+    if (!file.path.startsWith("SkillTree/Master-Class/")) return false;
+    if (!file.path.endsWith(".md")) return false;
+    if (file.path.includes("/Class/")) return false;
+    if (file.path.includes("/Skills/")) return false;
+    if (file.path.includes("/Stats/")) return false;
+    if (file.path.includes("/Stat/")) return false;
+    return true;
+  });
+  return found?.basename.replace(/\s*🎭\s*$/, "").trim() || null;
+}
 
 async function ensureBackupDir(vault: Vault) {
-  const dir = vault.getAbstractFileByPath(BACKUP_DIR);
-  if (!dir) {
-    try { await vault.createFolder(BACKUP_DIR); } catch { /* ignore */ }
+  const adapter = vault.adapter;
+  try {
+    if (!(await adapter.exists(BACKUP_DIR))) {
+      await adapter.mkdir(BACKUP_DIR);
+    }
+  } catch {
+    /* ignore */
   }
 }
 
 function timestamp() {
   const d = new Date();
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+  const pad = (n: number, width = 2) => String(n).padStart(width, "0");
+  return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}${pad(d.getMilliseconds(), 3)}`;
+}
+
+function backupBaseName(path: string): string {
+  return path.split("/").pop() ?? path;
+}
+
+/**
+ * `.playerdata_backups` is hidden, so Obsidian's vault file list never sees it.
+ * Retention has to go through the adapter or old snapshots are never deleted.
+ */
+async function listBackupPaths(vault: Vault): Promise<string[]> {
+  const adapter = vault.adapter;
+  if (!(await adapter.exists(BACKUP_DIR))) return [];
+  const listing = await adapter.list(BACKUP_DIR);
+  return listing.files
+    .filter((filePath) => {
+      const name = backupBaseName(filePath);
+      return name.startsWith(BACKUP_PREFIX) && name.endsWith(".md");
+    })
+    .sort();
+}
+
+export async function prunePlayerDataBackups(vault: Vault): Promise<void> {
+  const files = await listBackupPaths(vault);
+  const overflow = files.length - MAX_BACKUPS;
+  if (overflow <= 0) return;
+  for (const oldest of files.slice(0, overflow)) {
+    try {
+      await vault.adapter.remove(oldest);
+    } catch {
+      /* ignore */
+    }
+  }
 }
 
 async function createBackup(vault: Vault, src: TFile) {
   await ensureBackupDir(vault);
   const content = await vault.read(src);
-  const name = `${BACKUP_PREFIX}${timestamp()}.md`;
-  await vault.create(`${BACKUP_DIR}/${name}`, content);
-  // Trim oldest backups
-  const files = vault.getFiles().filter(f => f.path.startsWith(BACKUP_DIR + "/") && f.basename.startsWith(BACKUP_PREFIX));
-  files.sort((a, b) => (a.stat.ctime ?? 0) - (b.stat.ctime ?? 0));
-  while (files.length > MAX_BACKUPS) {
-    const f = files.shift();
-    if (f) { try { await vault.delete(f); } catch { /* ignore */ } }
+  if (!content || content.trim().length === 0) return;
+
+  const existing = await listBackupPaths(vault);
+  const newest = existing[existing.length - 1];
+  if (newest) {
+    try {
+      const previous = await vault.adapter.read(newest);
+      if (previous === content) {
+        if (existing.length > MAX_BACKUPS) await prunePlayerDataBackups(vault);
+        return;
+      }
+    } catch {
+      /* write a new snapshot */
+    }
   }
+
+  await vault.adapter.write(`${BACKUP_DIR}/${BACKUP_PREFIX}${timestamp()}.md`, content);
+  await prunePlayerDataBackups(vault);
 }
 
 export async function listPlayerDataBackups(vault: Vault): Promise<TFile[]> {
-  await ensureBackupDir(vault);
-  return vault.getFiles()
-    .filter(f => f.path.startsWith(BACKUP_DIR + "/") && f.basename.startsWith(BACKUP_PREFIX))
-    .sort((a, b) => (b.stat.ctime ?? 0) - (a.stat.ctime ?? 0));
+  const paths = await listBackupPaths(vault);
+  const files: TFile[] = [];
+  for (const path of [...paths].reverse()) {
+    const file = vault.getAbstractFileByPath(path);
+    if (file instanceof TFile) files.push(file);
+  }
+  return files;
 }
 
 export async function restorePlayerDataBackup(vault: Vault, backupPath: string): Promise<void> {
   const target = vault.getAbstractFileByPath("SkillTree/PlayerData.md");
-  const backup = vault.getAbstractFileByPath(backupPath);
-  if (target instanceof TFile && backup instanceof TFile) {
-    const content = await vault.read(backup);
-    document.dispatchEvent(new Event('player-data-saving'));
-    await vault.modify(target, content);
-    document.dispatchEvent(new Event('player-data-saved'));
-    document.dispatchEvent(new Event('player-data-updated'));
-  } else {
+  if (!(target instanceof TFile)) {
     throw new Error("Backup or target file not found");
   }
+  let content: string;
+  try {
+    content = await vault.adapter.read(backupPath);
+  } catch {
+    throw new Error("Backup or target file not found");
+  }
+  if (!content || content.trim().length === 0) {
+    throw new Error("Backup file is empty — refusing to restore.");
+  }
+  document.dispatchEvent(new Event("player-data-saving"));
+  await vault.modify(target, content);
+  document.dispatchEvent(new Event("player-data-saved"));
+  document.dispatchEvent(new Event("player-data-updated"));
 }
 
 async function performWrite(vault: Vault, tfile: TFile, updated: string) {
@@ -73,120 +145,109 @@ async function performWrite(vault: Vault, tfile: TFile, updated: string) {
   document.dispatchEvent(new Event('player-data-updated'));
 }
 
+/** Lightweight markdown/YAML parse used on mobile/tablet (gray-matter can fail there). */
+function parsePlayerDataFromMarkdown(content: string): PlayerData | null {
+  if (!content || !content.trim()) return null;
+
+  const yamlMatch = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  if (!yamlMatch) return null;
+
+  const yamlContent = yamlMatch[1];
+  const data: Record<string, string | number | unknown[]> = {};
+  const lines = yamlContent.split('\n');
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+
+    const colonIndex = trimmed.indexOf(':');
+    if (colonIndex === -1) continue;
+
+    const key = trimmed.substring(0, colonIndex).trim();
+    let value = trimmed.substring(colonIndex + 1).trim();
+
+    if (value === '>-' || value === '|-' || value === '>' || value === '|') {
+      continue;
+    }
+
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+
+    if (/^\d+$/.test(value)) {
+      data[key] = parseInt(value, 10);
+    } else if (/^\d+\.\d+$/.test(value)) {
+      data[key] = parseFloat(value);
+    } else if (value.startsWith('[') && value.endsWith(']')) {
+      const arrayContent = value.slice(1, -1);
+      data[key] = arrayContent.trim()
+        ? arrayContent.split(',').map((item) => item.trim().replace(/['"]/g, ''))
+        : [];
+    } else {
+      if (key === 'description' && (value.length < 5 || value.includes('>') || value.includes('|'))) {
+        continue;
+      }
+      data[key] = value;
+    }
+  }
+
+  if (!data.name && data.level === undefined && data.xp === undefined) {
+    // Still allow defaults, but require at least some parsed keys
+    if (Object.keys(data).length === 0) return null;
+  }
+
+  return {
+    name: String(data.name ?? DEFAULT_PLAYER.name),
+    avatar: String(data.avatar ?? DEFAULT_PLAYER.avatar),
+    rank: String(data.rank ?? DEFAULT_PLAYER.rank),
+    masterClass: String(data.masterClass ?? DEFAULT_PLAYER.masterClass),
+    description: String(data.description ?? DEFAULT_PLAYER.description),
+    level: Number(data.level ?? DEFAULT_PLAYER.level),
+    xp: Number(data.xp ?? DEFAULT_PLAYER.xp),
+    xpRequired: Number(data.xpRequired ?? DEFAULT_PLAYER.xpRequired),
+    total_exp: Number(data.total_exp ?? DEFAULT_PLAYER.total_exp),
+    coins: Number(data.coins ?? DEFAULT_PLAYER.coins),
+    cp: Number(data.cp ?? DEFAULT_PLAYER.cp),
+    inventory: Array.isArray(data.inventory) ? (data.inventory as string[]) : DEFAULT_PLAYER.inventory,
+    stats: (data.stats as unknown as PlayerData['stats']) || DEFAULT_PLAYER.stats,
+    buffs: Array.isArray(data.buffs) ? (data.buffs as PlayerData['buffs']) : [],
+    debuffs: Array.isArray(data.debuffs) ? (data.debuffs as PlayerData['debuffs']) : [],
+    activeArtifacts: Array.isArray(data.activeArtifacts)
+      ? (data.activeArtifacts as PlayerData['activeArtifacts'])
+      : [],
+    failureDebtXP: Number(data.failureDebtXP ?? 0),
+    failureDebtCoins: Number(data.failureDebtCoins ?? 0),
+    questReputation: Number(data.questReputation ?? 0),
+    dream: dreamFromFrontmatter(data as Record<string, unknown>),
+    lastDailyReset: String(data.lastDailyReset || new Date().toISOString()),
+  };
+}
 
 // Reads and parses PlayerData.md, returns PlayerData object
 export async function readPlayerData(vault: Vault): Promise<PlayerData | null> {
   let filePath = "SkillTree/PlayerData.md";
   console.log("[readPlayerData] Looking for file at:", filePath);
 
-  // Enhanced mobile debugging
-  const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent.toLowerCase());
+  // iPad/iPhone/Android: Obsidian body classes + Platform + iPad desktop-UA touch heuristic
+  const isMobile = isLikelyMobileDevice();
   if (isMobile) {
-    console.log("📱 [Mobile] Reading PlayerData on mobile device");
+    console.log("📱 [Mobile/Tablet] Reading PlayerData (adapter-first path)");
 
     // Use the proven working method: direct adapter.read
     try {
       console.log("📱 [Mobile] Using direct adapter.read method...");
       const content = await vault.adapter.read(filePath);
       console.log("📱 [Mobile] File read successfully, length:", content.length);
-      console.log("📱 [Mobile] First 100 chars of content:", content.substring(0, 100));
-
-      // Use the exact same parsing method as the working debug button
-      const yamlMatch = content.match(/^---\n([\s\S]*?)\n---/);
-      if (!yamlMatch) {
-        throw new Error("No YAML frontmatter found");
+      const parsed = parsePlayerDataFromMarkdown(content);
+      if (parsed) {
+        console.log("📱 [Mobile] PlayerData created successfully:", parsed.name, "Level", parsed.level);
+        return parsed;
       }
-
-      const yamlContent = yamlMatch[1];
-      console.log("📱 [Mobile] YAML content extracted:", yamlContent.substring(0, 200));
-
-      // Simple YAML parser (same as debug button)
-      const data: Record<string, string | number | unknown[]> = {};
-      const lines = yamlContent.split('\n');
-      for (const line of lines) {
-        const trimmed = line.trim();
-        if (!trimmed || trimmed.startsWith('#')) continue;
-
-        const colonIndex = trimmed.indexOf(':');
-        if (colonIndex === -1) continue;
-
-        const key = trimmed.substring(0, colonIndex).trim();
-        let value = trimmed.substring(colonIndex + 1).trim();
-
-        // Mobile-safe YAML value parsing
-        // Handle multi-line strings that might be corrupted on mobile
-        if (value === '>-' || value === '|-' || value === '>' || value === '|') {
-          console.log('📱 [Mobile] Detected YAML block scalar indicator, skipping corrupted value for key:', key);
-          // Skip this corrupted value, will use default
-          continue;
-        }
-
-        // Remove quotes
-        if ((value.startsWith('"') && value.endsWith('"')) ||
-          (value.startsWith("'") && value.endsWith("'"))) {
-          value = value.slice(1, -1);
-        }
-
-        // Convert numbers
-        if (/^\d+$/.test(value)) {
-          data[key] = parseInt(value, 10);
-        } else if (/^\d+\.\d+$/.test(value)) {
-          data[key] = parseFloat(value);
-        } else if (value.startsWith('[') && value.endsWith(']')) {
-          // Simple array parsing
-          const arrayContent = value.slice(1, -1);
-          if (arrayContent.trim()) {
-            data[key] = arrayContent.split(',').map(item => item.trim().replace(/['"]/g, ''));
-          } else {
-            data[key] = [];
-          }
-        } else {
-          // Additional validation for description field
-          if (key === 'description' && (value.length < 5 || value.includes('>') || value.includes('|'))) {
-            console.log('📱 [Mobile] Skipping potentially corrupted description value:', value);
-            continue;
-          }
-          data[key] = value;
-        }
-      }
-
-      console.log("📱 [Mobile] Manual YAML parsing successful, keys:", Object.keys(data));
-
-      // Create complete PlayerData object
-      const playerData: PlayerData = {
-        name: String(data.name ?? DEFAULT_PLAYER.name),
-        avatar: String(data.avatar ?? DEFAULT_PLAYER.avatar),
-        rank: String(data.rank ?? DEFAULT_PLAYER.rank),
-        masterClass: String(data.masterClass ?? DEFAULT_PLAYER.masterClass),
-        description: String(data.description ?? DEFAULT_PLAYER.description),
-        level: Number(data.level ?? DEFAULT_PLAYER.level),
-        xp: Number(data.xp ?? DEFAULT_PLAYER.xp),
-        xpRequired: Number(data.xpRequired ?? DEFAULT_PLAYER.xpRequired),
-        total_exp: Number(data.total_exp ?? DEFAULT_PLAYER.total_exp),
-        coins: Number(data.coins ?? DEFAULT_PLAYER.coins),
-        cp: Number(data.cp ?? DEFAULT_PLAYER.cp),
-        inventory: Array.isArray(data.inventory) ? data.inventory as string[] : DEFAULT_PLAYER.inventory,
-        stats: (data.stats as unknown as PlayerData['stats']) || DEFAULT_PLAYER.stats,
-        buffs: Array.isArray(data.buffs) ? data.buffs as PlayerData['buffs'] : [],
-        debuffs: Array.isArray(data.debuffs) ? data.debuffs as PlayerData['debuffs'] : [],
-        activeArtifacts: Array.isArray(data.activeArtifacts) ? data.activeArtifacts as PlayerData['activeArtifacts'] : [],
-        failureDebtXP: Number(data.failureDebtXP ?? 0),
-        failureDebtCoins: Number(data.failureDebtCoins ?? 0),
-        questReputation: Number(data.questReputation ?? 0),
-        lastDailyReset: String(data.lastDailyReset || new Date().toISOString()),
-      };
-
-      console.log("📱 [Mobile] PlayerData created successfully:", playerData.name, "Level", playerData.level);
-      return playerData;
-
+      console.warn("📱 [Mobile] adapter.read succeeded but YAML parse failed; falling back");
     } catch (mobileError) {
       console.error("📱 [Mobile] Direct adapter.read failed:", mobileError);
-      console.error("📱 [Mobile] Error details:", {
-        message: mobileError instanceof Error ? mobileError.message : String(mobileError),
-        stack: mobileError instanceof Error ? mobileError.stack : undefined,
-        filePath,
-        type: typeof mobileError
-      });
       console.log("📱 [Mobile] Falling back to normal method...");
     }
   }
@@ -289,6 +350,32 @@ export async function readPlayerData(vault: Vault): Promise<PlayerData | null> {
     }
   }
 
+  if (!tfile && isMobile) {
+    const indexed = vault.getMarkdownFiles().find((f) =>
+      f.path.toLowerCase().endsWith("playerdata.md")
+    );
+    if (indexed) {
+      console.log("📱 [Mobile] Found PlayerData in the markdown index:", indexed.path);
+      filePath = indexed.path;
+      tfile = indexed;
+    } else {
+      let onDisk = false;
+      try {
+        onDisk = await vault.adapter.exists(filePath);
+      } catch {
+        onDisk = false;
+      }
+      // iCloud often has not listed the note yet. Creating a starter here
+      // replaces the real profile with level 1 and 0 coins.
+      console.warn(
+        onDisk
+          ? "📱 [Mobile] PlayerData exists but is not readable yet. Skipping starter file."
+          : "📱 [Mobile] PlayerData is not in the vault index yet. Skipping starter file."
+      );
+      return null;
+    }
+  }
+
   if (!tfile) {
     if (isMobile) {
       console.log("📱 [Mobile] No valid TFile found, checking if file truly doesn't exist...");
@@ -329,7 +416,10 @@ export async function readPlayerData(vault: Vault): Promise<PlayerData | null> {
         }
       }
 
-      const initialFrontmatter = sanitizeForYaml({ ...DEFAULT_PLAYER }) as Record<string, unknown>;
+      const starter = createStarterPlayerData();
+      const existingMaster = findExistingMasterClassName(vault);
+      if (existingMaster) starter.masterClass = existingMaster;
+      const initialFrontmatter = sanitizeForYaml(starter) as Record<string, unknown>;
       const initialContent = matter.stringify("\n## Player Profile\n\nThis file is managed by the Gamification plugin.", initialFrontmatter);
 
       try {
@@ -385,11 +475,11 @@ export async function readPlayerData(vault: Vault): Promise<PlayerData | null> {
             const restoredContent = await vault.read(tfile);
             const { data } = matter(restoredContent);
             const playerData: PlayerData = {
-              name: String(data.name ?? 'The Tester'),
-              avatar: String(data.avatar ?? 'assets/sonic.png'),
-              rank: String(data.rank ?? 'E'),
-              masterClass: String(data.masterClass ?? 'Jester'),
-              description: String(data.description ?? 'A player'),
+              name: String(data.name ?? DEFAULT_PLAYER.name),
+              avatar: String(data.avatar ?? DEFAULT_PLAYER.avatar),
+              rank: String(data.rank ?? DEFAULT_PLAYER.rank),
+              masterClass: String(data.masterClass ?? DEFAULT_PLAYER.masterClass),
+              description: String(data.description ?? DEFAULT_PLAYER.description),
               level: Number(data.level ?? 1),
               xp: Number(data.xp ?? 0),
               xpRequired: Number(data.xpRequired ?? 100),
@@ -410,6 +500,7 @@ export async function readPlayerData(vault: Vault): Promise<PlayerData | null> {
               totalBossVictories: Number(data.totalBossVictories ?? 0),
               unlockedSkills: Array.isArray(data.unlockedSkills) ? data.unlockedSkills as string[] : [],
               achievements: Array.isArray(data.achievements) ? data.achievements as string[] : [],
+              dream: dreamFromFrontmatter(data as Record<string, unknown>),
               lastDailyReset: String(data.lastDailyReset || new Date().toISOString()),
             };
             Object.keys(data).forEach(key => {
@@ -486,6 +577,8 @@ export async function readPlayerData(vault: Vault): Promise<PlayerData | null> {
       // Achievement system
       achievements: Array.isArray(data.achievements) ? data.achievements as string[] : [],
 
+      dream: dreamFromFrontmatter(data as Record<string, unknown>),
+
       // System properties
       lastDailyReset: String(data.lastDailyReset || new Date().toISOString()),
     };
@@ -513,14 +606,66 @@ export async function readPlayerData(vault: Vault): Promise<PlayerData | null> {
       });
     }
 
+    // Last-resort: adapter.read + lightweight parse (helps iPad desktop-UA / gray-matter failures)
+    try {
+      const raw = await vault.adapter.read(filePath);
+      const recovered = parsePlayerDataFromMarkdown(raw);
+      if (recovered) {
+        console.log("[readPlayerData] Recovered via adapter.read fallback:", recovered.name);
+        return recovered;
+      }
+    } catch (fallbackErr) {
+      console.error("[readPlayerData] adapter.read fallback also failed:", fallbackErr);
+    }
+
     return null;
+  }
+}
+
+async function flushQueuedPlayerData(vault: Vault, file: TFile): Promise<void> {
+  while (queuedData) {
+    if (writeLock) {
+      await new Promise((r) => setTimeout(r, 40));
+      continue;
+    }
+    const snapshot = queuedData;
+    writeLock = true;
+    try {
+      const content = await vault.read(file);
+      const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(
+        navigator.userAgent.toLowerCase()
+      );
+      let updated: string;
+      if (!content || content.trim().length === 0) {
+        updated = createPlayerDataContent(snapshot);
+      } else if (isMobile) {
+        updated = updateYamlContent(content, snapshot);
+      } else {
+        const parsed = matter(content);
+        const merged = { ...parsed.data, ...snapshot } as Record<string, unknown>;
+        const sanitized = sanitizeForYaml(merged) as Record<string, unknown>;
+        updated = matter.stringify(parsed.content, sanitized);
+      }
+      let attempts = 0;
+      while (true) {
+        try {
+          await performWrite(vault, file, updated);
+          break;
+        } catch (e) {
+          if (++attempts > 2) throw e;
+          await new Promise((r) => setTimeout(r, 250 * attempts));
+        }
+      }
+      if (queuedData === snapshot) queuedData = null;
+    } finally {
+      writeLock = false;
+    }
   }
 }
 
 // Writes updated PlayerData to PlayerData.md (updates YAML frontmatter, preserves rest of file)
 export async function updatePlayerData(vault: Vault, newData: PlayerData): Promise<void> {
   const filePath = "SkillTree/PlayerData.md";
-  // SAFEGUARD
   if (!newData.name || newData.level === undefined || newData.xp === undefined) {
     throw new Error('Cannot save PlayerData: critical fields missing');
   }
@@ -529,44 +674,19 @@ export async function updatePlayerData(vault: Vault, newData: PlayerData): Promi
     throw new Error(`[updatePlayerData] File exists but not accessible: ${filePath}`);
   }
 
-  // Queue latest data and debounce
-  queuedData = { ...newData, schemaVersion: SCHEMA_VERSION } as any;
+  queuedData = { ...newData, schemaVersion: SCHEMA_VERSION } as PlayerData & { schemaVersion: number };
   if (debounceTimer) window.clearTimeout(debounceTimer);
 
-  await new Promise<void>((resolve) => {
-    debounceTimer = window.setTimeout(async () => {
-      if (writeLock) { resolve(); return; }
-      writeLock = true;
-      try {
-        const content = await vault.read(file);
-        const isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent.toLowerCase());
-        let updated: string;
-        if (!content || content.trim().length === 0) {
-          updated = createPlayerDataContent(queuedData!);
-        } else if (isMobile) {
-          updated = updateYamlContent(content, queuedData!);
-        } else {
-          const parsed = matter(content);
-          const merged = { ...parsed.data, ...queuedData } as Record<string, unknown>;
-          const sanitized = sanitizeForYaml(merged) as Record<string, unknown>;
-          updated = matter.stringify(parsed.content, sanitized);
-        }
-        // retries
-        let attempts = 0;
-        while (true) {
-          try {
-            await performWrite(vault, file, updated);
-            break;
-          } catch (e) {
-            if (++attempts > 2) throw e;
-            await new Promise(r => setTimeout(r, 250 * attempts));
-          }
-        }
-      } finally {
-        writeLock = false;
-        queuedData = null;
-        resolve();
-      }
+  await new Promise<void>((resolve, reject) => {
+    writeWaiters.push({ resolve, reject });
+    debounceTimer = window.setTimeout(() => {
+      debounceTimer = null;
+      const waiters = writeWaiters;
+      writeWaiters = [];
+      flushQueuedPlayerData(vault, file).then(
+        () => waiters.forEach((w) => w.resolve()),
+        (error) => waiters.forEach((w) => w.reject(error))
+      );
     }, DEBOUNCE_MS);
   });
 }
@@ -687,6 +807,9 @@ function createPlayerDataContent(data: PlayerData): string {
   }
   yamlLines.push(`consecutiveBossWins: ${data.consecutiveBossWins || 0}`);
   yamlLines.push(`totalBossVictories: ${data.totalBossVictories || 0}`);
+  yamlLines.push(`dreamHp: ${data.dream?.hp == null ? '' : data.dream.hp}`);
+  yamlLines.push(`dreamLastOutcome: ${serializeYamlValue(data.dream?.lastOutcome || '')}`);
+  yamlLines.push(`dreamLastBossName: ${serializeYamlValue(data.dream?.lastBossName || '')}`);
 
   // Add skill system fields
   if (data.unlockedSkills && data.unlockedSkills.length > 0) {
@@ -829,6 +952,9 @@ function updateYamlContent(content: string, newData: PlayerData): string {
   }
   updatedYaml.push(`consecutiveBossWins: ${newData.consecutiveBossWins || 0}`);
   updatedYaml.push(`totalBossVictories: ${newData.totalBossVictories || 0}`);
+  updatedYaml.push(`dreamHp: ${newData.dream?.hp == null ? '' : newData.dream.hp}`);
+  updatedYaml.push(`dreamLastOutcome: ${serializeYamlValue(newData.dream?.lastOutcome || '')}`);
+  updatedYaml.push(`dreamLastBossName: ${serializeYamlValue(newData.dream?.lastBossName || '')}`);
 
   // Add skill system fields
   if (newData.unlockedSkills && newData.unlockedSkills.length > 0) {

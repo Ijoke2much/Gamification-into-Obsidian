@@ -19,6 +19,10 @@ import {
 	type WellbeingDeltas,
 } from "./questWellbeingProfiles";
 import { resolveEnergyHudConfig } from "./energyHudConfig";
+import {
+	resolveActivityEnergy,
+	type ActivityEnergyRule,
+} from "./activityEnergy";
 import type { GamificationPluginSettings } from "../../core/settings";
 import { distributeCPFromQuest } from "./progressUpdater";
 import {
@@ -45,6 +49,14 @@ import {
 	notifyDungeonUnlocked,
 	processXPGainCeremonies,
 } from "../services/ceremonyService";
+import { recordDailyActivity } from "./dailyActivityStreak";
+import { MaterialInventoryManager } from "../services/materialInventoryManager";
+import { applyDreamBattleOnQuestComplete } from "../../features/player/utils/dreamBattleTick";
+import {
+	overdueKeepFraction,
+	payableQuestRewards,
+} from "./overdueRewardScale";
+import { getPluginSettingsFromApp } from "./gameplayConfig";
 
 export interface QuestRewardSettings {
 	currencyName?: string;
@@ -76,28 +88,40 @@ export interface QuestRewardResult {
 	bossRaidHpPercent?: number;
 	bossRaidBossName?: string;
 	bossRaidPendingVictory?: boolean;
+	/** Crafting materials granted (chance-based). */
+	materialsGranted?: { name: string; icon: string }[];
+	/** Dream survival tick — flavor only; never blocks completion. */
+	dreamNotice?: string;
+	dreamOutcome?: 'survived' | 'wrecked';
+	dreamLootDown?: number;
+	/** Set when overdue penalties shrunk this payout. */
+	overdueDaysLate?: number;
 }
 
 /** Default stamina cost when a quest has no `energyCost` in metadata. */
 export const DEFAULT_QUEST_ENERGY_COST = 10;
 
 /**
- * Resolve how much `stats.energy` to subtract when a quest is completed.
+ * Signed energy change when a quest is completed.
+ * Positive spends. Negative restores. The activity type supplies the number
+ * unless this quest locked its own.
  */
-export function getQuestEnergyCost(quest: Pick<Quest, "energyCost"> | null | undefined): number {
-	const e = quest?.energyCost;
-	if (typeof e === "number" && Number.isFinite(e) && e > 0) {
-		return Math.min(100, Math.floor(e));
-	}
-	return DEFAULT_QUEST_ENERGY_COST;
+export function getQuestEnergyCost(
+	quest: Pick<Quest, "energyCost" | "activityProfile" | "energyLocked"> | null | undefined,
+	rules?: ActivityEnergyRule[] | null
+): number {
+	return resolveActivityEnergy(quest, rules);
 }
 
 /**
- * Subtract energy from player stats (clamped 0–100) after a quest completes.
+ * Move `stats.energy` by the quest's signed cost (clamped 0–100).
  */
-export async function applyQuestEnergyCost(quest: Pick<Quest, "energyCost">): Promise<void> {
-	const cost = getQuestEnergyCost(quest);
-	if (cost <= 0) return;
+export async function applyQuestEnergyCost(
+	quest: Pick<Quest, "energyCost" | "activityProfile" | "energyLocked">,
+	rules?: ActivityEnergyRule[] | null
+): Promise<void> {
+	const cost = getQuestEnergyCost(quest, rules);
+	if (!Number.isFinite(cost) || cost === 0) return;
 
 	await playerStore.update((data) => {
 		const stats = { ...(data.stats || {}) };
@@ -111,13 +135,16 @@ export async function applyQuestEnergyCost(quest: Pick<Quest, "energyCost">): Pr
  * Parse `energy` / `energyCost` from a raw gamified task markdown line (Pomodoro / legacy paths).
  */
 export function parseEnergyCostFromMarkdownLine(line: string): number | undefined {
-	const brace = line.match(/\{([^}]*)\}/);
-	if (brace) {
-		const m = brace[1].match(/(?:energy|energyCost)\s*:\s*(\d+)/i);
-		if (m) return Math.min(100, parseInt(m[1], 10));
+	const signed = line.match(/(?:energy|energyCost)\s*:\s*(-?\d+)/i);
+	if (signed) {
+		const n = parseInt(signed[1], 10);
+		if (Number.isFinite(n)) return Math.max(-100, Math.min(100, n));
 	}
-	const m2 = line.match(/(?:\||\s)(?:energy|energyCost)\s*:\s*(\d+)/i);
-	if (m2) return Math.min(100, parseInt(m2[1], 10));
+	const emoji = line.match(/🔋\s*(-?\d+)/);
+	if (emoji) {
+		const n = parseInt(emoji[1], 10);
+		if (Number.isFinite(n)) return Math.max(-100, Math.min(100, n));
+	}
 	return undefined;
 }
 
@@ -133,12 +160,13 @@ export async function awardQuestRewards(
 	app?: App
 ): Promise<QuestRewardResult> {
 	const rewardSettings = normalizeQuestRewardSettings(settings);
-	const awardedXP = Math.max(0, Number.isFinite(quest.xp) ? (quest.xp as number) : 0);
-	const awardedCP = Math.max(0, Number.isFinite(quest.cp) ? (quest.cp as number) : 0);
-	const awardedCoins = Math.max(
-		0,
-		Number.isFinite(quest.coins) ? (quest.coins as number) : Math.round(awardedXP * 0.2)
-	);
+	const payable = payableQuestRewards(quest, resolveGameplaySettings(settings, app), new Date(), {
+		ignoreCompleted: true,
+	});
+	const awardedXP = payable.xp;
+	const awardedCP = payable.cp;
+	const awardedCoins = payable.coins;
+	const overdueDaysLate = payable.reduced ? payable.daysLate : undefined;
 
 	let xpGain: XPGainResult | undefined;
 	if (awardedXP > 0) {
@@ -168,7 +196,7 @@ export async function awardQuestRewards(
 	// Stamina + wellbeing — only for stats the user tracks in their HUD mode
 	const hudConfig = resolveEnergyHudConfig(rewardSettings?.energySettings);
 	if (hudConfig.trackEnergyCost) {
-		await applyQuestEnergyCost(quest);
+		await applyQuestEnergyCost(quest, rewardSettings?.energySettings?.activityEnergyRules);
 	}
 	if (hudConfig.activeWellbeingStats.length > 0) {
 		const wellbeing = await applyQuestWellbeingEffects(quest, rewardSettings?.energySettings);
@@ -191,6 +219,32 @@ export async function awardQuestRewards(
 
 	let journeyVictoryLoot: JourneyVictoryLoot | undefined;
 	let journeyVictoryNotice: string | undefined;
+	let materialsGranted: { name: string; icon: string }[] | undefined;
+	let dreamTick: Awaited<ReturnType<typeof applyDreamBattleOnQuestComplete>> = null;
+
+	if (app) {
+		dreamTick = await applyDreamBattleOnQuestComplete(app, settings as { bookOfEasy?: boolean } | null);
+	}
+
+	// Live crafting inventory — chance-based mats on the main quest path
+	if (app) {
+		try {
+			const difficulty = String(quest.difficulty || 'medium');
+			const matResult = await MaterialInventoryManager.addQuestMaterials(
+				app,
+				difficulty,
+				dreamTick?.lootStepsDown ?? 0
+			);
+			if (matResult.materials.length > 0) {
+				materialsGranted = matResult.materials.map((m) => ({
+					name: m.name,
+					icon: m.icon,
+				}));
+			}
+		} catch (error) {
+			console.warn('[awardQuestRewards] Material grant failed:', error);
+		}
+	}
 
 	if (journeyHit.defeated) {
 		const state = loadJourneyState();
@@ -207,6 +261,17 @@ export async function awardQuestRewards(
 					loot,
 					currencySymbol
 				);
+				// Every felled foe drops a Lootbox Key — spend it in the shop's Lootbox tab.
+				if (app) {
+					try {
+						const { grantKey, LOOTBOX_KEY_NAME } = await import('./keyItems');
+						if (await grantKey(app, LOOTBOX_KEY_NAME)) {
+							journeyVictoryNotice += ' · 🗝️ +1 Lootbox Key';
+						}
+					} catch (error) {
+						console.warn('[awardQuestRewards] Lootbox key grant failed:', error);
+					}
+				}
 			}
 		}
 	}
@@ -239,6 +304,15 @@ export async function awardQuestRewards(
 					bossRaidPendingVictory: bossRaidHit.pendingVictoryClaim,
 				}
 			: {}),
+		...(materialsGranted?.length ? { materialsGranted } : {}),
+		...(dreamTick
+			? {
+					dreamNotice: dreamTick.notice,
+					dreamOutcome: dreamTick.outcome,
+					dreamLootDown: dreamTick.lootStepsDown,
+				}
+			: {}),
+		...(overdueDaysLate ? { overdueDaysLate } : {}),
 	};
 }
 
@@ -253,6 +327,19 @@ export async function undoBossFileQuestCompletion(
 	quest: Quest
 ): Promise<{ reverted: boolean; hpRestored: number }> {
 	return revertBossFileQuestCompletion(app, quest);
+}
+
+function resolveGameplaySettings(
+	settings?: QuestRewardSettings | Partial<GamificationPluginSettings>,
+	app?: App
+): Partial<GamificationPluginSettings> | null {
+	if (settings && ("modules" in settings || "gameplayProfile" in settings)) {
+		return settings as Partial<GamificationPluginSettings>;
+	}
+	if (settings && "energySettings" in settings && settings.energySettings) {
+		return settings.energySettings;
+	}
+	return getPluginSettingsFromApp(app) ?? null;
 }
 
 function normalizeQuestRewardSettings(
@@ -281,10 +368,42 @@ export async function applyTacticalBattleBonuses(bonusXP: number, bonusCoins: nu
 	if (c > 0) await playerStore.addCoins(c);
 }
 
+/** Extra flavor that belongs on the same toast as XP — not a second notice. */
+export function appendQuestCompletionFlavor(
+	lines: string[],
+	result: QuestRewardResult
+): void {
+	if (result.materialsGranted?.length) {
+		const summary = result.materialsGranted
+			.map((m) => `${m.icon} ${m.name}`)
+			.join(', ');
+		lines.push(`📦 ${summary}`);
+	}
+	if (result.journeyDamage != null && !result.journeyDefeated) {
+		if (result.journeyGrazed) {
+			lines.push(`Journey graze −${result.journeyDamage} HP`);
+		} else {
+			const hp =
+				result.journeyHpPercent != null ? ` · foe ${result.journeyHpPercent}%` : '';
+			lines.push(`Journey −${result.journeyDamage} HP${hp}`);
+		}
+	}
+	if (result.bossRaidDamage != null && !result.bossRaidDefeated) {
+		const label = result.bossRaidBossName || 'Gate boss';
+		if (result.bossRaidGrazed) {
+			lines.push(`Raid graze −${result.bossRaidDamage} HP vs ${label}`);
+		} else {
+			const hp =
+				result.bossRaidHpPercent != null ? ` · ${result.bossRaidHpPercent}%` : '';
+			lines.push(`Raid −${result.bossRaidDamage} HP vs ${label}${hp}`);
+		}
+	}
+}
+
 /**
  * Build the standard "Quest Complete!" notice string.
  *
- * Example:  ✅ Quest Complete! +50 XP, +10 CP, 🪙10 Boogers
+ * Example:  ✅ QUEST COMPLETE!\n+50 XP · +10 CP · 🪙10 Coins
  */
 export function buildCompletionNoticeText(
 	result: QuestRewardResult,
@@ -294,11 +413,20 @@ export function buildCompletionNoticeText(
 	const currencyName = rewardSettings?.currencyName || "Coins";
 	const currencySymbol = rewardSettings?.currencySymbol || "🪙";
 	const lines = [
-		`QUEST COMPLETE\n+${result.awardedXP} XP · +${result.awardedCP} CP · ${currencySymbol}${result.awardedCoins} ${currencyName}`,
+		`✅ QUEST COMPLETE!\n+${result.awardedXP} XP · +${result.awardedCP} CP · ${currencySymbol}${result.awardedCoins} ${currencyName}`,
 	];
+	if (result.overdueDaysLate && result.overdueDaysLate > 0) {
+		const kept = Math.round(overdueKeepFraction(result.overdueDaysLate) * 100);
+		const dayLabel = result.overdueDaysLate === 1 ? '1 day late' : `${result.overdueDaysLate} days late`;
+		lines.push(`${dayLabel} · ${kept}% of the reward`);
+	}
 	if (result.wellbeingLine) {
 		lines.push(result.wellbeingLine);
 	}
+	if (result.dreamNotice) {
+		lines.push(result.dreamNotice);
+	}
+	appendQuestCompletionFlavor(lines, result);
 	return lines.join('\n');
 }
 
@@ -309,9 +437,9 @@ export function emitQuestCompletionFeedback(
 	result: QuestRewardResult,
 	settings?: Partial<GamificationPluginSettings> | QuestRewardSettings
 ): void {
-	if (result.journeyDamage != null) {
+	if (result.journeyDefeated && result.journeyDamage != null) {
 		notifyJourneyHit(result.journeyDamage, {
-			defeated: result.journeyDefeated,
+			defeated: true,
 			grazed: result.journeyGrazed,
 			hpPercentAfter: result.journeyHpPercent,
 		});
@@ -322,9 +450,9 @@ export function emitQuestCompletionFeedback(
 	if (result.journeyVictoryNotice) {
 		notifyJourneyVictory(result.journeyVictoryNotice);
 	}
-	if (result.bossRaidDamage != null) {
+	if (result.bossRaidDefeated && result.bossRaidDamage != null) {
 		notifyBossRaidHit(result.bossRaidDamage, {
-			defeated: result.bossRaidDefeated,
+			defeated: true,
 			grazed: result.bossRaidGrazed,
 			hpPercentAfter: result.bossRaidHpPercent,
 			bossName: result.bossRaidBossName,
@@ -333,6 +461,7 @@ export function emitQuestCompletionFeedback(
 	}
 
 	notifyQuestComplete(buildCompletionNoticeText(result, settings));
+	recordDailyActivity();
 
 	if (result.xpGain) {
 		const ceremonySettings =

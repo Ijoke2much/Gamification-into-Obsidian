@@ -1,0 +1,452 @@
+.root {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    max-width: 100%;
+    --slot: 56px;
+    --slot-body: 72px;
+}
+
+.rootDressing {
+    width: 100%;
+}
+
+.rootCompact {
+    --slot: 44px;
+    --slot-body: 56px;
+}
+
+.rootFace {
+    width: auto;
+}
+
+.faceHit {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 220px;
+    height: 220px;
+    margin: 0;
+    padding: 8px;
+    border: 1px solid var(--go-border-strong, rgba(34, 200, 255, 0.85));
+    border-radius: 2px;
+    background:
+        radial-gradient(circle at 50% 30%, rgba(34, 200, 255, 0.12), transparent 55%),
+        rgba(4, 14, 28, 0.92);
+    box-shadow:
+        0 0 0 1px rgba(34, 200, 255, 0.12),
+        0 0 22px rgba(34, 200, 255, 0.2);
+    cursor: pointer;
+    overflow: hidden;
+}
+
+.faceHit:disabled {
+    cursor: default;
+}
+
+.faceImg {
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center center;
+}
+
+.corner {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    pointer-events: none;
+    border-color: var(--go-accent, #22c8ff);
+    border-style: solid;
+    z-index: 2;
+}
+
+.cornerTL { top: 3px; left: 3px; border-width: 1px 0 0 1px; }
+.cornerTR { top: 3px; right: 3px; border-width: 1px 1px 0 0; }
+.cornerBL { bottom: 3px; left: 3px; border-width: 0 0 1px 1px; }
+.cornerBR { bottom: 3px; right: 3px; border-width: 0 1px 1px 0; }
+
+.board {
+    position: relative;
+    display: grid;
+    grid-template-columns: var(--slot) minmax(96px, 1fr) var(--slot);
+    grid-template-rows: var(--slot) minmax(120px, 1fr) var(--slot) var(--slot);
+    column-gap: 18px;
+    row-gap: 10px;
+    width: min(320px, 100%);
+    min-height: 280px;
+    padding: 4px 2px 8px;
+    box-sizing: border-box;
+}
+
+.rootCompact .board {
+    width: min(240px, 100%);
+    min-height: 220px;
+    column-gap: 12px;
+}
+
+.boardLines {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.boardLines path {
+    fill: none;
+    stroke: rgba(90, 120, 145, 0.55);
+    stroke-width: 1.4;
+    vector-effect: non-scaling-stroke;
+}
+
+.ghostWrap {
+    grid-column: 2;
+    grid-row: 2 / span 2;
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+}
+
+.ghostHit {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+}
+
+.ghostHit:disabled {
+    cursor: default;
+}
+
+.ghost {
+    position: relative;
+    width: 72%;
+    height: 100%;
+    max-height: 220px;
+}
+
+.ghostSvg {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.ghostFace {
+    position: absolute;
+    left: 50%;
+    top: 12.5%;
+    width: 28%;
+    aspect-ratio: 1;
+    height: auto;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    object-fit: cover;
+    pointer-events: none;
+    opacity: 0.92;
+    border: 1px solid rgba(80, 130, 160, 0.35);
+}
+
+.slotHead { grid-column: 2; grid-row: 1; justify-self: center; }
+.slotWeapon { grid-column: 1; grid-row: 2; align-self: start; }
+.slotAccessory { grid-column: 3; grid-row: 2; align-self: start; }
+.slotHands { grid-column: 1; grid-row: 3; align-self: center; }
+.slotTool { grid-column: 3; grid-row: 3; align-self: center; }
+.slotFeet { grid-column: 2; grid-row: 4; justify-self: center; }
+
+.slot {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--slot);
+    height: var(--slot);
+    margin: 0;
+    padding: 0;
+    border: 1.5px solid rgba(90, 140, 170, 0.45);
+    border-radius: 10px;
+    background: rgba(8, 16, 28, 0.88);
+    color: var(--go-text, #e0f2fe);
+    box-shadow: 0 0 10px rgba(34, 200, 255, 0.08);
+    cursor: pointer;
+}
+
+.slotBody {
+    position: absolute;
+    left: 50%;
+    top: 42%;
+    transform: translate(-50%, -50%);
+    z-index: 3;
+    width: var(--slot-body);
+    height: var(--slot-body);
+    border-radius: 12px;
+}
+
+.slot:disabled {
+    cursor: default;
+}
+
+.slotDim {
+    opacity: 0.4;
+}
+
+.slotEmpty {
+    opacity: 0.72;
+}
+
+.slotFilled {
+    opacity: 1;
+}
+
+.slotSelected {
+    box-shadow:
+        0 0 0 1px var(--go-accent, #22c8ff),
+        0 0 16px rgba(34, 200, 255, 0.45);
+}
+
+.rarityCommon {
+    border-color: rgba(34, 200, 255, 0.7);
+    box-shadow: 0 0 12px rgba(34, 200, 255, 0.28);
+}
+
+.rarityUncommon {
+    border-color: rgba(110, 220, 140, 0.85);
+    box-shadow: 0 0 12px rgba(110, 220, 140, 0.32);
+}
+
+.rarityRare {
+    border-color: rgba(168, 85, 247, 0.9);
+    box-shadow: 0 0 14px rgba(168, 85, 247, 0.38);
+}
+
+.rarityEpic {
+    border-color: rgba(196, 80, 220, 0.95);
+    box-shadow: 0 0 14px rgba(196, 80, 220, 0.4);
+}
+
+.rarityLegendary {
+    border-color: rgba(255, 176, 32, 0.95);
+    box-shadow: 0 0 16px rgba(255, 176, 32, 0.45);
+}
+
+.slotWorn {
+    filter: saturate(0.7);
+}
+
+.slotBroken {
+    opacity: 0.4;
+    filter: grayscale(0.85);
+}
+
+.slotIcon,
+.slotIconMuted {
+    font-size: 22px;
+    line-height: 1;
+}
+
+.slotIconMuted {
+    opacity: 0.35;
+}
+
+.rootCompact .slotIcon,
+.rootCompact .slotIconMuted {
+    font-size: 16px;
+}
+
+.slotImg {
+    width: 72%;
+    height: 72%;
+    object-fit: contain;
+    pointer-events: none;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+.slotImgMuted {
+    opacity: 0.4;
+}
+
+.editHint {
+    position: absolute;
+    right: 4px;
+    bottom: 8px;
+    z-index: 3;
+    padding: 3px 6px;
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    opacity: 0;
+    transition: opacity 0.12s ease;
+    pointer-events: none;
+    color: var(--go-text-bright, #f0f9ff);
+    background: rgba(7, 21, 39, 0.9);
+    border: 1px solid var(--go-border, rgba(34, 200, 255, 0.55));
+}
+
+.ghostHit:hover .editHint,
+.ghostHit:focus-visible .editHint,
+.faceHit:hover .editHint,
+.faceHit:focus-visible .editHint {
+    opacity: 1;
+}
+
+@media (pointer: coarse) {
+    .editHint {
+        opacity: 0.85;
+    }
+}
+
+.gearStats {
+    width: min(320px, 100%);
+    text-align: center;
+}
+
+.gearStatsTitle {
+    margin: 0 0 6px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--go-text-bright, #f0f9ff);
+}
+
+.gearStatsRow {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: var(--go-muted, #9ec7df);
+}
+
+.broughtRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: min(320px, 100%);
+}
+
+.brought {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    padding: 8px 10px;
+    border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42));
+    background: rgba(12, 40, 72, 0.65);
+    color: var(--go-text, #e0f2fe);
+    text-align: left;
+    cursor: pointer;
+    border-radius: 10px;
+}
+
+.brought:disabled {
+    cursor: default;
+}
+
+.broughtKey {
+    font-size: 8px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--go-accent, #22c8ff);
+}
+
+.broughtIcon {
+    font-size: 16px;
+    line-height: 1;
+}
+
+.broughtImg {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+
+.broughtName {
+    font-size: 11px;
+    color: var(--go-muted, #9ec7df);
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+@media (max-width: 720px) {
+    .root {
+        --slot: 48px;
+        --slot-body: 60px;
+    }
+
+    .faceHit {
+        width: min(72vw, 220px);
+        height: min(72vw, 220px);
+    }
+
+    .board {
+        min-height: 240px;
+        column-gap: 10px;
+    }
+}
+
+.rootClay .corner {
+    display: none;
+}
+
+.rootClay .faceHit {
+    border: none;
+    border-radius: 28px;
+    padding: 10px;
+    background: var(--clay-gradient, linear-gradient(145deg, #fbf8f2, #efe6d8));
+    box-shadow: var(--clay-shadow);
+}
+
+.rootClay .faceImg {
+    border-radius: 20px;
+    image-rendering: auto;
+    background: #f7f3ec;
+    object-fit: cover;
+}
+
+.rootClay .editHint {
+    color: var(--clay-text, #3a342c);
+    background: var(--clay-button-gradient, linear-gradient(180deg, #fbf8f2, #ece3d6));
+    border: none;
+    border-radius: 14px;
+    box-shadow: var(--clay-shadow);
+}
+
+.rootClay .board {
+    background: var(--clay-surface-2, #efe6d8);
+    border-radius: var(--clay-radius, 24px);
+    box-shadow: var(--clay-recessed);
+}
+
+.rootClay .gearStatsTitle,
+.rootClay .gearStatsRow,
+.rootClay .broughtKey,
+.rootClay .broughtName {
+    color: var(--clay-text, #3a342c);
+    font-family: var(--go-font-ui, "Nunito", "Segoe UI", system-ui, sans-serif);
+}
