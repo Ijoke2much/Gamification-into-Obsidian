@@ -29,7 +29,7 @@ export interface HabitData {
 }
 
 // --- ✅ CONSTANTS ---
-export const HABIT_FILE_PATH = 'SkillTree/Habits.md';
+export const HABIT_FILE_PATH = 'Gamified/SkillTree/Habits.md';
 
 // --- ✅ DATE HELPER ---
 // Local YYYY-MM-DD so habits reset at the user's local midnight

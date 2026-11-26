@@ -1,7 +1,7 @@
 import { TFile, type Vault } from 'obsidian';
 import { isSkillOnActiveGate } from './activeGateTraining';
 
-export const SKILL_CP_LOG_PATH = 'SkillTree/SkillCpLog.md';
+export const SKILL_CP_LOG_PATH = 'Gamified/SkillTree/SkillCpLog.md';
 export const SKILL_CP_LOGGED_EVENT = 'skill-cp-logged';
 const MAX_ENTRIES = 400;
 

@@ -1,6 +1,6 @@
 import { TFile, Vault } from 'obsidian';
 
-export const CLASS_DASHBOARD_TEMPLATE_PATH = 'SkillTree/Templates/Class Dashboard.md';
+export const CLASS_DASHBOARD_TEMPLATE_PATH = 'Gamified/SkillTree/Templates/Class Dashboard.md';
 
 export type ClassNoteTemplateVars = {
     name: string;
@@ -53,7 +53,7 @@ cssclasses:
 
 \`\`\`datacorejsx
 const { ClassDashboard } = await dc.require(
-  dc.headerLink("SkillTree/Templates/Class Dashboard Engine.md", "ClassDashboard")
+  dc.headerLink("Gamified/SkillTree/Templates/Class Dashboard Engine.md", "ClassDashboard")
 );
 
 return function View() {

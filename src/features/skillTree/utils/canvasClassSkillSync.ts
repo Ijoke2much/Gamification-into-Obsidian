@@ -30,16 +30,16 @@ interface CanvasData {
     edges: CanvasEdge[];
 }
 
-export const CANVAS_PATH = 'SkillTree/SkillTree.canvas';
+export const CANVAS_PATH = 'Gamified/SkillTree/SkillTree.canvas';
 
 const HIERARCHY_EDGE_COLOR = '#6b7280';
 
 export function classFilePath(className: string): string {
-    return `SkillTree/Master-Class/Class/${className.trim()}.md`;
+    return `Gamified/SkillTree/Master-Class/Class/${className.trim()}.md`;
 }
 
 export function skillFilePath(skillName: string): string {
-    return `SkillTree/Master-Class/Skills/${skillName.trim()}.md`;
+    return `Gamified/SkillTree/Master-Class/Skills/${skillName.trim()}.md`;
 }
 
 /** Strip emoji / punctuation so "Jester 🎭" matches "Jester". */
@@ -54,7 +54,7 @@ export function normalizeMasterKey(name: string): string {
 /** Master-class notes live directly under Master-Class/, not Class/Skills/Stats. */
 export function isMasterClassFilePath(path: string | undefined): boolean {
     if (!path) return false;
-    if (!path.startsWith('SkillTree/Master-Class/')) return false;
+    if (!path.startsWith('Gamified/SkillTree/Master-Class/')) return false;
     if (!path.endsWith('.md')) return false;
     if (path.includes('/Class/')) return false;
     if (path.includes('/Skills/')) return false;

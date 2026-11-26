@@ -20,7 +20,7 @@ export interface CoinFlowData {
 }
 
 export class CoinTransactionTracker {
-    private static readonly TRANSACTIONS_FILE = 'SkillTree/CoinTransactions.md';
+    private static readonly TRANSACTIONS_FILE = 'Gamified/SkillTree/CoinTransactions.md';
     private static readonly MAX_TRANSACTIONS = 1000; // Keep last 1000 transactions
 
     /**

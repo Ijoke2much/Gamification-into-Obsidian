@@ -97,7 +97,7 @@ export async function isFocusCheckInDue(
 export function getCheckInLogPath(
 	settings: Pick<GamificationPluginSettings, 'focusCheckInLogPath'>
 ): string {
-	return settings.focusCheckInLogPath?.trim() || 'CheckIns.md';
+	return settings.focusCheckInLogPath?.trim() || 'Gamified/CheckIns.md';
 }
 
 function formatLogTimestamp(date: Date): string {

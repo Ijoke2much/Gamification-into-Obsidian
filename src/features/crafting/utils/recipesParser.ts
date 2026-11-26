@@ -245,7 +245,7 @@ export function parseRecipesFromLines(lines: string[]): CraftingRecipe[] {
 
 export function findRecipesFile(plugin: GamifiedObsidianPlugin) {
 	return resolveVaultMarkdownFile(plugin.app, RECIPES_FILE_BASENAME, [
-		'Recipes.md',
+		'Gamified/Recipes.md',
 		'recipes.md',
 		'Gamification/Recipes.md',
 		'Gamified/Recipes.md',
@@ -286,7 +286,7 @@ export async function ensureRecipesFile(plugin: GamifiedObsidianPlugin): Promise
 
 	try {
 		clearVaultMarkdownFileCache(RECIPES_FILE_BASENAME);
-		await plugin.app.vault.create('Recipes.md', RECIPES_FILE_HEADER);
+		await plugin.app.vault.create('Gamified/Recipes.md', RECIPES_FILE_HEADER);
 		clearVaultMarkdownFileCache(RECIPES_FILE_BASENAME);
 		return true;
 	} catch (error) {

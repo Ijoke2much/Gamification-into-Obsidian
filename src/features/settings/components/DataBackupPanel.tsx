@@ -165,6 +165,9 @@ export const DataBackupPanel: React.FC<Props> = ({ plugin, onSettingsApplied }) 
 			await backupPluginSettings(plugin, plugin.settings, { force: true });
 			const result = await importVaultExport(plugin, bundle);
 			await afterSettingsRestore();
+			const { playerStore } = await import('../../../shared/state/playerStore');
+			await playerStore.refreshPlayerData();
+			document.dispatchEvent(new CustomEvent('gamification-vault-imported'));
 			await refresh();
 			pixelNotice(`Imported ${result.files} notes${result.settings ? ' and settings' : ''}.`, 5000);
 		} catch (error) {
@@ -202,8 +205,7 @@ export const DataBackupPanel: React.FC<Props> = ({ plugin, onSettingsApplied }) 
 			<Card className={styles.settingsCard}>
 				<h3>📦 Move to another vault</h3>
 				<p className={styles.settingDescription}>
-					One file with your character, skills, inventory, gear, bosses, quests, shop, workshop, and
-					plugin settings. Export here, then in the other vault use Import all data.
+					One file with the plugin notes from your file paths: character, skills, habits, inventory, gear, bosses, quests, shop, and workshop. They are packed under a Gamified folder. Import writes that folder into the other vault.
 				</p>
 				<div className={styles.resetButtonGroup} style={{ marginTop: 12, flexDirection: 'row', flexWrap: 'wrap' }}>
 					<button type="button" className={styles.resetButton} disabled={busy} onClick={() => void handleExportAll()}>

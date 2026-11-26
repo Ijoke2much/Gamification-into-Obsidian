@@ -43,7 +43,7 @@ function shopItemToShopLikeItem(item: ShopItem): ShopLikeItem {
 }
 
 // Centralized inventory file path constant
-export const INVENTORY_FILE_PATH = 'Inventory.md';
+export const INVENTORY_FILE_PATH = 'Gamified/Inventory.md';
 
 /** Deduped machine effect lines from shop-like item fields. */
 function collectEffectLines(shopLikeItem: ShopLikeItem): string[] {

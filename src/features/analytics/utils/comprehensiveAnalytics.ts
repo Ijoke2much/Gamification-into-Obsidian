@@ -284,8 +284,8 @@ export interface ComparisonData {
 }
 
 export class ComprehensiveAnalyticsEngine {
-    private static readonly ANALYTICS_FILE = 'SkillTree/Analytics/ComprehensiveData.md';
-    private static readonly INSIGHTS_FILE = 'SkillTree/Analytics/Insights.md';
+    private static readonly ANALYTICS_FILE = 'Gamified/SkillTree/Analytics/ComprehensiveData.md';
+    private static readonly INSIGHTS_FILE = 'Gamified/SkillTree/Analytics/Insights.md';
     private static readonly CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
     private static cache: {

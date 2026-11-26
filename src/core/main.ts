@@ -49,6 +49,7 @@ import {
 	applyVisualTheme,
 	migrateVisualThemeSettings,
 } from '../shared/utils/visualThemeManager';
+import { applyDataPaths, migrateLegacyVaultPaths } from '../shared/utils/vaultPaths';
 
 export const TASK_VIEW_TYPE = "gamified-task-view";
 
@@ -583,6 +584,13 @@ export default class GamifiedObsidianPlugin extends Plugin {
 
 		// Visual theme: existing installs without visualTheme keep Classic (current look)
 		this.settings.visualTheme = migrateVisualThemeSettings(loaded);
+		if (migrateLegacyVaultPaths(
+			this.settings as unknown as Record<string, unknown>,
+			(path) => this.app.vault.getAbstractFileByPath(path) != null,
+		)) {
+			await this.saveData(this.settings);
+		}
+		applyDataPaths(this.settings);
 
 		const existingInstall = Boolean(loaded && Object.keys(loaded).length > 0);
 
@@ -1448,7 +1456,7 @@ class GamificationSettingTab extends PluginSettingTab {
 			.setDesc("Set the folder path for skill files. Example: SkillTree/Master-Class/Class/Skills")
 			.addText((text) =>
 				text
-					.setPlaceholder("SkillTree/Master-Class/Class/Skills")
+					.setPlaceholder("Gamified/SkillTree/Master-Class/Class/Skills")
 					.setValue(this.plugin.settings.skillFolder || "")
 					.onChange(async (value) => {
 						this.plugin.settings.skillFolder = value;
@@ -1461,7 +1469,7 @@ class GamificationSettingTab extends PluginSettingTab {
 			.setDesc("Set the folder path for class files. Example: SkillTree/Master-Class/Class")
 			.addText((text) =>
 				text
-					.setPlaceholder("SkillTree/Master-Class/Class")
+					.setPlaceholder("Gamified/SkillTree/Master-Class/Class")
 					.setValue(this.plugin.settings.classFolder || "")
 					.onChange(async (value) => {
 						this.plugin.settings.classFolder = value;
@@ -1474,7 +1482,7 @@ class GamificationSettingTab extends PluginSettingTab {
 			.setDesc("Set the folder path for master class files. Example: SkillTree/Master-Class")
 			.addText((text) =>
 				text
-					.setPlaceholder("SkillTree/Master-Class")
+					.setPlaceholder("Gamified/SkillTree/Master-Class")
 					.setValue(this.plugin.settings.masterClassFolder || "")
 					.onChange(async (value) => {
 						this.plugin.settings.masterClassFolder = value;
@@ -1487,7 +1495,7 @@ class GamificationSettingTab extends PluginSettingTab {
 			.setDesc("Set the folder path for stat files. Example: SkillTree/Master-Class/Stats")
 			.addText((text) =>
 				text
-					.setPlaceholder("SkillTree/Master-Class/Stats")
+					.setPlaceholder("Gamified/SkillTree/Master-Class/Stats")
 					.setValue(this.plugin.settings.statFolder || "")
 					.onChange(async (value) => {
 						this.plugin.settings.statFolder = value;
@@ -1857,7 +1865,7 @@ class GamificationSettingTab extends PluginSettingTab {
 						const confirmed = confirm("Are you sure you want to reset PlayerData.md? This cannot be undone.");
 						if (!confirmed) return;
 						const { readYamlFrontmatter, writeYamlFrontmatter } = await import("../shared/utils/progressUpdater");
-						const playerPath = "SkillTree/PlayerData.md";
+						const playerPath = "Gamified/SkillTree/PlayerData.md";
 						const { frontmatter } = await readYamlFrontmatter(this.app.vault, playerPath);
 						frontmatter.level = 1;
 						frontmatter.xp = 0;

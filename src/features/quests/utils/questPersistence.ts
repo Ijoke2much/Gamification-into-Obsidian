@@ -52,7 +52,7 @@ export function describeQuestPersistFailure(
 	quest: Quest,
 	action: QuestPersistAction
 ): string {
-	const file = quest.filePath?.trim() || 'GamifiedTasks.md';
+	const file = quest.filePath?.trim() || 'Gamified/GamifiedTasks.md';
 	const title = quest.title?.trim() || 'quest';
 
 	switch (reason) {
@@ -82,7 +82,7 @@ export async function persistQuestCompletion(
 	awardRewards: boolean,
 	rewardSettings?: QuestRewardSettings
 ): Promise<QuestPersistResult> {
-	const path = quest.filePath?.trim() || 'GamifiedTasks.md';
+	const path = quest.filePath?.trim() || 'Gamified/GamifiedTasks.md';
 	const file = app.vault.getAbstractFileByPath(path);
 	if (!(file instanceof TFile)) {
 		return { ...EMPTY_RESULT, failureReason: 'file_not_found' };
@@ -163,7 +163,7 @@ export function describeQuestUncompleteFailure(
 	reason: QuestUncompleteFailureReason,
 	quest: Quest
 ): string {
-	const file = quest.filePath?.trim() || 'GamifiedTasks.md';
+	const file = quest.filePath?.trim() || 'Gamified/GamifiedTasks.md';
 	const title = quest.title?.trim() || 'quest';
 
 	switch (reason) {
@@ -180,7 +180,7 @@ export async function persistQuestUncomplete(
 	app: App,
 	quest: Quest
 ): Promise<QuestUncompleteResult> {
-	const path = quest.filePath?.trim() || 'GamifiedTasks.md';
+	const path = quest.filePath?.trim() || 'Gamified/GamifiedTasks.md';
 	const file = app.vault.getAbstractFileByPath(path);
 	if (!(file instanceof TFile)) {
 		return { changed: false, failureReason: 'file_not_found' };

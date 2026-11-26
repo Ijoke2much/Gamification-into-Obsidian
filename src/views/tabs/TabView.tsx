@@ -591,7 +591,7 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
 
         const handleStatsUpdate = () => {
             const loadStats = async () => {
-                const folderPath = plugin.settings.statFolder || "SkillTree/Master-Class/Stats";
+                const folderPath = plugin.settings.statFolder || "Gamified/SkillTree/Master-Class/Stats";
                 try {
                     const result = await getStatsFromFolder(plugin.app, folderPath);
                     if (Array.isArray(result)) {
@@ -616,7 +616,7 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
         if (isMobile && !showStats) return;
 
         const loadStats = async () => {
-            const folderPath = plugin.settings.statFolder || "SkillTree/Master-Class/Stats";
+            const folderPath = plugin.settings.statFolder || "Gamified/SkillTree/Master-Class/Stats";
             try {
                 const result = await getStatsFromFolder(plugin.app, folderPath);
                 if (Array.isArray(result)) {
@@ -869,7 +869,7 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
                                                 <button 
                                                     onClick={async () => {
                                     try {
-                                        const file = plugin.app.vault.getAbstractFileByPath('SkillTree/PlayerData.md');
+                                        const file = plugin.app.vault.getAbstractFileByPath('Gamified/SkillTree/PlayerData.md');
                                         let fileContent = "File not accessible";
                                         let fileError: string | null = null;
                                         
@@ -884,7 +884,7 @@ const PlayerTabView: React.FC<PlayerTabViewProps> = ({ plugin }) => {
                                                 
                                                 // Method 1: Direct adapter read
                                                 try {
-                                                    rawContent = await plugin.app.vault.adapter.read('SkillTree/PlayerData.md');
+                                                    rawContent = await plugin.app.vault.adapter.read('Gamified/SkillTree/PlayerData.md');
                                                     readMethod = "adapter.read";
                                                     testResults.push("✅ adapter.read: SUCCESS");
                                                 } catch (err1) {

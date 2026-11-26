@@ -180,7 +180,7 @@ export async function ensureFoesFile(plugin: GamifiedObsidianPlugin): Promise<bo
 	if (findFoesFile(plugin)) return true;
 
 	try {
-		await plugin.app.vault.create('Foes.md', FOES_FILE_HEADER);
+		await plugin.app.vault.create('Gamified/Foes.md', FOES_FILE_HEADER);
 		return true;
 	} catch (error) {
 		console.error('[foesParser] Failed to create Foes.md', error);

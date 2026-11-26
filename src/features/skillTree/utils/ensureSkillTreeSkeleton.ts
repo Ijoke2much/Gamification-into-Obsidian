@@ -1,20 +1,20 @@
 import { TFile, type Vault } from 'obsidian';
 import { pickStarterMasterClass } from '../../../data/models/PlayerData';
 
-export const SKILL_TREE_ROOT = 'SkillTree';
-export const HUNTER_MASTER_PATH = 'SkillTree/Master-Class/Hunter.md';
-export const JESTER_MASTER_PATH = 'SkillTree/Master-Class/Jester 🎭.md';
-export const STARTER_CLASS_PATH = 'SkillTree/Master-Class/Class/Focus.md';
-export const STARTER_SKILL_PATH = 'SkillTree/Master-Class/Class/Skills/Deep Work.md';
-export const SKILL_TREE_CANVAS_PATH = 'SkillTree/SkillTree.canvas';
+export const SKILL_TREE_ROOT = 'Gamified/SkillTree';
+export const HUNTER_MASTER_PATH = 'Gamified/SkillTree/Master-Class/Hunter.md';
+export const JESTER_MASTER_PATH = 'Gamified/SkillTree/Master-Class/Jester 🎭.md';
+export const STARTER_CLASS_PATH = 'Gamified/SkillTree/Master-Class/Class/Focus.md';
+export const STARTER_SKILL_PATH = 'Gamified/SkillTree/Master-Class/Class/Skills/Deep Work.md';
+export const SKILL_TREE_CANVAS_PATH = 'Gamified/SkillTree/SkillTree.canvas';
 
 const FOLDERS = [
-	'SkillTree',
-	'SkillTree/Master-Class',
-	'SkillTree/Master-Class/Class',
-	'SkillTree/Master-Class/Class/Skills',
-	'SkillTree/Master-Class/Skills',
-	'SkillTree/Master-Class/Stats',
+	'Gamified/SkillTree',
+	'Gamified/SkillTree/Master-Class',
+	'Gamified/SkillTree/Master-Class/Class',
+	'Gamified/SkillTree/Master-Class/Class/Skills',
+	'Gamified/SkillTree/Master-Class/Skills',
+	'Gamified/SkillTree/Master-Class/Stats',
 ] as const;
 
 async function ensureFolder(vault: Vault, path: string): Promise<void> {
@@ -33,7 +33,7 @@ async function ensureFolder(vault: Vault, path: string): Promise<void> {
 }
 
 function isMasterClassNote(file: TFile): boolean {
-	if (!file.path.startsWith('SkillTree/Master-Class/')) return false;
+	if (!file.path.startsWith('Gamified/SkillTree/Master-Class/')) return false;
 	if (!file.path.endsWith('.md')) return false;
 	if (file.path.includes('/Class/')) return false;
 	if (file.path.includes('/Skills/')) return false;
@@ -44,7 +44,7 @@ function isMasterClassNote(file: TFile): boolean {
 
 function isClassNote(file: TFile): boolean {
 	return (
-		file.path.startsWith('SkillTree/Master-Class/Class/') &&
+		file.path.startsWith('Gamified/SkillTree/Master-Class/Class/') &&
 		file.path.endsWith('.md') &&
 		!file.path.includes('/Skills/')
 	);
@@ -60,11 +60,11 @@ function safeMasterFileName(name: string): string {
 }
 
 function masterNotePathFor(name: string): string {
-	return `SkillTree/Master-Class/${safeMasterFileName(name)}.md`;
+	return `Gamified/SkillTree/Master-Class/${safeMasterFileName(name)}.md`;
 }
 
 async function readPlayerMasterClass(vault: Vault): Promise<string | null> {
-	const pd = vault.getAbstractFileByPath('SkillTree/PlayerData.md');
+	const pd = vault.getAbstractFileByPath('Gamified/SkillTree/PlayerData.md');
 	if (!(pd instanceof TFile)) return null;
 	try {
 		const raw = await vault.read(pd);
@@ -204,6 +204,11 @@ export function resolveExistingMasterPath(vault: Vault): string | null {
  * Existing Jester (or any master) vaults are left as-is.
  */
 export async function ensureSkillTreeSkeleton(vault: Vault): Promise<void> {
+	const legacyTree = vault.getAbstractFileByPath('SkillTree/PlayerData.md')
+		|| vault.getAbstractFileByPath('SkillTree/Master-Class');
+	const movedTree = vault.getAbstractFileByPath('Gamified/SkillTree/PlayerData.md');
+	if (legacyTree && !movedTree) return;
+
 	for (const folder of FOLDERS) {
 		await ensureFolder(vault, folder);
 	}

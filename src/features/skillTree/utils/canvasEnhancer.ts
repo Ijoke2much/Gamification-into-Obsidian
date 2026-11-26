@@ -97,8 +97,8 @@ export interface EnhancedCanvasData {
 }
 
 export class CanvasEnhancer {
-    private static readonly CANVAS_FILE = 'SkillTree/SkillTree.canvas';
-    private static readonly ENHANCED_DATA_FILE = 'SkillTree/CanvasEnhancementData.json';
+    private static readonly CANVAS_FILE = 'Gamified/SkillTree/SkillTree.canvas';
+    private static readonly ENHANCED_DATA_FILE = 'Gamified/SkillTree/CanvasEnhancementData.json';
 
     // Visual constants
     private static readonly COLORS = {
@@ -210,7 +210,7 @@ export class CanvasEnhancer {
             const classNode: CanvasNode = {
                 id: `node-${nodeId++}`,
                 type: 'file',
-                file: `SkillTree/Master-Class/Class/${className}.md`,
+                file: `Gamified/SkillTree/Master-Class/Class/${className}.md`,
                 x: currentX,
                 y: currentY,
                 width: this.NODE_SIZES.class.width,
@@ -580,16 +580,16 @@ export class CanvasEnhancer {
             let filePath: string;
             switch (skillType) {
                 case 'class':
-                    filePath = `SkillTree/Master-Class/Class/${skillName}.md`;
+                    filePath = `Gamified/SkillTree/Master-Class/Class/${skillName}.md`;
                     break;
                 case 'skill':
-                    filePath = `SkillTree/Master-Class/Skills/${skillName}.md`;
+                    filePath = `Gamified/SkillTree/Master-Class/Skills/${skillName}.md`;
                     break;
                 case 'stat':
-                    filePath = `SkillTree/Master-Class/Stats/${skillName}.md`;
+                    filePath = `Gamified/SkillTree/Master-Class/Stats/${skillName}.md`;
                     break;
                 default:
-                    filePath = `SkillTree/Master-Class/${skillName}.md`;
+                    filePath = `Gamified/SkillTree/Master-Class/${skillName}.md`;
             }
 
             const newNode: CanvasNode = {

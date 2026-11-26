@@ -31,7 +31,7 @@ export function getProjectsFilePath(settings: ProjectsFileSettings): string {
 	const projectLocation = locations.find(
 		(loc) => /project/i.test(loc.label || '') || /project/i.test(loc.filePath || '')
 	);
-	return projectLocation?.filePath || settings.defaultQuestFilePath || 'GamifiedTasks.md';
+	return projectLocation?.filePath || settings.defaultQuestFilePath || 'Gamified/GamifiedTasks.md';
 }
 
 /** Open contract titles for quest-modal / step linking pickers. */
@@ -95,7 +95,7 @@ export async function appendProjectStep(
 		? markdownTask
 		: `${markdownTask} ${projectSlugTag}`;
 
-	const path = settings.defaultQuestFilePath || 'GamifiedTasks.md';
+	const path = settings.defaultQuestFilePath || 'Gamified/GamifiedTasks.md';
 	const file = app.vault.getAbstractFileByPath(path);
 	if (file instanceof TFile) {
 		const content = await app.vault.read(file);

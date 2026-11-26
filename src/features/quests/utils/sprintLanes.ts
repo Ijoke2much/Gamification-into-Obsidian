@@ -124,7 +124,7 @@ async function rewriteQuestLines(
 ): Promise<void> {
 	const byPath = new Map<string, { quest: Quest; mapLine: (line: string) => string }[]>();
 	for (const edit of edits) {
-		const path = edit.quest.filePath || 'GamifiedTasks.md';
+		const path = edit.quest.filePath || 'Gamified/GamifiedTasks.md';
 		const list = byPath.get(path) ?? [];
 		list.push(edit);
 		byPath.set(path, list);

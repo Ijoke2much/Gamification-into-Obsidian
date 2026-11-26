@@ -2036,15 +2036,39 @@ const FileSettingsSection: React.FC<{
         <PathField
           label="Inventory File Path:"
           value={settings.inventoryFilePath}
-          placeholder="Inventory.md"
+          placeholder="Gamified/Inventory.md"
           kind="markdown"
           app={app}
           onChange={(value) => onSettingChange('inventoryFilePath', value)}
         />
         <PathField
+          label="Player Data File:"
+          value={settings.playerDataFilePath || 'Gamified/SkillTree/PlayerData.md'}
+          placeholder="Gamified/SkillTree/PlayerData.md"
+          kind="markdown"
+          app={app}
+          onChange={(value) => onSettingChange('playerDataFilePath', value || 'Gamified/SkillTree/PlayerData.md')}
+        />
+        <PathField
+          label="Habits Folder:"
+          value={settings.habitsFolderPath || 'Gamified/SkillTree/Habits'}
+          placeholder="Gamified/SkillTree/Habits"
+          kind="folder"
+          app={app}
+          onChange={(value) => onSettingChange('habitsFolderPath', value || 'Gamified/SkillTree/Habits')}
+        />
+        <PathField
+          label="Habits File:"
+          value={settings.habitsFilePath || 'Gamified/SkillTree/Habits.md'}
+          placeholder="Gamified/SkillTree/Habits.md"
+          kind="markdown"
+          app={app}
+          onChange={(value) => onSettingChange('habitsFilePath', value || 'Gamified/SkillTree/Habits.md')}
+        />
+        <PathField
           label="Master Class Folder:"
           value={settings.masterClassFolder}
-          placeholder="SkillTree/Master-Class"
+          placeholder="Gamified/SkillTree/Master-Class"
           kind="folder"
           app={app}
           onChange={(value) => onSettingChange('masterClassFolder', value)}
@@ -2052,7 +2076,7 @@ const FileSettingsSection: React.FC<{
         <PathField
           label="Class Folder:"
           value={settings.classFolder}
-          placeholder="SkillTree/Master-Class/Class"
+          placeholder="Gamified/SkillTree/Master-Class/Class"
           kind="folder"
           app={app}
           onChange={(value) => onSettingChange('classFolder', value)}
@@ -2060,7 +2084,7 @@ const FileSettingsSection: React.FC<{
         <PathField
           label="Skill Folder:"
           value={settings.skillFolder}
-          placeholder="SkillTree/Master-Class/Class/Skills"
+          placeholder="Gamified/SkillTree/Master-Class/Class/Skills"
           kind="folder"
           app={app}
           onChange={(value) => onSettingChange('skillFolder', value)}
@@ -2068,18 +2092,18 @@ const FileSettingsSection: React.FC<{
         <PathField
           label="Stat Folder:"
           value={settings.statFolder}
-          placeholder="SkillTree/Master-Class/Stats"
+          placeholder="Gamified/SkillTree/Master-Class/Stats"
           kind="folder"
           app={app}
           onChange={(value) => onSettingChange('statFolder', value)}
         />
         <PathField
           label="Default Quest File:"
-          value={settings.defaultQuestFilePath || 'GamifiedTasks.md'}
+          value={settings.defaultQuestFilePath || 'Gamified/GamifiedTasks.md'}
           placeholder="GamifiedTasks.md"
           kind="markdown"
           app={app}
-          onChange={(value) => onSettingChange('defaultQuestFilePath', value || 'GamifiedTasks.md')}
+          onChange={(value) => onSettingChange('defaultQuestFilePath', value || 'Gamified/GamifiedTasks.md')}
         />
         <label>
           Quest storage mode:
@@ -2105,19 +2129,19 @@ const FileSettingsSection: React.FC<{
         )}
         <PathField
           label="Projects / contracts file:"
-          value={settings.projectsFilePath || 'GamifiedProjects.md'}
+          value={settings.projectsFilePath || 'Gamified/GamifiedProjects.md'}
           placeholder="GamifiedProjects.md"
           kind="markdown"
           app={app}
-          onChange={(value) => onSettingChange('projectsFilePath', value || 'GamifiedProjects.md')}
+          onChange={(value) => onSettingChange('projectsFilePath', value || 'Gamified/GamifiedProjects.md')}
         />
         <PathField
           label="Brain dump file:"
-          value={settings.captureFilePath || 'Capture.md'}
+          value={settings.captureFilePath || 'Gamified/Capture.md'}
           placeholder="Capture.md"
           kind="markdown"
           app={app}
-          onChange={(value) => onSettingChange('captureFilePath', value || 'Capture.md')}
+          onChange={(value) => onSettingChange('captureFilePath', value || 'Gamified/Capture.md')}
         />
         <label>
           Capture tag presets (comma-separated):
@@ -2270,8 +2294,8 @@ const FileSettingsSection: React.FC<{
           Check-in log file:
           <input
             type="text"
-            value={settings.focusCheckInLogPath || 'CheckIns.md'}
-            onChange={(e) => onSettingChange('focusCheckInLogPath', e.target.value || 'CheckIns.md')}
+            value={settings.focusCheckInLogPath || 'Gamified/CheckIns.md'}
+            onChange={(e) => onSettingChange('focusCheckInLogPath', e.target.value || 'Gamified/CheckIns.md')}
             placeholder="CheckIns.md"
           />
         </label>
@@ -2361,7 +2385,7 @@ const FileSettingsSection: React.FC<{
             locations.push({
               id,
               label: 'New Quest Location',
-              filePath: settings.defaultQuestFilePath || 'GamifiedTasks.md',
+              filePath: settings.defaultQuestFilePath || 'Gamified/GamifiedTasks.md',
             });
             onSettingChange('questSaveLocations', locations);
           }}
@@ -2437,7 +2461,7 @@ const ResetSettingsSection: React.FC<{
 
   const resetSkillsData = async (app: App, settings: GamificationPluginSettings) => {
     console.log('🔄 Resetting skills data...');
-    const skillFolder = settings.skillFolder || 'SkillTree/Master-Class/Class/Skills';
+    const skillFolder = settings.skillFolder || 'Gamified/SkillTree/Master-Class/Class/Skills';
     const folder = app.vault.getAbstractFileByPath(skillFolder);
     
     if (folder instanceof TFolder) {
@@ -2486,7 +2510,7 @@ const ResetSettingsSection: React.FC<{
 
   const resetMasterClassData = async (app: App, settings: GamificationPluginSettings) => {
     console.log('🔄 Resetting master class data...');
-    const masterClassFolder = settings.masterClassFolder || 'SkillTree/Master-Class';
+    const masterClassFolder = settings.masterClassFolder || 'Gamified/SkillTree/Master-Class';
     const folder = app.vault.getAbstractFileByPath(masterClassFolder);
     
     if (folder instanceof TFolder) {
@@ -2538,7 +2562,7 @@ const ResetSettingsSection: React.FC<{
 
   const resetClassData = async (app: App, settings: GamificationPluginSettings) => {
     console.log('🔄 Resetting class data...');
-    const classFolder = settings.classFolder || 'SkillTree/Master-Class/Class';
+    const classFolder = settings.classFolder || 'Gamified/SkillTree/Master-Class/Class';
     const folder = app.vault.getAbstractFileByPath(classFolder);
     
     if (folder instanceof TFolder) {
@@ -2583,7 +2607,7 @@ const ResetSettingsSection: React.FC<{
 
   const resetStatsData = async (app: App, settings: GamificationPluginSettings) => {
     console.log('🔄 Resetting stats data...');
-    const statFolder = settings.statFolder || 'SkillTree/Master-Class/Stats';
+    const statFolder = settings.statFolder || 'Gamified/SkillTree/Master-Class/Stats';
     const folder = app.vault.getAbstractFileByPath(statFolder);
     
     if (folder instanceof TFolder) {

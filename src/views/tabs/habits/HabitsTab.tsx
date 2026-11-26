@@ -184,6 +184,12 @@ export const HabitsTab: React.FC<HabitsTabProps> = ({ plugin, playerData, reload
         void loadHabitsData();
     }, [loadHabitsData, loadAttempt]);
 
+    useEffect(() => {
+        const onImported = () => { void loadHabitsData(); };
+        document.addEventListener('gamification-vault-imported', onImported);
+        return () => document.removeEventListener('gamification-vault-imported', onImported);
+    }, [loadHabitsData]);
+
     // Load persistent toggle states from localStorage
     useEffect(() => {
         const loadToggleStates = () => {

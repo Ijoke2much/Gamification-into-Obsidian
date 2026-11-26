@@ -36,7 +36,7 @@ export interface QuestLoadSettings {
 
 export function getConfiguredListQuestPaths(settings: QuestLoadSettings): string[] {
 	const paths = new Set<string>();
-	paths.add(settings.defaultQuestFilePath || 'GamifiedTasks.md');
+	paths.add(settings.defaultQuestFilePath || 'Gamified/GamifiedTasks.md');
 	if (settings.projectsFilePath?.trim()) {
 		paths.add(settings.projectsFilePath.trim());
 	}

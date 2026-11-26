@@ -15,8 +15,8 @@ const MAX_BACKUPS_PER_FILE = 5;
 const MIN_BACKUP_INTERVAL_MS = 60_000;
 
 /** Legacy PlayerData backups (playerDataUtils.ts) — included in listing/restore. */
-const PLAYERDATA_BACKUP_DIR = 'SkillTree/.playerdata_backups';
-const PLAYERDATA_SOURCE_PATH = 'SkillTree/PlayerData.md';
+const PLAYERDATA_BACKUP_DIR = 'Gamified/SkillTree/.playerdata_backups';
+const PLAYERDATA_SOURCE_PATH = 'Gamified/SkillTree/PlayerData.md';
 
 const lastBackupAt = new Map<string, number>();
 

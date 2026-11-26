@@ -170,7 +170,7 @@ export async function getAllShopItems(plugin: GamifiedObsidianPlugin): Promise<S
 // --- INVENTORY.md PARSER ---
 export async function getAllInventoryItems(plugin: GamifiedObsidianPlugin): Promise<ShopItem[]> {
 	const invFile = resolveVaultMarkdownFile(plugin.app, "inventory", [
-		"Inventory.md",
+		"Gamified/Inventory.md",
 		"inventory.md",
 		"Gamification/Inventory.md",
 		"Gamified/Inventory.md",

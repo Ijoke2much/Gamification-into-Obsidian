@@ -207,7 +207,7 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
 
                 const canvasOpen = plugin.app.workspace.getLeavesOfType('canvas').some((leaf: WorkspaceLeaf) => {
                     const view = leaf.view as { file?: TFile } | undefined;
-                    return view?.file?.path === 'SkillTree/SkillTree.canvas';
+                    return view?.file?.path === 'Gamified/SkillTree/SkillTree.canvas';
                 });
                 const masterEdgeSync = await syncMasterClassEdgesOnCanvas(
                     plugin.app.vault,
@@ -482,7 +482,7 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
     const createNewSkill = async () => {
         const name = formData.name.trim();
         const statsArray = formData.stats;
-        const skillPath = `SkillTree/Master-Class/Skills/${name}.md`;
+        const skillPath = `Gamified/SkillTree/Master-Class/Skills/${name}.md`;
         const content = await buildSkillNoteFromTemplate(plugin.app.vault, {
             name,
             className: formData.class.trim(),
@@ -506,7 +506,7 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
 
             const createNewClass = async () => {
                 const name = formData.name.trim();
-                const classPath = `SkillTree/Master-Class/Class/${name}.md`;
+                const classPath = `Gamified/SkillTree/Master-Class/Class/${name}.md`;
                 const masterName = (playerMasterClass || DEFAULT_PLAYER.masterClass).trim() || DEFAULT_PLAYER.masterClass;
                 const content = await buildClassNoteFromTemplate(plugin.app.vault, {
                     name,
@@ -540,7 +540,7 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
             const name = skillName.trim();
             const classDisplayName = className.trim();
 
-            const canvasFile = plugin.app.vault.getAbstractFileByPath('SkillTree/SkillTree.canvas');
+            const canvasFile = plugin.app.vault.getAbstractFileByPath('Gamified/SkillTree/SkillTree.canvas');
             if (!canvasFile || !(canvasFile instanceof TFile)) {
                 showNotice('❌ Canvas file not found. Please create it first.');
                 return;
@@ -551,7 +551,7 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
 
             // Find the class node
             const classNode = canvasData.nodes.find((node: CanvasNode) => 
-                node.file === `SkillTree/Master-Class/Class/${classDisplayName}.md`
+                node.file === `Gamified/SkillTree/Master-Class/Class/${classDisplayName}.md`
             );
 
             if (!classNode) {
@@ -561,7 +561,7 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
 
             // Avoid creating duplicate nodes for the same skill file
             const existingSkillNode = canvasData.nodes.find((node: CanvasNode) =>
-                node.file === `SkillTree/Master-Class/Skills/${name}.md`
+                node.file === `Gamified/SkillTree/Master-Class/Skills/${name}.md`
             );
 
             if (existingSkillNode) {
@@ -577,7 +577,7 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
             const newNode: CanvasNode = {
                 "id": `skill-${name.toLowerCase().replace(/\s+/g, '-')}`,
                 "type": "file",
-                "file": `SkillTree/Master-Class/Skills/${name}.md`,
+                "file": `Gamified/SkillTree/Master-Class/Skills/${name}.md`,
                 "x": skillX,
                 "y": skillY,
                 "width": 160,
@@ -616,7 +616,7 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
                 // core Obsidian typings don't model the CanvasView explicitly. We use a
                 // lightweight structural type here rather than `any` to keep linting happy.
                 const view = leaf.view as { file?: TFile } | undefined;
-                return view?.file?.path === 'SkillTree/SkillTree.canvas';
+                return view?.file?.path === 'Gamified/SkillTree/SkillTree.canvas';
             });
 
             if (canvasOpenForSkillTree) {
@@ -624,7 +624,7 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
                 return;
             }
 
-            const canvasFile = plugin.app.vault.getAbstractFileByPath('SkillTree/SkillTree.canvas');
+            const canvasFile = plugin.app.vault.getAbstractFileByPath('Gamified/SkillTree/SkillTree.canvas');
             if (!canvasFile || !(canvasFile instanceof TFile)) {
                 showNotice('❌ Canvas file not found. Please create it first.');
                 return;
@@ -648,7 +648,7 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
 
             // If this class already has a node, ensure Master→Class edge exists, then return
             const existingClassNode = canvasData.nodes.find((node: CanvasNode) =>
-                node.file === `SkillTree/Master-Class/Class/${name}.md`
+                node.file === `Gamified/SkillTree/Master-Class/Class/${name}.md`
             );
 
             if (existingClassNode) {
@@ -672,7 +672,7 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
 
             // Calculate initial position for new class node (user can rearrange freely after)
             const existingClasses = canvasData.nodes.filter((node: CanvasNode) => 
-                node.id !== masterNode.id && node.file && node.file.includes('SkillTree/Master-Class/Class/')
+                node.id !== masterNode.id && node.file && node.file.includes('Gamified/SkillTree/Master-Class/Class/')
             );
             const classCount = existingClasses.length;
             
@@ -687,7 +687,7 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
             const newNode: CanvasNode = {
                 "id": `class-${name.toLowerCase().replace(/\s+/g, '-')}`,
                 "type": "file",
-                "file": `SkillTree/Master-Class/Class/${name}.md`,
+                "file": `Gamified/SkillTree/Master-Class/Class/${name}.md`,
                 "x": Math.round(x),
                 "y": Math.round(y),
                 "width": 200,
@@ -711,7 +711,7 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
             const verifyContent = await plugin.app.vault.read(canvasFile);
             const verifyData: CanvasData = JSON.parse(verifyContent);
             const persistedNode = verifyData.nodes.find((node: CanvasNode) => 
-                node.file === `SkillTree/Master-Class/Class/${name}.md`
+                node.file === `Gamified/SkillTree/Master-Class/Class/${name}.md`
             );
 
             if (!persistedNode) {
@@ -746,7 +746,7 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
             const canvasLeaves = plugin.app.workspace.getLeavesOfType('canvas');
             const canvasOpenForSkillTree = canvasLeaves.some((leaf: WorkspaceLeaf) => {
                 const view = leaf.view as { file?: TFile } | undefined;
-                return view?.file?.path === 'SkillTree/SkillTree.canvas';
+                return view?.file?.path === 'Gamified/SkillTree/SkillTree.canvas';
             });
 
             if (canvasOpenForSkillTree) {
@@ -754,7 +754,7 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
                 return;
             }
 
-            const canvasFile = plugin.app.vault.getAbstractFileByPath('SkillTree/SkillTree.canvas');
+            const canvasFile = plugin.app.vault.getAbstractFileByPath('Gamified/SkillTree/SkillTree.canvas');
             if (!canvasFile || !(canvasFile instanceof TFile)) {
                 // If there is no canvas yet, nothing to sync
                 return;
@@ -791,15 +791,15 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
                     ) || fallbackMaster;
 
                 let classNode = canvasData.nodes.find((node: CanvasNode) =>
-                    node.file === (classMeta.filePath || `SkillTree/Master-Class/Class/${name}.md`)
+                    node.file === (classMeta.filePath || `Gamified/SkillTree/Master-Class/Class/${name}.md`)
                 ) || canvasData.nodes.find((node: CanvasNode) =>
-                    node.file === `SkillTree/Master-Class/Class/${name}.md`
+                    node.file === `Gamified/SkillTree/Master-Class/Class/${name}.md`
                 );
 
                 if (!classNode) {
                     // Initial placement only for brand-new nodes
                     const existingClasses = canvasData.nodes.filter((node: CanvasNode) => 
-                        node.id !== masterNode.id && node.file && node.file.includes('SkillTree/Master-Class/Class/')
+                        node.id !== masterNode.id && node.file && node.file.includes('Gamified/SkillTree/Master-Class/Class/')
                     );
                     const classCount = existingClasses.length;
                     const angle = (classCount * 60) * (Math.PI / 180);
@@ -813,7 +813,7 @@ export const SkillTreeModal: React.FC<SkillTreeModalProps> = ({
                     classNode = {
                         "id": `class-${name.toLowerCase().replace(/\s+/g, '-')}`,
                         "type": "file",
-                        "file": `SkillTree/Master-Class/Class/${name}.md`,
+                        "file": `Gamified/SkillTree/Master-Class/Class/${name}.md`,
                         "x": Math.round(x),
                         "y": Math.round(y),
                         "width": 200,

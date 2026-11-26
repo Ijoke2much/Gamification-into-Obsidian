@@ -1,5 +1,14 @@
 import { TAbstractFile, TFile, TFolder, Vault, Notice, parseYaml, stringifyYaml } from 'obsidian';
 import { getSkillMetadata } from '../../../shared/utils/skillDiscovery';
+import { configuredHabitsFilePath, configuredHabitsFolderPath } from '../../../shared/utils/vaultPaths';
+
+function habitsFolder(): string {
+    return configuredHabitsFolderPath() || HABITS_FOLDER_PATH;
+}
+
+function habitsFile(): string {
+    return configuredHabitsFilePath() || HABIT_FILE_PATH;
+}
 
 // --- ✅ LOCAL TYPES ---
 interface HabitReward {
@@ -269,9 +278,9 @@ export const checkAndUpdateTreeMilestones = (habit: HabitData): { newMilestones:
 
 // --- ✅ CONSTANTS ---
 // Legacy single-file storage path
-export const HABIT_FILE_PATH = 'SkillTree/Habits.md';
+export const HABIT_FILE_PATH = 'Gamified/SkillTree/Habits.md';
 // New: per-habit folder storage (one note per habit)
-export const HABITS_FOLDER_PATH = 'SkillTree/Habits';
+export const HABITS_FOLDER_PATH = 'Gamified/SkillTree/Habits';
 
 export const DEFAULT_HABITS: HabitData[] = [
     {
@@ -664,7 +673,9 @@ export const generateHabitsMarkdown = (habits: HabitData[]): string => {
 export const loadHabitsFromFile = async (vault: Vault): Promise<HabitData[]> => {
     try {
         // Prefer new per-file folder format if available
-        const folder = vault.getAbstractFileByPath(HABITS_FOLDER_PATH);
+        const folder = vault.getAbstractFileByPath(habitsFolder())
+            ?? vault.getAbstractFileByPath('Gamified/SkillTree/Habits')
+            ?? vault.getAbstractFileByPath('SkillTree/Habits');
         if (folder && folder instanceof TFolder) {
             const habitFiles: TFile[] = [];
             Vault.recurseChildren(folder, (f: TAbstractFile) => {
@@ -709,7 +720,9 @@ export const loadHabitsFromFile = async (vault: Vault): Promise<HabitData[]> => 
         }
 
         // Fallback to legacy single-file format
-        const file = vault.getAbstractFileByPath(HABIT_FILE_PATH);
+        const file = vault.getAbstractFileByPath(habitsFile())
+            ?? vault.getAbstractFileByPath('Gamified/SkillTree/Habits.md')
+            ?? vault.getAbstractFileByPath('SkillTree/Habits.md');
         if (file && file instanceof TFile) {
             const content = await vault.read(file);
             return parseHabitsFromMarkdown(content);
@@ -729,12 +742,12 @@ import { showGameNotice } from '../../../shared/utils/noticeUtils';
 export const saveHabitsToFile = async (vault: Vault, habits: HabitData[]): Promise<void> => {
     try {
         // Prefer writing to per-habit folder format
-        let folder = vault.getAbstractFileByPath(HABITS_FOLDER_PATH);
+        let folder = vault.getAbstractFileByPath(habitsFolder());
         if (!folder) {
             // Create folder tree if it does not exist
             try {
-                await vault.createFolder(HABITS_FOLDER_PATH);
-                folder = vault.getAbstractFileByPath(HABITS_FOLDER_PATH);
+                await vault.createFolder(habitsFolder());
+                folder = vault.getAbstractFileByPath(habitsFolder());
             } catch (e) {
                 console.error('Failed to create habits folder, falling back to legacy file:', e);
             }
@@ -820,10 +833,10 @@ export const saveHabitsToFile = async (vault: Vault, habits: HabitData[]): Promi
                     targetFile = filesById[habit.id];
                 } else {
                     const base = slugifyHabitName(habit.name);
-                    let candidatePath = `${HABITS_FOLDER_PATH}/${base}.md`;
+                    let candidatePath = `${habitsFolder()}/${base}.md`;
                     let i = 1;
                     while (vault.getAbstractFileByPath(candidatePath)) {
-                        candidatePath = `${HABITS_FOLDER_PATH}/${base}-${i++}.md`;
+                        candidatePath = `${habitsFolder()}/${base}-${i++}.md`;
                     }
                     // For new files, try to derive canonical paths immediately.
                     if ((!skillPath || !classPath || !masterClassPath || !statPaths) && primarySkillName) {
@@ -907,11 +920,11 @@ export const saveHabitsToFile = async (vault: Vault, habits: HabitData[]): Promi
 
         // If folder does not exist and cannot be created, fall back to legacy single-file behavior
         const content = generateHabitsMarkdown(habits);
-        const file = vault.getAbstractFileByPath(HABIT_FILE_PATH);
+        const file = vault.getAbstractFileByPath(habitsFile());
         if (file && file instanceof TFile) {
             await vault.modify(file, content);
         } else {
-            await vault.create(HABIT_FILE_PATH, content);
+            await vault.create(habitsFile(), content);
         }
     } catch (error) {
         console.error('Error saving habits:', error);
@@ -969,7 +982,7 @@ export const getStreakMultiplier = (streak: number): number => {
  */
 export const migrateHabitsToPerFile = async (vault: Vault): Promise<void> => {
     try {
-        const folder = vault.getAbstractFileByPath(HABITS_FOLDER_PATH);
+        const folder = vault.getAbstractFileByPath(habitsFolder());
         if (folder && folder instanceof TFolder) {
             // Folder already exists; if it has any markdown files, assume migration happened
             let hasFiles = false;
@@ -981,18 +994,18 @@ export const migrateHabitsToPerFile = async (vault: Vault): Promise<void> => {
             if (hasFiles) return;
         }
 
-        const legacyFile = vault.getAbstractFileByPath(HABIT_FILE_PATH);
+        const legacyFile = vault.getAbstractFileByPath(habitsFile());
         if (!legacyFile || !(legacyFile instanceof TFile)) {
             // Nothing to migrate
             return;
         }
 
         // Ensure the folder exists
-        let targetFolder = vault.getAbstractFileByPath(HABITS_FOLDER_PATH);
+        let targetFolder = vault.getAbstractFileByPath(habitsFolder());
         if (!targetFolder) {
             try {
-                await vault.createFolder(HABITS_FOLDER_PATH);
-                targetFolder = vault.getAbstractFileByPath(HABITS_FOLDER_PATH);
+                await vault.createFolder(habitsFolder());
+                targetFolder = vault.getAbstractFileByPath(habitsFolder());
             } catch (e) {
                 console.error('Failed to create habits folder during migration:', e);
                 return;
@@ -1018,10 +1031,10 @@ export const migrateHabitsToPerFile = async (vault: Vault): Promise<void> => {
             const content = `---\n${yaml}---\n${bodyLines.join('\n')}\n`;
 
             const base = slugifyHabitName(habit.name);
-            let candidatePath = `${HABITS_FOLDER_PATH}/${base}.md`;
+            let candidatePath = `${habitsFolder()}/${base}.md`;
             let i = 1;
             while (vault.getAbstractFileByPath(candidatePath)) {
-                candidatePath = `${HABITS_FOLDER_PATH}/${base}-${i++}.md`;
+                candidatePath = `${habitsFolder()}/${base}-${i++}.md`;
             }
             await vault.create(candidatePath, content);
         }

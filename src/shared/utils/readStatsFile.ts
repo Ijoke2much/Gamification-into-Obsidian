@@ -113,7 +113,7 @@ export async function getStatsFromFolder(
 
 // Legacy: single file loader (kept for backward compatibility)
 export async function getStatsFromFile(app: App): Promise<Stat[]> {
-  const file = app.vault.getAbstractFileByPath("SkillTree/Stat/Stats.md");
+  const file = app.vault.getAbstractFileByPath("Gamified/SkillTree/Stat/Stats.md");
   if (!(file instanceof TFile)) return [];
   const content = await app.vault.read(file);
   const match = content.match(/^---([\s\S]*?)---/);
@@ -130,7 +130,7 @@ export async function getStatsFromFile(app: App): Promise<Stat[]> {
 }
 
 export async function resetStatsFile(app: App): Promise<void> {
-  const file = app.vault.getAbstractFileByPath("SkillTree/Stat/Stats.md");
+  const file = app.vault.getAbstractFileByPath("Gamified/SkillTree/Stat/Stats.md");
   if (!(file instanceof TFile)) return;
   const defaultStats = `---\nstats:\n  Muscle:\n    value: 0\n    level: 1\n  Intelligence:\n    value: 0\n    level: 1\n  Dexterity:\n    value: 0\n    level: 1\n  Charisma:\n    value: 0\n    level: 1\n---\n`;
   await app.vault.modify(file, defaultStats);

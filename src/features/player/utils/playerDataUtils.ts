@@ -4,11 +4,12 @@ import { PlayerData, DEFAULT_PLAYER, createStarterPlayerData } from "../../../da
 import { dreamFromFrontmatter } from "../../../data/models/DreamPlayer";
 import { readYamlFrontmatter, sanitizeForYaml } from "../../../shared/utils/progressUpdater";
 import { isLikelyMobileDevice } from "../../../shared/utils/deviceDetect";
+import { configuredPlayerDataPath } from "../../../shared/utils/vaultPaths";
 
 // ---------------------------------------------------------------------------
 // Reliability: backups, write queue with debounce + lock, schema versioning
 // ---------------------------------------------------------------------------
-const BACKUP_DIR = "SkillTree/.playerdata_backups";
+const BACKUP_DIR = "Gamified/SkillTree/.playerdata_backups";
 const BACKUP_PREFIX = "PlayerData.";
 const MAX_BACKUPS = 5;
 const SCHEMA_VERSION = 1;
@@ -22,7 +23,7 @@ let writeWaiters: PlayerWriteWaiter[] = [];
 
 function findExistingMasterClassName(vault: Vault): string | null {
   const found = vault.getMarkdownFiles().find((file) => {
-    if (!file.path.startsWith("SkillTree/Master-Class/")) return false;
+    if (!file.path.startsWith("Gamified/SkillTree/Master-Class/")) return false;
     if (!file.path.endsWith(".md")) return false;
     if (file.path.includes("/Class/")) return false;
     if (file.path.includes("/Skills/")) return false;
@@ -117,7 +118,7 @@ export async function listPlayerDataBackups(vault: Vault): Promise<TFile[]> {
 }
 
 export async function restorePlayerDataBackup(vault: Vault, backupPath: string): Promise<void> {
-  const target = vault.getAbstractFileByPath("SkillTree/PlayerData.md");
+  const target = vault.getAbstractFileByPath("Gamified/SkillTree/PlayerData.md");
   if (!(target instanceof TFile)) {
     throw new Error("Backup or target file not found");
   }
@@ -227,7 +228,13 @@ function parsePlayerDataFromMarkdown(content: string): PlayerData | null {
 
 // Reads and parses PlayerData.md, returns PlayerData object
 export async function readPlayerData(vault: Vault): Promise<PlayerData | null> {
-  let filePath = "SkillTree/PlayerData.md";
+  const preferredPath = configuredPlayerDataPath();
+  const legacyPath = "SkillTree/PlayerData.md";
+  let filePath = vault.getAbstractFileByPath(preferredPath)
+    ? preferredPath
+    : vault.getAbstractFileByPath(legacyPath)
+      ? legacyPath
+      : preferredPath;
   console.log("[readPlayerData] Looking for file at:", filePath);
 
   // iPad/iPhone/Android: Obsidian body classes + Platform + iPad desktop-UA touch heuristic
@@ -308,8 +315,8 @@ export async function readPlayerData(vault: Vault): Promise<PlayerData | null> {
     const alternativePaths = [
       "skilltree/PlayerData.md",
       "SKILLTREE/PlayerData.md",
-      "SkillTree/playerdata.md",
-      "SkillTree/PLAYERDATA.md"
+      "Gamified/SkillTree/playerdata.md",
+      "Gamified/SkillTree/PLAYERDATA.md"
     ];
 
     for (const altPath of alternativePaths) {
@@ -397,7 +404,7 @@ export async function readPlayerData(vault: Vault): Promise<PlayerData | null> {
 
     // Attempt to initialize the file with defaults
     try {
-      const folderPath = "SkillTree";
+      const folderPath = "Gamified/SkillTree";
       const folder = vault.getAbstractFileByPath(folderPath);
       if (!folder) {
         if (isMobile) {
@@ -463,7 +470,7 @@ export async function readPlayerData(vault: Vault): Promise<PlayerData | null> {
       console.error("❌ [CRITICAL] PlayerData.md file is empty! Attempting recovery from backup...");
       
       // Try to restore from backup
-      const backupFile = vault.getAbstractFileByPath("SkillTree/PlayerData.backup.md");
+      const backupFile = vault.getAbstractFileByPath("Gamified/SkillTree/PlayerData.backup.md");
       if (backupFile instanceof TFile) {
         try {
           const backupContent = await vault.read(backupFile);
@@ -665,7 +672,13 @@ async function flushQueuedPlayerData(vault: Vault, file: TFile): Promise<void> {
 
 // Writes updated PlayerData to PlayerData.md (updates YAML frontmatter, preserves rest of file)
 export async function updatePlayerData(vault: Vault, newData: PlayerData): Promise<void> {
-  const filePath = "SkillTree/PlayerData.md";
+  const preferredPath = configuredPlayerDataPath();
+  const legacyPath = "SkillTree/PlayerData.md";
+  const filePath = vault.getAbstractFileByPath(preferredPath)
+    ? preferredPath
+    : vault.getAbstractFileByPath(legacyPath)
+      ? legacyPath
+      : preferredPath;
   if (!newData.name || newData.level === undefined || newData.xp === undefined) {
     throw new Error('Cannot save PlayerData: critical fields missing');
   }
