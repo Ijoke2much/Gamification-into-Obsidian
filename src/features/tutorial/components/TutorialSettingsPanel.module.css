@@ -1,0 +1,565 @@
+/* Tutorial Settings Panel Styles */
+.panel {
+    padding: 24px;
+    max-width: 900px;
+    margin: 0 auto;
+    background: var(--background-primary);
+    border-radius: 12px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.panel.mobile {
+    padding: 16px;
+    margin: 0;
+    border-radius: 0;
+    max-width: 100%;
+}
+
+/* Header */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 32px;
+    gap: 16px;
+}
+
+.headerTitle h2 {
+    margin: 0 0 8px 0;
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: var(--text-normal);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.headerTitle p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.95rem;
+}
+
+.closeButton {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    min-width: 40px;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.closeButton:hover {
+    background: var(--background-modifier-hover);
+    color: var(--text-normal);
+}
+
+/* Preferences Section */
+.preferences {
+    margin-bottom: 32px;
+    padding: 20px;
+    background: var(--background-secondary);
+    border-radius: 8px;
+    border: 1px solid var(--background-modifier-border);
+}
+
+.preferences h3 {
+    margin: 0 0 16px 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-normal);
+}
+
+.preferenceGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 12px;
+}
+
+.checkbox {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 6px;
+    transition: background 0.2s ease;
+}
+
+.checkbox:hover {
+    background: var(--background-modifier-hover);
+}
+
+.checkbox input[type="checkbox"] {
+    margin: 0;
+    accent-color: var(--interactive-accent);
+}
+
+.checkbox span {
+    color: var(--text-normal);
+    font-size: 0.9rem;
+    user-select: none;
+}
+
+/* Section */
+.section {
+    margin-bottom: 32px;
+}
+
+.section h3 {
+    margin: 0 0 16px 0;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-normal);
+}
+
+/* Recommended Tutorials */
+.recommendedGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+}
+
+.recommendedCard {
+    background: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    padding: 16px;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.recommendedCard::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--interactive-accent), var(--interactive-accent-hover));
+}
+
+.recommendedCard:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    border-color: var(--interactive-accent);
+}
+
+.cardHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.statusIcon {
+    font-size: 1.2rem;
+}
+
+.badge {
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 500;
+}
+
+.recommendedCard h4 {
+    margin: 0 0 8px 0;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-normal);
+}
+
+.recommendedCard p {
+    margin: 0 0 16px 0;
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+.cardFooter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.difficulty {
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.time {
+    color: var(--text-muted);
+    font-size: 0.8rem;
+}
+
+.startButton {
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+    border: none;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.startButton:hover {
+    background: var(--interactive-accent-hover);
+    transform: scale(1.05);
+}
+
+/* Controls */
+.controls {
+    margin-bottom: 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.searchBar {
+    flex: 1;
+}
+
+.searchInput {
+    width: 100%;
+    padding: 12px 16px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    background: var(--background-primary);
+    color: var(--text-normal);
+    font-size: 0.9rem;
+}
+
+.searchInput:focus {
+    outline: none;
+    border-color: var(--interactive-accent);
+    box-shadow: 0 0 0 2px var(--interactive-accent-hover);
+}
+
+.categoryTabs {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.categoryTab {
+    background: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    color: var(--text-muted);
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.categoryTab:hover {
+    background: var(--background-modifier-hover);
+    color: var(--text-normal);
+}
+
+.categoryTab.active {
+    color: var(--text-normal);
+    font-weight: 500;
+}
+
+.categoryIcon {
+    font-size: 1rem;
+}
+
+/* Tutorial List */
+.tutorialList {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.tutorialCard {
+    background: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    padding: 20px;
+    transition: all 0.2s ease;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+}
+
+.tutorialCard:hover {
+    border-color: var(--interactive-accent);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+.tutorialCard.completed {
+    background: var(--background-secondary);
+    border-color: #10b981;
+}
+
+.tutorialCard.skipped {
+    opacity: 0.7;
+    border-color: var(--text-muted);
+}
+
+.tutorialInfo {
+    flex: 1;
+}
+
+.tutorialHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 8px;
+    gap: 16px;
+}
+
+.tutorialTitle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+}
+
+.tutorialTitle h4 {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-normal);
+}
+
+.tutorialMeta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.8rem;
+}
+
+.steps {
+    color: var(--text-muted);
+}
+
+.tutorialDescription {
+    margin: 0 0 12px 0;
+    color: var(--text-muted);
+    line-height: 1.4;
+    font-size: 0.9rem;
+}
+
+.tutorialStatus {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+}
+
+.progressBar {
+    flex: 1;
+    max-width: 200px;
+    height: 4px;
+    background: var(--background-modifier-border);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.progressFill {
+    height: 100%;
+    background: var(--interactive-accent);
+    border-radius: 2px;
+    transition: width 0.3s ease;
+}
+
+.prerequisites {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.prerequisite {
+    background: var(--background-secondary);
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid var(--background-modifier-border);
+}
+
+.prerequisite.met {
+    background: #10b981;
+    color: white;
+    border-color: #10b981;
+}
+
+.tutorialActions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    min-width: 100px;
+}
+
+.actionButton {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+}
+
+.actionButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.actionButton.startButton {
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+}
+
+.actionButton.startButton:hover:not(:disabled) {
+    background: var(--interactive-accent-hover);
+}
+
+/* Empty State */
+.emptyState {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--text-muted);
+}
+
+.emptyIcon {
+    font-size: 3rem;
+    display: block;
+    margin-bottom: 16px;
+}
+
+.emptyState h4 {
+    margin: 0 0 8px 0;
+    color: var(--text-normal);
+}
+
+.emptyState p {
+    margin: 0;
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+    .preferenceGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .recommendedGrid {
+        grid-template-columns: 1fr;
+    }
+
+    .tutorialCard {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .tutorialHeader {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+
+    .tutorialMeta {
+        justify-content: flex-start;
+    }
+
+    .tutorialActions {
+        min-width: auto;
+        flex-direction: row;
+    }
+
+    .categoryTabs {
+        justify-content: flex-start;
+        overflow-x: auto;
+        padding-bottom: 4px;
+    }
+
+    .categoryTab {
+        flex-shrink: 0;
+    }
+
+    .controls {
+        gap: 12px;
+    }
+}
+
+/* Touch device optimizations */
+@media (pointer: coarse) {
+
+    .startButton,
+    .actionButton,
+    .closeButton,
+    .categoryTab {
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    .checkbox {
+        padding: 12px 8px;
+    }
+
+    .searchInput {
+        padding: 16px;
+        font-size: 16px;
+        /* Prevent zoom on iOS */
+    }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+
+    .tutorialCard,
+    .recommendedCard,
+    .preferences {
+        border-width: 2px;
+    }
+
+    .actionButton,
+    .startButton {
+        border: 2px solid currentColor;
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+
+    .tutorialCard,
+    .recommendedCard,
+    .actionButton,
+    .categoryTab {
+        transition: none;
+    }
+
+    .recommendedCard:hover {
+        transform: none;
+    }
+
+    .progressFill {
+        transition: none;
+    }
+}

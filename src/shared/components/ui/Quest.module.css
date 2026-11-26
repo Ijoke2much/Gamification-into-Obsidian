@@ -1,0 +1,97 @@
+/* Quest Section Drag and Drop Styles */
+.questSections {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.questSection {
+    border-radius: 10px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.questSection.dragOver {
+    transform: scale(1.02);
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.3);
+}
+
+/* Enhanced Quest Card Styles */
+.questCardContainer {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.questCardContainer:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Quest Section Headers */
+.questSectionHeader {
+    background: linear-gradient(135deg, var(--section-color, #667eea) 0%, rgba(0, 0, 0, 0.2) 100%) !important;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* Enhanced Quest Tab Styling */
+.questTab {
+    padding: 16px;
+    background: linear-gradient(135deg, rgba(13, 13, 13, 0.95) 0%, rgba(25, 25, 35, 0.95) 100%);
+    border-radius: 12px;
+    min-height: 100vh;
+}
+
+/* Quest Board Header Enhancement */
+.questBoardHeader {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.3) !important;
+    border: 1px solid rgba(102, 126, 234, 0.4) !important;
+}
+
+/* Subtle animations for quest cards */
+@keyframes questCardAppear {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.questCardAppear {
+    animation: questCardAppear 0.3s ease-out;
+}
+
+/* Improved scrollbar for quest sections */
+.questSections {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(102, 126, 234, 0.5) transparent;
+}
+
+.questSections::-webkit-scrollbar {
+    width: 6px;
+}
+
+.questSections::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.questSections::-webkit-scrollbar-thumb {
+    background: rgba(102, 126, 234, 0.5);
+    border-radius: 3px;
+}
+
+.questSections::-webkit-scrollbar-thumb:hover {
+    background: rgba(102, 126, 234, 0.7);
+}

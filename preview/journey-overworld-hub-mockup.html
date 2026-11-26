@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Journey Overworld Hub — Sidebar Mockup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0d1020;
+      --panel: #1a1f35;
+      --frame: #c6c6c6;
+      --frame-dark: #333;
+      --gold: #ffd700;
+      --text: #e8e8f0;
+      --muted: #8892b0;
+      --hp: #c2410c;
+      --hp-seg: #ea580c;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 16px;
+      font-family: "Press Start 2P", ui-monospace, monospace;
+      font-size: 8px;
+      line-height: 1.6;
+      color: var(--text);
+      background: #050810;
+      -webkit-font-smoothing: none;
+    }
+
+    .pageHead {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .pageHead h1 {
+      font-size: 9px;
+      color: var(--gold);
+      letter-spacing: 0.1em;
+      margin: 0 0 8px;
+    }
+
+    .pageHead p {
+      font-size: 6px;
+      color: var(--muted);
+      max-width: 400px;
+      margin: 0 auto;
+      line-height: 1.9;
+    }
+
+    .layout {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 28px;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    /* ── Sidebar shell (~380px like Player tab) ── */
+    .sidebar {
+      width: min(100%, 380px);
+      padding: 10px;
+      background: #111827;
+      border: 3px solid var(--frame-dark);
+      box-shadow: 8px 8px 0 #000;
+    }
+
+    .hubNav {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 5px;
+      margin-bottom: 10px;
+    }
+
+    .hubNav button {
+      font-family: inherit;
+      font-size: 5px;
+      padding: 7px 2px;
+      border: 2px solid #555;
+      background: var(--bg);
+      color: var(--muted);
+      box-shadow: 2px 2px 0 #000;
+      cursor: default;
+    }
+
+    .hubNav button.on {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    /* ── Journey hub card ── */
+    .journeyHub {
+      background:
+        repeating-linear-gradient(0deg, transparent, transparent 4px, rgba(255,255,255,0.025) 4px, rgba(255,255,255,0.025) 5px),
+        var(--panel);
+      border: 3px solid var(--frame-dark);
+      padding: 10px 8px 12px;
+    }
+
+    .journeyHubTitle {
+      font-size: 7px;
+      color: var(--gold);
+      letter-spacing: 0.12em;
+      margin: 0 0 10px;
+      text-align: center;
+    }
+
+    /*
+     * INSET SCENE WINDOW — banner does NOT span full sidebar width.
+     * Centered with side gutters; pixel double-frame like a GB viewport.
+     */
+    .sceneGutter {
+      padding: 0 14px; /* side breathing room */
+      margin-bottom: 10px;
+    }
+
+    .sceneWindow {
+      position: relative;
+      border: 3px solid var(--frame);
+      outline: 3px solid #000;
+      box-shadow:
+        inset 0 0 0 2px #000,
+        4px 4px 0 #000;
+      background: #000;
+      aspect-ratio: 16 / 10;
+      overflow: hidden;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+
+    .sceneWindow img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center 55%;
+      display: block;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+
+    /* Vignette + scanlines on scene */
+    .sceneWindow::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(180deg, rgba(0,0,0,0.35) 0%, transparent 28%, transparent 72%, rgba(0,0,0,0.5) 100%),
+        repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.06) 2px, rgba(0,0,0,0.06) 3px);
+    }
+
+    /* Foe marker on the path (overlay on banner) */
+    .foeMarker {
+      position: absolute;
+      left: 50%;
+      bottom: 18%;
+      transform: translateX(-50%);
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      animation: bob 2s steps(2) infinite;
+    }
+
+    @keyframes bob {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(-3px); }
+    }
+
+    .foeBounce {
+      font-size: 14px;
+      filter: drop-shadow(2px 2px 0 #000);
+    }
+
+    .foeShadow {
+      width: 20px;
+      height: 4px;
+      background: rgba(0,0,0,0.45);
+      border-radius: 50%;
+    }
+
+    .encounterBadge {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      z-index: 2;
+      font-size: 5px;
+      padding: 4px 6px;
+      background: rgba(0,0,0,0.75);
+      border: 2px solid var(--gold);
+      color: var(--gold);
+      letter-spacing: 0.05em;
+    }
+
+    .dayBadge {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      z-index: 2;
+      font-size: 5px;
+      padding: 4px 6px;
+      background: rgba(0,0,0,0.75);
+      border: 2px solid var(--frame);
+      color: var(--text);
+    }
+
+    /* HP strip overlaid on bottom of scene (inside frame) */
+    .sceneHpStrip {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 2;
+      padding: 5px 8px 6px;
+      background: linear-gradient(180deg, transparent, rgba(0,0,0,0.88));
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .sceneHpLabel {
+      display: flex;
+      justify-content: space-between;
+      font-size: 5px;
+      color: #fde68a;
+    }
+
+    .sceneHpSegs {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 2px;
+    }
+
+    .sceneHpSegs span {
+      height: 6px;
+      background: #1a1f35;
+      border: 1px solid #333;
+    }
+
+    .sceneHpSegs span.on {
+      background: var(--hp-seg);
+      box-shadow: inset 0 -1px 0 rgba(0,0,0,0.4);
+    }
+
+    /* Action row under scene */
+    .actionRow {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      padding: 0 14px;
+      margin-bottom: 10px;
+    }
+
+    .btnStrike {
+      font-family: inherit;
+      font-size: 6px;
+      padding: 10px 6px;
+      border: 3px solid var(--gold);
+      background: linear-gradient(180deg, #b45309, #92400e);
+      color: #fff;
+      box-shadow: 3px 3px 0 #000;
+      cursor: pointer;
+      letter-spacing: 0.04em;
+    }
+
+    .btnStrike:active {
+      transform: translate(2px, 2px);
+      box-shadow: 1px 1px 0 #000;
+    }
+
+    .btnDungeon {
+      font-family: inherit;
+      font-size: 5px;
+      padding: 10px 4px;
+      border: 3px solid #64748b;
+      background: #1e293b;
+      color: var(--muted);
+      box-shadow: 3px 3px 0 #000;
+      cursor: not-allowed;
+    }
+
+    .btnDungeon.ready {
+      border-color: #7c3aed;
+      color: #c4b5fd;
+      cursor: pointer;
+    }
+
+    /* Compact stats + dialogue below actions */
+    .hubFooter {
+      padding: 0 10px;
+    }
+
+    .statPills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 8px;
+    }
+
+    .pill {
+      font-size: 5px;
+      padding: 5px 7px;
+      border: 2px solid #444;
+      background: var(--bg);
+      color: var(--muted);
+    }
+
+    .pill strong { color: #a5f3fc; }
+
+    .dialogue {
+      border: 2px solid #475569;
+      border-left: 4px solid var(--gold);
+      background: #0f172a;
+      padding: 8px;
+      font-size: 5px;
+      line-height: 1.85;
+      color: #cbd5e1;
+    }
+
+    .dialogueTag {
+      color: var(--gold);
+      margin-bottom: 4px;
+      font-size: 5px;
+    }
+
+    /* Design notes column */
+    .notes {
+      width: min(100%, 340px);
+      font-size: 6px;
+      color: var(--muted);
+      line-height: 1.9;
+    }
+
+    .notes h2 {
+      font-size: 7px;
+      color: var(--gold);
+      margin: 0 0 10px;
+    }
+
+    .notes ul {
+      margin: 0;
+      padding-left: 14px;
+    }
+
+    .notes li { margin-bottom: 8px; }
+
+    .notes code {
+      font-size: 5px;
+      background: rgba(0,0,0,0.4);
+      padding: 1px 4px;
+    }
+  </style>
+</head>
+<body>
+  <header class="pageHead">
+    <h1>JOURNEY OVERWORLD HUB</h1>
+    <p>
+      Sidebar concept: your desert art lives in a centered scene window (not full width).
+      Foe + HP overlay the banner; fight controls sit below.
+    </p>
+  </header>
+
+  <div class="layout">
+    <div class="sidebar">
+      <nav class="hubNav" aria-label="Quest hub">
+        <button type="button">Tasks</button>
+        <button type="button">Projects</button>
+        <button type="button" class="on">Journey</button>
+        <button type="button">Dungeon</button>
+      </nav>
+
+      <section class="journeyHub" aria-label="Journey overworld">
+        <h2 class="journeyHubTitle">— ON THE ROAD —</h2>
+
+        <div class="sceneGutter">
+          <div class="sceneWindow" id="scene">
+            <img src="journey-overworld-banner.png" alt="Desert overworld path" />
+            <span class="dayBadge">DAY <span id="dayN">4</span>/7</span>
+            <span class="encounterBadge">FOE NEAR</span>
+
+            <div class="foeMarker" aria-hidden="true">
+              <span class="foeBounce" id="foeIcon">👤</span>
+              <span class="foeShadow"></span>
+            </div>
+
+            <div class="sceneHpStrip">
+              <div class="sceneHpLabel">
+                <span id="foeName">WANDERING SHADE</span>
+                <span id="hpNums">72/100</span>
+              </div>
+              <div class="sceneHpSegs" id="hpSegs"></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="actionRow">
+          <button type="button" class="btnStrike" id="btnStrike">⚔ STRIKE</button>
+          <button type="button" class="btnDungeon" id="btnDungeon" title="Unlock at ≤25% foe HP">🏰 DUNGEON</button>
+        </div>
+
+        <div class="hubFooter">
+          <div class="statPills">
+            <span class="pill">Tasks: <strong id="tasks">12</strong></span>
+            <span class="pill">Run dmg: <strong id="dmg">28</strong></span>
+            <span class="pill">Loot: <strong>common</strong></span>
+          </div>
+          <div class="dialogue">
+            <div class="dialogueTag">PATH WHISPER</div>
+            The shade blocks the canyon trail. Each quest you finish this week is another step forward—and another cut at its strength.
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <aside class="notes">
+      <h2>DESIGN NOTES</h2>
+      <ul>
+        <li><strong>Inset banner:</strong> <code>sceneGutter</code> adds ~14px side padding so art never touches sidebar edges.</li>
+        <li><strong>Viewport frame:</strong> double border + hard shadow reads as “game screen,” not a full-bleed photo.</li>
+        <li><strong>Overlays on art:</strong> day badge, foe bobbing on path, HP strip at bottom—info without hiding the scene.</li>
+        <li><strong>Actions below:</strong> STRIKE = passive journey progress; DUNGEON unlocks when foe is weak (gold/purple state).</li>
+        <li><strong>Sprite swap:</strong> replace 👤 with PNG in <code>.foeMarker</code>; banner stays vault PNG or bundled asset.</li>
+        <li><strong>Aspect:</strong> 16:10 crop; tune <code>object-position</code> to keep path + foe visible on narrow sidebars.</li>
+      </ul>
+    </aside>
+  </div>
+
+  <script>
+    const SEGS = 8;
+    let hp = 72;
+    const max = 100;
+    let tasks = 12;
+    let dmg = 28;
+
+    const hpSegs = document.getElementById("hpSegs");
+    const hpNums = document.getElementById("hpNums");
+    const tasksEl = document.getElementById("tasks");
+    const dmgEl = document.getElementById("dmg");
+    const btnDungeon = document.getElementById("btnDungeon");
+
+    function render() {
+      const filled = Math.round((hp / max) * SEGS);
+      hpSegs.innerHTML = "";
+      for (let i = 0; i < SEGS; i++) {
+        const s = document.createElement("span");
+        if (i < filled) s.className = "on";
+        hpSegs.appendChild(s);
+      }
+      hpNums.textContent = hp + "/" + max;
+      tasksEl.textContent = tasks;
+      dmgEl.textContent = dmg;
+      const unlocked = hp <= max * 0.25;
+      btnDungeon.classList.toggle("ready", unlocked);
+      btnDungeon.textContent = unlocked ? "🏰 DUNGEON!" : "🏰 DUNGEON";
+    }
+
+    document.getElementById("btnStrike").addEventListener("click", () => {
+      const hit = 6 + Math.floor(Math.random() * 5);
+      hp = Math.max(0, hp - hit);
+      tasks += 1;
+      dmg += hit;
+      render();
+    });
+
+    render();
+  </script>
+</body>
+</html>

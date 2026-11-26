@@ -1,0 +1,644 @@
+import React from "react";
+import type { QuestTimelineTheme } from "../../utils/taskParser";
+import styles from "../QuestModal.module.css";
+import { DurationWheelPicker } from "./DurationWheelPicker";
+
+interface QuestModalAdvancedOptionsProps {
+    showAdvancedOptions: boolean;
+    setShowAdvancedOptions: (show: boolean) => void;
+    activeAdvancedTab: 'details' | 'customization' | 'features';
+    setActiveAdvancedTab: (tab: 'details' | 'customization' | 'features') => void;
+    
+    // Details tab props
+    description: string;
+    setDescription: (description: string) => void;
+    recur: string;
+    setRecur: (recur: string) => void;
+    estimatedMinutes: string;
+    setEstimatedMinutes: (minutes: string) => void;
+    
+    // Customization tab props
+    questGiverImagePath: string;
+    setQuestGiverImagePath: (path: string) => void;
+    questBanner: string;
+    setQuestBanner: (banner: string) => void;
+    bannerAlign: string;
+    setBannerAlign: (align: string) => void;
+
+    timelineTheme: QuestTimelineTheme | undefined;
+    setTimelineTheme: (theme: QuestTimelineTheme | undefined) => void;
+    
+    // Features tab props
+    subtasks: Array<{ text: string; completed: boolean; description?: string }>;
+    newSubtask: string;
+    setNewSubtask: (subtask: string) => void;
+    newSubtaskDescription: string;
+    setNewSubtaskDescription: (description: string) => void;
+    handleAddSubtask: () => void;
+    handleRemoveSubtask: (index: number) => void;
+    
+    // Mobile
+    isMobile: boolean;
+}
+
+export const QuestModalAdvancedOptions: React.FC<QuestModalAdvancedOptionsProps> = ({
+    showAdvancedOptions,
+    setShowAdvancedOptions,
+    activeAdvancedTab,
+    setActiveAdvancedTab,
+    description,
+    setDescription,
+    recur,
+    setRecur,
+    estimatedMinutes,
+    setEstimatedMinutes,
+    questGiverImagePath,
+    setQuestGiverImagePath,
+    questBanner,
+    setQuestBanner,
+    bannerAlign,
+    setBannerAlign,
+    timelineTheme,
+    setTimelineTheme,
+    subtasks,
+    newSubtask,
+    setNewSubtask,
+    newSubtaskDescription,
+    setNewSubtaskDescription,
+    handleAddSubtask,
+    handleRemoveSubtask,
+    isMobile
+}) => {
+    if (!showAdvancedOptions) {
+        return (
+            <div style={{ marginBottom: 24 }}>
+                <button
+                    type="button"
+                    onClick={() => setShowAdvancedOptions(true)}
+                    style={{
+                        width: "100%",
+                        padding: "16px 20px",
+                        backgroundColor: "rgba(var(--interactive-accent-rgb), 0.1)",
+                        border: "2px solid var(--interactive-accent)",
+                        borderRadius: 12,
+                        color: "var(--interactive-accent)",
+                        cursor: "pointer",
+                        fontSize: 16,
+                        fontWeight: 600,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: 10,
+                        transition: "all 0.3s ease",
+                    }}
+                >
+                    ⚙️ Advanced Options
+                    <span style={{
+                        transform: "rotate(0deg)",
+                        transition: "transform 0.3s ease",
+                        fontSize: 18,
+                    }}>
+                        ▼
+                    </span>
+                </button>
+            </div>
+        );
+    }
+
+    return (
+        <div style={{ marginBottom: 24 }}>
+            <button
+                type="button"
+                onClick={() => setShowAdvancedOptions(false)}
+                style={{
+                    width: "100%",
+                    padding: "16px 20px",
+                    backgroundColor: "var(--interactive-accent)",
+                    border: "2px solid var(--interactive-accent)",
+                    borderRadius: 12,
+                    color: "white",
+                    cursor: "pointer",
+                    fontSize: 16,
+                    fontWeight: 600,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    gap: 10,
+                    transition: "all 0.3s ease",
+                }}
+            >
+                ⚙️ Advanced Options
+                <span style={{
+                    transform: "rotate(180deg)",
+                    transition: "transform 0.3s ease",
+                    fontSize: 18,
+                }}>
+                    ▼
+                </span>
+            </button>
+
+            {/* Advanced Options Content */}
+            <div style={{
+                marginTop: 16,
+                padding: 20,
+                backgroundColor: "var(--background-secondary)",
+                borderRadius: 12,
+                border: "1px solid var(--background-modifier-border)",
+                animation: "slideDown 0.3s ease-out",
+            }}>
+                {/* Tab Navigation */}
+                <div style={{
+                    display: "flex",
+                    gap: 4,
+                    marginBottom: 20,
+                    borderBottom: "2px solid var(--background-modifier-border)",
+                }}>
+                    {[
+                        { id: 'details', label: '📝 Details', icon: '📝' },
+                        { id: 'customization', label: '🎨 Customization', icon: '🎨' },
+                        { id: 'features', label: '⚡ Features', icon: '⚡' }
+                    ].map((tab) => (
+                        <button
+                            key={tab.id}
+                            type="button"
+                            onClick={() => setActiveAdvancedTab(tab.id as 'details' | 'customization' | 'features')}
+                            style={{
+                                padding: "12px 16px",
+                                backgroundColor: activeAdvancedTab === tab.id ? "var(--interactive-accent)" : "transparent",
+                                border: "none",
+                                borderRadius: "8px 8px 0 0",
+                                color: activeAdvancedTab === tab.id ? "white" : "var(--text-normal)",
+                                cursor: "pointer",
+                                fontSize: 14,
+                                fontWeight: 500,
+                                transition: "all 0.2s ease",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 6,
+                            }}
+                        >
+                            {tab.icon} {tab.label.replace(/^[^\s]+ /, '')}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Tab Content */}
+                <div style={{ minHeight: 200 }}>
+                    {activeAdvancedTab === 'details' && (
+                        <div>
+                            {/* Quest Description */}
+                            <div style={{ marginBottom: 16 }}>
+                                <label style={{
+                                    display: "block",
+                                    marginBottom: 8,
+                                    fontWeight: 600,
+                                    color: "var(--text-normal)",
+                                }}>
+                                    Quest Description (Optional)
+                                </label>
+                                <textarea
+                                    value={description}
+                                    onChange={(e) => setDescription(e.target.value)}
+                                    placeholder="Enter quest description..."
+                                    rows={3}
+                                    style={{
+                                        width: "100%",
+                                        padding: 12,
+                                        borderRadius: 8,
+                                        border: "1px solid var(--background-modifier-border)",
+                                        backgroundColor: "var(--background-primary)",
+                                        color: "var(--text-normal)",
+                                        fontSize: 14,
+                                        resize: "vertical",
+                                        minHeight: 80
+                                    }}
+                                />
+                            </div>
+
+                            {/* Recurrence + duration */}
+                            <div style={{ 
+                                display: isMobile ? "block" : "flex", 
+                                gap: isMobile ? 0 : 16, 
+                                marginBottom: 16 
+                            }}>
+                                <div style={{ flex: isMobile ? "none" : 1, marginBottom: isMobile ? 16 : 0 }}>
+                                    <label style={{
+                                        display: "block",
+                                        marginBottom: 8,
+                                        fontWeight: 600,
+                                        color: "var(--text-normal)",
+                                    }}>
+                                        🔄 Recurrence (Optional)
+                                    </label>
+                                    <select
+                                        value={recur}
+                                        onChange={(e) => setRecur(e.target.value)}
+                                        className={styles.select}
+                                    >
+                                        <option value="">No recurrence</option>
+                                        <option value="daily">Daily</option>
+                                        <option value="weekly">Weekly</option>
+                                        <option value="bi-weekly">Bi-weekly</option>
+                                        <option value="monthly">Monthly</option>
+                                        <option value="quarterly">Quarterly</option>
+                                        <option value="yearly">Yearly</option>
+                                        <option value="weekdays">Weekdays only</option>
+                                        <option value="weekends">Weekends only</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div style={{ marginBottom: 16 }}>
+                                <label style={{
+                                    display: "block",
+                                    marginBottom: 8,
+                                    fontWeight: 600,
+                                    color: "var(--text-normal)",
+                                }}>
+                                    Estimated Duration (Optional)
+                                </label>
+                                <DurationWheelPicker
+                                    value={estimatedMinutes}
+                                    onChange={setEstimatedMinutes}
+                                />
+                            </div>
+                        </div>
+                    )}
+
+                    {activeAdvancedTab === 'customization' && (
+                        <div>
+                            {/* Quest Banner */}
+                            <div style={{ marginBottom: 16 }}>
+                                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                                    <label style={{
+                                        fontWeight: 600,
+                                        color: "var(--text-normal)",
+                                    }}>
+                                        🖼️ Quest Banner
+                                    </label>
+                                    <label
+                                        style={{
+                                            fontSize: 12,
+                                            padding: "4px 8px",
+                                            backgroundColor: "var(--interactive-accent)",
+                                            border: "none",
+                                            borderRadius: 4,
+                                            color: "white",
+                                            cursor: "pointer"
+                                        }}
+                                    >
+                                        Change Banner
+                                        <input
+                                            type="file"
+                                            accept="image/*"
+                                            style={{ display: "none" }}
+                                            onChange={(event) => {
+                                                const file = event.target.files?.[0];
+                                                if (!file) return;
+
+                                                try {
+                                                    const reader = new FileReader();
+                                                    reader.onload = () => {
+                                                        const result = reader.result as string;
+                                                        if (result) {
+                                                            setQuestBanner(result);
+                                                        }
+                                                        // Clear the value so selecting the same file again still triggers onChange
+                                                        event.target.value = "";
+                                                    };
+                                                    reader.onerror = (error) => {
+                                                        console.error("Error uploading banner:", error);
+                                                    };
+                                                    reader.readAsDataURL(file);
+                                                } catch (error) {
+                                                    console.error("Error uploading banner:", error);
+                                                }
+                                            }}
+                                        />
+                                    </label>
+                                    {questBanner && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setQuestBanner("")}
+                                            style={{
+                                                fontSize: 12,
+                                                padding: "4px 8px",
+                                                backgroundColor: "transparent",
+                                                border: "1px solid var(--background-modifier-border)",
+                                                borderRadius: 4,
+                                                color: "var(--text-muted)",
+                                                cursor: "pointer"
+                                            }}
+                                        >
+                                            Remove
+                                        </button>
+                                    )}
+                                </div>
+                                <div style={{
+                                    padding: 16,
+                                    backgroundColor: "var(--background-primary)",
+                                    border: "2px dashed var(--background-modifier-border)",
+                                    borderRadius: 8,
+                                    textAlign: "center",
+                                    color: "var(--text-muted)",
+                                    fontSize: 14,
+                                }}>
+                                    {questBanner ? (
+                                        <div
+                                            style={{
+                                                width: "100%",
+                                                maxHeight: 160,
+                                                borderRadius: 8,
+                                                overflow: "hidden",
+                                                border: "1px solid var(--background-modifier-border)",
+                                                display: "flex",
+                                                alignItems: "center",
+                                                justifyContent: "center",
+                                                backgroundColor: "black",
+                                            }}
+                                        >
+                                            <img
+                                                src={questBanner}
+                                                alt="Quest banner preview"
+                                                style={{
+                                                    maxWidth: "100%",
+                                                    maxHeight: 160,
+                                                    objectFit: "cover",
+                                                    display: "block",
+                                                }}
+                                            />
+                                        </div>
+                                    ) : (
+                                        <>
+                                            🖼️ Banner preview will appear here
+                                            <br />
+                                            <small>Upload an image to customize your quest banner</small>
+                                        </>
+                                    )}
+                                </div>
+                                {/* Banner focus controls */}
+                                <div
+                                    style={{
+                                        marginTop: 8,
+                                        display: "flex",
+                                        alignItems: "center",
+                                        justifyContent: "center",
+                                        gap: 8,
+                                        flexWrap: "wrap",
+                                    }}
+                                >
+                                    <span
+                                        style={{
+                                            fontSize: 12,
+                                            color: "var(--text-muted)",
+                                        }}
+                                    >
+                                        Banner Focus:
+                                    </span>
+                                    {[
+                                        { id: "top", label: "Top" },
+                                        { id: "center", label: "Center" },
+                                        { id: "bottom", label: "Bottom" },
+                                    ].map((option) => (
+                                        <button
+                                            key={option.id}
+                                            type="button"
+                                            onClick={() => setBannerAlign(option.id)}
+                                            style={{
+                                                padding: "4px 10px",
+                                                borderRadius: 999,
+                                                border:
+                                                    bannerAlign === option.id
+                                                        ? "1px solid var(--interactive-accent)"
+                                                        : "1px solid var(--background-modifier-border)",
+                                                backgroundColor:
+                                                    bannerAlign === option.id
+                                                        ? "var(--interactive-accent)"
+                                                        : "var(--background-secondary)",
+                                                color:
+                                                    bannerAlign === option.id
+                                                        ? "var(--text-on-accent)"
+                                                        : "var(--text-normal)",
+                                                fontSize: 11,
+                                                cursor: "pointer",
+                                                fontWeight: 500,
+                                            }}
+                                        >
+                                            {option.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+
+                            {/* Quest Color Scheme */}
+                            <div style={{ marginBottom: 16 }}>
+                                <label style={{
+                                    display: "block",
+                                    marginBottom: 8,
+                                    fontWeight: 600,
+                                    color: "var(--text-normal)",
+                                }}>
+                                    🌈 Color Scheme
+                                </label>
+                                <div style={{
+                                    display: "flex",
+                                    gap: 8,
+                                    flexWrap: "wrap",
+                                }}>
+                                    {(
+                                        [
+                                            { name: "Blue", theme: "blue" as const, color: "#3b82f6" },
+                                            { name: "Purple", theme: "violet" as const, color: "#8b5cf6" },
+                                            { name: "Green", theme: "green" as const, color: "#10b981" },
+                                            { name: "Red", theme: "red" as const, color: "#ef4444" },
+                                            { name: "Orange", theme: "amber" as const, color: "#f97316" },
+                                            { name: "Pink", theme: "pink" as const, color: "#ec4899" },
+                                        ] satisfies Array<{
+                                            name: string;
+                                            theme: QuestTimelineTheme;
+                                            color: string;
+                                        }>
+                                    ).map((scheme) => {
+                                        const selected = timelineTheme === scheme.theme;
+                                        return (
+                                            <button
+                                                key={scheme.name}
+                                                type="button"
+                                                aria-label={`${scheme.name} time block color`}
+                                                aria-pressed={selected}
+                                                onClick={() =>
+                                                    setTimelineTheme(
+                                                        selected ? undefined : scheme.theme
+                                                    )
+                                                }
+                                                style={{
+                                                    width: 40,
+                                                    height: 40,
+                                                    borderRadius: 8,
+                                                    backgroundColor: scheme.color,
+                                                    border: selected
+                                                        ? "2px solid var(--text-normal)"
+                                                        : "2px solid transparent",
+                                                    boxShadow: selected
+                                                        ? "0 0 0 2px var(--background-modifier-border)"
+                                                        : undefined,
+                                                    cursor: "pointer",
+                                                    transition: "all 0.2s ease",
+                                                }}
+                                                title={`${scheme.name}${selected ? " (selected)" : ""}`}
+                                            />
+                                        );
+                                    })}
+                                </div>
+                                <p
+                                    style={{
+                                        marginTop: 8,
+                                        marginBottom: 0,
+                                        fontSize: 11,
+                                        color: "var(--text-muted)",
+                                    }}
+                                >
+                                    Uses this color on the sidebar day-schedule blocks after you save the quest.
+                                    Click again to clear and follow the schedule color mode.
+                                </p>
+                            </div>
+                        </div>
+                    )}
+
+                    {activeAdvancedTab === 'features' && (
+                        <div>
+                            {/* Subtasks */}
+                            <div style={{ marginBottom: 16 }}>
+                                <label style={{
+                                    display: "block",
+                                    marginBottom: 8,
+                                    fontWeight: 600,
+                                    color: "var(--text-normal)",
+                                }}>
+                                    📋 Subquests (Optional)
+                                </label>
+                                
+                                {/* Add Subtask */}
+                                <div style={{
+                                    display: "flex",
+                                    gap: 8,
+                                    marginBottom: 12,
+                                }}>
+                                    <input
+                                        type="text"
+                                        value={newSubtask}
+                                        onChange={(e) => setNewSubtask(e.target.value)}
+                                        placeholder="Enter subquest..."
+                                        style={{
+                                            flex: 1,
+                                            padding: 12,
+                                            borderRadius: 8,
+                                            border: "1px solid var(--background-modifier-border)",
+                                            backgroundColor: "var(--background-primary)",
+                                            color: "var(--text-normal)",
+                                            fontSize: 14,
+                                        }}
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={handleAddSubtask}
+                                        disabled={!newSubtask.trim()}
+                                        style={{
+                                            padding: "12px 16px",
+                                            backgroundColor: "var(--interactive-accent)",
+                                            border: "none",
+                                            borderRadius: 8,
+                                            color: "white",
+                                            cursor: "pointer",
+                                            fontSize: 14,
+                                            fontWeight: 600,
+                                            opacity: newSubtask.trim() ? 1 : 0.5,
+                                        }}
+                                    >
+                                        Add
+                                    </button>
+                                </div>
+                                
+                                {/* Subtask Description */}
+                                <input
+                                    type="text"
+                                    value={newSubtaskDescription}
+                                    onChange={(e) => setNewSubtaskDescription(e.target.value)}
+                                    placeholder="Optional subquest description..."
+                                    style={{
+                                        width: "100%",
+                                        padding: 8,
+                                        borderRadius: 4,
+                                        border: "1px solid var(--background-modifier-border)",
+                                        backgroundColor: "var(--background-primary)",
+                                        color: "var(--text-normal)",
+                                        fontSize: 12,
+                                        marginBottom: 12,
+                                    }}
+                                />
+
+                                {/* Subtasks List */}
+                                {subtasks.length > 0 && (
+                                    <div style={{
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        gap: 8,
+                                    }}>
+                                        {subtasks.map((subtask, index) => (
+                                            <div key={index} style={{
+                                                display: "flex",
+                                                alignItems: "center",
+                                                gap: 8,
+                                                padding: "8px 12px",
+                                                backgroundColor: "var(--background-primary)",
+                                                border: "1px solid var(--background-modifier-border)",
+                                                borderRadius: 6,
+                                            }}>
+                                                <span style={{
+                                                    flex: 1,
+                                                    fontSize: 14,
+                                                    color: "var(--text-normal)",
+                                                }}>
+                                                    {subtask.text}
+                                                </span>
+                                                {subtask.description && (
+                                                    <span style={{
+                                                        fontSize: 12,
+                                                        color: "var(--text-muted)",
+                                                        fontStyle: "italic",
+                                                    }}>
+                                                        {subtask.description}
+                                                    </span>
+                                                )}
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleRemoveSubtask(index)}
+                                                    style={{
+                                                        background: "#f44336",
+                                                        border: "none",
+                                                        borderRadius: 4,
+                                                        color: "white",
+                                                        cursor: "pointer",
+                                                        width: 24,
+                                                        height: 24,
+                                                        display: "flex",
+                                                        alignItems: "center",
+                                                        justifyContent: "center",
+                                                        fontSize: 12,
+                                                        fontWeight: "bold",
+                                                    }}
+                                                >
+                                                    ×
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+};

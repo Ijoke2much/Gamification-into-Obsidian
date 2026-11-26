@@ -1,0 +1,337 @@
+/* ========================================
+   INVENTORY MODAL — shell, variables, pixel skin
+   ======================================== */
+
+.inventoryModal {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: transparent;
+  flex: 1;
+}
+
+/* Theme tokens (inherited by Inventory.module.css content) */
+:global(.modal-container .modal.gamify-inventory-modal) {
+  --inv-bg: linear-gradient(135deg, #1a1d29 0%, #2d3748 100%);
+  --inv-panel: rgba(255, 255, 255, 0.06);
+  --inv-border: rgba(255, 255, 255, 0.12);
+  --inv-accent: #8ecae6;
+  --inv-accent-strong: #219ebc;
+  --inv-text: #e0e6f7;
+  --inv-radius: 16px;
+  --inv-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+
+  position: fixed !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  margin: 0 !important;
+  z-index: 1000 !important;
+
+  width: min(1200px, 96vw) !important;
+  min-width: min(800px, 100vw) !important;
+  max-width: 98vw !important;
+  height: min(800px, 88vh) !important;
+  min-height: min(480px, 90vh) !important;
+  max-height: 92vh !important;
+
+  background: var(--inv-bg) !important;
+  border-radius: var(--inv-radius) !important;
+  box-shadow: var(--inv-shadow) !important;
+  border: 1px solid var(--inv-border) !important;
+}
+
+/* Pixel variant — align with plugin pixel / notice tokens */
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel) {
+  --inv-bg: #1b1d2f;
+  --inv-panel: #252742;
+  --inv-border: #5b61a2;
+  --inv-border-dark: #0f1120;
+  --inv-accent: #8ecae6;
+  --inv-accent-strong: #6ecff6;
+  --inv-text: #ecefff;
+  --inv-muted: #bac2e3;
+  --inv-highlight: #ffd166;
+  --inv-radius: 0;
+  --inv-shadow: 4px 4px 0 #0f1120, inset 0 0 0 1px #5b61a2;
+
+  font-family: "Press Start 2P", "VT323", monospace;
+  border-radius: 0 !important;
+  border: 2px solid var(--inv-border-dark) !important;
+  box-shadow: var(--inv-shadow) !important;
+  background: var(--inv-bg) !important;
+}
+
+:global(.modal-container .modal.gamify-inventory-modal .modal-title),
+:global(.modal-container .modal.gamify-inventory-modal .modal-title-bar) {
+  background: linear-gradient(135deg, #8ecae6 0%, #219ebc 100%) !important;
+  color: #ffffff !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+  border-bottom: 2px solid #4a90e2 !important;
+  font-weight: bold !important;
+  text-align: center !important;
+  padding: 16px !important;
+  border-radius: 16px 16px 0 0 !important;
+  position: relative !important;
+  cursor: move;
+  user-select: none;
+}
+
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel .modal-title),
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel .modal-title-bar) {
+  background: var(--inv-panel) !important;
+  color: var(--inv-text) !important;
+  text-shadow: none !important;
+  border-bottom: 2px solid var(--inv-border-dark) !important;
+  border-radius: 0 !important;
+  font-family: "Press Start 2P", "VT323", monospace !important;
+  font-size: 10px !important;
+  letter-spacing: 0.02em;
+  padding: 14px 44px 14px 16px !important;
+  box-shadow: inset 0 -2px 0 var(--inv-border);
+}
+
+:global(.modal-container .modal.gamify-inventory-modal .modal-content) {
+  background: transparent !important;
+  border-radius: 0 0 16px 16px !important;
+  padding: 0 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 1 auto !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel .modal-content) {
+  border-radius: 0 !important;
+}
+
+/* Injected close control */
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--pixel .gamify-close-btn) {
+  border-radius: 0 !important;
+  background: var(--inv-panel) !important;
+  border: 2px solid var(--inv-border-dark) !important;
+  color: var(--inv-text) !important;
+  font-size: 10px !important;
+  font-family: "Press Start 2P", "VT323", monospace !important;
+  box-shadow: 2px 2px 0 var(--inv-border-dark) !important;
+  width: 32px !important;
+  height: 32px !important;
+}
+
+:global(.gamify-close-btn:hover) {
+  filter: brightness(1.05);
+}
+
+:global(.gamify-close-btn:active) {
+  transform: scale(0.95);
+}
+
+.inventoryModalHeader::before {
+  display: none;
+}
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+@media (max-width: 900px) {
+  :global(.modal-container .modal.gamify-inventory-modal) {
+    width: min(1200px, 100vw) !important;
+    min-width: 0 !important;
+  }
+}
+
+/* Solo Leveling / System Hunter shell — mobile full-bleed + desktop themed modal */
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--system),
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--mobile) {
+  /* Solo Leveling shell */
+  --inv-bg: linear-gradient(180deg, rgba(8, 28, 54, 0.98), rgba(2, 8, 18, 0.99)) !important;
+  --inv-panel: rgba(12, 40, 72, 0.88);
+  --inv-border: rgba(34, 200, 255, 0.42);
+  --inv-accent: #22c8ff;
+  --inv-text: #e0f2fe;
+  --go-font-ui: "Segoe UI", "Inter", system-ui, -apple-system, sans-serif;
+  background: var(--inv-bg) !important;
+  border: 1px solid var(--inv-border) !important;
+  box-shadow: 0 0 28px rgba(34, 200, 255, 0.18) !important;
+  font-family: var(--go-font-ui) !important;
+}
+
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--mobile) {
+  width: 100vw !important;
+  height: 100vh !important;
+  height: 100dvh !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  top: 0 !important;
+  left: 0 !important;
+  transform: none !important;
+  border-radius: 0 !important;
+  max-width: none !important;
+  max-height: none !important;
+  z-index: 100050 !important;
+  padding-top: env(safe-area-inset-top, 0px) !important;
+  padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+}
+
+/* Kill Press Start / VT323 inside system / mobile inventory */
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--system),
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--system) *:not(svg):not(path),
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--mobile),
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--mobile) *:not(svg):not(path) {
+  font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, -apple-system, sans-serif) !important;
+}
+
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--system .modal-title),
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--mobile .modal-title) {
+  /* SystemHeader inside content replaces this */
+  display: none !important;
+}
+
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--clay) {
+  --inv-bg: var(--go-screen-bg, linear-gradient(180deg, #f4efe6, #e8dfd2)) !important;
+  --inv-panel: var(--clay-surface, #f7f3ec);
+  --inv-border: rgba(255, 255, 255, 0.55);
+  --inv-accent: #5bb8b0;
+  --inv-text: #3a342c;
+  --go-font-ui: "Nunito", "Segoe UI", "Avenir Next", system-ui, -apple-system, sans-serif;
+  background: var(--inv-bg) !important;
+  border: none !important;
+  border-radius: var(--clay-radius, 24px) !important;
+  box-shadow: var(--clay-shadow) !important;
+  font-family: var(--go-font-ui) !important;
+  color: var(--inv-text) !important;
+}
+
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--clay),
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--clay) *:not(svg):not(path) {
+  font-family: var(--go-font-ui, "Nunito", "Segoe UI", system-ui, sans-serif) !important;
+}
+
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--clay .modal-title) {
+  display: none !important;
+}
+
+/* Native Obsidian X (.modal-header-button on current builds, .modal-close-button on older). */
+:global(.modal.gamify-inventory-modal > .modal-close-button),
+:global(.modal.gamify-inventory-modal .modal-close-button),
+:global(.modal.gamify-inventory-modal > .modal-header-button),
+:global(.modal.gamify-inventory-modal .modal-header-button),
+:global(.gamify-inventory-modal-host > .modal-close-button),
+:global(.gamify-inventory-modal-host .modal-close-button),
+:global(.gamify-inventory-modal-host > .modal-header-button),
+:global(.gamify-inventory-modal-host .modal-header-button),
+:global(.modal-container:has(.gamify-inventory-modal) > .modal-close-button),
+:global(.modal-container:has(.gamify-inventory-modal) > .modal-header-button),
+:global(.modal-container .modal.gamify-inventory-modal .modal-close-button),
+:global(.modal-container .modal.gamify-inventory-modal > .modal-close-button),
+:global(.modal-container .modal.gamify-inventory-modal .modal-header-button),
+:global(.modal-container .modal.gamify-inventory-modal > .modal-header-button),
+:global(.modal-container .modal.gamify-inventory-modal .gamify-close-btn) {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+  position: absolute !important;
+  clip: rect(0, 0, 0, 0) !important;
+  border: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+:global(.modal-container .modal.gamify-inventory-modal.gamify-inventory-modal--mobile .modal-content) {
+  padding: 0 !important;
+  overflow: hidden !important;
+  display: flex !important;
+  flex-direction: column !important;
+  flex: 1 !important;
+  min-height: 0 !important;
+}
+
+@media (max-width: 768px) {
+  :global(.modal-container .modal.gamify-inventory-modal) {
+    width: 100vw !important;
+    height: 100vh !important;
+    min-width: 280px !important;
+    min-height: 400px !important;
+    top: 0 !important;
+    left: 0 !important;
+    transform: none !important;
+    border-radius: 0 !important;
+    max-width: none !important;
+    max-height: none !important;
+  }
+
+  :global(.modal-container .modal.gamify-inventory-modal .modal-title),
+  :global(.modal-container .modal.gamify-inventory-modal .modal-title-bar) {
+    border-radius: 0 !important;
+  }
+
+  .closeBtn {
+    top: 8px;
+    right: 12px;
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .inventoryModalHeader {
+    padding: 16px 20px;
+    font-size: 18px;
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  :global(.modal-container .modal.gamify-inventory-modal .modal-content) {
+    padding: 0 !important;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 1280px) {
+  :global(.modal-container .modal:has(.inventoryModal)) {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35) !important;
+  }
+
+  .inventoryModalHeader::before {
+    animation: none;
+  }
+
+  [data-inventory-modal="true"],
+  [data-inventory-modal="true"] * {
+    backdrop-filter: none !important;
+    filter: none !important;
+  }
+
+  [data-inventory-modal="true"] * {
+    animation-duration: 0s !important;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1100px) {
+  :global(.modal-container .modal:has(.inventoryModal)) {
+    width: 94vw !important;
+    min-width: 0 !important;
+    height: min(800px, 90vh) !important;
+  }
+}

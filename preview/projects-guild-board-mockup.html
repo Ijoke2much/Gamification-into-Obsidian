@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Projects Guild Board — Sidebar Mockup</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0d1020;
+      --panel: #1a1f35;
+      --frame: #c6c6c6;
+      --frame-dark: #333;
+      --gold: #ffd700;
+      --text: #e8e8f0;
+      --muted: #8892b0;
+      --green: #22c55e;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --blue: #38bdf8;
+      --purple: #a78bfa;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      padding: 16px;
+      font-family: "Press Start 2P", ui-monospace, monospace;
+      font-size: 8px;
+      line-height: 1.6;
+      color: var(--text);
+      background: #050810;
+      -webkit-font-smoothing: none;
+    }
+
+    .pageHead {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .pageHead h1 {
+      font-size: 9px;
+      color: var(--gold);
+      letter-spacing: 0.08em;
+      margin: 0 0 8px;
+    }
+
+    .pageHead p {
+      font-size: 6px;
+      color: var(--muted);
+      max-width: 520px;
+      margin: 0 auto;
+      line-height: 1.9;
+    }
+
+    .layout {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 32px;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    .sidebar {
+      width: min(100%, 380px);
+      padding: 10px;
+      background: #111827;
+      border: 3px solid var(--frame-dark);
+      box-shadow: 8px 8px 0 #000;
+    }
+
+    .hubNav {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 5px;
+      margin-bottom: 10px;
+    }
+
+    .hubNav button {
+      font-family: inherit;
+      font-size: 5px;
+      padding: 7px 2px;
+      border: 2px solid #555;
+      background: var(--bg);
+      color: var(--muted);
+      box-shadow: 2px 2px 0 #000;
+      cursor: default;
+    }
+
+    .hubNav button.on {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    /* ── Projects hub shell ── */
+    .projectsHub {
+      background:
+        repeating-linear-gradient(0deg, transparent, transparent 4px, rgba(255,255,255,0.025) 4px, rgba(255,255,255,0.025) 5px),
+        var(--panel);
+      border: 3px solid var(--frame-dark);
+      padding: 10px 8px 12px;
+    }
+
+    .hubTitle {
+      font-size: 7px;
+      color: var(--gold);
+      letter-spacing: 0.1em;
+      margin: 0 0 10px;
+      text-align: center;
+    }
+
+    /* Guild hall scene — warm workshop / contract board */
+    .sceneGutter {
+      padding: 0 12px;
+      margin-bottom: 10px;
+    }
+
+    .sceneWindow {
+      position: relative;
+      border: 3px solid var(--frame);
+      outline: 3px solid #000;
+      box-shadow: inset 0 0 0 2px #000, 4px 4px 0 #000;
+      aspect-ratio: 16 / 9;
+      overflow: hidden;
+      background: #2a1810;
+    }
+
+    .guildScene {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(180deg, #1e3a5f 0%, #4a7ab0 35%, transparent 55%),
+        linear-gradient(180deg, transparent 40%, #3d2817 55%, #2a1810 100%);
+    }
+
+    .guildFloor {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 42%;
+      background:
+        repeating-linear-gradient(90deg, #4a3525 0, #4a3525 8px, #3d2817 8px, #3d2817 16px);
+    }
+
+    .guildTable {
+      position: absolute;
+      left: 50%;
+      bottom: 18%;
+      transform: translateX(-50%);
+      width: 58%;
+      height: 22%;
+      background: #5c4033;
+      border: 2px solid #2a1810;
+      box-shadow: inset 0 -4px 0 #3d2817;
+    }
+
+    .guildScroll {
+      position: absolute;
+      width: 18%;
+      height: 14%;
+      background: #f5e6c8;
+      border: 2px solid #8b7355;
+      box-shadow: 2px 2px 0 #000;
+    }
+
+    .guildScroll.a { left: 28%; bottom: 36%; transform: rotate(-8deg); }
+    .guildScroll.b { left: 42%; bottom: 38%; }
+    .guildScroll.c { left: 56%; bottom: 35%; transform: rotate(6deg); background: #e8d4a8; }
+
+    .guildLantern {
+      position: absolute;
+      top: 18%;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 14px;
+      filter: drop-shadow(0 0 8px rgba(255, 200, 80, 0.6));
+    }
+
+    .guildBadge {
+      position: absolute;
+      top: 6px;
+      left: 6px;
+      font-size: 6px;
+      padding: 4px 6px;
+      background: rgba(0,0,0,0.75);
+      border: 2px solid var(--gold);
+      color: var(--gold);
+      z-index: 2;
+    }
+
+    .guildCaption {
+      position: absolute;
+      bottom: 6px;
+      right: 6px;
+      font-size: 5px;
+      padding: 3px 5px;
+      background: rgba(0,0,0,0.7);
+      border: 1px solid #555;
+      color: var(--muted);
+      z-index: 2;
+    }
+
+    .sceneWindow::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background:
+        linear-gradient(180deg, rgba(0,0,0,0.3) 0%, transparent 30%, transparent 70%, rgba(0,0,0,0.45) 100%),
+        repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.05) 2px, rgba(0,0,0,0.05) 3px);
+    }
+
+    /* Active contract hero */
+    .activeContract {
+      margin: 0 4px 10px;
+      padding: 10px;
+      border: 3px solid var(--gold);
+      outline: 2px solid #000;
+      box-shadow: 4px 4px 0 #000;
+      background: linear-gradient(180deg, rgba(255,215,0,0.12), rgba(0,0,0,0.2));
+    }
+
+    .activeLabel {
+      font-size: 5px;
+      color: var(--gold);
+      letter-spacing: 0.12em;
+      margin-bottom: 6px;
+    }
+
+    .contractHead {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    .contractName {
+      font-size: 7px;
+      color: var(--text);
+      line-height: 1.5;
+    }
+
+    .contractPct {
+      font-size: 7px;
+      color: var(--gold);
+      flex-shrink: 0;
+    }
+
+    .badgeRow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-bottom: 8px;
+    }
+
+    .badge {
+      font-size: 5px;
+      padding: 3px 5px;
+      border: 2px solid;
+    }
+
+    .badge.momentum { border-color: var(--green); color: #86efac; background: rgba(34,197,94,0.15); }
+    .badge.due { border-color: var(--amber); color: #fcd34d; background: rgba(245,158,11,0.12); }
+    .badge.stalled { border-color: #64748b; color: #94a3b8; background: rgba(100,116,139,0.15); }
+    .badge.urgent { border-color: var(--red); color: #fca5a5; background: rgba(239,68,68,0.12); }
+    .badge.reward { border-color: var(--purple); color: #ddd6fe; background: rgba(167,139,250,0.12); }
+
+    /* Milestone progress bar */
+    .milestoneTrack {
+      position: relative;
+      height: 12px;
+      background: rgba(0,0,0,0.5);
+      border: 2px solid #000;
+      margin-bottom: 4px;
+    }
+
+    .milestoneFill {
+      height: 100%;
+      width: 62%;
+      background: linear-gradient(90deg, #15803d, #4ade80);
+      box-shadow: inset 0 -2px 0 rgba(0,0,0,0.3);
+    }
+
+    .milestoneTick {
+      position: absolute;
+      top: -2px;
+      bottom: -2px;
+      width: 2px;
+      background: #000;
+      z-index: 1;
+    }
+
+    .milestoneTick.done::after {
+      content: "◆";
+      position: absolute;
+      top: -8px;
+      left: -3px;
+      font-size: 6px;
+      color: var(--gold);
+    }
+
+    .milestoneLabels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 4px;
+      color: var(--muted);
+      margin-bottom: 8px;
+      padding: 0 1px;
+    }
+
+    .contractMeta {
+      font-size: 5px;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    /* Next waypoint — productivity anchor */
+    .waypoint {
+      padding: 8px;
+      border: 2px solid var(--blue);
+      background: rgba(56,189,248,0.08);
+      margin-bottom: 8px;
+    }
+
+    .waypointTag {
+      font-size: 5px;
+      color: var(--blue);
+      margin-bottom: 4px;
+      letter-spacing: 0.06em;
+    }
+
+    .waypointTask {
+      font-size: 6px;
+      color: var(--text);
+      line-height: 1.6;
+      display: flex;
+      gap: 6px;
+      align-items: flex-start;
+    }
+
+    .waypointTask span:first-child { color: var(--muted); }
+
+    .ctaRow {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+
+    .cta {
+      font-family: inherit;
+      font-size: 5px;
+      padding: 8px 4px;
+      border: 2px solid;
+      background: var(--bg);
+      color: var(--text);
+      box-shadow: 2px 2px 0 #000;
+      cursor: default;
+      line-height: 1.5;
+    }
+
+    .cta.primary {
+      border-color: var(--gold);
+      color: var(--gold);
+    }
+
+    .cta.secondary {
+      border-color: #555;
+      color: var(--muted);
+    }
+
+    /* Roster section */
+    .rosterHead {
+      font-size: 6px;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      margin: 4px 4px 8px;
+      padding-top: 8px;
+      border-top: 2px solid #333;
+    }
+
+    .contractCard {
+      margin: 0 4px 8px;
+      border: 2px solid #444;
+      background: rgba(0,0,0,0.25);
+      box-shadow: 2px 2px 0 #000;
+    }
+
+    .contractCardMain {
+      padding: 8px;
+      display: block;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .contractCard.stalled { border-color: #475569; opacity: 0.85; }
+    .contractCard.urgent { border-color: #b45309; }
+
+    .miniBar {
+      height: 6px;
+      background: rgba(0,0,0,0.45);
+      border: 1px solid #000;
+      margin: 6px 0 4px;
+    }
+
+    .miniBarFill {
+      height: 100%;
+      background: linear-gradient(90deg, #166534, #86efac);
+    }
+
+    .contractCard .contractMeta { margin: 0; }
+
+    .notes {
+      width: min(100%, 320px);
+      padding: 12px;
+      border: 2px dashed #333;
+      font-size: 6px;
+      color: var(--muted);
+      line-height: 1.9;
+    }
+
+    .notes h2 {
+      font-size: 7px;
+      color: var(--gold);
+      margin: 0 0 8px;
+    }
+
+    .notes ul {
+      margin: 0;
+      padding-left: 14px;
+    }
+
+    .notes li { margin-bottom: 6px; }
+  </style>
+</head>
+<body>
+  <header class="pageHead">
+    <h1>PROJECTS — GUILD CONTRACT BOARD</h1>
+    <p>
+      Visual concept for the Projects tab. Banner = guild hall scene (pairs with Journey’s road/arena).
+      One pinned <strong style="color:var(--gold)">active contract</strong>, milestone bar, next waypoint, then a roster of other projects.
+    </p>
+  </header>
+
+  <div class="layout">
+    <aside class="sidebar" aria-label="Sidebar mockup">
+      <nav class="hubNav" aria-label="Quest hub">
+        <button>Tasks</button>
+        <button class="on">Projects</button>
+        <button>Journey</button>
+        <button>Dungeon</button>
+      </nav>
+
+      <section class="projectsHub">
+        <h2 class="hubTitle">— GUILD CONTRACTS —</h2>
+
+        <div class="sceneGutter">
+          <div class="sceneWindow" aria-hidden="true">
+            <div class="guildScene">
+              <div class="guildLantern">🏮</div>
+              <div class="guildFloor"></div>
+              <div class="guildTable"></div>
+              <div class="guildScroll a"></div>
+              <div class="guildScroll b"></div>
+              <div class="guildScroll c"></div>
+            </div>
+            <span class="guildBadge">CONTRACT HALL</span>
+            <span class="guildCaption">3 open · 1 active</span>
+          </div>
+        </div>
+
+        <!-- Active / pinned contract -->
+        <article class="activeContract">
+          <div class="activeLabel">★ ACTIVE CONTRACT</div>
+          <div class="contractHead">
+            <span class="contractName">Ship Plugin v2</span>
+            <span class="contractPct">62%</span>
+          </div>
+          <div class="badgeRow">
+            <span class="badge momentum">MOMENTUM</span>
+            <span class="badge due">DUE JUN 1</span>
+            <span class="badge reward">+500c</span>
+          </div>
+
+          <div class="milestoneTrack" aria-hidden="true">
+            <div class="milestoneFill"></div>
+            <span class="milestoneTick done" style="left:25%"></span>
+            <span class="milestoneTick done" style="left:50%"></span>
+            <span class="milestoneTick" style="left:75%"></span>
+            <span class="milestoneTick" style="left:100%"></span>
+          </div>
+          <div class="milestoneLabels">
+            <span>CAMP</span><span>OUTPOST</span><span>FORT</span><span>DONE</span>
+          </div>
+          <div class="contractMeta">14/23 steps · 8 linked tasks · hard contract</div>
+
+          <div class="waypoint">
+            <div class="waypointTag">▶ NEXT WAYPOINT</div>
+            <div class="waypointTask">
+              <span>○</span>
+              <span>Wire Journey loot on victory</span>
+            </div>
+          </div>
+
+          <div class="ctaRow">
+            <button class="cta primary">Continue on Tasks</button>
+            <button class="cta secondary">Open contract</button>
+          </div>
+        </article>
+
+        <h3 class="rosterHead">OTHER CONTRACTS</h3>
+
+        <article class="contractCard urgent">
+          <div class="contractCardMain">
+            <div class="contractHead">
+              <span class="contractName">Tax Prep 2026</span>
+              <span class="contractPct" style="color:#fcd34d">28%</span>
+            </div>
+            <div class="badgeRow">
+              <span class="badge urgent">URGENT</span>
+              <span class="badge due">DUE APR 10</span>
+            </div>
+            <div class="miniBar"><div class="miniBarFill" style="width:28%"></div></div>
+            <div class="contractMeta">4/14 steps · medium</div>
+          </div>
+        </article>
+
+        <article class="contractCard stalled">
+          <div class="contractCardMain">
+            <div class="contractHead">
+              <span class="contractName">Health Reset</span>
+              <span class="contractPct" style="color:#94a3b8">45%</span>
+            </div>
+            <div class="badgeRow">
+              <span class="badge stalled">STALLED</span>
+            </div>
+            <div class="miniBar"><div class="miniBarFill" style="width:45%;opacity:0.6"></div></div>
+            <div class="contractMeta">9/20 steps · no activity 12d</div>
+          </div>
+        </article>
+
+        <article class="contractCard">
+          <div class="contractCardMain">
+            <div class="contractHead">
+              <span class="contractName">Blog Relaunch</span>
+              <span class="contractPct" style="color:#86efac">100%</span>
+            </div>
+            <div class="badgeRow">
+              <span class="badge reward">TURN IN</span>
+            </div>
+            <div class="miniBar"><div class="miniBarFill" style="width:100%"></div></div>
+            <div class="contractMeta">6/6 steps · ready for payout</div>
+          </div>
+        </article>
+      </section>
+    </aside>
+
+    <aside class="notes">
+      <h2>DESIGN NOTES</h2>
+      <ul>
+        <li><strong style="color:var(--gold)">Banner</strong> — static guild hall (Journey uses road / arena). Same inset frame, different biome.</li>
+        <li><strong style="color:var(--gold)">Active contract</strong> — one pinned project; reduces ADHD overwhelm.</li>
+        <li><strong style="color:var(--gold)">Milestones</strong> — 25/50/75/100% gates on existing progress %.</li>
+        <li><strong style="color:var(--gold)">Next waypoint</strong> — single recommended task (priority / due / energy).</li>
+        <li><strong style="color:var(--gold)">Badges</strong> — computed: Momentum, Stalled, Urgent, Turn in.</li>
+        <li><strong style="color:var(--gold)">CTA</strong> — “Continue on Tasks” filters Tasks tab by <code>project:</code> slug.</li>
+        <li>No combat here — Journey/Dungeon keep the fight fantasy.</li>
+      </ul>
+    </aside>
+  </div>
+</body>
+</html>

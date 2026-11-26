@@ -1,0 +1,4452 @@
+.sessionLive .statsPanel,
+.sessionLive .energySection,
+.sessionLive .sessionTypesSection,
+.sessionLive .questAttachmentSection,
+.sessionLive .enhancedQuestCard,
+.sessionLive .timerSection {
+    display: none !important;
+}
+
+.arenaControls {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 10px;
+}
+
+.arenaControls button {
+    padding: 6px 12px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #efe6d8;
+    background: rgba(7, 6, 10, 0.85);
+    border: 1px solid rgba(232, 200, 160, 0.35);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.arenaControlsClay button {
+    font-family: "Nunito", "Segoe UI", system-ui, sans-serif;
+    color: var(--clay-text, #3a342c);
+    background: var(--clay-gradient, linear-gradient(145deg, #fbf8f2, #efe6d8));
+    border: none;
+    border-radius: 999px;
+    padding: 8px 16px;
+    box-shadow: var(--clay-shadow, 6px 8px 14px rgba(90, 70, 50, 0.16), inset 1px 1px 2px rgba(255, 255, 255, 0.7), inset -2px -2px 4px rgba(120, 90, 60, 0.12));
+}
+
+.arenaControlsClay button:first-child {
+    background: var(--clay-accent, #5bb8b0);
+    color: #fff;
+}
+
+/* Timer Card */
+.timerCard {
+    padding: 2rem;
+    text-align: center;
+    background: var(--background-secondary);
+    border-radius: 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    max-width: 400px;
+    width: 100%;
+    margin: 0 auto;
+}
+
+.timerCard:has(.encounterMount) {
+    max-width: min(920px, 100%);
+    padding: 0.55rem;
+    background: #07060a;
+    border: 1px solid rgba(168, 42, 58, 0.4);
+    box-shadow: 0 0 24px rgba(80, 8, 24, 0.22);
+}
+
+.timerCard:has(.encounterMount) .timerTitle {
+    display: none;
+}
+
+.timerCard:has(.encounterMount) .controls button {
+    background: transparent !important;
+    box-shadow: none !important;
+    border: 1px solid rgba(34, 200, 255, 0.35) !important;
+    color: var(--go-text, #e8e0d4) !important;
+}
+
+.timerCard:has(.encounterMount) .btnStart {
+    color: var(--go-accent, #22c8ff) !important;
+}
+
+.timerCard:has(.encounterMount) .btnPause {
+    border-color: rgba(232, 184, 74, 0.55) !important;
+    color: #e8b84a !important;
+    background: transparent !important;
+}
+
+.timerCard:has(.encounterMount) .btnReset {
+    border-color: rgba(194, 56, 72, 0.7) !important;
+    color: #ffb4b4 !important;
+}
+
+.timerCard:has(.encounterMount) .btnSkip {
+    border-color: rgba(155, 126, 220, 0.55) !important;
+    color: #d2c4f0 !important;
+}
+
+.encounterMount {
+    width: 100%;
+}
+
+/* Timer Title */
+.timerTitle {
+    font-size: 1.2rem;
+    color: var(--text-muted);
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+}
+
+/* Timer Display */
+.timeCircle {
+    font-size: 3.5rem;
+    font-weight: bold;
+    padding: 0.75rem 0;
+    color: var(--text-normal);
+}
+
+/* Timer Controls */
+.controls {
+    display: flex;
+    justify-content: center;
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+/* Timer Controls Buttons */
+.controls button {
+    padding: 0.5rem 1rem;
+    font-weight: bold;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+}
+
+/* Timer Controls Buttons */
+.btnStart {
+    background-color: #4fc3f7;
+    color: white;
+}
+
+/* Timer Controls Buttons */
+.btnReset {
+    background-color: #ffd54f;
+    color: black;
+}
+
+
+.btnSkip {
+    background-color: #ba68c8;
+    color: white;
+}
+
+/* Timer Display */
+.circleWrapper {
+    position: relative;
+    width: 200px;
+    height: 200px;
+    margin: 0 auto;
+}
+
+.progressRing {
+    width: 200px;
+    height: 200px;
+    transform: rotate(-90deg);
+    display: block;
+}
+
+.ringBackground {
+    transition: stroke-dashoffset 0.5s ease;
+}
+
+.ringProgress {
+    transition: stroke-dashoffset 0.5s ease;
+    stroke-linecap: round;
+}
+
+.timerOverlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+    pointer-events: none;
+}
+
+.presets {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+    margin-top: 1rem;
+}
+
+.presetBtn {
+    flex: 1 1 22%;
+    background-color: var(--background-primary-alt);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+    font-size: 0.8rem;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.presetBtn:hover {
+    background-color: var(--interactive-accent-hover);
+    color: white;
+}
+
+.activePreset {
+    background-color: var(--interactive-accent) !important;
+    color: white !important;
+    border-color: var(--interactive-accent) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transform: translateY(-1px);
+}
+
+/* ========================================
+   ENHANCED POMODORO TAB STYLES
+   ======================================== */
+
+.pomodoroContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+/* Stats Panel */
+.statsPanel {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 24px;
+}
+
+.xpDisplay {
+    background: linear-gradient(135deg, rgba(142, 202, 230, 0.1), rgba(33, 158, 188, 0.1));
+    border: 2px solid rgba(142, 202, 230, 0.3);
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.currentSessionXP {
+    font-size: 14px;
+    color: #8ecae6;
+    margin-bottom: 8px;
+    font-weight: 600;
+    text-align: center;
+    padding: 4px 8px;
+    background: rgba(142, 202, 230, 0.1);
+    border-radius: 8px;
+    border: 1px solid rgba(142, 202, 230, 0.2);
+}
+
+.totalXP {
+    font-size: 24px;
+    font-weight: bold;
+    color: #219ebc;
+    margin-bottom: 12px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.dailyProgress {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    gap: 8px;
+}
+
+.progressItem {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+}
+
+.progressLabel {
+    opacity: 0.8;
+}
+
+.progressValue {
+    font-weight: 700;
+}
+
+/* Session Counters */
+.sessionCounters {
+    display: flex;
+    justify-content: space-around;
+    background: linear-gradient(135deg, rgba(255, 183, 3, 0.1), rgba(251, 133, 0, 0.1));
+    border: 2px solid rgba(255, 183, 3, 0.3);
+    border-radius: 16px;
+    padding: 20px;
+    gap: 16px;
+}
+
+.counterItem {
+    text-align: center;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+}
+
+.counterNumber {
+    display: block;
+    font-size: 28px;
+    font-weight: bold;
+    color: #ffb703;
+    line-height: 1;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.counterLabel {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Streak Display */
+.streakDisplay {
+    background: linear-gradient(135deg, rgba(255, 69, 0, 0.1), rgba(255, 20, 147, 0.1));
+    border: 2px solid rgba(255, 69, 0, 0.3);
+    border-radius: 16px;
+    padding: 20px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+.streakBadge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.streakIcon {
+    font-size: 24px;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.streakInfo {
+    display: flex;
+    flex-direction: column;
+}
+
+.streakNumber {
+    font-size: 24px;
+    font-weight: bold;
+    line-height: 1;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.streakLabel {
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+.streakRecord {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.longestStreak {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-top: 4px;
+}
+
+/* Session Types Grid */
+.sessionTypesGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin: 24px 0;
+}
+
+.sessionTypeBtn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    min-height: 140px;
+}
+
+.sessionTypeBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    border-color: rgba(142, 202, 230, 0.5);
+}
+
+.activeSessionType {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+}
+
+.sessionTypeIcon {
+    font-size: 32px;
+    margin-bottom: 12px;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+    transition: transform 0.2s ease;
+}
+
+.sessionTypeCard:hover .sessionTypeIcon {
+    transform: scale(1.1);
+}
+
+.sessionTypeInfo {
+    text-align: center;
+    flex: 1;
+}
+
+.sessionTypeName {
+    font-size: 16px;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 8px;
+}
+
+.sessionTypeDetails {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 4px;
+}
+
+.sessionTypeXP {
+    font-size: 11px;
+    color: #8ecae6;
+    font-weight: 600;
+}
+
+.sessionTypeCount {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(142, 202, 230, 0.2);
+    color: #8ecae6;
+    border-radius: 12px;
+    padding: 4px 8px;
+    font-size: 10px;
+    font-weight: 600;
+}
+
+/* Enhanced Attachment Section */
+.attachmentSection {
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.2));
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 24px;
+}
+
+.sectionTitle {
+    color: #8ecae6;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    text-align: center;
+}
+
+.attachedQuestCard {
+    background: linear-gradient(135deg, rgba(142, 202, 230, 0.1), rgba(33, 158, 188, 0.1));
+    border: 2px solid rgba(142, 202, 230, 0.3);
+    border-radius: 12px;
+    padding: 20px;
+    margin-bottom: 16px;
+}
+
+.questHeader {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.questIcon {
+    font-size: 20px;
+}
+
+.questTitle {
+    font-size: 16px;
+    font-weight: 600;
+    color: white;
+}
+
+.subtasksContainer {
+    margin: 16px 0;
+}
+
+.subtasksTitle {
+    font-size: 14px;
+    color: #8ecae6;
+    margin-bottom: 8px;
+}
+
+.subtasksList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.subtaskItem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.subtaskCheckbox {
+    width: 16px;
+    height: 16px;
+}
+
+.subtaskText {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.8);
+}
+
+.subtaskText.completed {
+    text-decoration: line-through;
+    opacity: 0.6;
+}
+
+.questProgress {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin: 16px 0;
+}
+
+.progressText {
+    font-size: 14px;
+    color: #8ecae6;
+    font-weight: 600;
+}
+
+.detachBtn {
+    background: rgba(255, 69, 0, 0.2);
+    border: 2px solid rgba(255, 69, 0, 0.5);
+    color: #ff4500;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s ease;
+}
+
+.detachBtn:hover {
+    background: rgba(255, 69, 0, 0.3);
+    border-color: #ff4500;
+}
+
+.attachmentOptions {
+    text-align: center;
+}
+
+.attachBtn {
+    background: linear-gradient(135deg, #8ecae6, #219ebc);
+    border: none;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    margin-bottom: 8px;
+}
+
+.attachBtn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(142, 202, 230, 0.3);
+}
+
+.smartSuggestionBtn {
+    background: linear-gradient(135deg, #a8e6cf, #4ecdc4) !important;
+    position: relative;
+    overflow: hidden;
+}
+
+.smartSuggestionBtn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.smartSuggestionBtn:hover::before {
+    left: 100%;
+}
+
+.smartSuggestionBtn:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(168, 230, 207, 0.4);
+}
+
+/* Energy Section */
+.energySection {
+    background: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.energyDisplay {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.energyBattery {
+    position: relative;
+    width: 120px;
+    height: 24px;
+    background: var(--background-modifier-border);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 2px solid var(--background-modifier-border-hover);
+}
+
+.energyLevel {
+    height: 100%;
+    background: var(--go-accent, #22c8ff);
+    border-radius: 10px;
+    transition: width 0.3s ease;
+    position: relative;
+}
+
+.energyText {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-normal);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+    z-index: 1;
+}
+
+.energyInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.energyType {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+.hyperfocusLevel {
+    font-size: 11px;
+    color: var(--text-accent);
+    font-weight: 600;
+}
+
+/* Hyperfocus Button */
+.hyperfocusBtn {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    border: none;
+    color: white;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 140px;
+    justify-content: center;
+}
+
+.hyperfocusBtn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+}
+
+.hyperfocusBtn:disabled {
+    background: var(--background-modifier-border);
+    color: var(--text-muted);
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+.hyperfocusActive {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a24) !important;
+    animation: hyperfocusPulse 2s infinite;
+}
+
+@keyframes hyperfocusPulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 107, 107, 0.4);
+    }
+
+    50% {
+        box-shadow: 0 0 0 8px rgba(255, 107, 107, 0);
+    }
+}
+
+.attachmentHint {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    margin: 0;
+}
+
+/* ========================================
+   ENHANCED QUEST INTEGRATION STYLES
+   ======================================== */
+
+.enhancedQuestCard {
+    background: var(--go-panel, var(--pixel-panel, var(--background-secondary)));
+    border-radius: var(--pixel-card-radius, 12px);
+    padding: 16px;
+    margin-bottom: 10px;
+    border: 1px solid var(--go-border, var(--pixel-border-dark, rgba(255, 255, 255, 0.2)));
+    box-shadow: none;
+    backdrop-filter: none;
+    color: var(--go-text, var(--text-normal));
+}
+
+.questHeaderEnhanced {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.questMainInfo {
+    display: flex;
+    align-items: center;
+    flex: 1;
+}
+
+.questIconEnhanced {
+    font-size: 2rem;
+    margin-right: 15px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.questTitleSection {
+    flex: 1;
+}
+
+.questTitleEnhanced {
+    font-size: 1.15rem;
+    font-weight: bold;
+    color: var(--go-text, var(--text-normal));
+    margin: 0 0 8px 0;
+}
+
+.questMeta {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.difficultyBadge {
+    background: linear-gradient(45deg, #ffd700, #ffed4e);
+    color: #333;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    box-shadow: 0 2px 8px rgba(255, 215, 0, 0.3);
+}
+
+.questType {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.skillBadge {
+    font-size: 10px;
+    color: #ffd700;
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.2) 0%, rgba(255, 215, 0, 0.1) 100%);
+    padding: 2px 6px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 215, 0, 0.3);
+    margin-left: 5px;
+}
+
+.sessionBonus {
+    background: linear-gradient(135deg, rgba(116, 185, 255, 0.1) 0%, rgba(116, 185, 255, 0.05) 100%);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 12px;
+    border: 1px solid rgba(116, 185, 255, 0.2);
+}
+
+.questDescription {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.03) 100%);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.descriptionLabel {
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: #74b9ff;
+    margin-bottom: 6px;
+}
+
+.descriptionText {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.85);
+    line-height: 1.4;
+}
+
+.questDueDate {
+    background: linear-gradient(135deg, rgba(255, 193, 7, 0.1) 0%, rgba(255, 193, 7, 0.05) 100%);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 12px;
+    border: 1px solid rgba(255, 193, 7, 0.2);
+}
+
+.dueDateLabel {
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: #ffc107;
+    margin-bottom: 6px;
+}
+
+.dueDateText {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.85);
+    font-weight: 500;
+}
+
+.questProgressSection {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+}
+
+.progressTextEnhanced {
+    color: var(--go-text, var(--text-normal));
+    font-weight: bold;
+    font-size: 0.9rem;
+    text-shadow: none;
+}
+
+.questDescription {
+    margin: 20px 0;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    border-left: 4px solid #4ecdc4;
+}
+
+.descriptionLabel {
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: #4ecdc4;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.descriptionText {
+    color: #e0e0e0;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.questRewards {
+    margin: 16px 0 12px;
+    padding: 14px;
+    background: var(--go-panel-strong, var(--pixel-panel-alt, rgba(142, 202, 230, 0.1)));
+    border-radius: var(--pixel-card-radius, 12px);
+    border: 1px solid var(--go-border, var(--pixel-border-dark, rgba(142, 202, 230, 0.2)));
+}
+
+.rewardStripLabel {
+    margin: 0 0 10px;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--go-muted, var(--pixel-accent, var(--text-muted)));
+}
+
+.rewardStrip {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.rewardChip {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 6px;
+    padding: 6px 10px;
+    background: var(--go-panel, var(--pixel-panel, rgba(0, 0, 0, 0.28)));
+    border: 1px solid var(--go-border, var(--pixel-border-dark, rgba(255, 255, 255, 0.12)));
+    border-radius: var(--go-radius, var(--pixel-card-radius, 8px));
+    color: var(--go-text, var(--text-normal));
+}
+
+.rewardChipValue {
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+}
+
+.rewardChipKind {
+    font-size: 0.75rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--go-muted, var(--text-muted));
+}
+
+.questTimedRewardBonus {
+    margin-bottom: 10px;
+    font-size: 0.85rem;
+}
+
+.rewardsLabel {
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: #ffd700;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.timedBonusLabel {
+    color: #ffc107;
+    font-size: 0.8rem;
+    text-transform: none;
+    letter-spacing: normal;
+}
+
+.rewardsList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.rewardItem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 8px 12px;
+    border-radius: 20px;
+    border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.rewardIcon {
+    font-size: 1.1rem;
+}
+
+.rewardText {
+    color: #fff;
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+.questSkills {
+    margin: 20px 0;
+    padding: 15px;
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.1) 0%, rgba(139, 195, 74, 0.05) 100%);
+    border-radius: 8px;
+    border: 1px solid rgba(76, 175, 80, 0.2);
+}
+
+.skillsLabel {
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: #4caf50;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.skillsList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.skillTag {
+    background: linear-gradient(45deg, #4caf50, #8bc34a);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: bold;
+    box-shadow: 0 2px 8px rgba(76, 175, 80, 0.3);
+}
+
+.subtasksContainerEnhanced {
+    margin: 20px 0;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.subtasksHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.subtasksLabel {
+    font-size: 0.9rem;
+    font-weight: bold;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.subtasksProgress {
+    background: linear-gradient(45deg, #2196f3, #21cbf3);
+    color: white;
+    padding: 4px 10px;
+    border-radius: 15px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.subtasksListEnhanced {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.subtaskItemEnhanced {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: all 0.3s ease;
+}
+
+.subtaskItemEnhanced:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(5px);
+}
+
+.subtaskItemEnhanced.subtaskCompleted {
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.2) 0%, rgba(139, 195, 74, 0.1) 100%);
+    border-color: rgba(76, 175, 80, 0.3);
+}
+
+.subtaskCheckboxEnhanced {
+    font-size: 1.2rem;
+    min-width: 24px;
+}
+
+.subtaskTextEnhanced {
+    color: #fff;
+    font-size: 0.9rem;
+    flex: 1;
+    line-height: 1.4;
+}
+
+.subtaskCompleted .subtaskTextEnhanced {
+    text-decoration: line-through;
+    opacity: 0.7;
+    color: #4caf50;
+}
+
+.detachBtnEnhanced {
+    background: transparent;
+    color: var(--go-danger, #ff6b6b);
+    border: 1px solid var(--go-danger, #ff6b6b);
+    padding: 12px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 0.9rem;
+    transition: background 0.15s ease;
+    width: 100%;
+    margin-top: 0;
+    box-shadow: none;
+}
+
+.detachBtnEnhanced:hover {
+    background: color-mix(in srgb, var(--go-danger, #ff6b6b) 16%, transparent);
+    transform: none;
+    box-shadow: none;
+}
+
+/* Sidebar View (350px width) - Most restrictive first */
+@media (max-width: 400px) {
+    .pomodoroContainer {
+        padding: 12px;
+        gap: 16px;
+        max-width: none;
+        margin: 0;
+    }
+
+    /* Single column stats for narrow view */
+    .statsPanel {
+        grid-template-columns: 1fr;
+        gap: 12px;
+        margin-bottom: 16px;
+    }
+
+    .xpDisplay,
+    .sessionCounter,
+    .streakDisplay {
+        padding: 12px;
+        border-radius: 12px;
+    }
+
+    .currentSessionXP {
+        font-size: 12px;
+        margin-bottom: 4px;
+    }
+
+    .totalXP {
+        font-size: 20px;
+        margin-bottom: 8px;
+    }
+
+    .dailyProgress {
+        font-size: 11px;
+    }
+
+    /* Compact session types */
+    .sessionTypesGrid {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+        margin-bottom: 16px;
+    }
+
+    .sessionTypeBtn {
+        padding: 12px 8px;
+        font-size: 12px;
+        border-radius: 8px;
+    }
+
+    .sessionTypeBtn .sessionTypeIcon {
+        font-size: 16px;
+        margin-bottom: 4px;
+    }
+
+    .sessionTypeBtn .sessionTypeName {
+        font-size: 11px;
+        font-weight: 600;
+        margin-bottom: 2px;
+    }
+
+    .sessionTypeBtn .sessionTypeDetails {
+        font-size: 9px;
+    }
+
+    /* Compact timer */
+    .timerCard {
+        padding: 16px;
+        margin-bottom: 16px;
+    }
+
+    .timerTitle {
+        font-size: 16px;
+        margin-bottom: 12px;
+    }
+
+    /* Timer display optimizations */
+    .timeCircle {
+        font-size: 2.2rem;
+        padding: 0.8rem 0;
+    }
+
+    .circleWrapper {
+        width: 100px;
+        height: 100px;
+        margin: 0 auto 16px;
+    }
+
+    .progressRing {
+        width: 100px;
+        height: 100px;
+    }
+
+    .controls {
+        gap: 8px;
+        margin-top: 12px;
+        flex-wrap: wrap;
+    }
+
+    .btnStart,
+    .btnPause,
+    .btnStop,
+    .btnReset {
+        padding: 8px 12px;
+        font-size: 12px;
+        min-width: 60px;
+        border-radius: 6px;
+    }
+
+    /* Compact quest attachment */
+    .attachmentSection {
+        padding: 12px;
+        border-radius: 12px;
+    }
+
+    .sectionTitle {
+        font-size: 16px;
+        margin-bottom: 12px;
+    }
+
+    .attachedQuestCard {
+        padding: 12px;
+        border-radius: 8px;
+    }
+
+    .questTitle {
+        font-size: 13px;
+    }
+
+    .questProgress {
+        margin: 12px 0;
+        gap: 8px;
+    }
+
+    .progressText {
+        font-size: 12px;
+    }
+
+    .subtasksContainer {
+        margin-top: 12px;
+    }
+
+    .subtasksTitle {
+        font-size: 13px;
+        margin-bottom: 8px;
+    }
+
+    .subtasksList {
+        gap: 6px;
+    }
+
+    .subtaskText {
+        font-size: 12px;
+    }
+
+    .attachBtn,
+    .detachBtn {
+        padding: 8px 12px;
+        font-size: 12px;
+        border-radius: 6px;
+    }
+
+    .attachmentHint {
+        font-size: 11px;
+        margin-top: 8px;
+    }
+
+    /* Stack session counters vertically */
+    .sessionCounters {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .counterCard {
+        padding: 12px;
+    }
+
+    .counterValue {
+        font-size: 18px;
+    }
+
+    .counterLabel {
+        font-size: 11px;
+    }
+
+    /* Compact streak display */
+    .streakIcon {
+        font-size: 20px;
+    }
+
+    .streakValue {
+        font-size: 18px;
+    }
+
+    .streakLabel {
+        font-size: 11px;
+    }
+}
+
+/* Tablet/Mobile Responsive */
+@media (max-width: 768px) and (min-width: 401px) {
+    .statsPanel {
+        grid-template-columns: 1fr;
+    }
+
+    .sessionTypesGrid {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .sessionCounters {
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .pomodoroContainer {
+        padding: 16px;
+    }
+}
+
+
+.btnStop {
+    background-color: #e57373;
+    color: white;
+}
+
+
+
+/* Attached Task UI CSS */
+.attachedTask {
+    background: var(--background-secondary);
+    padding: 12px;
+    border-radius: 12px;
+    margin-top: 12px;
+    border: 2px solid var(--color-accent);
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.2);
+    position: relative;
+}
+
+
+.attachedTaskHeader {
+    font-size: 1rem;
+    font-weight: bold;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.difficultyIcon {
+    font-size: 1.25rem;
+}
+
+.attachedTaskFooter {
+    margin-top: 8px;
+    display: flex;
+    gap: 10px;
+}
+
+.timerDisplay {
+    font-size: 1.1rem;
+    margin: 6px 0 10px;
+    color: var(--text-accent);
+    font-weight: 600;
+    text-align: left;
+}
+
+/* Rewards UI CSS */
+.rewardsWrapper {
+    margin-top: 1rem;
+    padding: 1rem;
+    border-radius: 12px;
+    background-color: rgba(20, 20, 20, 0.6);
+    box-shadow: 0 0 8px #000;
+    text-align: center;
+}
+
+.rewardsTitle {
+    font-size: 1.3rem;
+    margin-bottom: 0.8rem;
+    color: #ffd700;
+    text-shadow: 0 0 4px #000;
+}
+
+.rewardChip {
+    padding: 0.5rem 1rem;
+    border-radius: 999px;
+    font-weight: bold;
+    font-size: 1rem;
+    color: #fff;
+    box-shadow: 0 0 6px rgba(0, 0, 0, 0.4);
+    transition: transform 0.2s ease-in-out;
+}
+
+.rewardChips {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.rewardChip:hover {
+    transform: scale(1.1);
+}
+
+.xp {
+    background: linear-gradient(135deg, #00c6ff, #0072ff);
+}
+
+.cp {
+    background: linear-gradient(135deg, #ff5f6d, #ffc371);
+}
+
+.coins {
+    background: linear-gradient(135deg, #f9d423, #ff4e50);
+}
+
+.subtaskList {
+    list-style: none;
+    padding: 0;
+    margin-top: 1rem;
+}
+
+.subtaskList li {
+    padding: 4px 0;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.subtaskDone {
+    color: #888;
+    text-decoration: line-through;
+}
+
+/* Pomodoro Timer UI CSS */
+
+.circleWrapper {
+    position: relative;
+    display: inline-block;
+    margin: 1rem auto;
+}
+
+.progressRing {
+    transform: rotate(-90deg);
+}
+
+.ringBackground {
+    stroke: #ccc;
+}
+
+.ringProgress {
+    transition: stroke-dashoffset 0.35s;
+    stroke-linecap: round;
+}
+
+/* Timer Overlay */
+.timerOverlay {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: white;
+}
+
+/* Subtask UI */
+.subtaskContainer {
+    margin-top: 1rem;
+    padding: 0.5rem;
+    border-top: 1px solid #ccc;
+}
+
+.subtaskList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.subtaskItem {
+    margin: 0.3rem 0;
+}
+
+.subtaskBtn {
+    background-color: #eee;
+    border: none;
+    padding: 0.4rem 0.8rem;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    width: 100%;
+    text-align: left;
+}
+
+.subtaskBtn:hover {
+    background-color: #d5f5e3;
+}
+
+/* Rarity styles */
+.rarity-common {
+    border-color: gray;
+}
+
+.rarity-uncommon {
+    border-color: green;
+}
+
+.rarity-rare {
+    border-color: blue;
+}
+
+.rarity-epic {
+    border-color: purple;
+}
+
+.rarity-legendary {
+    border-color: orange;
+}
+
+/* Difficulty icon (placeholder) */
+.difficultyIcon {
+    display: inline-flex;
+    align-items: center;
+    font-size: 1.2rem;
+    margin-right: 0.5rem;
+    filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.2));
+    transition: transform 0.2s;
+}
+
+.difficultyIcon:hover {
+    transform: scale(1.1);
+}
+
+/* Mode Switcher */
+.modeSwitcher {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 1rem;
+}
+
+.modeButton {
+    padding: 4px 12px;
+    border-radius: 12px;
+    border: none;
+    background-color: #333;
+    color: white;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.2s;
+}
+
+.modeButton:hover {
+    background-color: #444;
+}
+
+.active {
+    background-color: #4caf50;
+}
+
+/* ========================================
+   COMPACT MODE CLASS - Always apply compact layout
+   ======================================== */
+
+.pomodoroContainer.compact,
+.pomodoroContainer[data-compact="true"] {
+    padding: 8px !important;
+    gap: 8px !important;
+    max-width: none !important;
+    margin: 0 !important;
+    width: 100% !important;
+}
+
+.pomodoroContainer.compact .statsPanel,
+.pomodoroContainer[data-compact="true"] .statsPanel {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+    margin-bottom: 10px !important;
+}
+
+.pomodoroContainer.compact .sessionTypesGrid,
+.pomodoroContainer[data-compact="true"] .sessionTypesGrid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 4px !important;
+    margin-bottom: 10px !important;
+}
+
+.pomodoroContainer.compact .sessionTypeCard,
+.pomodoroContainer[data-compact="true"] .sessionTypeCard {
+    padding: 4px !important;
+    border-radius: 4px !important;
+    min-height: 40px !important;
+    text-align: center !important;
+}
+
+.pomodoroContainer.compact .circleWrapper,
+.pomodoroContainer[data-compact="true"] .circleWrapper {
+    width: 150px !important;
+    height: 150px !important;
+    margin: 0 auto 16px !important;
+    position: relative !important;
+}
+
+.pomodoroContainer.compact .progressRing,
+.pomodoroContainer[data-compact="true"] .progressRing {
+    width: 150px !important;
+    height: 150px !important;
+    transform: rotate(-90deg) !important;
+    display: block !important;
+}
+
+.pomodoroContainer.compact .timerOverlay,
+.pomodoroContainer[data-compact="true"] .timerOverlay {
+    position: absolute !important;
+    top: 50% !important;
+    left: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: auto !important;
+    height: auto !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    pointer-events: none !important;
+}
+
+.pomodoroContainer.compact .timeCircle,
+.pomodoroContainer[data-compact="true"] .timeCircle {
+    font-size: 2.2rem !important;
+    font-weight: 700 !important;
+    color: var(--text-normal) !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    line-height: 1 !important;
+    text-align: center !important;
+}
+
+.pomodoroContainer.compact .controls,
+.pomodoroContainer[data-compact="true"] .controls {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 4px !important;
+}
+
+/* ========================================
+   SIDEBAR VIEW (350px) - COMPACT DESIGN
+   ======================================== */
+
+/* Target both small screens AND container-based layouts */
+@media (max-width: 450px),
+screen and (max-width: 600px) {
+    .pomodoroContainer {
+        padding: 8px !important;
+        gap: 8px !important;
+        max-width: none !important;
+        margin: 0 !important;
+        width: 100% !important;
+    }
+
+    /* Compact stats - single column */
+    .statsPanel {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-bottom: 10px;
+    }
+
+    .xpDisplay,
+    .sessionCounter,
+    .streakDisplay {
+        padding: 6px 8px;
+        border-radius: 6px;
+        background: rgba(142, 202, 230, 0.1);
+        border: 1px solid rgba(142, 202, 230, 0.2);
+    }
+
+    .currentSessionXP {
+        font-size: 10px;
+        margin-bottom: 1px;
+        opacity: 0.8;
+    }
+
+    .totalXP {
+        font-size: 14px;
+        margin-bottom: 1px;
+        font-weight: bold;
+    }
+
+    .todayXP {
+        font-size: 9px;
+        opacity: 0.7;
+    }
+
+    /* Session counters - horizontal */
+    .sessionCounters {
+        display: flex;
+        justify-content: space-between;
+        gap: 4px;
+        font-size: 10px;
+    }
+
+    .sessionCounters>div {
+        text-align: center;
+        flex: 1;
+        padding: 2px;
+    }
+
+    /* Compact session types - 2x2 grid */
+    .sessionTypesGrid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4px;
+        margin-bottom: 10px;
+    }
+
+    .sessionTypeCard {
+        padding: 4px;
+        border-radius: 4px;
+        background: rgba(142, 202, 230, 0.05);
+        border: 1px solid rgba(142, 202, 230, 0.15);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        text-align: center;
+        min-height: 40px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+    }
+
+    .sessionTypeCard:hover {
+        background: rgba(142, 202, 230, 0.1);
+    }
+
+    .sessionTypeCard.active {
+        background: rgba(142, 202, 230, 0.2);
+        border-color: rgba(142, 202, 230, 0.4);
+    }
+
+    .sessionTypeTitle {
+        font-size: 9px;
+        margin-bottom: 1px;
+        font-weight: 500;
+    }
+
+    .sessionTypeDuration {
+        font-size: 11px;
+        font-weight: bold;
+        margin-bottom: 1px;
+    }
+
+    .sessionTypeXP {
+        font-size: 8px;
+        opacity: 0.7;
+    }
+
+    /* Compact timer */
+    .timerCard {
+        padding: 16px;
+        margin-bottom: 16px;
+        background: rgba(142, 202, 230, 0.08);
+        border: 1px solid rgba(142, 202, 230, 0.2);
+        border-radius: 12px;
+        max-width: 300px;
+        width: 100%;
+        margin: 0 auto 16px auto;
+    }
+
+    .timerTitle {
+        font-size: 12px;
+        margin-bottom: 6px;
+        text-align: center;
+        font-weight: 500;
+    }
+
+    /* Larger timer circle for mobile */
+    .circleWrapper {
+        width: 150px;
+        height: 150px;
+        margin: 0 auto 16px;
+        position: relative;
+    }
+
+    .progressRing {
+        width: 150px;
+        height: 150px;
+        transform: rotate(-90deg);
+        display: block;
+    }
+
+    .timerOverlay {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: auto;
+        height: auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: none;
+    }
+
+    .timeCircle {
+        font-size: 2.2rem;
+        font-weight: bold;
+        color: var(--text-normal);
+        padding: 0;
+        margin: 0;
+        line-height: 1;
+        text-align: center;
+    }
+
+    /* 2x2 control grid */
+    .controls {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 4px;
+        margin-top: 6px;
+    }
+
+    .btnStart,
+    .btnPause,
+    .btnStop,
+    .btnReset {
+        padding: 4px 6px;
+        font-size: 10px;
+        border-radius: 4px;
+        min-width: auto;
+        height: 28px;
+    }
+
+    /* Compact quest attachment */
+    .questAttachment {
+        padding: 6px;
+        margin-bottom: 10px;
+        background: rgba(76, 175, 80, 0.1);
+        border: 1px solid rgba(76, 175, 80, 0.2);
+        border-radius: 6px;
+    }
+
+    .questTitle {
+        font-size: 11px;
+        margin-bottom: 3px;
+        font-weight: 500;
+    }
+
+    .questProgress {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin-bottom: 4px;
+    }
+
+    .progressText {
+        font-size: 9px;
+    }
+
+    .questSubtasks {
+        margin-top: 4px;
+        max-height: 60px;
+        overflow-y: auto;
+    }
+
+    .questSubtask {
+        font-size: 9px;
+        padding: 1px 0;
+        display: flex;
+        align-items: center;
+        gap: 2px;
+    }
+
+    .attachBtn,
+    .detachBtn {
+        padding: 3px 6px;
+        font-size: 9px;
+        border-radius: 3px;
+        width: 100%;
+        margin-top: 4px;
+    }
+
+    /* Very compact achievements */
+    .achievementsList {
+        max-height: 120px;
+        padding: 4px;
+        background: rgba(156, 39, 176, 0.05);
+        border: 1px solid rgba(156, 39, 176, 0.15);
+        border-radius: 6px;
+    }
+
+    .achievementItem {
+        padding: 4px;
+        margin-bottom: 3px;
+        background: rgba(156, 39, 176, 0.05);
+        border-radius: 4px;
+    }
+
+    .achievementTitle {
+        font-size: 10px;
+        margin-bottom: 1px;
+        font-weight: 500;
+    }
+
+    .achievementDescription {
+        font-size: 8px;
+        margin-bottom: 2px;
+        opacity: 0.8;
+        line-height: 1.1;
+    }
+
+    .achievementProgress {
+        font-size: 8px;
+        opacity: 0.7;
+    }
+
+    .achievementIcon {
+        font-size: 12px;
+    }
+
+    /* Hide less important elements */
+    .weekXP,
+    .longestStreak {
+        display: none;
+    }
+
+    /* Compact streak display */
+    .streakLevel {
+        font-size: 10px;
+        margin-bottom: 1px;
+    }
+
+    .currentStreak {
+        font-size: 12px;
+        font-weight: bold;
+    }
+
+    .streakIcon {
+        font-size: 14px;
+    }
+
+    /* ========================================
+       ENHANCED QUEST INTEGRATION - COMPACT
+       ======================================== */
+
+    .enhancedQuestCard {
+        padding: 12px !important;
+        margin-bottom: 8px !important;
+    }
+
+    .questHeaderEnhanced {
+        flex-direction: column !important;
+        gap: 10px !important;
+        margin-bottom: 12px !important;
+        padding-bottom: 10px !important;
+    }
+
+    .questMainInfo {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+
+    .questIconEnhanced {
+        font-size: 1.5rem !important;
+        margin-right: 10px !important;
+        padding: 8px !important;
+    }
+
+    .questTitleEnhanced {
+        font-size: 1rem !important;
+        text-align: center !important;
+    }
+
+    .questMeta {
+        justify-content: center !important;
+        gap: 6px !important;
+    }
+
+    .difficultyBadge,
+    .questType {
+        padding: 2px 8px !important;
+        font-size: 0.7rem !important;
+    }
+
+    .questProgressSection {
+        margin-top: 8px !important;
+    }
+
+    .questDescription {
+        margin: 10px 0 !important;
+        padding: 8px !important;
+    }
+
+    .descriptionLabel {
+        font-size: 0.8rem !important;
+        margin-bottom: 4px !important;
+    }
+
+    .descriptionText {
+        font-size: 0.8rem !important;
+        line-height: 1.3 !important;
+    }
+
+    .questRewards {
+        margin: 10px 0 !important;
+        padding: 10px !important;
+    }
+
+    .rewardsLabel {
+        font-size: 0.8rem !important;
+        margin-bottom: 6px !important;
+    }
+
+    .rewardsList {
+        gap: 4px !important;
+    }
+
+    .rewardItem {
+        padding: 4px 8px !important;
+        font-size: 0.8rem !important;
+    }
+
+    .rewardIcon {
+        font-size: 0.9rem !important;
+    }
+
+    .rewardText {
+        font-size: 0.8rem !important;
+    }
+
+    .questSkills {
+        margin: 10px 0 !important;
+        padding: 8px !important;
+    }
+
+    .skillsLabel {
+        font-size: 0.8rem !important;
+        margin-bottom: 6px !important;
+    }
+
+    .skillsList {
+        gap: 4px !important;
+    }
+
+    .skillTag {
+        padding: 4px 8px !important;
+        font-size: 0.7rem !important;
+    }
+
+    .subtasksContainerEnhanced {
+        margin: 10px 0 !important;
+        padding: 8px !important;
+    }
+
+    .subtasksHeader {
+        margin-bottom: 8px !important;
+        padding-bottom: 6px !important;
+    }
+
+    .subtasksLabel {
+        font-size: 0.8rem !important;
+    }
+
+    .subtasksProgress {
+        padding: 2px 6px !important;
+        font-size: 0.7rem !important;
+    }
+
+    .subtasksListEnhanced {
+        gap: 6px !important;
+    }
+
+    .subtaskItemEnhanced {
+        padding: 6px 8px !important;
+        gap: 8px !important;
+    }
+
+    .subtaskCheckboxEnhanced {
+        font-size: 1rem !important;
+        min-width: 20px !important;
+    }
+
+    .subtaskTextEnhanced {
+        font-size: 0.8rem !important;
+        line-height: 1.2 !important;
+    }
+
+    .detachBtnEnhanced {
+        padding: 8px 12px !important;
+        font-size: 0.8rem !important;
+        margin-top: 10px !important;
+    }
+}
+
+/* ========================================
+   COMPACT MODE ENHANCED QUEST STYLES
+   ======================================== */
+
+.pomodoroContainer.compact .enhancedQuestCard,
+.pomodoroContainer[data-compact="true"] .enhancedQuestCard {
+    padding: 12px !important;
+    margin-bottom: 8px !important;
+}
+
+.pomodoroContainer.compact .questHeaderEnhanced,
+.pomodoroContainer[data-compact="true"] .questHeaderEnhanced {
+    flex-direction: column !important;
+    gap: 10px !important;
+    margin-bottom: 12px !important;
+    padding-bottom: 10px !important;
+}
+
+.pomodoroContainer.compact .questMainInfo,
+.pomodoroContainer[data-compact="true"] .questMainInfo {
+    width: 100% !important;
+    justify-content: center !important;
+}
+
+.pomodoroContainer.compact .questIconEnhanced,
+.pomodoroContainer[data-compact="true"] .questIconEnhanced {
+    font-size: 1.5rem !important;
+    margin-right: 10px !important;
+    padding: 8px !important;
+}
+
+.pomodoroContainer.compact .questTitleEnhanced,
+.pomodoroContainer[data-compact="true"] .questTitleEnhanced {
+    font-size: 1rem !important;
+    text-align: center !important;
+}
+
+.pomodoroContainer.compact .questMeta,
+.pomodoroContainer[data-compact="true"] .questMeta {
+    justify-content: center !important;
+    gap: 6px !important;
+}
+
+.pomodoroContainer.compact .difficultyBadge,
+.pomodoroContainer[data-compact="true"] .difficultyBadge,
+.pomodoroContainer.compact .questType,
+.pomodoroContainer[data-compact="true"] .questType {
+    padding: 2px 8px !important;
+    font-size: 0.7rem !important;
+}
+
+.pomodoroContainer.compact .skillBadge,
+.pomodoroContainer[data-compact="true"] .skillBadge {
+    font-size: 9px !important;
+    padding: 1px 4px !important;
+    margin-left: 3px !important;
+}
+
+.pomodoroContainer.compact .sessionBonus,
+.pomodoroContainer[data-compact="true"] .sessionBonus {
+    padding: 8px !important;
+    margin-bottom: 8px !important;
+}
+
+.pomodoroContainer.compact .questDescription,
+.pomodoroContainer[data-compact="true"] .questDescription {
+    padding: 8px !important;
+    margin-bottom: 8px !important;
+}
+
+.pomodoroContainer.compact .descriptionLabel,
+.pomodoroContainer[data-compact="true"] .descriptionLabel {
+    font-size: 0.8rem !important;
+    margin-bottom: 4px !important;
+}
+
+.pomodoroContainer.compact .descriptionText,
+.pomodoroContainer[data-compact="true"] .descriptionText {
+    font-size: 0.75rem !important;
+}
+
+.pomodoroContainer.compact .questDueDate,
+.pomodoroContainer[data-compact="true"] .questDueDate {
+    padding: 8px !important;
+    margin-bottom: 8px !important;
+}
+
+.pomodoroContainer.compact .dueDateLabel,
+.pomodoroContainer[data-compact="true"] .dueDateLabel {
+    font-size: 0.8rem !important;
+    margin-bottom: 4px !important;
+}
+
+.pomodoroContainer.compact .dueDateText,
+.pomodoroContainer[data-compact="true"] .dueDateText {
+    font-size: 0.75rem !important;
+}
+
+.pomodoroContainer.compact .questProgressSection,
+.pomodoroContainer[data-compact="true"] .questProgressSection {
+    margin-top: 8px !important;
+}
+
+.pomodoroContainer.compact .questDescription,
+.pomodoroContainer[data-compact="true"] .questDescription {
+    margin: 10px 0 !important;
+    padding: 8px !important;
+}
+
+.pomodoroContainer.compact .questRewards,
+.pomodoroContainer[data-compact="true"] .questRewards {
+    margin: 10px 0 !important;
+    padding: 10px !important;
+}
+
+.pomodoroContainer.compact .rewardsList,
+.pomodoroContainer[data-compact="true"] .rewardsList {
+    gap: 4px !important;
+}
+
+.pomodoroContainer.compact .rewardItem,
+.pomodoroContainer[data-compact="true"] .rewardItem {
+    padding: 4px 8px !important;
+    font-size: 0.8rem !important;
+}
+
+.pomodoroContainer.compact .questSkills,
+.pomodoroContainer[data-compact="true"] .questSkills {
+    margin: 10px 0 !important;
+    padding: 8px !important;
+}
+
+.pomodoroContainer.compact .skillsList,
+.pomodoroContainer[data-compact="true"] .skillsList {
+    gap: 4px !important;
+}
+
+.pomodoroContainer.compact .skillTag,
+.pomodoroContainer[data-compact="true"] .skillTag {
+    padding: 4px 8px !important;
+    font-size: 0.7rem !important;
+}
+
+.pomodoroContainer.compact .subtasksContainerEnhanced,
+.pomodoroContainer[data-compact="true"] .subtasksContainerEnhanced {
+    margin: 10px 0 !important;
+    padding: 8px !important;
+}
+
+.pomodoroContainer.compact .subtasksListEnhanced,
+.pomodoroContainer[data-compact="true"] .subtasksListEnhanced {
+    gap: 6px !important;
+}
+
+.pomodoroContainer.compact .subtaskItemEnhanced,
+.pomodoroContainer[data-compact="true"] .subtaskItemEnhanced {
+    padding: 6px 8px !important;
+    gap: 8px !important;
+}
+
+.pomodoroContainer.compact .subtaskTextEnhanced,
+.pomodoroContainer[data-compact="true"] .subtaskTextEnhanced {
+    font-size: 0.8rem !important;
+    line-height: 1.2 !important;
+}
+
+.pomodoroContainer.compact .detachBtnEnhanced,
+.pomodoroContainer[data-compact="true"] .detachBtnEnhanced {
+    padding: 8px 12px !important;
+    font-size: 0.8rem !important;
+    margin-top: 10px !important;
+}
+
+
+
+/* ========================================
+subtasks CSS
+*/
+
+.subtaskInteractive {
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.subtaskInteractive:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(2px);
+}
+
+.questActions {
+    display: flex;
+    gap: 10px;
+    margin-top: 15px;
+}
+
+.completeQuestBtn {
+    flex: 1;
+    background: var(--go-accent, var(--pixel-accent, #4fc3f7));
+    color: var(--go-text-on-accent, #0b1220);
+    border: 1px solid var(--go-border-strong, var(--pixel-border-dark, transparent));
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.completeQuestBtn:hover {
+    filter: brightness(1.08);
+}
+
+/* Compact styles */
+.pomodoroContainer.compact .questActions,
+.pomodoroContainer[data-compact="true"] .questActions {
+    flex-direction: column !important;
+    gap: 8px !important;
+}
+
+.pomodoroContainer.compact .completeQuestBtn,
+.pomodoroContainer[data-compact="true"] .completeQuestBtn {
+    padding: 10px 16px !important;
+    font-size: 0.9rem !important;
+}
+
+/* ========================================
+   INTERACTIVE QUEST STYLES - REGULAR
+   ======================================== */
+
+.subtaskInteractive {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border-radius: 6px;
+    padding: 8px 12px;
+    margin: 2px 0;
+}
+
+.subtaskInteractive:hover {
+    background: rgba(116, 185, 255, 0.1);
+    transform: translateX(3px);
+    box-shadow: 0 2px 8px rgba(116, 185, 255, 0.2);
+}
+
+.subtaskInteractive:active {
+    transform: translateX(1px);
+}
+
+.questActions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.completeQuestBtn {
+    background: var(--go-accent, var(--pixel-accent, #4fc3f7));
+    color: var(--go-text-on-accent, #0b1220);
+    border: 1px solid var(--go-border-strong, var(--pixel-border-dark, transparent));
+    border-radius: 10px;
+    padding: 12px 20px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: filter 0.15s ease;
+    box-shadow: none;
+}
+
+.completeQuestBtn:hover {
+    filter: brightness(1.08);
+    transform: none;
+    box-shadow: none;
+}
+
+.completeQuestBtn:active {
+    filter: brightness(0.95);
+    transform: none;
+    box-shadow: none;
+}
+
+.subtaskItemEnhanced {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    margin: 4px 0;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.subtaskCompleted {
+    background: rgba(34, 197, 94, 0.1) !important;
+    border-color: rgba(34, 197, 94, 0.3) !important;
+}
+
+.subtaskCompleted .subtaskTextEnhanced {
+    text-decoration: line-through;
+    opacity: 0.7;
+}
+
+.subtaskCheckboxEnhanced {
+    font-size: 1.2rem;
+    min-width: 20px;
+}
+
+.subtaskTextEnhanced {
+    flex: 1;
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.subtasksContainerEnhanced {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.subtasksHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.subtasksLabel {
+    font-size: 1rem;
+    font-weight: bold;
+    color: #74b9ff;
+}
+
+.subtasksProgress {
+    font-size: 0.9rem;
+    color: rgba(255, 255, 255, 0.7);
+    background: rgba(116, 185, 255, 0.2);
+    padding: 4px 8px;
+    border-radius: 12px;
+}
+
+.subtasksListEnhanced {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* ========================================
+Break Activities CSS
+======================================== */
+
+.breakActivitiesSection {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    padding: 15px;
+    margin-top: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.breakHint {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.9rem;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.breakActivitiesGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 12px;
+}
+
+.breakActivityBtn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 16px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    min-height: 80px;
+    justify-content: center;
+}
+
+.breakActivityBtn:hover {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.breakActivityBtn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+}
+
+/* Compact mode adjustments for break activities */
+.pomodoroContainer.compact .breakActivitiesSection,
+.pomodoroContainer[data-compact="true"] .breakActivitiesSection {
+    margin-top: 15px !important;
+    padding: 12px !important;
+}
+
+.pomodoroContainer.compact .breakActivitiesGrid,
+.pomodoroContainer[data-compact="true"] .breakActivitiesGrid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8px !important;
+}
+
+.pomodoroContainer.compact .breakActivityBtn,
+.pomodoroContainer[data-compact="true"] .breakActivityBtn {
+    padding: 8px 12px !important;
+    font-size: 0.8rem !important;
+    min-height: 60px !important;
+}
+
+/* ========================================
+   SESSION TYPES GRID STYLES
+   ======================================== */
+
+.sessionTypesSection {
+    margin: 24px 0;
+    text-align: center;
+}
+
+.sessionTypesSection h3 {
+    color: #8ecae6;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    text-align: center;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    padding: 8px 16px;
+    background: rgba(142, 202, 230, 0.1);
+    border-radius: 12px;
+    border: 1px solid rgba(142, 202, 230, 0.2);
+    display: inline-block;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.sessionTypesGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin: 24px 0;
+}
+
+.sessionTypeCard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    min-height: 140px;
+}
+
+.sessionTypeCard:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    border-color: rgba(142, 202, 230, 0.5);
+}
+
+.sessionTypeCard.active {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    background: rgba(142, 202, 230, 0.1);
+    border-color: rgba(142, 202, 230, 0.5);
+    position: relative;
+}
+
+.sessionTypeCard.active::after {
+    content: '✓';
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: #4ade80;
+    color: white;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.sessionTypeIcon {
+    font-size: 32px;
+    margin-bottom: 12px;
+}
+
+.sessionTypeTitle {
+    font-size: 16px;
+    font-weight: 600;
+    color: white;
+    margin-bottom: 8px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.sessionTypeDuration {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 4px;
+    font-weight: 500;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 2px 8px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.sessionTypeXP {
+    font-size: 12px;
+    color: #8ecae6;
+    font-weight: 600;
+    background: rgba(142, 202, 230, 0.1);
+    padding: 2px 6px;
+    border-radius: 8px;
+    border: 1px solid rgba(142, 202, 230, 0.2);
+}
+
+/* ========================================
+   PROGRESS BAR STYLES
+   ======================================== */
+
+.progressBar {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 8px 0;
+}
+
+.progressFill {
+    height: 100%;
+    background: linear-gradient(90deg, #4ade80, #22c55e);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+/* ========================================
+   NOTIFICATIONS STYLES
+   ======================================== */
+
+.notificationsContainer {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 300px;
+}
+
+.notification {
+    background: rgba(0, 0, 0, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    padding: 12px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.notification:hover {
+    transform: translateX(-5px);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.notification.achievement {
+    border-color: #ffd700;
+    background: rgba(255, 215, 0, 0.1);
+}
+
+.notification.info {
+    border-color: #4fc3f7;
+    background: rgba(79, 195, 247, 0.1);
+}
+
+.notificationContent {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex: 1;
+}
+
+.notificationIcon {
+    font-size: 16px;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.notificationTitle {
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.notificationMessage {
+    font-size: 12px;
+    opacity: 0.8;
+}
+
+/* ========================================
+   TIMER SECTION STYLES
+   ======================================== */
+
+.timerSection {
+    margin: 24px 0;
+    display: flex;
+    justify-content: center;
+}
+
+/* ========================================
+   COMPACT MODE ADJUSTMENTS
+   ======================================== */
+
+@media (max-width: 768px) {
+    .sessionTypesGrid {
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 12px;
+    }
+
+    .sessionTypeCard {
+        padding: 16px;
+        min-height: 120px;
+    }
+
+    .sessionTypeIcon {
+        font-size: 24px;
+        margin-bottom: 8px;
+    }
+
+    .sessionTypeTitle {
+        font-size: 14px;
+        margin-bottom: 6px;
+    }
+
+    .sessionTypeDuration {
+        font-size: 12px;
+        margin-bottom: 2px;
+    }
+
+    .sessionTypeXP {
+        font-size: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    .sessionTypesGrid {
+        grid-template-columns: 1fr 1fr;
+        gap: 8px;
+    }
+
+    .sessionTypeCard {
+        padding: 12px;
+        min-height: 100px;
+    }
+
+    .sessionTypeIcon {
+        font-size: 20px;
+        margin-bottom: 6px;
+    }
+
+    .sessionTypeTitle {
+        font-size: 12px;
+        margin-bottom: 4px;
+    }
+
+    .sessionTypeDuration {
+        font-size: 11px;
+        margin-bottom: 1px;
+    }
+
+    .sessionTypeXP {
+        font-size: 9px;
+    }
+}
+
+/* ========================================
+   QUEST PROGRESS SECTION STYLES
+   ======================================== */
+
+.questProgressSection {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    margin: 16px 0;
+}
+
+.progressTextEnhanced {
+    color: var(--go-text, var(--text-normal));
+    font-weight: bold;
+    font-size: 0.9rem;
+    text-shadow: none;
+}
+
+/* ========================================
+   QUEST ACTIONS STYLES
+   ======================================== */
+
+.questActions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.completeQuestBtn {
+    background: var(--go-accent, var(--pixel-accent, #4fc3f7));
+    color: var(--go-text-on-accent, #0b1220);
+    border: 1px solid var(--go-border-strong, var(--pixel-border-dark, transparent));
+    border-radius: 10px;
+    padding: 12px 20px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: filter 0.15s ease;
+    box-shadow: none;
+}
+
+.completeQuestBtn:hover {
+    filter: brightness(1.08);
+    transform: none;
+    box-shadow: none;
+}
+
+.completeQuestBtn:active {
+    filter: brightness(0.95);
+    transform: none;
+    box-shadow: none;
+}
+
+/* ========================================
+   COMPACT MODE QUEST STYLES
+   ======================================== */
+
+.pomodoroContainer.compact .questActions,
+.pomodoroContainer[data-compact="true"] .questActions {
+    flex-direction: column !important;
+    gap: 8px !important;
+}
+
+.pomodoroContainer.compact .completeQuestBtn,
+.pomodoroContainer[data-compact="true"] .completeQuestBtn {
+    padding: 10px 16px !important;
+    font-size: 0.9rem !important;
+}
+
+.pomodoroContainer.compact .questProgressSection,
+.pomodoroContainer[data-compact="true"] .questProgressSection {
+    margin-top: 8px !important;
+}
+
+.pomodoroContainer.compact .progressTextEnhanced,
+.pomodoroContainer[data-compact="true"] .progressTextEnhanced {
+    font-size: 0.8rem !important;
+}
+
+/* ========================================
+   MISSING CSS CLASSES FOR POMODORO TAB
+   ======================================== */
+
+.pomodoroContainer {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.statsPanel {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.timerSection {
+    display: flex;
+    justify-content: center;
+    margin: 30px 0;
+}
+
+/* Quest-related styles */
+.enhancedQuestCard {
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 24px;
+    margin: 20px 0;
+    backdrop-filter: blur(10px);
+}
+
+.questHeaderEnhanced {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+}
+
+.questMainInfo {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.questIconEnhanced {
+    font-size: 32px;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.questTitleSection {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.questTitleEnhanced {
+    font-size: 20px;
+    font-weight: bold;
+    color: white;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.questMeta {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.difficultyBadge {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+.questType {
+    background: rgba(142, 202, 230, 0.2);
+    color: #8ecae6;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid rgba(142, 202, 230, 0.3);
+}
+
+.questDescription {
+    margin: 20px 0;
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.descriptionLabel {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.descriptionText {
+    color: white;
+    line-height: 1.5;
+}
+
+.questDueDate {
+    margin: 20px 0;
+    padding: 16px;
+    background: rgba(255, 193, 7, 0.1);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 193, 7, 0.2);
+}
+
+.dueDateLabel {
+    font-size: 14px;
+    color: rgba(255, 193, 7, 0.8);
+    margin-bottom: 8px;
+    font-weight: 600;
+}
+
+.dueDateText {
+    color: #ffc107;
+    font-weight: 600;
+}
+
+.questRewards {
+    margin: 16px 0 12px;
+}
+
+.rewardsLabel {
+    font-size: 14px;
+    color: var(--go-muted, var(--text-muted));
+    margin-bottom: 12px;
+    font-weight: 600;
+}
+
+.rewardsList {
+    display: flex;
+    gap: 16px;
+}
+
+.rewardItem {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: rgba(76, 175, 80, 0.1);
+    border-radius: 8px;
+    border: 1px solid rgba(76, 175, 80, 0.2);
+}
+
+.rewardIcon {
+    font-size: 16px;
+}
+
+.rewardText {
+    color: #4caf50;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.progressBar {
+    width: 100%;
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-top: 8px;
+}
+
+.progressFill {
+    height: 100%;
+    background: linear-gradient(90deg, #4caf50, #8bc34a);
+    transition: width 0.3s ease;
+}
+
+.subtasksContainerEnhanced {
+    margin: 20px 0;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.subtasksHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+.subtasksLabel {
+    font-size: 16px;
+    font-weight: 600;
+    color: white;
+}
+
+.subtasksProgress {
+    background: rgba(142, 202, 230, 0.2);
+    color: #8ecae6;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid rgba(142, 202, 230, 0.3);
+}
+
+.subtasksListEnhanced {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.subtaskItemEnhanced {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.subtaskItemEnhanced:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateX(4px);
+}
+
+.subtaskItemEnhanced.subtaskCompleted {
+    background: rgba(76, 175, 80, 0.1);
+    border-color: rgba(76, 175, 80, 0.3);
+}
+
+.subtaskCheckboxEnhanced {
+    font-size: 18px;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.3));
+}
+
+.subtaskTextEnhanced {
+    color: white;
+    font-size: 14px;
+    flex: 1;
+}
+
+.subtaskItemEnhanced.subtaskCompleted .subtaskTextEnhanced {
+    text-decoration: line-through;
+    color: rgba(255, 255, 255, 0.6);
+}
+
+.detachBtnEnhanced {
+    background: transparent;
+    color: var(--go-danger, #ff6b6b);
+    border: 1px solid var(--go-danger, #ff6b6b);
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    margin-top: 0;
+    width: 100%;
+}
+
+.detachBtnEnhanced:hover {
+    background: color-mix(in srgb, var(--go-danger, #ff6b6b) 16%, transparent);
+    transform: none;
+    box-shadow: none;
+}
+
+.notificationsContainer {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 350px;
+}
+
+.notificationTitle {
+    font-weight: 600;
+    color: white;
+    font-size: 14px;
+}
+
+.notificationMessage {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 12px;
+    line-height: 1.4;
+}
+
+/* Quest Attachment Section */
+.questAttachmentSection {
+    margin: 24px 0;
+    text-align: center;
+}
+
+.questAttachmentSection h3 {
+    color: #8ecae6;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    padding: 8px 16px;
+    background: rgba(142, 202, 230, 0.1);
+    border-radius: 12px;
+    border: 1px solid rgba(142, 202, 230, 0.2);
+    display: inline-block;
+}
+
+.attachmentOptions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    backdrop-filter: blur(10px);
+}
+
+.attachBtn {
+    background: linear-gradient(135deg, #8ecae6, #219ebc);
+    border: none;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(142, 202, 230, 0.3);
+}
+
+.attachBtn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(142, 202, 230, 0.4);
+    background: linear-gradient(135deg, #219ebc, #1976d2);
+}
+
+.attachBtn:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 10px rgba(142, 202, 230, 0.3);
+}
+
+
+
+.attachmentHint {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.6);
+    margin: 0;
+    text-align: center;
+    line-height: 1.4;
+}
+
+/* Quest Skills Display */
+.questSkills {
+    margin: 16px 0;
+    padding: 12px;
+    background: rgba(142, 202, 230, 0.1);
+    border-radius: 8px;
+    border: 1px solid rgba(142, 202, 230, 0.2);
+}
+
+.skillsLabel {
+    font-size: 12px;
+    font-weight: 600;
+    color: #8ecae6;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.skillsList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.skillTag {
+    background: linear-gradient(135deg, #8ecae6, #219ebc);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 500;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 2px 4px rgba(142, 202, 230, 0.3);
+}
+
+/* Timed Quest Indicator */
+.timedQuestIndicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 16px 0;
+    padding: 12px;
+    background: linear-gradient(135deg, rgba(255, 193, 7, 0.2), rgba(255, 152, 0, 0.2));
+    border: 2px solid rgba(255, 193, 7, 0.4);
+    border-radius: 12px;
+    color: #ffc107;
+}
+
+.timedIcon {
+    font-size: 18px;
+    animation: pulse 2s infinite;
+}
+
+.timedText {
+    font-weight: 600;
+    font-size: 14px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+/* Quest Progress Section */
+.questProgressSection {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin: 16px 0;
+    padding: 14px;
+    background: var(--go-panel-strong, var(--pixel-panel-alt, rgba(142, 202, 230, 0.1)));
+    border-radius: var(--pixel-card-radius, 12px);
+    border: 1px solid var(--go-border, var(--pixel-border-dark, rgba(142, 202, 230, 0.2)));
+}
+
+.questProgressTrack {
+    width: 100%;
+    height: 10px;
+    overflow: hidden;
+    background: var(--go-panel, var(--pixel-bg, rgba(0, 0, 0, 0.35)));
+    border: 1px solid var(--go-border, var(--pixel-border-dark, rgba(255, 255, 255, 0.12)));
+    border-radius: 999px;
+}
+
+.questProgressFill {
+    display: block;
+    height: 100%;
+    min-width: 0;
+    background: var(--go-accent, var(--pixel-accent, #22c8ff));
+    border-radius: inherit;
+    transition: width 0.35s ease;
+}
+
+.progressTextEnhanced {
+    color: var(--go-text, var(--text-normal));
+    font-weight: bold;
+    font-size: 0.9rem;
+}
+
+/* Quest Actions */
+.questActions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.completeQuestBtn {
+    background: var(--go-accent, var(--pixel-accent, #4fc3f7));
+    color: var(--go-text-on-accent, #0b1220);
+    border: 1px solid var(--go-border-strong, var(--pixel-border-dark, transparent));
+    border-radius: 10px;
+    padding: 12px 20px;
+    font-size: 1rem;
+    font-weight: bold;
+    cursor: pointer;
+    transition: filter 0.15s ease;
+    box-shadow: none;
+}
+
+.completeQuestBtn:hover {
+    filter: brightness(1.08);
+    transform: none;
+    box-shadow: none;
+}
+
+.completeQuestBtn:active {
+    filter: brightness(0.95);
+    transform: none;
+    box-shadow: none;
+}
+
+/* ========================================
+   RESPONSIVE ADJUSTMENTS
+   ======================================== */
+
+@media (max-width: 768px) {
+    .questProgressSection {
+        margin: 12px 0;
+    }
+
+    .progressTextEnhanced {
+        font-size: 0.8rem;
+    }
+
+    .questActions {
+        margin-top: 16px;
+        padding-top: 12px;
+        gap: 10px;
+    }
+
+    .completeQuestBtn {
+        padding: 10px 16px;
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .questProgressSection {
+        margin: 8px 0;
+    }
+
+    .progressTextEnhanced {
+        font-size: 0.75rem;
+    }
+
+    .questActions {
+        margin-top: 12px;
+        padding-top: 8px;
+        gap: 8px;
+    }
+
+    .completeQuestBtn {
+        padding: 8px 12px;
+        font-size: 0.8rem;
+    }
+}
+
+/* ========================================
+   PIXEL / RPG SHELL (Pomodoro tab)
+   Matches Player tab tokens: hard edges, slab shadow, retro type.
+   ======================================== */
+
+.pomodoroContainer.pixelPomodoroShell {
+    --pixel-ring-work: #5ce1e6;
+    --pixel-ring-break: #7ed957;
+    --pixel-ring-track: #2f3558;
+    --pomo-reward-bg: var(--pixel-panel-alt);
+    --pomo-reward-item-bg: var(--pixel-panel);
+    --pomo-reward-border: var(--pixel-border-dark);
+    --pomo-reward-item-border: var(--pixel-border-dark);
+    --pomo-reward-text: var(--go-text, var(--pixel-text));
+    --pomo-reward-muted: var(--pixel-muted);
+    --pomo-reward-radius: var(--pixel-card-radius);
+    --pomo-reward-item-radius: var(--pixel-card-radius);
+    --pomo-reward-shadow: var(--pixel-shadow-pressed);
+
+    font-family: var(--go-font-ui, "Press Start 2P", "VT323", "Courier New", monospace);
+    font-size: 11px;
+    line-height: 1.65;
+    color: var(--go-text, var(--pixel-text));
+    background: var(--go-bg, var(--pixel-bg));
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: var(--pixel-card-radius);
+    box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light);
+}
+
+.pomodoroContainer.pixelPomodoroShell .statsPanel {
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.pomodoroContainer.pixelPomodoroShell .xpDisplay,
+.pomodoroContainer.pixelPomodoroShell .sessionCounters,
+.pomodoroContainer.pixelPomodoroShell .streakDisplay {
+    background: var(--pixel-panel);
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: var(--pixel-card-radius);
+    box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light);
+    backdrop-filter: none;
+}
+
+.pomodoroContainer.pixelPomodoroShell .xpDisplay {
+    background: var(--pixel-panel-alt);
+}
+
+.pomodoroContainer.pixelPomodoroShell .currentSessionXP {
+    font-family: "VT323", "Courier New", monospace;
+    font-size: 16px;
+    color: var(--pixel-accent);
+    background: var(--pixel-panel);
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: var(--pixel-card-radius);
+    box-shadow: var(--pixel-shadow-pressed);
+}
+
+.pomodoroContainer.pixelPomodoroShell .totalXP {
+    font-size: 18px;
+    color: var(--pixel-highlight);
+    text-shadow: 2px 2px 0 var(--pixel-border-dark);
+}
+
+.pomodoroContainer.pixelPomodoroShell .dailyProgress,
+.pomodoroContainer.pixelPomodoroShell .progressLabel,
+.pomodoroContainer.pixelPomodoroShell .counterLabel,
+.pomodoroContainer.pixelPomodoroShell .streakLabel,
+.pomodoroContainer.pixelPomodoroShell .longestStreak {
+    color: var(--pixel-muted);
+    font-family: "VT323", "Courier New", monospace;
+    font-size: 14px;
+}
+
+.pomodoroContainer.pixelPomodoroShell .counterNumber {
+    color: var(--pixel-highlight);
+    text-shadow: 2px 2px 0 var(--pixel-border-dark);
+}
+
+.pomodoroContainer.pixelPomodoroShell .streakNumber {
+    font-size: 20px;
+    color: var(--pixel-highlight);
+    text-shadow: 2px 2px 0 var(--pixel-border-dark);
+}
+
+.pomodoroContainer.pixelPomodoroShell .timerSection {
+    margin: 16px 0;
+}
+
+.pomodoroContainer.pixelPomodoroShell .timerCard {
+    background: var(--pixel-panel);
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: var(--pixel-card-radius);
+    box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light);
+    padding: 1.25rem;
+}
+
+.pomodoroContainer.pixelPomodoroShell .timerCard:has(.encounterMount) {
+    max-width: min(920px, 100%);
+    padding: 0.55rem;
+    background: #07060a;
+    border-color: rgba(168, 42, 58, 0.55);
+    box-shadow: 0 0 24px rgba(80, 8, 24, 0.28);
+}
+
+.pomodoroContainer.pixelPomodoroShell .timerCard:has(.encounterMount) .controls button {
+    background: transparent !important;
+    box-shadow: none !important;
+    border: 1px solid rgba(232, 200, 160, 0.28) !important;
+    color: #efe6d8 !important;
+}
+
+.pomodoroContainer.pixelPomodoroShell .timerCard:has(.encounterMount) .btnPause {
+    border-color: rgba(232, 184, 74, 0.55) !important;
+    color: #e8b84a !important;
+}
+
+.pomodoroContainer.pixelPomodoroShell .timerCard:has(.encounterMount) .btnReset {
+    border-color: rgba(194, 56, 72, 0.7) !important;
+    color: #ffb4b4 !important;
+}
+
+.pomodoroContainer.pixelPomodoroShell .timerTitle {
+    font-family: var(--go-font-ui, "Press Start 2P", "VT323", monospace);
+    font-size: 10px;
+    color: var(--pixel-accent);
+    text-shadow: 2px 2px 0 var(--pixel-border-dark);
+}
+
+.pomodoroContainer.pixelPomodoroShell .timeCircle {
+    font-family: var(--go-font-ui, "Press Start 2P", "VT323", monospace);
+    font-size: 2rem;
+    color: var(--go-text, var(--pixel-text));
+    text-shadow: 2px 2px 0 var(--pixel-border-dark);
+}
+
+.pomodoroContainer.pixelPomodoroShell .progressRing .ringBackground {
+    stroke: var(--pixel-ring-track) !important;
+    stroke-linecap: butt;
+}
+
+.pomodoroContainer.pixelPomodoroShell .timerCard[data-phase="work"] .ringProgress {
+    stroke: var(--pixel-ring-work) !important;
+    stroke-linecap: butt;
+    filter: drop-shadow(1px 1px 0 var(--pixel-border-dark));
+}
+
+.pomodoroContainer.pixelPomodoroShell .timerCard[data-phase="break"] .ringProgress {
+    stroke: var(--pixel-ring-break) !important;
+    stroke-linecap: butt;
+    filter: drop-shadow(1px 1px 0 var(--pixel-border-dark));
+}
+
+.pomodoroContainer.pixelPomodoroShell .controls {
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.pomodoroContainer.pixelPomodoroShell .controls button {
+    font-family: var(--go-font-ui, "Press Start 2P", "VT323", monospace);
+    font-size: 9px;
+    border-radius: var(--pixel-card-radius);
+    border: 2px solid var(--pixel-border-dark);
+    box-shadow: var(--pixel-shadow);
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+
+.pomodoroContainer.pixelPomodoroShell .controls button:hover {
+    transform: translate(1px, 1px);
+    box-shadow: var(--pixel-shadow-pressed);
+}
+
+.pomodoroContainer.pixelPomodoroShell .controls button:active {
+    transform: translate(2px, 2px);
+    box-shadow: none;
+}
+
+.pomodoroContainer.pixelPomodoroShell .btnStart {
+    background: var(--pixel-accent);
+    color: var(--pixel-border-dark);
+}
+
+.pomodoroContainer.pixelPomodoroShell .btnPause {
+    background: var(--pixel-panel-alt);
+    color: var(--pixel-highlight, #ffd36a);
+}
+
+.pomodoroContainer.pixelPomodoroShell .btnReset {
+    background: var(--pixel-panel-alt);
+    color: var(--go-text, var(--pixel-text));
+    border-color: var(--pixel-border-light);
+}
+
+.pomodoroContainer.pixelPomodoroShell .btnSkip {
+    background: #9b7edc;
+    color: var(--go-text, var(--pixel-text));
+}
+
+.pomodoroContainer.pixelPomodoroShell .energySection {
+    background: var(--pixel-panel);
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: var(--pixel-card-radius);
+    box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light);
+}
+
+.pomodoroContainer.pixelPomodoroShell .energyBattery {
+    border-radius: var(--pixel-card-radius);
+    border: 2px solid var(--pixel-border-dark);
+    background: var(--pixel-ring-track);
+    box-shadow: inset 2px 2px 0 rgba(0, 0, 0, 0.35);
+}
+
+.pomodoroContainer.pixelPomodoroShell .energyLevel {
+    border-radius: var(--pixel-card-radius);
+    background: var(--pixel-accent);
+    box-shadow: none;
+}
+
+.pomodoroContainer.pixelPomodoroShell .energyText {
+    font-family: "VT323", "Courier New", monospace;
+    font-size: 14px;
+    color: var(--go-text, var(--pixel-text));
+    text-shadow: 1px 1px 0 var(--pixel-border-dark);
+}
+
+.pomodoroContainer.pixelPomodoroShell .energyType,
+.pomodoroContainer.pixelPomodoroShell .hyperfocusLevel {
+    font-family: "VT323", "Courier New", monospace;
+    font-size: 15px;
+    color: var(--pixel-muted);
+}
+
+.pomodoroContainer.pixelPomodoroShell .hyperfocusBtn {
+    background: var(--pixel-panel-alt);
+    color: var(--pixel-accent);
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: var(--pixel-card-radius);
+    box-shadow: var(--pixel-shadow);
+    font-family: var(--go-font-ui, "Press Start 2P", "VT323", monospace);
+    font-size: 8px;
+}
+
+.pomodoroContainer.pixelPomodoroShell .hyperfocusBtn:hover:not(:disabled) {
+    box-shadow: var(--pixel-shadow-pressed);
+    transform: translate(1px, 1px);
+}
+
+.pomodoroContainer.pixelPomodoroShell .hyperfocusBtn:disabled {
+    background: var(--pixel-panel);
+    color: var(--pixel-muted);
+    opacity: 0.7;
+}
+
+.pomodoroContainer.pixelPomodoroShell .hyperfocusActive {
+    background: #c94c4c !important;
+    color: var(--go-text, var(--pixel-text)) !important;
+    animation: none;
+    box-shadow: var(--pixel-shadow) !important;
+}
+
+.pomodoroContainer.pixelPomodoroShell .sessionTypesSection h3,
+.pomodoroContainer.pixelPomodoroShell .questAttachmentSection h3 {
+    font-family: var(--go-font-ui, "Press Start 2P", "VT323", monospace);
+    font-size: 10px;
+    color: var(--pixel-accent);
+    text-shadow: 2px 2px 0 var(--pixel-border-dark);
+    background: var(--pixel-panel);
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: var(--pixel-card-radius);
+    box-shadow: var(--pixel-shadow);
+    padding: 10px 14px;
+}
+
+.pomodoroContainer.pixelPomodoroShell .sessionTypeCard {
+    background: var(--pixel-panel);
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: var(--pixel-card-radius);
+    box-shadow: var(--pixel-shadow);
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+
+.pomodoroContainer.pixelPomodoroShell .sessionTypeCard:hover {
+    transform: translate(1px, 1px);
+    box-shadow: var(--pixel-shadow-pressed);
+    border-color: var(--pixel-border-light);
+}
+
+.pomodoroContainer.pixelPomodoroShell .sessionTypeCard.active {
+    background: var(--pixel-panel-alt);
+    border-color: var(--pixel-accent);
+    box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-accent);
+}
+
+.pomodoroContainer.pixelPomodoroShell .sessionTypeCard.active::after {
+    border-radius: var(--pixel-card-radius);
+    background: var(--pixel-ring-break);
+    border: 2px solid var(--pixel-border-dark);
+    width: 22px;
+    height: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--go-font-ui, "Press Start 2P", monospace);
+    font-size: 8px;
+}
+
+.pomodoroContainer.pixelPomodoroShell .sessionTypeTitle {
+    font-family: var(--go-font-ui, "Press Start 2P", "VT323", monospace);
+    font-size: 9px;
+    color: var(--go-text, var(--pixel-text));
+}
+
+.pomodoroContainer.pixelPomodoroShell .sessionTypeDuration,
+.pomodoroContainer.pixelPomodoroShell .sessionTypeXP {
+    font-family: "VT323", "Courier New", monospace;
+    font-size: 14px;
+    color: var(--pixel-muted);
+}
+
+.pomodoroContainer.pixelPomodoroShell .attachmentOptions {
+    background: var(--pixel-panel);
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: var(--pixel-card-radius);
+    box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light);
+    backdrop-filter: none;
+}
+
+.pomodoroContainer.pixelPomodoroShell .attachBtn,
+.pomodoroContainer.pixelPomodoroShell .smartSuggestionBtn {
+    background: var(--pixel-panel-alt) !important;
+    color: var(--pixel-accent) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    border-radius: var(--pixel-card-radius) !important;
+    box-shadow: var(--pixel-shadow) !important;
+    font-family: var(--go-font-ui, "Press Start 2P", "VT323", monospace);
+    font-size: 9px;
+}
+
+.pomodoroContainer.pixelPomodoroShell .smartSuggestionBtn::before {
+    display: none;
+}
+
+.pomodoroContainer.pixelPomodoroShell .attachBtn:hover,
+.pomodoroContainer.pixelPomodoroShell .smartSuggestionBtn:hover {
+    transform: translate(1px, 1px);
+    box-shadow: var(--pixel-shadow-pressed) !important;
+}
+
+.pomodoroContainer.pixelPomodoroShell .attachmentHint {
+    font-family: "VT323", "Courier New", monospace;
+    font-size: 15px;
+    color: var(--pixel-muted);
+}
+
+.pomodoroContainer.pixelPomodoroShell .enhancedQuestCard {
+    background: var(--pixel-panel);
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: var(--pixel-card-radius);
+    box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light);
+    backdrop-filter: none;
+}
+
+.pomodoroContainer.pixelPomodoroShell .questHeaderEnhanced {
+    border-bottom: 2px solid var(--pixel-border-dark);
+}
+
+.pomodoroContainer.pixelPomodoroShell .questIconEnhanced {
+    border-radius: var(--pixel-card-radius);
+    background: var(--pixel-panel-alt);
+    border: 2px solid var(--pixel-border-dark);
+    box-shadow: var(--pixel-shadow-pressed);
+}
+
+.pomodoroContainer.pixelPomodoroShell .questTitleEnhanced {
+    font-family: var(--go-font-ui, "Press Start 2P", "VT323", monospace);
+    font-size: 11px;
+    color: var(--go-text, var(--pixel-text));
+    text-shadow: 2px 2px 0 var(--pixel-border-dark);
+}
+
+.pomodoroContainer.pixelPomodoroShell .difficultyBadge {
+    border-radius: var(--pixel-card-radius);
+    border: 2px solid var(--pixel-border-dark);
+    box-shadow: var(--pixel-shadow-pressed);
+    font-family: var(--go-font-ui, "Press Start 2P", monospace);
+    font-size: 7px;
+}
+
+.pomodoroContainer.pixelPomodoroShell .questType {
+    font-family: "VT323", monospace;
+    font-size: 14px;
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: var(--pixel-card-radius);
+    padding: 2px 8px;
+    background: var(--pixel-panel-alt);
+}
+
+.pomodoroContainer.pixelPomodoroShell .questSkills,
+.pomodoroContainer.pixelPomodoroShell .questDescription,
+.pomodoroContainer.pixelPomodoroShell .questDueDate,
+.pomodoroContainer.pixelPomodoroShell .timedQuestIndicator {
+    border-radius: var(--pixel-card-radius);
+    border: 2px solid var(--pixel-border-dark);
+    background: var(--pixel-panel-alt);
+    font-family: "VT323", monospace;
+    font-size: 14px;
+}
+
+.pomodoroContainer.pixelPomodoroShell .questRewards {
+    border: 2px solid var(--pixel-border-dark);
+    background: var(--pixel-panel-alt);
+    box-shadow: var(--pixel-shadow-pressed);
+    padding: 12px;
+    margin: 12px 0;
+    font-family: "VT323", monospace;
+    font-size: 14px;
+}
+
+.pomodoroContainer.pixelPomodoroShell .rewardStripLabel {
+    font-family: var(--go-font-ui, "Press Start 2P", monospace);
+    font-size: 8px;
+    color: var(--pixel-highlight, #ffd36a);
+}
+
+.pomodoroContainer.pixelPomodoroShell .rewardChip {
+    border: 2px solid var(--pixel-border-dark);
+    background: var(--pixel-panel);
+    border-radius: var(--pixel-card-radius);
+}
+
+.pomodoroContainer.pixelPomodoroShell .questProgressTrack {
+    height: 12px;
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: var(--pixel-card-radius);
+    background: var(--pixel-bg);
+    box-shadow: var(--pixel-shadow-pressed);
+}
+
+.pomodoroContainer.pixelPomodoroShell .questProgressFill {
+    background: var(--pixel-accent);
+    border-radius: 0;
+}
+
+.pomodoroContainer.pixelPomodoroShell .questTimedRewardBonus {
+    color: var(--pixel-highlight);
+    text-shadow: 1px 1px 0 var(--pixel-border-dark);
+}
+
+.pomodoroContainer.pixelPomodoroShell .skillTag {
+    border-radius: var(--pixel-card-radius);
+    border: 2px solid var(--pixel-border-dark);
+    font-family: var(--go-font-ui, "Press Start 2P", monospace);
+    font-size: 7px;
+}
+
+.pomodoroContainer.pixelPomodoroShell .questActions {
+    border-top: 2px solid var(--pixel-border-dark);
+}
+
+.pomodoroContainer.pixelPomodoroShell .completeQuestBtn {
+    background: var(--pixel-accent) !important;
+    color: var(--pixel-bg, #1a1c2c) !important;
+    border-radius: var(--pixel-card-radius);
+    border: 2px solid var(--pixel-border-dark) !important;
+    box-shadow: var(--pixel-shadow);
+    font-family: var(--go-font-ui, "Press Start 2P", monospace);
+    font-size: 8px;
+}
+
+.pomodoroContainer.pixelPomodoroShell .detachBtnEnhanced {
+    background: var(--pixel-panel-alt) !important;
+    color: var(--pixel-highlight, #ffd36a) !important;
+    border-radius: var(--pixel-card-radius);
+    border: 2px solid var(--pixel-border-dark) !important;
+    box-shadow: var(--pixel-shadow);
+    font-family: var(--go-font-ui, "Press Start 2P", monospace);
+    font-size: 8px;
+}
+
+.pomodoroContainer.pixelPomodoroShell .subtasksContainerEnhanced {
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: var(--pixel-card-radius);
+    background: var(--pixel-panel-alt);
+    box-shadow: var(--pixel-shadow-pressed);
+}
+
+.pomodoroContainer.pixelPomodoroShell .subtaskItemEnhanced {
+    border-radius: var(--pixel-card-radius);
+    border: 2px solid var(--pixel-border-dark);
+    font-family: "VT323", monospace;
+    font-size: 14px;
+}
+
+.pomodoroContainer.pixelPomodoroShell .progressTextEnhanced {
+    font-family: "VT323", monospace;
+    font-size: 16px;
+    color: var(--pixel-accent);
+    text-shadow: none;
+}
+
+
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell {
+    --pomo-reward-bg: rgba(4, 16, 32, 0.88);
+    --pomo-reward-item-bg: rgba(8, 24, 48, 0.9);
+    --pomo-reward-border: var(--go-border, rgba(34, 200, 255, 0.35));
+    --pomo-reward-item-border: var(--go-border, rgba(34, 200, 255, 0.28));
+    --pomo-reward-text: var(--go-text, #e0f2fe);
+    --pomo-reward-muted: var(--go-muted, #9ec7df);
+    --pomo-reward-radius: 2px;
+    --pomo-reward-item-radius: 2px;
+    --pomo-reward-shadow: none;
+}
+
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .timerTitle,
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .sessionTypesSection h3,
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .questAttachmentSection h3 {
+    font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+    font-size: 0.75rem !important;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--go-accent, #22c8ff) !important;
+    text-shadow: none !important;
+}
+
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .timeCircle,
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .totalXP,
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .counterNumber,
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .streakNumber {
+    text-shadow: none !important;
+    color: var(--go-gold, #ffd83d);
+}
+
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .timerCard,
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .xpDisplay,
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .sessionCounters,
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .sessionTypeCard,
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .energySection {
+    border-width: 1px !important;
+    border-color: var(--go-border, rgba(34, 200, 255, 0.42)) !important;
+    border-radius: var(--go-radius, 2px) !important;
+    box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16)) !important;
+}
+
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .timerCard:has(.encounterMount) {
+    max-width: min(920px, 100%) !important;
+    background: #07060a !important;
+    border-color: rgba(168, 42, 58, 0.5) !important;
+    box-shadow: 0 0 24px rgba(80, 8, 24, 0.28) !important;
+}
+
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .sessionTypeCard.active {
+    border-color: var(--go-accent, #22c8ff) !important;
+    box-shadow: var(--go-shadow, 0 0 22px rgba(34, 200, 255, 0.24)) !important;
+}
+
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .controls button:hover,
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .sessionTypeCard:hover {
+    transform: none !important;
+}
+
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .btnStart {
+    background: var(--go-card-soft, rgba(8, 28, 54, 0.72));
+    color: var(--go-accent, #22c8ff);
+}
+
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .btnPause {
+    background: transparent;
+    color: var(--go-gold, #ffd83d);
+    border: 1px solid color-mix(in srgb, var(--go-gold, #ffd83d) 45%, transparent);
+}
+
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .enhancedQuestCard,
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .questRewards,
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .questProgressSection {
+    border-width: 1px !important;
+    border-color: var(--go-border, rgba(34, 200, 255, 0.42)) !important;
+    border-radius: var(--go-radius, 2px) !important;
+    box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16)) !important;
+}
+
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .questProgressFill {
+    background: var(--go-accent, #22c8ff);
+}
+
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .rewardChip {
+    background: var(--go-card-soft, rgba(8, 28, 54, 0.72));
+    border: 1px solid var(--go-border, rgba(34, 200, 255, 0.28));
+    border-radius: var(--go-radius, 2px);
+}
+
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .completeQuestBtn {
+    background: var(--go-card-soft, rgba(8, 28, 54, 0.72)) !important;
+    color: var(--go-accent, #22c8ff) !important;
+    border: 1px solid var(--go-accent, #22c8ff) !important;
+    border-radius: var(--go-radius, 2px) !important;
+    font-family: inherit !important;
+    font-size: 12px !important;
+    box-shadow: none !important;
+}
+
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .detachBtnEnhanced,
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .questActions .attachBtn {
+    background: transparent !important;
+    color: var(--go-text, #e0f2fe) !important;
+    border: 1px solid var(--go-border, rgba(34, 200, 255, 0.42)) !important;
+    border-radius: var(--go-radius, 2px) !important;
+    font-family: inherit !important;
+    font-size: 12px !important;
+    box-shadow: none !important;
+}
+
+:global([data-gamification-shell='system']) .pomodoroContainer.pixelPomodoroShell .detachBtnEnhanced {
+    color: var(--go-danger, #ff6b6b) !important;
+    border-color: var(--go-danger, #ff6b6b) !important;
+}
+
+/* ========================================
+   CLAY SHELL (Pomodoro tab)
+   ChatGPT claymorphism — molded cards + soft ring
+   ======================================== */
+
+.pomodoroContainer.clayPomodoroShell {
+    --clay-ring-work: #4fcfc6;
+    --clay-ring-break: #63d86d;
+    --clay-ring-track: #dcd6cf;
+    --pomo-reward-bg: var(--clay-gradient, linear-gradient(145deg, #f6f2ec, #efe8df));
+    --pomo-reward-item-bg: #f3eee8;
+    --pomo-reward-border: rgba(255, 255, 255, 0.45);
+    --pomo-reward-item-border: transparent;
+    --pomo-reward-text: var(--clay-text, #2e2e2e);
+    --pomo-reward-muted: var(--clay-text-light, #676767);
+    --pomo-reward-radius: var(--clay-radius, 22px);
+    --pomo-reward-item-radius: 16px;
+    --pomo-reward-shadow: var(--clay-recessed);
+
+    font-family: var(--go-font-ui, "Nunito", "Segoe UI", "Avenir Next", system-ui, sans-serif);
+    font-size: 13px;
+    line-height: 1.5;
+    color: var(--clay-text, #2e2e2e);
+    background: var(--go-screen-bg, linear-gradient(180deg, #d7ece7, #c9e3de));
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    border-radius: var(--clay-radius-large, 34px);
+    box-shadow: var(--clay-shadow);
+    padding: 16px;
+}
+
+.pomodoroContainer.clayPomodoroShell .statsPanel {
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+.pomodoroContainer.clayPomodoroShell .xpDisplay,
+.pomodoroContainer.clayPomodoroShell .sessionCounters,
+.pomodoroContainer.clayPomodoroShell .streakDisplay,
+.pomodoroContainer.clayPomodoroShell .timerCard,
+.pomodoroContainer.clayPomodoroShell .energySection,
+.pomodoroContainer.clayPomodoroShell .sessionTypeCard,
+.pomodoroContainer.clayPomodoroShell .questAttachmentSection {
+    background: var(--clay-gradient, linear-gradient(145deg, #f6f2ec, #efe8df));
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    border-radius: var(--clay-radius, 22px);
+    box-shadow: var(--clay-shadow);
+    backdrop-filter: none;
+    text-shadow: none;
+}
+
+.pomodoroContainer.clayPomodoroShell .currentSessionXP {
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--clay-accent-deep, #2ba8a3);
+    background: #f3eee8;
+    border: none;
+    border-radius: 18px;
+    box-shadow: var(--clay-recessed);
+}
+
+.pomodoroContainer.clayPomodoroShell .totalXP,
+.pomodoroContainer.clayPomodoroShell .counterNumber,
+.pomodoroContainer.clayPomodoroShell .streakNumber {
+    font-family: inherit;
+    color: var(--clay-accent-deep, #2ba8a3);
+    text-shadow: none;
+}
+
+.pomodoroContainer.clayPomodoroShell .dailyProgress,
+.pomodoroContainer.clayPomodoroShell .progressLabel,
+.pomodoroContainer.clayPomodoroShell .counterLabel,
+.pomodoroContainer.clayPomodoroShell .streakLabel,
+.pomodoroContainer.clayPomodoroShell .longestStreak {
+    color: var(--clay-text-light, #676767);
+    font-family: inherit;
+    font-size: 13px;
+}
+
+.pomodoroContainer.clayPomodoroShell .timerTitle,
+.pomodoroContainer.clayPomodoroShell .sessionTypesSection h3,
+.pomodoroContainer.clayPomodoroShell .questAttachmentSection h3 {
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    color: var(--clay-text, #2e2e2e);
+    text-shadow: none;
+    text-transform: none;
+}
+
+.pomodoroContainer.clayPomodoroShell .timeCircle {
+    font-family: inherit;
+    font-size: 2.4rem;
+    font-weight: 800;
+    color: var(--clay-accent-deep, #2ba8a3);
+    text-shadow: none;
+}
+
+/* Analytic donut ring — thick matte clay tube (gradient via SVG defs) */
+.timerCardClay {
+    overflow: visible;
+    padding: 1.25rem 1rem 1.5rem;
+}
+
+.pomodoroContainer.clayPomodoroShell .timerCard {
+    overflow: visible;
+}
+
+.pomodoroContainer.clayPomodoroShell .timerCard:has(.encounterMount) {
+    max-width: min(920px, 100%);
+    overflow: hidden;
+    background: #07060a;
+    border: 1px solid rgba(168, 42, 58, 0.45);
+    box-shadow: 0 0 24px rgba(80, 8, 24, 0.22);
+    padding: 0.55rem;
+}
+
+.circleWrapperClay {
+    width: 236px;
+    height: 236px;
+    overflow: visible;
+    margin: 0.5rem auto 1rem;
+}
+
+.circleWrapperClay .progressRing {
+    width: 236px;
+    height: 236px;
+    overflow: visible;
+}
+
+/* Compact mode must not shrink clay ring into a clip box */
+.pomodoroContainer.clayPomodoroShell.compact .circleWrapperClay,
+.pomodoroContainer.clayPomodoroShell[data-compact="true"] .circleWrapperClay {
+    width: 210px !important;
+    height: 210px !important;
+}
+
+.pomodoroContainer.clayPomodoroShell.compact .circleWrapperClay .progressRing,
+.pomodoroContainer.clayPomodoroShell[data-compact="true"] .circleWrapperClay .progressRing {
+    width: 210px !important;
+    height: 210px !important;
+}
+
+.pomodoroContainer.clayPomodoroShell .progressRing .ringBackground,
+.timerCardClay .ringBackground {
+    stroke: #c5c2ce !important;
+    stroke-linecap: round;
+    filter: none;
+    opacity: 1;
+}
+
+/* Keep SVG analytic gradient — never override stroke with a flat clay accent */
+.pomodoroContainer.clayPomodoroShell .timerCard[data-phase="work"] .ringProgress,
+.pomodoroContainer.clayPomodoroShell .timerCard[data-phase="break"] .ringProgress,
+.timerCardClay .ringProgress {
+    stroke-linecap: round;
+}
+
+.timerCardClay .ringProgressDepth {
+    stroke-linecap: round;
+    pointer-events: none;
+}
+
+.timerOverlayClay {
+    width: 118px;
+    height: 118px;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #f7f4ef, #efe8df);
+    box-shadow:
+        6px 8px 16px rgba(59, 130, 246, 0.12),
+        -4px -4px 12px rgba(255, 255, 255, 0.72),
+        inset 3px 3px 6px rgba(255, 255, 255, 0.5),
+        inset -3px -3px 8px rgba(139, 92, 246, 0.1);
+}
+
+.timerOverlayClay .timeCircle {
+    font-size: 2.15rem;
+    font-weight: 800;
+    color: #2e2a3f;
+}
+
+.pomodoroContainer.clayPomodoroShell .timerCardClay .timeCircle,
+.pomodoroContainer.clayPomodoroShell .timerOverlayClay .timeCircle {
+    color: #2e2a3f !important;
+}
+
+.pomodoroContainer.clayPomodoroShell .questProgressTrack {
+    background: #ece8e2;
+    border: none;
+    box-shadow:
+        inset 0 2px 4px rgba(255, 255, 255, 0.85),
+        inset 0 -2px 5px rgba(0, 0, 0, 0.08);
+}
+
+.pomodoroContainer.clayPomodoroShell .questProgressFill {
+    background: var(--clay-accent-deep, #2ba8a3);
+}
+
+.pomodoroContainer.clayPomodoroShell .rewardChip {
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    box-shadow: var(--clay-shadow);
+    color: var(--clay-text, #2e2e2e);
+}
+
+.pomodoroContainer.clayPomodoroShell .rewardStripLabel,
+.pomodoroContainer.clayPomodoroShell .rewardChipKind {
+    color: var(--clay-text-light, #676767);
+}
+
+.pomodoroContainer.clayPomodoroShell .controls {
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.pomodoroContainer.clayPomodoroShell .controls button {
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    border: none;
+    border-radius: 18px;
+    padding: 12px 18px;
+    background: var(--clay-button-gradient, linear-gradient(180deg, #f7f4ef, #ece3da));
+    color: var(--clay-text, #2e2e2e);
+    box-shadow: var(--clay-shadow);
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.pomodoroContainer.clayPomodoroShell .controls button:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--clay-shadow-hover);
+}
+
+.pomodoroContainer.clayPomodoroShell .controls button:active {
+    transform: translateY(2px);
+    box-shadow: var(--clay-shadow-pressed);
+}
+
+.pomodoroContainer.clayPomodoroShell .btnStart {
+    background: var(--clay-accent-gradient, linear-gradient(180deg, #6ad7d4, #53c6c2));
+    color: #fff;
+}
+
+.pomodoroContainer.clayPomodoroShell .btnPause {
+    background: linear-gradient(90deg, #ffd36a, #ffb84c, #ff9738);
+    color: #2e2e2e;
+}
+
+.pomodoroContainer.clayPomodoroShell .btnReset {
+    background: var(--clay-button-gradient, linear-gradient(180deg, #f7f4ef, #ece3da));
+    color: var(--clay-text, #2e2e2e);
+}
+
+.pomodoroContainer.clayPomodoroShell .btnSkip {
+    background: linear-gradient(90deg, #d9b8ff, #b98dff, #9a72ff);
+    color: #fff;
+}
+
+.pomodoroContainer.clayPomodoroShell .sessionTypeCard {
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.pomodoroContainer.clayPomodoroShell .sessionTypeCard:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--clay-shadow-hover);
+}
+
+.pomodoroContainer.clayPomodoroShell .sessionTypeCard.active {
+    background: var(--clay-accent-gradient, linear-gradient(180deg, #6ad7d4, #53c6c2));
+    color: #fff;
+    box-shadow: var(--clay-shadow-pressed);
+}
+
+.pomodoroContainer.clayPomodoroShell .energyBattery {
+    border-radius: 999px;
+    border: none;
+    background: linear-gradient(to bottom, #ece8e2, #dcd6cf);
+    box-shadow:
+        inset 0 2px 4px rgba(255, 255, 255, 0.85),
+        inset 0 -2px 5px rgba(0, 0, 0, 0.08);
+}
+
+.pomodoroContainer.clayPomodoroShell .energyLevel {
+    border-radius: 999px;
+    background: linear-gradient(90deg, #72e5db, #4fcfc6, #2fafa7);
+    box-shadow:
+        inset 0 1px 2px rgba(255, 255, 255, 0.5),
+        0 0 8px rgba(79, 207, 198, 0.25);
+}
+
+.pomodoroContainer.clayPomodoroShell .energyText,
+.pomodoroContainer.clayPomodoroShell .energyType,
+.pomodoroContainer.clayPomodoroShell .hyperfocusLevel {
+    font-family: inherit;
+    color: var(--clay-text-light, #676767);
+    text-shadow: none;
+}
+
+.pomodoroContainer.clayPomodoroShell .hyperfocusBtn {
+    background: var(--clay-button-gradient, linear-gradient(180deg, #f7f4ef, #ece3da));
+    color: var(--clay-accent-deep, #2ba8a3);
+    border: none;
+    border-radius: 18px;
+    box-shadow: var(--clay-shadow);
+}
+
+.pomodoroContainer.clayPomodoroShell .hyperfocusBtn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: var(--clay-shadow-hover);
+}
+
+.pomodoroContainer.clayPomodoroShell .hyperfocusActive {
+    background: var(--clay-accent-gradient, linear-gradient(180deg, #6ad7d4, #53c6c2));
+    color: #fff;
+}
+
+.pomodoroContainer.clayPomodoroShell .enhancedQuestCard,
+.pomodoroContainer.clayPomodoroShell .questRewards,
+.pomodoroContainer.clayPomodoroShell .questProgressSection,
+.pomodoroContainer.clayPomodoroShell .questDescription,
+.pomodoroContainer.clayPomodoroShell .timedQuestIndicator,
+.pomodoroContainer.clayPomodoroShell .subtasksContainerEnhanced {
+    background: var(--clay-gradient, linear-gradient(145deg, #f6f2ec, #efe8df));
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    border-radius: var(--clay-radius, 22px);
+    box-shadow: var(--clay-shadow);
+    backdrop-filter: none;
+}
+
+.pomodoroContainer.clayPomodoroShell .questTitleEnhanced,
+.pomodoroContainer.clayPomodoroShell .progressTextEnhanced,
+.pomodoroContainer.clayPomodoroShell .descriptionText,
+.pomodoroContainer.clayPomodoroShell .subtaskTextEnhanced {
+    color: var(--clay-text, #2e2e2e);
+    text-shadow: none;
+}
+
+.pomodoroContainer.clayPomodoroShell .questActions .attachBtn,
+.pomodoroContainer.clayPomodoroShell .completeQuestBtn,
+.pomodoroContainer.clayPomodoroShell .detachBtnEnhanced {
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    border: none !important;
+    border-radius: 18px !important;
+    padding: 12px 18px;
+    box-shadow: var(--clay-shadow) !important;
+}
+
+.pomodoroContainer.clayPomodoroShell .questActions .attachBtn {
+    background: var(--clay-button-gradient, linear-gradient(180deg, #f7f4ef, #ece3da)) !important;
+    color: var(--clay-text, #2e2e2e) !important;
+}
+
+.pomodoroContainer.clayPomodoroShell .completeQuestBtn {
+    background: var(--clay-accent-gradient, linear-gradient(180deg, #6ad7d4, #53c6c2)) !important;
+    color: #fff !important;
+}
+
+.pomodoroContainer.clayPomodoroShell .detachBtnEnhanced {
+    background: var(--clay-button-gradient, linear-gradient(180deg, #f7f4ef, #ece3da)) !important;
+    color: var(--clay-text, #2e2e2e) !important;
+}

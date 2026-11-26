@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Pixel Boss Battle — Temporary Preview</title>
+  <!-- Loads best over http; use: npm run preview:pixel-boss:serve -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-dark: #0d1020;
+      --panel: #1a1f35;
+      --border: #c6c6c6;
+      --accent: #ffd700;
+      --hp: #3ecf8e;
+      --hp-boss: #e74c3c;
+      --text: #e8e8f0;
+      --muted: #8892b0;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Press Start 2P", "Courier New", monospace;
+      font-size: 10px;
+      line-height: 1.6;
+      color: var(--text);
+      background: var(--bg-dark);
+      -webkit-font-smoothing: none;
+      image-rendering: pixelated;
+      image-rendering: crisp-edges;
+    }
+
+    .banner {
+      text-align: center;
+      padding: 10px 12px;
+      background: linear-gradient(180deg, #2a1f4e 0%, #0d1020 100%);
+      border-bottom: 4px solid var(--border);
+      color: var(--accent);
+      letter-spacing: 0.08em;
+    }
+
+    .banner small {
+      display: block;
+      margin-top: 8px;
+      color: var(--muted);
+      font-size: 7px;
+      letter-spacing: 0;
+    }
+
+    .battle {
+      display: flex;
+      flex-direction: column;
+      min-height: calc(100vh - 56px);
+    }
+
+    .statusBar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 14px;
+      background: var(--panel);
+      border-bottom: 3px solid #333;
+    }
+
+    .turnBox {
+      border: 3px solid var(--border);
+      padding: 8px 12px;
+      background: #000;
+      text-align: center;
+    }
+
+    .turnBox span {
+      display: block;
+      color: var(--muted);
+      font-size: 7px;
+      margin-bottom: 4px;
+    }
+
+    .turnBox strong {
+      font-size: 18px;
+      color: var(--accent);
+    }
+
+    .nextAction {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border: 3px solid #7c3aed;
+      padding: 8px 12px;
+      background: #1a1030;
+      flex: 1;
+      min-width: 200px;
+    }
+
+    .nextAction .icon {
+      font-size: 24px;
+    }
+
+    .nextAction .label {
+      font-size: 7px;
+      color: var(--muted);
+    }
+
+    .countdown {
+      display: flex;
+      gap: 8px;
+      margin-left: auto;
+    }
+
+    .cdBox {
+      border: 2px solid var(--border);
+      padding: 6px 8px;
+      background: #000;
+      text-align: center;
+      min-width: 44px;
+    }
+
+    .cdBox .n {
+      font-size: 14px;
+      color: #f59e0b;
+    }
+
+    .cdBox .l {
+      font-size: 6px;
+      color: var(--muted);
+    }
+
+    .arena {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      padding: 16px;
+      position: relative;
+      background: repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 4px,
+          rgba(255, 255, 255, 0.03) 4px,
+          rgba(255, 255, 255, 0.03) 5px
+        ),
+        linear-gradient(180deg, #1e3a5f 0%, #0d1f2d 50%, #1a2f1a 100%);
+    }
+
+    .arena::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image: linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+      background-size: 24px 24px;
+      pointer-events: none;
+      opacity: 0.5;
+    }
+
+    .combatant {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .sprite {
+      width: 140px;
+      height: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+      border: 4px solid var(--border);
+      font-size: 72px;
+      box-shadow: 4px 4px 0 #000;
+    }
+
+    .combatant.boss .sprite {
+      border-color: #c0392b;
+      box-shadow: 4px 4px 0 #5c1a1a;
+    }
+
+    .statsPanel {
+      width: 100%;
+      max-width: 320px;
+      background: var(--panel);
+      border: 4px solid var(--accent);
+      padding: 12px;
+      box-shadow: 4px 4px 0 #000;
+    }
+
+    .combatant.boss .statsPanel {
+      border-color: #e74c3c;
+    }
+
+    .statsRow {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+
+    .statCell {
+      background: #000;
+      border: 2px solid #444;
+      padding: 6px;
+      text-align: center;
+    }
+
+    .statCell .lbl {
+      font-size: 6px;
+      color: var(--accent);
+    }
+
+    .statCell .val {
+      font-size: 14px;
+      margin-top: 4px;
+    }
+
+    .weapon {
+      font-size: 8px;
+      margin-bottom: 10px;
+      padding: 6px;
+      border: 2px dashed #555;
+    }
+
+    .hpWrap {
+      margin-bottom: 8px;
+    }
+
+    .hpBar {
+      display: flex;
+      gap: 2px;
+      background: #000;
+      padding: 4px;
+      border: 2px solid #333;
+      position: relative;
+    }
+
+    .hpSeg {
+      flex: 1;
+      height: 14px;
+      background: #222;
+    }
+
+    .hpSeg.on {
+      background: var(--hp);
+    }
+
+    .combatant.boss .hpSeg.on {
+      background: var(--hp-boss);
+    }
+
+    .phaseTick {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: #fff;
+      opacity: 0.6;
+    }
+
+    .name {
+      font-size: 9px;
+      text-align: center;
+      margin-top: 4px;
+    }
+
+    .phase {
+      font-size: 7px;
+      color: #f59e0b;
+      text-align: center;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      grid-template-rows: auto auto;
+      gap: 10px;
+      padding: 12px;
+      background: #0a0c14;
+      border-top: 4px solid var(--border);
+      max-height: 42vh;
+      overflow: auto;
+    }
+
+    @media (min-width: 900px) {
+      .controls {
+        grid-template-columns: 1.1fr 1fr 0.9fr 1fr;
+        grid-template-rows: 1fr;
+      }
+    }
+
+    .panel {
+      border: 3px solid var(--border);
+      background: var(--panel);
+      display: flex;
+      flex-direction: column;
+      min-height: 160px;
+    }
+
+    .panelHead {
+      padding: 8px 10px;
+      background: #000;
+      border-bottom: 2px solid var(--border);
+      font-size: 8px;
+      color: var(--accent);
+    }
+
+    .panelBody {
+      padding: 8px;
+      flex: 1;
+      overflow: auto;
+    }
+
+    .moves {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .moveBtn {
+      border: 3px solid #555;
+      background: #111;
+      color: var(--text);
+      padding: 10px 8px;
+      font-family: inherit;
+      font-size: 7px;
+      cursor: pointer;
+      text-align: left;
+      box-shadow: 3px 3px 0 #000;
+    }
+
+    .moveBtn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .moveBtn .dmg {
+      margin-top: 6px;
+      color: var(--hp);
+      font-size: 6px;
+    }
+
+    .task {
+      display: block;
+      width: 100%;
+      text-align: left;
+      border: 2px solid #444;
+      background: #0d0d12;
+      color: var(--text);
+      padding: 8px;
+      margin-bottom: 6px;
+      font-family: inherit;
+      font-size: 7px;
+      cursor: pointer;
+    }
+
+    .task.done {
+      opacity: 0.45;
+      text-decoration: line-through;
+    }
+
+    .log {
+      font-size: 6px;
+      color: var(--muted);
+      line-height: 1.8;
+    }
+
+    .log .p {
+      color: #6cf;
+    }
+
+    .log .b {
+      color: #f88;
+    }
+
+    .exit {
+      position: fixed;
+      bottom: 12px;
+      right: 12px;
+      z-index: 100;
+      font-family: inherit;
+      font-size: 7px;
+      padding: 10px 14px;
+      background: #8b0000;
+      color: #fff;
+      border: 3px solid #fff;
+      cursor: pointer;
+      box-shadow: 4px 4px 0 #000;
+    }
+
+    /* Mirrors TacticalBattleUI weapon picker (pixel style) */
+    .weaponOv {
+      position: fixed;
+      inset: 0;
+      z-index: 300;
+      background: rgba(0, 0, 0, 0.82);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 12px;
+      overflow: auto;
+    }
+
+    .weaponOv.hidden {
+      display: none;
+    }
+
+    .weaponModal {
+      width: 100%;
+      max-width: 640px;
+      background: linear-gradient(180deg, #0f172a 0%, #111827 100%);
+      border: 4px solid var(--accent);
+      box-shadow: 8px 8px 0 #000;
+      padding: 14px 12px 12px;
+    }
+
+    .weaponModal h2 {
+      margin: 0 0 6px;
+      font-size: 11px;
+      color: var(--accent);
+      text-align: center;
+      letter-spacing: 0.06em;
+    }
+
+    .weaponModal .hint {
+      margin: 0 0 14px;
+      font-size: 6px;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.7;
+    }
+
+    .weaponGrid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    @media (min-width: 560px) {
+      .weaponGrid {
+        grid-template-columns: repeat(4, 1fr);
+      }
+    }
+
+    .weaponCard {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      text-align: left;
+      padding: 8px 8px 10px;
+      font-family: inherit;
+      font-size: 6px;
+      line-height: 1.5;
+      color: var(--text);
+      background: #1e293b;
+      border: 3px solid #475569;
+      cursor: pointer;
+      box-shadow: 3px 3px 0 #000;
+    }
+
+    .weaponCard:hover {
+      border-color: #94a3b8;
+    }
+
+    .weaponCard.selected {
+      border-color: var(--accent);
+      background: #1a2332;
+      box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.25), 3px 3px 0 #000;
+    }
+
+    .weaponCard .wi {
+      font-size: 20px;
+      line-height: 1;
+      margin-bottom: 4px;
+    }
+
+    .weaponCard .wn {
+      font-size: 7px;
+      font-weight: bold;
+      color: #f8fafc;
+      margin-bottom: 4px;
+    }
+
+    .weaponCard .wb {
+      font-size: 5px;
+      color: var(--muted);
+    }
+
+    .weaponLock {
+      width: 100%;
+      font-family: inherit;
+      font-size: 8px;
+      padding: 12px 10px;
+      background: linear-gradient(180deg, #ffd700 0%, #d97706 100%);
+      color: #111;
+      border: 3px solid #fff;
+      cursor: pointer;
+      box-shadow: 4px 4px 0 #000;
+    }
+
+    .weaponLock:hover {
+      filter: brightness(1.08);
+    }
+
+    .weaponReplay {
+      position: fixed;
+      bottom: 12px;
+      left: 12px;
+      z-index: 150;
+      font-family: inherit;
+      font-size: 6px;
+      padding: 8px 10px;
+      background: #1e293b;
+      color: var(--accent);
+      border: 3px solid var(--accent);
+      cursor: pointer;
+      box-shadow: 3px 3px 0 #000;
+    }
+
+    .weaponReplay.hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="banner">
+    PROJECT BOSS RAID — PIXEL PREVIEW
+    <small
+      >Boss bar = min(task/moves HP, deadline %) · moves use real-time cooldowns (scaled to project length), no
+      energy · + Subquest modal · <strong style="color: #fbbf24">weapon loadout</strong> before first fight (mirrors
+      plugin)</small
+    >
+  </div>
+
+  <div class="battle">
+    <div class="statusBar">
+      <div class="turnBox">
+        <span>TURN</span>
+        <strong>7</strong>
+      </div>
+      <div class="nextAction">
+        <span class="icon">📅</span>
+        <div>
+          <div class="label">NEXT BOSS ACTION</div>
+          <div>Emergency Meeting</div>
+        </div>
+      </div>
+      <div class="countdown">
+        <div class="cdBox"><div class="n">2</div><div class="l">DAYS</div></div>
+        <div class="cdBox"><div class="n">14</div><div class="l">HRS</div></div>
+        <div class="cdBox"><div class="n">22</div><div class="l">MIN</div></div>
+        <div class="cdBox"><div class="n">10</div><div class="l">SEC</div></div>
+      </div>
+    </div>
+
+    <div class="arena">
+      <div class="combatant">
+        <div class="sprite">🧙</div>
+        <div class="statsPanel">
+          <div class="statsRow">
+            <div class="statCell"><div class="lbl">HIT</div><div class="val">75</div></div>
+            <div class="statCell"><div class="lbl">DMG</div><div class="val">52</div></div>
+            <div class="statCell"><div class="lbl">CRT</div><div class="val">20</div></div>
+          </div>
+          <div class="weapon" id="playerWeapon">⚔️ Skill Blade</div>
+          <div class="hpWrap">
+            <div class="hpBar">
+              <div class="hpSeg on"></div>
+              <div class="hpSeg on"></div>
+              <div class="hpSeg on"></div>
+              <div class="hpSeg on"></div>
+              <div class="hpSeg on"></div>
+              <div class="hpSeg on"></div>
+              <div class="hpSeg"></div>
+              <div class="hpSeg"></div>
+              <div class="hpSeg"></div>
+              <div class="hpSeg"></div>
+            </div>
+            <div class="name">58 / 100 ENERGY</div>
+          </div>
+          <div class="phase">You · Level 12</div>
+        </div>
+      </div>
+
+      <div class="combatant boss">
+        <div class="sprite">🐉</div>
+        <div class="statsPanel">
+          <div class="statsRow">
+            <div class="statCell"><div class="lbl">HIT</div><div class="val">75</div></div>
+            <div class="statCell"><div class="lbl">DMG</div><div class="val">120</div></div>
+            <div class="statCell"><div class="lbl">CRT</div><div class="val">15</div></div>
+          </div>
+          <div class="weapon">⚔ Quest Shadow</div>
+          <div class="hpWrap">
+            <div class="hpBar">
+              <div class="phaseTick" style="left: 25%"></div>
+              <div class="phaseTick" style="left: 50%"></div>
+              <div class="phaseTick" style="left: 75%"></div>
+              <div class="hpSeg on"></div>
+              <div class="hpSeg on"></div>
+              <div class="hpSeg on"></div>
+              <div class="hpSeg on"></div>
+              <div class="hpSeg on"></div>
+              <div class="hpSeg"></div>
+              <div class="hpSeg"></div>
+              <div class="hpSeg"></div>
+              <div class="hpSeg"></div>
+              <div class="hpSeg"></div>
+              <div class="hpSeg"></div>
+            </div>
+            <div class="name">The Scope Creep Hydra · 180 / 400 <span style="color: #f59e0b">(deadline)</span></div>
+          </div>
+          <div class="phase">Phase 2 — ENRAGED</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <div class="panel">
+        <div class="panelHead">⚔ BATTLE MOVES</div>
+        <div class="panelBody">
+          <p style="font-size: 5px; color: #8892b0; margin: 0 0 8px; line-height: 1.7">
+            Plugin: base CD = max(5m, min(72h, projectMs × share)). Weapon <strong style="color: #fbbf24">Ritual Tome</strong> ×1.12
+            on all move CDs; <strong style="color: #6cf">Twin Momentum</strong> −15% on next move after a task.
+          </p>
+          <div class="moves">
+            <button type="button" class="moveBtn">
+              🧠 Deep Work
+              <div class="dmg">~84 DMG · no NRG · ~4h39m CD w/Tome · +6 XP/+3 🪙 cap</div>
+            </button>
+            <button type="button" class="moveBtn" style="opacity: 0.55">
+              💪 Power Surge
+              <div class="dmg">On CD · 1h 04m · ring uses weapon-adjusted duration</div>
+            </button>
+            <button type="button" class="moveBtn">
+              🧘 Calm Strike
+              <div class="dmg">~63 DMG · share 5.5% of project · +coins cap</div>
+            </button>
+            <button type="button" class="moveBtn">
+              🔥 Motivated Rush
+              <div class="dmg">~77 DMG · longest CD share (8% of project)</div>
+            </button>
+          </div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panelHead">📜 BATTLE LOG</div>
+        <div class="panelBody log">
+          <div class="weapon-log-line"><span class="p">[SYS]</span> ⚔️ Equipped Skill Blade — lock in loadout to confirm</div>
+          <div><span class="p">[YOU]</span> Task done — 42 dmg</div>
+          <div><span class="b">[BOSS]</span> Deadline Shift -6h</div>
+          <div><span class="p">[SYS]</span> Phase 2 — ENRAGED</div>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panelHead">📋 QUEST TASKS · <span style="color: #7dd3fc">+ Subquest</span></div>
+        <div class="panelBody">
+          <button type="button" class="task">#1 Ship MVP checklist</button>
+          <button type="button" class="task done">#2 Wire boss tags</button>
+          <button type="button" class="task">#3 Playtest pixel theme</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panelHead">⚔ BATTLE STATS</div>
+        <div class="panelBody log">
+          STR 12 · INT 18 · CRE 10<br />
+          FOC 15 · WIL 14 · END 11
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button type="button" class="exit" onclick="alert('In Obsidian this would close the modal.')">✕ EXIT</button>
+
+  <button type="button" class="weaponReplay hidden" id="weaponReplay" aria-label="Show weapon picker again">
+    ⚔ LOADOUT
+  </button>
+
+  <div class="weaponOv" id="weaponOverlay" role="dialog" aria-labelledby="weaponTitle">
+    <div class="weaponModal">
+      <h2 id="weaponTitle">CHOOSE YOUR WEAPON</h2>
+      <p class="hint">
+        Same 8 loadouts as the plugin. Task damage, move crits &amp; cooldowns, deadline bar, meeting block, and
+        victory XP can shift. Persists per quest save in Obsidian.
+      </p>
+      <div class="weaponGrid" id="weaponGrid">
+        <button type="button" class="weaponCard selected" data-id="balanced" data-icon="⚔️" data-name="Skill Blade" data-blurb="No special modifiers — balanced for any project.">
+          <span class="wi">⚔️</span><span class="wn">Skill Blade</span><span class="wb">Balanced — no modifiers.</span>
+        </button>
+        <button type="button" class="weaponCard" data-id="greatblade" data-icon="🗡️" data-name="Greatblade" data-blurb="+12% task dmg; moves −8%.">
+          <span class="wi">🗡️</span><span class="wn">Greatblade</span><span class="wb">+12% task · −8% move dmg</span>
+        </button>
+        <button type="button" class="weaponCard" data-id="rapier" data-icon="🤺" data-name="Rapier" data-blurb="+12% move crit.">
+          <span class="wi">🤺</span><span class="wn">Rapier</span><span class="wb">+12% crit on moves</span>
+        </button>
+        <button type="button" class="weaponCard" data-id="ward" data-icon="🛡️" data-name="Deadline Ward" data-blurb="+6% time-tied HP.">
+          <span class="wi">🛡️</span><span class="wn">Deadline Ward</span><span class="wb">Softer deadline bar</span>
+        </button>
+        <button type="button" class="weaponCard" data-id="bulwark" data-icon="🏰" data-name="Bulwark" data-blurb="Meeting block 2→1 turn.">
+          <span class="wi">🏰</span><span class="wn">Bulwark</span><span class="wb">Shorter turn blocks</span>
+        </button>
+        <button type="button" class="weaponCard" data-id="tome" data-icon="📖" data-name="Ritual Tome" data-blurb="+12% move CD; +1 XP/+1 coin per move.">
+          <span class="wi">📖</span><span class="wn">Ritual Tome</span><span class="wb">Longer CDs · richer move rewards</span>
+        </button>
+        <button type="button" class="weaponCard" data-id="momentum" data-icon="⚡" data-name="Twin Momentum" data-blurb="After task, next move −15% CD.">
+          <span class="wi">⚡</span><span class="wn">Twin Momentum</span><span class="wb">Task → faster next move</span>
+        </button>
+        <button type="button" class="weaponCard" data-id="finisher" data-icon="🔨" data-name="Hammer of Closure" data-blurb="+15 XP on victory recap.">
+          <span class="wi">🔨</span><span class="wn">Hammer of Closure</span><span class="wb">+15 XP victory bonus</span>
+        </button>
+      </div>
+      <button type="button" class="weaponLock" id="weaponLock">LOCK IN &amp; FIGHT</button>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var overlay = document.getElementById("weaponOverlay");
+      var grid = document.getElementById("weaponGrid");
+      var lockBtn = document.getElementById("weaponLock");
+      var replayBtn = document.getElementById("weaponReplay");
+      var playerWeapon = document.getElementById("playerWeapon");
+      var cards = grid.querySelectorAll(".weaponCard");
+
+      function selectCard(card) {
+        cards.forEach(function (c) {
+          c.classList.toggle("selected", c === card);
+        });
+      }
+
+      grid.addEventListener("click", function (e) {
+        var card = e.target.closest(".weaponCard");
+        if (card) selectCard(card);
+      });
+
+      lockBtn.addEventListener("click", function () {
+        var sel = grid.querySelector(".weaponCard.selected");
+        if (!sel) return;
+        var icon = sel.getAttribute("data-icon") || "⚔️";
+        var name = sel.getAttribute("data-name") || "Skill Blade";
+        var blurb = sel.getAttribute("data-blurb") || "";
+        playerWeapon.textContent = icon + " " + name;
+        overlay.classList.add("hidden");
+        replayBtn.classList.remove("hidden");
+        var logPanel = document.querySelector(".panelBody.log");
+        var logLine = document.querySelector(".panelBody.log .weapon-log-line");
+        if (logLine) {
+          logLine.innerHTML =
+            '<span class="p">[SYS]</span> ' +
+            icon +
+            " Equipped " +
+            name +
+            " — " +
+            blurb;
+        }
+      });
+
+      replayBtn.addEventListener("click", function () {
+        overlay.classList.remove("hidden");
+      });
+    })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,517 @@
+/* Welcome Wizard Styles */
+.wizard {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 10000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+}
+
+.container {
+    background: var(--background-primary);
+    border-radius: 16px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    width: 100%;
+    max-width: 600px;
+    max-height: 90vh;
+    overflow-y: auto;
+    position: relative;
+    z-index: 1;
+    animation: wizardSlideIn 0.4s ease-out;
+}
+
+@keyframes wizardSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.98);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Header */
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 32px 16px 32px;
+    border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.header h1 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--text-normal);
+}
+
+.skipButton {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.skipButton:hover {
+    background: var(--background-modifier-hover);
+    color: var(--text-normal);
+}
+
+/* Progress */
+.progress {
+    padding: 16px 32px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.progressBar {
+    flex: 1;
+    height: 6px;
+    background: var(--background-modifier-border);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.progressFill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--interactive-accent), var(--interactive-accent-hover));
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.progressText {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+}
+
+/* Step Content */
+.stepContent {
+    padding: 24px 32px;
+    min-height: 400px;
+}
+
+.stepContent h2 {
+    margin: 0 0 12px 0;
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: var(--text-normal);
+}
+
+.stepContent p {
+    margin: 0 0 32px 0;
+    color: var(--text-muted);
+    line-height: 1.5;
+}
+
+/* Features */
+.features {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.feature {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px;
+    background: var(--background-secondary);
+    border-radius: 12px;
+    border: 1px solid var(--background-modifier-border);
+}
+
+.featureIcon {
+    font-size: 2rem;
+    flex-shrink: 0;
+}
+
+.feature h4 {
+    margin: 0 0 4px 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-normal);
+}
+
+.feature p {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: 0.9rem;
+}
+
+/* Option Grid */
+.optionGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+}
+
+.optionCard {
+    background: var(--background-secondary);
+    border: 2px solid var(--background-modifier-border);
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.optionCard:hover {
+    border-color: var(--interactive-accent);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.optionCard.selected {
+    border-color: var(--interactive-accent);
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+}
+
+.optionCard.selected::before {
+    content: '✓';
+    position: absolute;
+    top: 8px;
+    right: 12px;
+    font-weight: bold;
+    font-size: 1.2rem;
+}
+
+.optionCard.compact {
+    padding: 16px;
+}
+
+.optionIcon {
+    font-size: 2.5rem;
+    display: block;
+    margin-bottom: 12px;
+}
+
+.optionCard h4 {
+    margin: 0 0 8px 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.optionCard p {
+    margin: 0;
+    font-size: 0.85rem;
+    opacity: 0.8;
+}
+
+/* Checkbox Grid */
+.checkboxGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+.checkboxCard {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: var(--background-secondary);
+    border: 2px solid var(--background-modifier-border);
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.checkboxCard:hover {
+    border-color: var(--interactive-accent);
+    background: var(--background-modifier-hover);
+}
+
+.checkboxCard.checked {
+    border-color: var(--interactive-accent);
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+}
+
+.checkboxCard input[type="checkbox"] {
+    margin: 0;
+    accent-color: var(--interactive-accent);
+}
+
+.checkboxIcon {
+    font-size: 1.5rem;
+}
+
+/* Sections */
+.section {
+    margin-bottom: 32px;
+}
+
+.section h3 {
+    margin: 0 0 16px 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text-normal);
+}
+
+/* Toggle Options */
+.toggleOptions {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.toggle {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.toggle input[type="checkbox"] {
+    display: none;
+}
+
+.toggleSlider {
+    width: 48px;
+    height: 24px;
+    background: var(--background-modifier-border);
+    border-radius: 12px;
+    position: relative;
+    transition: background 0.2s ease;
+}
+
+.toggleSlider::before {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.2s ease;
+}
+
+.toggle input[type="checkbox"]:checked+.toggleSlider {
+    background: var(--interactive-accent);
+}
+
+.toggle input[type="checkbox"]:checked+.toggleSlider::before {
+    transform: translateX(24px);
+}
+
+.toggle span:last-child {
+    color: var(--text-normal);
+    font-weight: 500;
+}
+
+/* Actions */
+.actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 24px 32px;
+    border-top: 1px solid var(--background-modifier-border);
+    gap: 16px;
+}
+
+.backButton,
+.nextButton {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    min-height: 44px;
+}
+
+.backButton {
+    background: var(--background-secondary);
+    color: var(--text-normal);
+    border: 1px solid var(--background-modifier-border);
+}
+
+.backButton:hover:not(:disabled) {
+    background: var(--background-modifier-hover);
+}
+
+.backButton:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.nextButton {
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+    flex-shrink: 0;
+}
+
+.nextButton:hover {
+    background: var(--interactive-accent-hover);
+    transform: translateY(-1px);
+}
+
+/* Mobile Optimizations */
+.wizard.mobile .container {
+    margin: 0;
+    width: 100%;
+    max-width: 100%;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+    overflow-y: auto;
+}
+
+.wizard.mobile .header {
+    padding: 16px 20px 12px 20px;
+}
+
+.wizard.mobile .progress {
+    padding: 12px 20px;
+}
+
+.wizard.mobile .stepContent {
+    padding: 20px;
+    min-height: auto;
+}
+
+.wizard.mobile .actions {
+    padding: 20px;
+}
+
+.wizard.mobile .optionGrid {
+    grid-template-columns: 1fr;
+}
+
+.wizard.mobile .checkboxGrid {
+    grid-template-columns: 1fr;
+}
+
+.wizard.mobile .features {
+    gap: 16px;
+}
+
+.wizard.mobile .feature {
+    padding: 16px;
+}
+
+.wizard.mobile .actions {
+    flex-direction: column-reverse;
+    gap: 12px;
+}
+
+.wizard.mobile .backButton,
+.wizard.mobile .nextButton {
+    width: 100%;
+    min-height: 48px;
+}
+
+/* Touch device optimizations */
+@media (pointer: coarse) {
+
+    .optionCard,
+    .checkboxCard,
+    .backButton,
+    .nextButton,
+    .skipButton {
+        min-height: 44px;
+    }
+
+    .toggle {
+        padding: 8px 0;
+    }
+
+    .toggleSlider {
+        width: 52px;
+        height: 28px;
+        border-radius: 14px;
+    }
+
+    .toggleSlider::before {
+        width: 24px;
+        height: 24px;
+        top: 2px;
+        left: 2px;
+    }
+
+    .toggle input[type="checkbox"]:checked+.toggleSlider::before {
+        transform: translateX(24px);
+    }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+    .container {
+        border: 2px solid var(--text-normal);
+    }
+
+    .optionCard,
+    .checkboxCard {
+        border-width: 3px;
+    }
+
+    .backButton,
+    .nextButton {
+        border: 2px solid currentColor;
+    }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+    .container {
+        animation: none;
+    }
+
+    .progressFill,
+    .optionCard,
+    .checkboxCard,
+    .backButton,
+    .nextButton,
+    .toggleSlider,
+    .toggleSlider::before {
+        transition: none;
+    }
+
+    .optionCard:hover,
+    .nextButton:hover {
+        transform: none;
+    }
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+    .container {
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+    }
+
+    .toggleSlider::before {
+        background: var(--background-primary);
+    }
+}

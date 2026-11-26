@@ -1,0 +1,257 @@
+/**
+ * Boss hub shell — matches tactical raid pixel theme (Press Start 2P, grid, hard borders).
+ */
+
+.root {
+    width: 100%;
+    min-height: 100vh;
+    min-height: 100dvh;
+    box-sizing: border-box;
+    font-family: "Press Start 2P", ui-monospace, "Cascadia Code", "Courier New", monospace;
+    font-size: 10px;
+    line-height: 1.6;
+    color: #e8e8f0;
+    background: #0d1020;
+    background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 4px, rgba(255, 255, 255, 0.03) 4px, rgba(255, 255, 255, 0.03) 5px),
+        linear-gradient(180deg, #1e3a5f 0%, #0d1f2d 50%, #1a2f1a 100%);
+    -webkit-font-smoothing: none;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding-top: max(12px, env(safe-area-inset-top, 0px));
+    padding-bottom: max(0px, env(safe-area-inset-bottom, 0px));
+}
+
+.nav {
+    border-bottom: 3px solid #333;
+    background: #1a1f35;
+    padding: 10px 12px 0;
+    box-shadow: 0 4px 0 #000;
+}
+
+.navTitle {
+    font-size: 7px;
+    letter-spacing: 0.14em;
+    color: #ffd700;
+    text-align: center;
+    margin: 0 0 8px;
+    text-shadow: 2px 2px 0 #000;
+}
+
+.navSubtitle {
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 11px;
+    line-height: 1.45;
+    color: #94a3b8;
+    text-align: center;
+    margin: 0 0 12px;
+    max-width: 520px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.navRow {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    padding-bottom: 8px;
+}
+
+.tab {
+    font-family: inherit;
+    font-size: 7px;
+    line-height: 1.45;
+    padding: 10px 12px;
+    margin: 0;
+    cursor: pointer;
+    border: 3px solid #555;
+    border-radius: 0;
+    background: #0d1020;
+    color: #8892b0;
+    box-shadow: 4px 4px 0 #000;
+    transition: none;
+}
+
+.tab:hover {
+    color: #e8e8f0;
+    border-color: #7c3aed;
+}
+
+.tabActive {
+    background: #1a1030;
+    color: #ffd700;
+    border-color: #ffd700;
+    box-shadow: 4px 4px 0 #000;
+}
+
+.content {
+    min-height: calc(100vh - 140px);
+    min-height: calc(100dvh - 140px);
+}
+
+.loadingOverlay {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(13, 16, 32, 0.97);
+    color: #e8e8f0;
+    padding: 28px 32px;
+    max-width: min(90vw, 420px);
+    border: 4px solid #ffd700;
+    border-radius: 0;
+    z-index: 1000;
+    text-align: center;
+    font-family: inherit;
+    font-size: 8px;
+    line-height: 1.65;
+    box-shadow: 8px 8px 0 #000;
+}
+
+.loadingEmoji {
+    font-size: 22px;
+    margin-bottom: 12px;
+    line-height: 1;
+}
+
+.loadingSub {
+    font-size: 6px;
+    margin-top: 12px;
+    color: #8892b0;
+}
+
+/* Gate idle hub (no active raid) */
+.idlePanel {
+	max-width: 560px;
+	margin: 0 auto;
+	padding: 28px 20px 40px;
+}
+
+.idleHero {
+	text-align: center;
+	margin-bottom: 24px;
+}
+
+.idleIcon {
+	font-size: 48px;
+	line-height: 1;
+	margin-bottom: 12px;
+}
+
+.idleTitle {
+	margin: 0 0 10px;
+	font-size: 14px;
+	letter-spacing: 0.12em;
+	color: var(--gamify-gate-highlight, #ffd700);
+	text-shadow: 2px 2px 0 #000;
+}
+
+.idleLead {
+	margin: 0;
+	font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+	font-size: 13px;
+	line-height: 1.55;
+	color: var(--gamify-boss-muted, #8892b0);
+}
+
+.idleLead strong {
+	color: var(--gamify-boss-text, #e8e8f0);
+}
+
+.idleRaidCard {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 14px 16px;
+	margin-bottom: 20px;
+	border: 2px solid var(--gamify-gate-accent, #8ecae6);
+	border-radius: var(--pixel-card-radius, 0);
+	background: var(--gamify-gate-banner-bg, linear-gradient(180deg, #2e3152, #252742));
+	box-shadow: var(--gamify-gate-glow, 3px 3px 0 #0f1120);
+}
+
+.idleRaidTag {
+	font-size: 9px;
+	font-weight: 800;
+	letter-spacing: 0.14em;
+	color: var(--gamify-gate-accent, #8ecae6);
+}
+
+.idleRaidName {
+	font-size: 13px;
+	color: var(--gamify-gate-text, #ecefff);
+}
+
+.idleRaidMeta {
+	margin: 0;
+	font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+	font-size: 12px;
+	line-height: 1.45;
+	color: var(--gamify-gate-muted, #bac2e3);
+}
+
+.idleSteps {
+	margin: 0 0 24px;
+	padding-left: 20px;
+	font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+	font-size: 12px;
+	line-height: 1.65;
+	color: var(--gamify-boss-muted, #8892b0);
+}
+
+.idleSteps li + li {
+	margin-top: 8px;
+}
+
+.idleSteps strong {
+	color: var(--gamify-boss-text, #e8e8f0);
+}
+
+.idleActions {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.idlePrimaryBtn,
+.idleSecondaryBtn {
+	all: unset;
+	box-sizing: border-box;
+	display: block;
+	width: 100%;
+	padding: 12px 14px;
+	font-family: inherit;
+	font-size: 9px;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-align: center;
+	cursor: pointer;
+	border: 3px solid #555;
+	box-shadow: 4px 4px 0 #000;
+}
+
+.idlePrimaryBtn {
+	background: #1a1030;
+	color: var(--gamify-gate-highlight, #ffd700);
+	border-color: var(--gamify-gate-highlight, #ffd700);
+}
+
+.idlePrimaryBtn:hover:not(:disabled) {
+	filter: brightness(1.08);
+}
+
+.idlePrimaryBtn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.idleSecondaryBtn {
+	background: #0d1020;
+	color: var(--gamify-boss-text, #e8e8f0);
+}
+
+.idleSecondaryBtn:hover {
+	border-color: var(--gamify-gate-accent, #8ecae6);
+	color: var(--gamify-gate-accent, #8ecae6);
+}

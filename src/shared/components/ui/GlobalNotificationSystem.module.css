@@ -1,0 +1,265 @@
+/* ========================================
+   GLOBAL NOTIFICATION SYSTEM
+   ======================================== */
+
+.notificationsContainer {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    max-width: 400px;
+    pointer-events: none;
+}
+
+.notification {
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.95), rgba(0, 0, 0, 0.9));
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    padding: 16px 20px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    pointer-events: auto;
+    transform: translateX(100%);
+    opacity: 0;
+    animation: slideIn 0.3s ease-out forwards;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    min-width: 300px;
+    max-width: 400px;
+}
+
+.notification:hover {
+    transform: translateX(-5px);
+    border-color: rgba(255, 255, 255, 0.4);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+}
+
+/* Notification Types */
+.notification.success {
+    border-color: rgba(76, 175, 80, 0.6);
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(76, 175, 80, 0.05));
+}
+
+.notification.info {
+    border-color: rgba(33, 150, 243, 0.6);
+    background: linear-gradient(135deg, rgba(33, 150, 243, 0.1), rgba(33, 150, 243, 0.05));
+}
+
+.notification.warning {
+    border-color: rgba(255, 193, 7, 0.6);
+    background: linear-gradient(135deg, rgba(255, 193, 7, 0.1), rgba(255, 193, 7, 0.05));
+}
+
+.notification.error {
+    border-color: rgba(244, 67, 54, 0.6);
+    background: linear-gradient(135deg, rgba(244, 67, 54, 0.1), rgba(244, 67, 54, 0.05));
+}
+
+.notification.achievement {
+    border-color: rgba(255, 215, 0, 0.6);
+    background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 215, 0, 0.05));
+    box-shadow: 0 8px 32px rgba(255, 215, 0, 0.2);
+}
+
+.notification.quest {
+    border-color: rgba(156, 39, 176, 0.6);
+    background: linear-gradient(135deg, rgba(156, 39, 176, 0.1), rgba(156, 39, 176, 0.05));
+}
+
+.notification.boss {
+    border-color: rgba(255, 87, 34, 0.6);
+    background: linear-gradient(135deg, rgba(255, 87, 34, 0.1), rgba(255, 87, 34, 0.05));
+}
+
+.notification.crafting {
+    border-color: rgba(255, 152, 0, 0.6);
+    background: linear-gradient(135deg, rgba(255, 152, 0, 0.1), rgba(255, 152, 0, 0.05));
+}
+
+.notification.shop {
+    border-color: rgba(0, 150, 136, 0.6);
+    background: linear-gradient(135deg, rgba(0, 150, 136, 0.1), rgba(0, 150, 136, 0.05));
+}
+
+.notification.energy {
+    border-color: rgba(255, 235, 59, 0.6);
+    background: linear-gradient(135deg, rgba(255, 235, 59, 0.1), rgba(255, 235, 59, 0.05));
+}
+
+.notification.habit {
+    border-color: rgba(76, 175, 80, 0.6);
+    background: linear-gradient(135deg, rgba(76, 175, 80, 0.1), rgba(76, 175, 80, 0.05));
+}
+
+.notification.pomodoro {
+    border-color: rgba(233, 30, 99, 0.6);
+    background: linear-gradient(135deg, rgba(233, 30, 99, 0.1), rgba(233, 30, 99, 0.05));
+}
+
+/* Priority Levels */
+.notification.high {
+    border-width: 3px;
+    box-shadow: 0 12px 40px rgba(255, 0, 0, 0.3);
+}
+
+.notification.low {
+    opacity: 0.8;
+    border-width: 1px;
+}
+
+.notificationContent {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+}
+
+.notificationIcon {
+    font-size: 20px;
+    flex-shrink: 0;
+    margin-top: 2px;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.notificationTitle {
+    font-weight: 600;
+    font-size: 14px;
+    line-height: 1.2;
+    color: #ffffff;
+}
+
+.notificationMessage {
+    font-size: 12px;
+    line-height: 1.4;
+    color: rgba(255, 255, 255, 0.8);
+    word-wrap: break-word;
+}
+
+.actionButton {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 11px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    align-self: flex-start;
+    margin-top: 4px;
+}
+
+.actionButton:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.4);
+}
+
+.closeButton {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.6);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.closeButton:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+/* Animations */
+@keyframes slideIn {
+    from {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+
+    to {
+        transform: translateX(100%);
+        opacity: 0;
+    }
+}
+
+.notification.removing {
+    animation: slideOut 0.3s ease-in forwards;
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+    .notificationsContainer {
+        top: 10px;
+        right: 10px;
+        left: 10px;
+        max-width: none;
+    }
+
+    .notification {
+        min-width: auto;
+        max-width: none;
+        padding: 12px 16px;
+    }
+
+    .notificationTitle {
+        font-size: 13px;
+    }
+
+    .notificationMessage {
+        font-size: 11px;
+    }
+
+    .notificationIcon {
+        font-size: 18px;
+    }
+}
+
+/* Dark/Light Theme Adaptations */
+.theme-light .notification {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.9));
+    color: #333;
+    border-color: rgba(0, 0, 0, 0.2);
+}
+
+.theme-light .notificationTitle {
+    color: #333;
+}
+
+.theme-light .notificationMessage {
+    color: rgba(0, 0, 0, 0.7);
+}
+
+.theme-light .closeButton {
+    color: rgba(0, 0, 0, 0.6);
+}
+
+.theme-light .closeButton:hover {
+    background: rgba(0, 0, 0, 0.1);
+    color: #333;
+}

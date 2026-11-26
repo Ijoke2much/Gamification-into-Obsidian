@@ -1,0 +1,304 @@
+/* ========================================
+   FEATURE PARITY STYLES - Timeline & Calendar
+   ======================================== */
+
+/* CP Badge - Character Points */
+.cpBadge {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(139, 92, 246, 0.1));
+    border-color: rgba(168, 85, 247, 0.3);
+}
+
+.cpBadge:hover {
+    background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(139, 92, 246, 0.15));
+    box-shadow: 0 0 10px rgba(168, 85, 247, 0.2);
+}
+
+.cpBadge .statValue {
+    color: rgb(107, 33, 168);
+    font-weight: 800;
+}
+
+/* Priority Badge - High/Medium/Low */
+.priorityBadge {
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.1), rgba(0, 0, 0, 0.08));
+    border-color: rgba(0, 0, 0, 0.2);
+}
+
+.priorityBadge:hover {
+    background: linear-gradient(135deg, rgba(0, 0, 0, 0.15), rgba(0, 0, 0, 0.12));
+    box-shadow: 0 0 8px rgba(0, 0, 0, 0.15);
+}
+
+.priorityBadge .statValue {
+    color: rgba(0, 0, 0, 0.85);
+    font-weight: 700;
+}
+
+/* Subtasks Badge - Progress tracker */
+.subtasksBadge {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(37, 99, 235, 0.08));
+    border-color: rgba(59, 130, 246, 0.25);
+}
+
+.subtasksBadge:hover {
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.18), rgba(37, 99, 235, 0.12));
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.15);
+}
+
+.subtasksBadge .statValue {
+    color: rgb(29, 78, 216);
+    font-weight: 700;
+}
+
+/* Recurrence Badge - Repeating tasks */
+.recurrenceBadge {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.12), rgba(5, 150, 105, 0.08));
+    border-color: rgba(16, 185, 129, 0.25);
+}
+
+.recurrenceBadge:hover {
+    background: linear-gradient(135deg, rgba(16, 185, 129, 0.18), rgba(5, 150, 105, 0.12));
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.15);
+}
+
+.recurrenceBadge .statValue {
+    color: rgb(5, 120, 85);
+    font-weight: 700;
+    text-transform: capitalize;
+}
+
+/* ========================================
+   CALENDAR VIEW ENHANCEMENTS
+   ======================================== */
+
+/* Quest item enhancements in calendar view */
+.questSubtasks {
+    margin-top: 6px;
+    padding: 4px 8px;
+    background: rgba(59, 130, 246, 0.08);
+    border-left: 3px solid rgba(59, 130, 246, 0.3);
+    border-radius: 4px;
+    font-size: 11px;
+    color: rgb(29, 78, 216);
+    font-weight: 600;
+}
+
+.questCp {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    background: rgba(168, 85, 247, 0.15);
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    color: rgb(107, 33, 168);
+}
+
+.questPriorityLabel {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+.questPriorityLabel.high {
+    background: rgba(239, 68, 68, 0.15);
+    color: rgb(185, 28, 28);
+}
+
+.questPriorityLabel.medium {
+    background: rgba(245, 158, 11, 0.15);
+    color: rgb(180, 83, 9);
+}
+
+.questPriorityLabel.low {
+    background: rgba(34, 197, 94, 0.15);
+    color: rgb(21, 128, 61);
+}
+
+.questRecurrence {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    background: rgba(16, 185, 129, 0.12);
+    border: 1px solid rgba(16, 185, 129, 0.25);
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    color: rgb(5, 120, 85);
+    text-transform: capitalize;
+}
+
+.questCoins {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    background: rgba(217, 119, 6, 0.12);
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+    color: rgb(120, 53, 15);
+}
+
+.questSkills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    margin-top: 6px;
+}
+
+.questSkillTag {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 6px;
+    background: rgba(139, 92, 246, 0.12);
+    border: 1px solid rgba(139, 92, 246, 0.25);
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 600;
+    color: rgb(76, 29, 149);
+}
+
+.questDifficulty {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    background: rgba(0, 0, 0, 0.08);
+    border: 1px solid rgba(0, 0, 0, 0.12);
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 700;
+}
+
+/* Enhanced quest meta layout for calendar */
+.questMeta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    margin-top: 8px;
+}
+
+.questMetaRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+    width: 100%;
+    margin-top: 4px;
+}
+
+/* Subtasks progress bar for calendar view */
+.subtasksProgress {
+    margin-top: 6px;
+    padding: 6px 8px;
+    background: rgba(59, 130, 246, 0.06);
+    border-radius: 6px;
+}
+
+.subtasksProgressLabel {
+    font-size: 10px;
+    font-weight: 600;
+    color: rgb(29, 78, 216);
+    margin-bottom: 4px;
+}
+
+.subtasksProgressBar {
+    height: 6px;
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.subtasksProgressFill {
+    height: 100%;
+    background: linear-gradient(90deg, rgb(59, 130, 246), rgb(37, 99, 235));
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.subtasksProgressFill.complete {
+    background: linear-gradient(90deg, rgb(34, 197, 94), rgb(21, 128, 61));
+}
+
+/* Mobile responsiveness for new badges */
+@media (max-width: 768px) {
+
+    .cpBadge,
+    .priorityBadge,
+    .subtasksBadge,
+    .recurrenceBadge {
+        font-size: 10px;
+    }
+
+    .questCp,
+    .questPriorityLabel,
+    .questRecurrence,
+    .questCoins,
+    .questDifficulty {
+        font-size: 10px;
+        padding: 2px 6px;
+    }
+
+    .questSkillTag {
+        font-size: 9px;
+        padding: 2px 5px;
+    }
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+    .cpBadge .statValue {
+        color: rgba(196, 181, 253, 0.95);
+    }
+
+    .priorityBadge .statValue {
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .subtasksBadge .statValue {
+        color: rgba(147, 197, 253, 0.95);
+    }
+
+    .recurrenceBadge .statValue {
+        color: rgba(167, 243, 208, 0.95);
+    }
+
+    .questPriorityLabel.high {
+        color: rgba(252, 165, 165, 0.95);
+    }
+
+    .questPriorityLabel.medium {
+        color: rgba(253, 224, 155, 0.95);
+    }
+
+    .questPriorityLabel.low {
+        color: rgba(167, 243, 208, 0.95);
+    }
+}
+
+/* Animation for badge appearance */
+.statBadge:nth-child(6) {
+    animation: badgeSlideIn 0.3s ease-out 0.3s both;
+}
+
+.statBadge:nth-child(7) {
+    animation: badgeSlideIn 0.3s ease-out 0.35s both;
+}
+
+.statBadge:nth-child(8) {
+    animation: badgeSlideIn 0.3s ease-out 0.4s both;
+}
+
+.statBadge:nth-child(9) {
+    animation: badgeSlideIn 0.3s ease-out 0.45s both;
+}

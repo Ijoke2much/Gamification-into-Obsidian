@@ -1,0 +1,1070 @@
+.root {
+    padding: 16px;
+    height: 100%;
+    overflow-y: auto;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.headerControls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-end;
+}
+
+.exportButtons {
+    display: flex;
+    gap: 8px;
+}
+
+.exportBtn {
+    background: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    padding: 4px 8px;
+    cursor: pointer;
+    color: var(--text-normal);
+    font-size: 11px;
+    transition: background-color 0.2s;
+}
+
+.exportBtn:hover {
+    background: var(--background-modifier-hover);
+}
+
+.title {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text-normal);
+}
+
+.range {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: var(--text-muted);
+}
+
+.navBtn {
+    background: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    padding: 4px 8px;
+    cursor: pointer;
+    color: var(--text-normal);
+    font-size: 12px;
+    transition: background-color 0.2s;
+}
+
+.navBtn:hover {
+    background: var(--background-modifier-hover);
+}
+
+.cardsRow {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.card {
+    padding: 16px;
+    text-align: center;
+}
+
+.cardHeader {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.bigNumber {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--text-accent);
+    margin-bottom: 4px;
+}
+
+.subtle {
+    font-size: 12px;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.note {
+    font-size: 11px;
+    color: var(--text-faint);
+    font-style: italic;
+}
+
+.gaugeRow {
+    display: flex;
+    padding: 20px;
+    margin-bottom: 20px;
+    gap: 20px;
+}
+
+.gaugeCol {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.gaugeWrap {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.metricsCol {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 8px;
+}
+
+.metricRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+    color: var(--text-normal);
+}
+
+.metricVal {
+    font-weight: 600;
+    color: var(--text-accent);
+}
+
+.sectionHeader {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-normal);
+    margin-bottom: 12px;
+    margin-top: 24px;
+}
+
+.activityChart {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    padding: 20px 16px 16px;
+    gap: 8px;
+    min-height: 160px;
+}
+
+.barCol {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    gap: 8px;
+}
+
+.barStack {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    min-height: 120px;
+    justify-content: end;
+}
+
+.barTasks {
+    background: var(--interactive-accent);
+    border-radius: 2px 2px 0 0;
+    min-width: 20px;
+    transition: height 0.3s ease;
+}
+
+.barHabits {
+    background: var(--interactive-success);
+    border-radius: 2px 2px 0 0;
+    min-width: 20px;
+    transition: height 0.3s ease;
+}
+
+.barLabel {
+    font-size: 11px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.barTotal {
+    font-size: 10px;
+    color: var(--text-faint);
+    min-height: 14px;
+}
+
+.legend {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    padding: 16px;
+    border-top: 1px solid var(--background-modifier-border);
+}
+
+.legendItem {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.legendTasks {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    background: var(--interactive-accent);
+    border-radius: 2px;
+}
+
+.legendHabits {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    background: var(--interactive-success);
+    border-radius: 2px;
+}
+
+/* Coin Flow Chart Styles */
+.coinFlowChart {
+    display: flex;
+    justify-content: space-between;
+    align-items: end;
+    padding: 20px 16px 16px;
+    gap: 8px;
+    min-height: 140px;
+}
+
+.barEarned {
+    background: var(--interactive-success);
+    border-radius: 2px 2px 0 0;
+    min-width: 20px;
+    transition: height 0.3s ease;
+}
+
+.barSpent {
+    background: var(--interactive-accent-hover);
+    border-radius: 2px 2px 0 0;
+    min-width: 20px;
+    transition: height 0.3s ease;
+}
+
+.legendEarned {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    background: var(--interactive-success);
+    border-radius: 2px;
+}
+
+.legendSpent {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    background: var(--interactive-accent-hover);
+    border-radius: 2px;
+}
+
+/* Custom Metrics Styles */
+.metricsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+    padding: 16px;
+}
+
+.metricCard {
+    background: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.metricCard:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.metricName {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+    line-height: 1.2;
+    min-height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.metricValue {
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--text-accent);
+    margin-bottom: 8px;
+}
+
+.metricUnit {
+    font-size: 14px;
+    color: var(--text-muted);
+    margin-left: 2px;
+}
+
+.metricProgress {
+    background: var(--background-modifier-border);
+    border-radius: 4px;
+    height: 6px;
+    margin-bottom: 8px;
+    overflow: hidden;
+}
+
+.metricProgressBar {
+    background: var(--interactive-accent);
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.metricType {
+    font-size: 10px;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.metricsSummary {
+    display: flex;
+    justify-content: space-between;
+    padding: 16px;
+    border-top: 1px solid var(--background-modifier-border);
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+/* Create Metrics Button */
+.createMetricsBtn {
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+    border: none;
+    border-radius: 6px;
+    padding: 6px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    margin-left: 8px;
+    transition: background-color 0.2s;
+}
+
+.createMetricsBtn:hover {
+    background: var(--interactive-accent-hover);
+}
+
+/* Tab Navigation System */
+.tabNavigation {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 20px;
+    border-bottom: 1px solid var(--background-modifier-border);
+    overflow-x: auto;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding-bottom: 2px;
+}
+
+.tabNavigation::-webkit-scrollbar {
+    display: none;
+}
+
+.tabButton {
+    background: var(--background-secondary);
+    border: none;
+    border-radius: 6px 6px 0 0;
+    padding: 12px 20px;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    border-bottom: 2px solid transparent;
+    min-width: 120px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+}
+
+.tabButton:hover {
+    background: var(--background-modifier-hover);
+    color: var(--text-normal);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.activeTab {
+    background: var(--background-primary);
+    color: var(--text-normal);
+    border-bottom-color: var(--interactive-accent);
+    font-weight: 600;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.tabContent {
+    min-height: 400px;
+}
+
+/* Boss Analytics Components */
+.bossAnalyticsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.bossCard {
+    background: var(--background-secondary);
+    border-radius: 8px;
+    padding: 16px;
+    border: 1px solid var(--background-modifier-border);
+}
+
+.bossName {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 12px;
+    color: var(--text-normal);
+}
+
+.bossStats {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.bossStat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.bossStatValue {
+    font-weight: 600;
+    color: var(--text-normal);
+}
+
+/* Crafting Analytics Components */
+.craftingAnalyticsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.craftingCard {
+    background: var(--background-secondary);
+    border-radius: 8px;
+    padding: 16px;
+    border: 1px solid var(--background-modifier-border);
+}
+
+.craftingName {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 12px;
+    color: var(--text-normal);
+}
+
+.craftingStats {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.craftingStat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.craftingStatValue {
+    font-weight: 600;
+    color: var(--text-normal);
+}
+
+/* Rewards Grid */
+.rewardsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.rewardItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 16px;
+    background: var(--background-secondary);
+    border-radius: 8px;
+    border: 1px solid var(--background-modifier-border);
+}
+
+.rewardIcon {
+    font-size: 24px;
+    margin-bottom: 8px;
+}
+
+.rewardValue {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--interactive-success);
+    margin-bottom: 4px;
+}
+
+.rewardLabel {
+    font-size: 12px;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Empty State Styles */
+.emptyState {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--text-muted);
+}
+
+.emptyIcon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    opacity: 0.6;
+}
+
+.emptyTitle {
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--text-normal);
+    margin-bottom: 8px;
+}
+
+.emptyDescription {
+    font-size: 14px;
+    line-height: 1.5;
+    max-width: 300px;
+    margin: 0 auto;
+}
+
+.footerNote {
+    text-align: center;
+    font-size: 12px;
+    color: var(--text-faint);
+    margin-top: 24px;
+    padding: 16px;
+    border-top: 1px solid var(--background-modifier-border);
+    font-style: italic;
+}
+
+/* Achievement Analytics Components */
+.achievementAnalyticsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.achievementCard {
+    background: var(--background-secondary);
+    border-radius: 8px;
+    padding: 16px;
+    border: 1px solid var(--background-modifier-border);
+}
+
+.achievementName {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 12px;
+    color: var(--text-normal);
+    text-transform: capitalize;
+}
+
+.achievementStats {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.achievementStat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.achievementStatValue {
+    font-weight: 600;
+    color: var(--text-normal);
+}
+
+/* Shop Analytics Components */
+.bigPurchase {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+}
+
+.bigPurchaseIcon {
+    font-size: 32px;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--background-modifier-border);
+    border-radius: 8px;
+}
+
+.bigPurchaseInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.bigPurchaseTitle {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.bigPurchaseName {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-normal);
+}
+
+.bigPurchaseAmount {
+    font-size: 14px;
+    color: var(--interactive-accent);
+    font-weight: 500;
+}
+
+.categoriesGrid,
+.itemsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.categoryCard,
+.itemCard {
+    background: var(--background-secondary);
+    border-radius: 8px;
+    padding: 16px;
+    border: 1px solid var(--background-modifier-border);
+}
+
+.categoryName,
+.itemName {
+    font-weight: 600;
+    font-size: 14px;
+    margin-bottom: 12px;
+    color: var(--text-normal);
+}
+
+.categoryStats,
+.itemStats {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.categoryStat,
+.itemStat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.categoryStatValue,
+.itemStatValue {
+    font-weight: 600;
+    color: var(--text-normal);
+}
+
+.itemCategory {
+    margin-top: 8px;
+    padding: 4px 8px;
+    background: var(--background-modifier-border);
+    border-radius: 4px;
+    font-size: 10px;
+    color: var(--text-muted);
+    text-align: center;
+    text-transform: uppercase;
+    font-weight: 500;
+}
+
+.spendingAnalysis {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 16px;
+}
+
+.trendIndicator {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.trendLabel {
+    font-size: 14px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.trendValue {
+    font-size: 14px;
+    font-weight: 600;
+    padding: 4px 8px;
+    border-radius: 4px;
+}
+
+.trendValue.increasing {
+    color: var(--text-error);
+    background: var(--background-modifier-error);
+}
+
+.trendValue.decreasing {
+    color: var(--text-success);
+    background: var(--background-modifier-success);
+}
+
+.financialHealth {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 16px;
+}
+
+.healthMetric {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--background-secondary);
+    border-radius: 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.healthValue {
+    font-weight: 600;
+    color: var(--text-normal);
+}
+
+.peakTimes {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 16px;
+}
+
+.peakTimesLabel {
+    font-size: 14px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.peakTimesList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.peakTime {
+    padding: 6px 12px;
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+    border-radius: 16px;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+/* Energy Analytics Components */
+.energyTrendsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.trendItem {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.trendLabel {
+    font-size: 12px;
+    color: var(--text-muted);
+    font-weight: 500;
+}
+
+.trendValue {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-normal);
+}
+
+.recommendationsList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.recommendationItem {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px;
+    background: var(--background-secondary);
+    border-radius: 6px;
+    border-left: 3px solid var(--interactive-accent);
+}
+
+.recommendationIcon {
+    font-size: 16px;
+    flex-shrink: 0;
+    margin-top: 2px;
+}
+
+.recommendationText {
+    font-size: 13px;
+    color: var(--text-normal);
+    line-height: 1.4;
+}
+
+/* Responsive adjustments for narrow sidebar */
+@media (max-width: 400px) {
+    .root {
+        padding: 12px;
+    }
+
+    .cardsRow {
+        gap: 8px;
+    }
+
+    .card {
+        padding: 12px;
+    }
+
+    .bigNumber {
+        font-size: 24px;
+    }
+
+    .gaugeRow {
+        padding: 16px;
+        gap: 16px;
+    }
+
+    .activityChart,
+    .coinFlowChart {
+        padding: 16px 12px 12px;
+        gap: 6px;
+    }
+
+    .barStack {
+        min-width: 16px;
+    }
+
+    .metricsGrid {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 8px;
+        padding: 12px;
+    }
+
+    .metricCard {
+        padding: 10px;
+    }
+
+    .metricName {
+        font-size: 11px;
+        min-height: 24px;
+    }
+
+    .metricValue {
+        font-size: 18px;
+    }
+}
+
+/* Skills Analytics Styles */
+.skillsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px;
+    margin-top: 16px;
+}
+
+.skillCard {
+    background: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    padding: 16px;
+    transition: all 0.2s ease;
+}
+
+.skillCard:hover {
+    background: var(--background-modifier-hover);
+    border-color: var(--interactive-accent);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.skillHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.skillName {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-normal);
+}
+
+.skillUsage {
+    font-size: 12px;
+    color: var(--text-muted);
+    background: var(--background-primary);
+    padding: 4px 8px;
+    border-radius: 12px;
+}
+
+.skillProgress {
+    font-size: 12px;
+    color: var(--interactive-accent);
+    font-weight: 500;
+}
+
+.skillWarning {
+    font-size: 12px;
+    color: var(--text-error);
+    font-weight: 500;
+}
+
+.progressBar {
+    width: 100%;
+    height: 6px;
+    background: var(--background-modifier-border);
+    border-radius: 3px;
+    margin: 8px 0;
+    overflow: hidden;
+}
+
+.progressFill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--interactive-accent), var(--interactive-success));
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.skillStats {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.skillStat {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+}
+
+.skillStat span:first-child {
+    color: var(--text-muted);
+}
+
+.skillStatValue {
+    font-weight: 600;
+    color: var(--text-normal);
+}
+
+/* Quest Analytics Tab specific styles */
+.questAnalyticsContainer {
+    padding: 0;
+    margin: 0;
+    min-height: 400px;
+    width: 100%;
+}
+
+/* Responsive adjustments for skills */
+@media (max-width: 400px) {
+    .skillsGrid {
+        grid-template-columns: 1fr;
+        gap: 12px;
+    }
+
+    .skillCard {
+        padding: 12px;
+    }
+
+    .skillName {
+        font-size: 14px;
+    }
+
+    .skillStats {
+        gap: 4px;
+    }
+}
+
+/* Enhanced Boss Analytics Integration */
+.enhancedBossAnalytics {
+    margin-bottom: 24px;
+}
+
+/* Real-Time Analytics Tab */
+.realTimeAnalyticsContainer {
+    padding: 0;
+    margin: 0;
+    width: 100%;
+}
+
+.realTimeDashboard {
+    background: transparent;
+    padding: 0;
+    border-radius: 0;
+    box-shadow: none;
+}

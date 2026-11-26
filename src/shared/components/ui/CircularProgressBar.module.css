@@ -1,0 +1,52 @@
+.progress-ring {
+  position: relative;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 100px;
+  height: 100px;
+  transition: filter 0.3s ease;
+}
+
+/* Text in the center */
+.percentText {
+  position: absolute;
+  font-weight: bold;
+  font-size: 1.2em;
+  color: #ffffff;
+  text-shadow: 0 0 4px #000000;
+}
+
+/* Quest active aura */
+.progress-ring.active {
+  filter: drop-shadow(0 0 10px rgba(0, 255, 200, 0.7)) drop-shadow(0 0 18px rgba(0, 255, 200, 0.4));
+}
+
+/* Pulse when complete */
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 6px lime);
+  }
+
+  50% {
+    transform: scale(1.1);
+    filter: drop-shadow(0 0 16px lime);
+  }
+
+  100% {
+    transform: scale(1);
+    filter: drop-shadow(0 0 6px lime);
+  }
+}
+
+.progress-ring.complete {
+  animation: pulse 1s ease-in-out infinite;
+}
+
+.circularProgressWrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 1rem;
+}

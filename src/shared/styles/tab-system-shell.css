@@ -1,0 +1,185 @@
+/**
+ * System Hunter shell — tab surfaces that use data-pixel-shell.
+ * Removes pixel-only behaviors (slab shadow, Press Start type, press transforms)
+ * while keeping per-tab layout in module CSS.
+ *
+ * Prefer html + ancestor shell selectors so Solo Leveling wins even when a
+ * module CSS block redeclares classic --pixel-* tokens.
+ */
+
+html[data-gamification-visual-theme='system-hunter'] [data-pixel-shell],
+[data-gamification-plugin][data-gamification-shell='system'] [data-pixel-shell],
+[data-gamification-shell='system'] [data-pixel-shell] {
+	--pixel-bg: var(--go-bg, #071527);
+	--pixel-panel: var(--go-panel, rgba(10, 30, 58, 0.9));
+	--pixel-panel-alt: var(--go-panel-strong, rgba(8, 28, 54, 0.85));
+	--pixel-border-dark: var(--go-border, rgba(34, 200, 255, 0.42));
+	--pixel-border-light: var(--go-border, rgba(34, 200, 255, 0.42));
+	--pixel-accent: var(--go-accent, #22c8ff);
+	--pixel-highlight: var(--go-gold, #ffd83d);
+	--pixel-text: var(--go-text, #e0f2fe);
+	--pixel-muted: var(--go-muted, #9ec7df);
+	--pixel-shadow: var(--go-shadow, 0 0 22px rgba(34, 200, 255, 0.24));
+	--pixel-shadow-pressed: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16));
+	--pixel-card-radius: var(--go-radius, 2px);
+
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+	color: var(--go-text, #e0f2fe) !important;
+	background-color: var(--go-bg, #071527) !important;
+	background-image: var(--go-energy-field, none) !important;
+	background-repeat: no-repeat !important;
+	background-size: cover !important;
+	background-position: center !important;
+	border-color: var(--go-border, rgba(34, 200, 255, 0.42)) !important;
+	border-width: 1px !important;
+	border-radius: var(--go-radius, 2px) !important;
+	box-shadow: var(--go-shadow, 0 0 22px rgba(34, 200, 255, 0.24)) !important;
+	image-rendering: auto !important;
+	-webkit-font-smoothing: antialiased !important;
+	text-shadow: none !important;
+}
+
+html[data-gamification-visual-theme='system-hunter'] [data-pixel-shell] :is(h1, h2, h3, h4, h5, h6),
+[data-gamification-shell='system'] [data-pixel-shell] :is(h1, h2, h3, h4, h5, h6) {
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+	text-shadow: none !important;
+	letter-spacing: 0.08em;
+}
+
+html[data-gamification-visual-theme='system-hunter'] [data-pixel-shell] button,
+html[data-gamification-visual-theme='system-hunter'] [data-pixel-shell] input,
+html[data-gamification-visual-theme='system-hunter'] [data-pixel-shell] select,
+html[data-gamification-visual-theme='system-hunter'] [data-pixel-shell] textarea,
+[data-gamification-shell='system'] [data-pixel-shell] button,
+[data-gamification-shell='system'] [data-pixel-shell] input,
+[data-gamification-shell='system'] [data-pixel-shell] select,
+[data-gamification-shell='system'] [data-pixel-shell] textarea {
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+	border-radius: var(--go-radius, 2px) !important;
+	border-width: 1px !important;
+	text-shadow: none !important;
+}
+
+html[data-gamification-visual-theme='system-hunter'] [data-pixel-shell] button,
+[data-gamification-shell='system'] [data-pixel-shell] button {
+	box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16)) !important;
+}
+
+/* Mobile day agenda — keep round check + soft add controls (beat shell radius 2px) */
+html[data-gamification-visual-theme='system-hunter'] [data-pixel-shell] [data-mobile-day-agenda] button[data-agenda-check],
+[data-gamification-shell='system'] [data-pixel-shell] [data-mobile-day-agenda] button[data-agenda-check] {
+	border-radius: 999px !important;
+	width: 34px !important;
+	height: 34px !important;
+	min-width: 34px !important;
+	min-height: 34px !important;
+	padding: 0 !important;
+	background: var(--go-bg, #071222) !important;
+	border: 2px solid color-mix(in srgb, var(--go-accent, #22c8ff) 60%, transparent) !important;
+	box-shadow: none !important;
+	color: transparent !important;
+}
+
+html[data-gamification-visual-theme='system-hunter'] [data-pixel-shell] [data-mobile-day-agenda] button[data-agenda-add],
+[data-gamification-shell='system'] [data-pixel-shell] [data-mobile-day-agenda] button[data-agenda-add] {
+	border-radius: 10px !important;
+	background: var(--go-card-soft, rgba(8, 28, 54, 0.72)) !important;
+	border: 1px dashed color-mix(in srgb, var(--go-accent, #22c8ff) 50%, transparent) !important;
+	color: var(--go-text, #e0f2fe) !important;
+	box-shadow: none !important;
+}
+
+html[data-gamification-visual-theme='system-hunter'] [data-pixel-shell] button:hover,
+html[data-gamification-visual-theme='system-hunter'] [data-pixel-shell] button:active,
+[data-gamification-shell='system'] [data-pixel-shell] button:hover,
+[data-gamification-shell='system'] [data-pixel-shell] button:active {
+	transform: none !important;
+}
+
+/* Keep intentional pixel enclaves (dungeon / boss) untouched */
+html[data-gamification-visual-theme='system-hunter'] [data-gamification-pixel-enclave],
+[data-gamification-shell='system'] [data-gamification-pixel-enclave] {
+	font-family: "Press Start 2P", "VT323", "Courier New", monospace;
+}
+
+/* Quest card / board children that hardcode Press Start under data-pixel-shell */
+html[data-gamification-visual-theme='system-hunter'] [data-pixel-shell='quests'] :is(
+	[class*='questTitle'],
+	[class*='questCategory'],
+	[class*='actionButton'],
+	[class*='skillTag'],
+	[class*='difficultyTag'],
+	[class*='priorityTag'],
+	[class*='metaBadge'],
+	[class*='rankBadge'],
+	[class*='adhdButton'],
+	[class*='energyBadge'],
+	[class*='headerButton'],
+	[class*='addQuestButton'],
+	[class*='title']
+),
+[data-gamification-shell='system'] [data-pixel-shell='quests'] :is(
+	[class*='questTitle'],
+	[class*='questCategory'],
+	[class*='actionButton'],
+	[class*='skillTag'],
+	[class*='difficultyTag'],
+	[class*='priorityTag'],
+	[class*='metaBadge'],
+	[class*='rankBadge'],
+	[class*='adhdButton'],
+	[class*='energyBadge'],
+	[class*='headerButton'],
+	[class*='addQuestButton'],
+	[class*='title']
+) {
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+	text-shadow: none !important;
+}
+
+/*
+ * iPhone Dynamic Island / status bar — MUST live in an imported global CSS file.
+ * (styles.css is not imported; module CSS alone loses to Obsidian / !important rules.)
+ * iOS Obsidian often reports env(safe-area-inset-top) as 0 → hard floor 59px.
+ */
+body.is-mobile .workspace-leaf-content[data-type='gamified-player-tab'] > .view-content,
+body.is-phone .workspace-leaf-content[data-type='gamified-player-tab'] > .view-content,
+body.is-ios .workspace-leaf-content[data-type='gamified-player-tab'] > .view-content,
+.workspace-leaf-content[data-type='gamified-player-tab'] .gamification-player-view-root,
+.gamification-player-shell[data-gamification-mobile='true'],
+.gamification-player-shell.mobile-container {
+	padding-top: max(59px, calc(12px + env(safe-area-inset-top, 0px))) !important;
+	padding-left: max(8px, env(safe-area-inset-left, 0px)) !important;
+	padding-right: max(8px, env(safe-area-inset-right, 0px)) !important;
+	box-sizing: border-box !important;
+}
+
+.gamification-player-shell[data-gamification-mobile='true'] .gamify-tab-nav {
+	position: sticky !important;
+	/* Parent already clears the island — stick to top of the padded content */
+	top: 0 !important;
+	z-index: 30 !important;
+	margin-top: 0 !important;
+	backdrop-filter: none !important;
+	-webkit-backdrop-filter: none !important;
+}
+
+html:not([data-gamification-visual-theme='clay']) .gamification-player-shell[data-gamification-mobile='true'] .gamify-tab-nav {
+	background: var(--background-primary, #0a1628) !important;
+	background-image: none !important;
+}
+
+html[data-gamification-visual-theme='system-hunter'] .gamification-player-shell[data-gamification-mobile='true'] .gamify-tab-nav {
+	background: transparent !important;
+	background-image: none !important;
+	backdrop-filter: none !important;
+	-webkit-backdrop-filter: none !important;
+}
+
+/* Dungeon / boss stay solid. This file's shell rule would otherwise paint the energy field on them. */
+html[data-gamification-visual-theme='system-hunter'] [data-gamification-pixel-enclave],
+html[data-gamification-visual-theme='system-hunter'] [data-gamification-pixel-enclave] [data-pixel-shell] {
+	background-color: var(--pixel-bg, #1b1d2f) !important;
+	background-image: none !important;
+	animation: none !important;
+}

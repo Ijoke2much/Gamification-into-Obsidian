@@ -1,0 +1,421 @@
+.skillProgress {
+    --sp-panel: var(--pixel-panel-alt, #2e3152);
+    --sp-border: var(--pixel-border-dark, #0f1120);
+    --sp-border-hi: var(--pixel-border-light, #5b61a2);
+    --sp-text: var(--pixel-text, #ecefff);
+    --sp-muted: var(--pixel-muted, #bac2e3);
+    --sp-highlight: var(--pixel-highlight, #ffd166);
+    --sp-shadow: 3px 3px 0 var(--sp-border);
+
+    background: var(--sp-panel);
+    border: 2px solid var(--sp-border);
+    border-radius: 0;
+    padding: 12px;
+    margin: 8px 0;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+    box-shadow: var(--sp-shadow), inset 0 0 0 1px var(--sp-border-hi);
+    font-family: "VT323", "Courier New", monospace;
+    color: var(--sp-text);
+    image-rendering: pixelated;
+}
+
+.skillProgress:hover {
+    transform: translate(1px, 1px);
+    box-shadow: 2px 2px 0 var(--sp-border), inset 0 0 0 1px var(--sp-border-hi);
+}
+
+/* Size variants */
+.small {
+    padding: 8px;
+    font-size: 14px;
+}
+
+.medium {
+    padding: 12px;
+    font-size: 16px;
+}
+
+.large {
+    padding: 16px;
+    font-size: 18px;
+}
+
+.compact {
+    padding: 6px 10px;
+    font-size: 11px;
+    margin: 2px 0;
+}
+
+.compact .skillHeader {
+    gap: 6px;
+    margin-bottom: 4px;
+}
+
+.compact .skillIcon {
+    font-size: 16px;
+}
+
+.compact .skillName {
+    font-size: 0.38rem;
+    line-height: 1.45;
+}
+
+.small .skillName {
+    font-size: 0.46rem;
+    line-height: 1.5;
+}
+
+.compact .levelInfo {
+    font-size: 10px;
+}
+
+.compact .progressBar {
+    height: 6px;
+    margin-bottom: 4px;
+}
+
+.compact .progressText {
+    font-size: 10px;
+}
+
+.compact .skillDetails {
+    display: none;
+}
+
+.detailed {
+    padding: 18px;
+    font-size: 18px;
+}
+
+.detailed .skillHeader {
+    gap: 14px;
+    margin-bottom: 14px;
+}
+
+.detailed .skillIcon {
+    font-size: 32px;
+}
+
+.detailed .skillName {
+    font-size: 0.58rem;
+}
+
+.detailed .levelInfo {
+    font-size: 0.95rem;
+}
+
+.detailed .progressBar {
+    height: 12px;
+    margin-bottom: 8px;
+}
+
+.detailed .progressText {
+    font-size: 0.95rem;
+}
+
+.detailed .statRow {
+    font-size: 0.92rem;
+    margin-bottom: 8px;
+}
+
+/* Skill Header */
+.skillHeader {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.skillIcon {
+    font-size: 24px;
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    margin-top: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid var(--sp-border);
+    background: var(--pixel-bg, #1b1d2f);
+    box-shadow: 2px 2px 0 var(--sp-border), inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+}
+
+.skillInfo {
+    flex: 1;
+    min-width: 0;
+}
+
+.skillName {
+    margin: 0 0 4px 0;
+    font-family: "Press Start 2P", "VT323", monospace;
+    font-size: 0.52rem;
+    line-height: 1.55;
+    color: var(--sp-text);
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+    hyphens: auto;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+
+.levelInfo {
+    font-size: 0.95rem;
+    color: var(--sp-muted);
+    font-weight: 600;
+}
+
+.masteryBadge {
+    background: var(--sp-highlight);
+    color: var(--sp-border);
+    font-family: "Press Start 2P", "VT323", monospace;
+    font-size: 0.35rem;
+    line-height: 1.45;
+    padding: 6px 8px;
+    border-radius: 0;
+    border: 2px solid var(--sp-border);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    box-shadow: 2px 2px 0 var(--sp-border);
+    animation: masteryGlow 2s ease-in-out infinite alternate;
+}
+
+/* Progress Bar */
+.progressContainer {
+    margin-bottom: 12px;
+}
+
+.progressBar {
+    width: 100%;
+    height: 10px;
+    background: var(--pixel-bg, #1b1d2f);
+    border-radius: 0;
+    overflow: hidden;
+    margin-bottom: 6px;
+    border: 2px solid var(--sp-border);
+    box-shadow: inset 0 0 0 1px var(--sp-border-hi);
+}
+
+.progressFill {
+    height: 100%;
+    border-radius: 0;
+    transition: width 0.35s ease, background-color 0.25s ease;
+    position: relative;
+    background: repeating-linear-gradient(
+        -45deg,
+        #22c55e,
+        #22c55e 4px,
+        #16a34a 4px,
+        #16a34a 8px
+    );
+    box-shadow: inset 0 2px 0 rgba(255, 255, 255, 0.18);
+}
+
+.progressFill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.22), transparent);
+    animation: shimmer 2s infinite;
+}
+
+.progressText {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.92rem;
+    color: var(--sp-muted);
+}
+
+.progressPercent {
+    color: var(--sp-muted);
+    font-style: italic;
+}
+
+/* Skill Details */
+.skillDetails {
+    border-top: 2px solid var(--sp-border);
+    padding-top: 12px;
+}
+
+.statRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 0.9rem;
+    color: var(--sp-muted);
+}
+
+.statRow:last-child {
+    margin-bottom: 0;
+}
+
+.statValue {
+    font-weight: 700;
+    font-family: "Press Start 2P", "VT323", monospace;
+    font-size: 0.42rem;
+    color: var(--sp-highlight);
+}
+
+.nextLevelPreview {
+    background: var(--pixel-bg, #1b1d2f);
+    border: 2px solid var(--sp-border);
+    border-radius: 0;
+    padding: 10px;
+    margin-top: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.85rem;
+    box-shadow: inset 0 0 0 1px var(--sp-border-hi);
+}
+
+.bonusText {
+    color: var(--pixel-ok, #4ade80);
+    font-family: "Press Start 2P", "VT323", monospace;
+    font-size: 0.38rem;
+    line-height: 1.45;
+    font-weight: 700;
+}
+
+/* Visual Effects */
+.locked {
+    opacity: 0.65;
+    filter: grayscale(0.25);
+}
+
+.locked .skillName {
+    color: var(--sp-muted);
+}
+
+.pulsing {
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.glowing {
+    box-shadow: 0 0 0 2px var(--pixel-accent, #8ecae6), var(--sp-shadow),
+        inset 0 0 0 1px var(--sp-border-hi);
+    animation: glow 2s ease-in-out infinite alternate;
+}
+
+.mastered {
+    background: var(--pixel-panel, #252742);
+    border-color: var(--sp-highlight);
+    box-shadow: var(--sp-shadow), inset 0 0 0 1px var(--sp-highlight);
+}
+
+.masteryOverlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    pointer-events: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.masterySparkles {
+    font-size: 20px;
+    animation: sparkle 3s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%,
+    100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.01);
+    }
+}
+
+@keyframes glow {
+    0% {
+        box-shadow: 0 0 0 1px var(--pixel-accent, #8ecae6), var(--sp-shadow),
+            inset 0 0 0 1px var(--sp-border-hi);
+    }
+    100% {
+        box-shadow: 0 0 0 3px rgba(142, 202, 230, 0.35), var(--sp-shadow),
+            inset 0 0 0 1px var(--sp-border-hi);
+    }
+}
+
+@keyframes masteryGlow {
+    0% {
+        filter: brightness(1);
+    }
+    100% {
+        filter: brightness(1.08);
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        transform: translateX(-100%);
+    }
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+@keyframes sparkle {
+    0%,
+    100% {
+        opacity: 0.35;
+        transform: scale(0.9);
+    }
+    50% {
+        opacity: 1;
+        transform: scale(1.1);
+    }
+}
+
+@media (max-width: 768px) {
+    .skillProgress {
+        padding: 10px;
+        margin: 6px 0;
+    }
+
+    .skillHeader {
+        gap: 8px;
+        margin-bottom: 10px;
+    }
+
+    .skillIcon {
+        font-size: 20px;
+        width: 36px;
+        height: 36px;
+    }
+
+    .skillName {
+        font-size: 0.48rem;
+    }
+
+    .progressBar {
+        height: 8px;
+    }
+
+    .statRow {
+        font-size: 0.85rem;
+    }
+}
+
+@media (hover: none) and (pointer: coarse) {
+    .skillProgress {
+        min-height: 60px;
+    }
+
+    .skillProgress:active {
+        transform: translate(2px, 2px);
+        box-shadow: 1px 1px 0 var(--sp-border), inset 0 0 0 1px var(--sp-border-hi);
+    }
+}

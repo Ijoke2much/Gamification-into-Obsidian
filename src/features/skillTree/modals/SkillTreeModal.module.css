@@ -1,0 +1,1033 @@
+/* Skill Codex — pixel shell (tokens align with PlayerStats pixel / TabView) */
+
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(15, 17, 32, 0.82);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    animation: fadeIn 0.25s ease-out;
+}
+
+.modalContent {
+    --pixel-bg: #1b1d2f;
+    --pixel-panel: #252742;
+    --pixel-panel-alt: #2e3152;
+    --pixel-border-dark: #0f1120;
+    --pixel-border-light: #5b61a2;
+    --pixel-accent: #8ecae6;
+    --pixel-highlight: #ffd166;
+    --pixel-text: #ecefff;
+    --pixel-muted: #bac2e3;
+    --pixel-ok: #4ade80;
+    --pixel-shadow: 3px 3px 0 var(--pixel-border-dark);
+
+    position: relative;
+
+    background: var(--pixel-panel);
+    color: var(--pixel-text);
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: 0;
+    width: 90vw;
+    max-width: 900px;
+    max-height: 85vh;
+    overflow: hidden;
+    box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light);
+    animation: slideIn 0.22s ease-out;
+    font-family: "VT323", "Courier New", monospace;
+    font-size: 20px;
+    line-height: 1.35;
+    image-rendering: pixelated;
+}
+
+.modalHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 2px solid var(--pixel-border-dark);
+    background: var(--pixel-panel-alt);
+    box-shadow: inset 0 -1px 0 var(--pixel-border-light);
+}
+
+.modalTitle {
+    margin: 0;
+    font-family: "Press Start 2P", "VT323", monospace;
+    font-size: 0.65rem;
+    line-height: 1.6;
+    color: var(--pixel-highlight);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.closeButton {
+    background: var(--pixel-panel);
+    border: 2px solid var(--pixel-border-dark);
+    color: var(--pixel-muted);
+    font-size: 16px;
+    cursor: pointer;
+    width: 36px;
+    height: 36px;
+    border-radius: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.1s ease, color 0.15s ease;
+    box-shadow: var(--pixel-shadow);
+    font-family: inherit;
+    line-height: 1;
+}
+
+.closeButton:hover {
+    color: var(--pixel-text);
+    transform: translate(1px, 1px);
+    box-shadow: 2px 2px 0 var(--pixel-border-dark);
+}
+
+.tabNavigation {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0;
+    background: var(--pixel-bg);
+    border-bottom: 2px solid var(--pixel-border-dark);
+}
+
+.tab {
+    flex: 1;
+    min-width: 96px;
+    padding: 12px 10px;
+    background: var(--pixel-bg);
+    border: none;
+    border-right: 2px solid var(--pixel-border-dark);
+    border-bottom: 2px solid transparent;
+    color: var(--pixel-muted);
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-family: inherit;
+    transition: background 0.12s ease, color 0.12s ease;
+    margin-bottom: -2px;
+}
+
+.tab:last-child {
+    border-right: none;
+}
+
+.tab:hover {
+    background: var(--pixel-panel-alt);
+    color: var(--pixel-text);
+}
+
+.tab.active {
+    color: var(--pixel-highlight);
+    background: var(--pixel-panel);
+    border-bottom-color: var(--pixel-highlight);
+    box-shadow: inset 0 0 0 1px var(--pixel-border-light);
+}
+
+.tabContent {
+    padding: 18px 16px 20px;
+    overflow-y: auto;
+    max-height: calc(85vh - 120px);
+    background: var(--pixel-panel);
+}
+
+.loading {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--pixel-muted);
+    font-size: 1.25rem;
+}
+
+.sectionTitle {
+    margin-top: 0;
+    margin-bottom: 14px;
+    font-family: "Press Start 2P", "VT323", monospace;
+    font-size: 0.55rem;
+    line-height: 1.65;
+    color: var(--pixel-text);
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--pixel-border-dark);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.sectionSubtitle {
+    margin-top: 0;
+    margin-bottom: 12px;
+    font-family: "Press Start 2P", "VT323", monospace;
+    font-size: 0.45rem;
+    line-height: 1.7;
+    color: var(--pixel-accent);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Progress tab */
+.progressTab {
+    min-height: 120px;
+}
+
+.progressGrid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Mobile tab panel */
+.mobileTab {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-height: 200px;
+}
+
+.mobileTab .sectionTitle {
+    margin-bottom: 0;
+}
+
+.helperText {
+    margin: 0;
+    color: var(--pixel-muted);
+    font-size: 0.95rem;
+    line-height: 1.45;
+}
+
+.emojiPresetButton {
+    background: var(--pixel-panel-alt);
+    border: 2px solid var(--pixel-border-dark);
+    color: var(--pixel-text);
+    border-radius: 0;
+    padding: 6px 10px;
+    font-size: 1.1rem;
+    cursor: pointer;
+    box-shadow: 2px 2px 0 var(--pixel-border-dark);
+    transition: transform 0.08s ease;
+}
+
+.emojiPresetButton:hover {
+    transform: translate(1px, 1px);
+    box-shadow: 1px 1px 0 var(--pixel-border-dark);
+}
+
+.emojiPresetButton:active {
+    transform: translate(2px, 2px);
+    box-shadow: none;
+}
+
+/* Overview */
+.overviewTab {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.canvasActions {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.primaryButton {
+    background: var(--pixel-accent);
+    color: var(--pixel-border-dark);
+    border: 2px solid var(--pixel-border-dark);
+    padding: 10px 18px;
+    border-radius: 0;
+    cursor: pointer;
+    font-weight: 700;
+    font-family: "Press Start 2P", "VT323", monospace;
+    font-size: 0.45rem;
+    line-height: 1.5;
+    box-shadow: var(--pixel-shadow);
+    transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.primaryButton:hover {
+    filter: brightness(1.06);
+    transform: translate(1px, 1px);
+    box-shadow: 2px 2px 0 var(--pixel-border-dark);
+}
+
+.secondaryButton {
+    background: var(--pixel-panel-alt);
+    color: var(--pixel-text);
+    border: 2px solid var(--pixel-border-dark);
+    padding: 10px 18px;
+    border-radius: 0;
+    cursor: pointer;
+    font-weight: 700;
+    font-family: inherit;
+    font-size: 0.95rem;
+    box-shadow: 2px 2px 0 var(--pixel-border-dark);
+    transition: transform 0.1s ease;
+}
+
+.secondaryButton:hover {
+    background: var(--pixel-panel);
+    transform: translate(1px, 1px);
+    box-shadow: 1px 1px 0 var(--pixel-border-dark);
+}
+
+.skillOverview {
+    background: var(--pixel-bg);
+    padding: 14px;
+    border: 2px solid var(--pixel-border-dark);
+    box-shadow: inset 0 0 0 1px var(--pixel-border-light);
+}
+
+.stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.statItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    background: var(--pixel-panel-alt);
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: 0;
+    box-shadow: inset 0 0 0 1px var(--pixel-border-light);
+}
+
+.statItem span:first-child {
+    color: var(--pixel-muted);
+    font-size: 0.9rem;
+}
+
+.statItem span:last-child {
+    color: var(--pixel-highlight);
+    font-weight: 700;
+    font-family: "Press Start 2P", "VT323", monospace;
+    font-size: 0.45rem;
+}
+
+.classBreakdown {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 8px;
+}
+
+.classItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    background: var(--pixel-panel-alt);
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: 0;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+}
+
+.classItem strong {
+    color: var(--pixel-text);
+    font-family: "Press Start 2P", "VT323", monospace;
+    font-size: 0.42rem;
+    line-height: 1.4;
+}
+
+.classItem span {
+    color: var(--pixel-muted);
+    font-size: 0.85rem;
+}
+
+/* Manage */
+.manageTab {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.classFilter {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 12px;
+    background: var(--pixel-bg);
+    border: 2px solid var(--pixel-border-dark);
+    flex-wrap: wrap;
+}
+
+.classFilter label {
+    color: var(--pixel-muted);
+    font-weight: 600;
+    font-size: 0.95rem;
+}
+
+.classFilter select {
+    background: var(--pixel-panel-alt);
+    color: var(--pixel-text);
+    border: 2px solid var(--pixel-border-dark);
+    padding: 12px 14px;
+    border-radius: 0;
+    min-width: 150px;
+    min-height: 48px;
+    line-height: 1.5;
+    box-sizing: border-box;
+    font-family: inherit;
+    font-size: 0.95rem;
+    box-shadow: inset 0 0 0 1px var(--pixel-border-light);
+    vertical-align: middle;
+}
+
+.skillsList {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.emptyState {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 48px 20px;
+    text-align: center;
+    background: var(--pixel-bg);
+    border: 2px dashed var(--pixel-border-light);
+}
+
+.emptyIcon {
+    font-size: 42px;
+    margin-bottom: 12px;
+    line-height: 1;
+}
+
+.emptyTitle {
+    font-family: "Press Start 2P", "VT323", monospace;
+    font-size: 0.5rem;
+    line-height: 1.6;
+    color: var(--pixel-text);
+    margin-bottom: 10px;
+}
+
+.emptyDescription {
+    font-size: 0.95rem;
+    color: var(--pixel-muted);
+    max-width: 400px;
+    line-height: 1.45;
+}
+
+.skillItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px;
+    background: var(--pixel-bg);
+    border: 2px solid var(--pixel-border-dark);
+    transition: box-shadow 0.15s ease;
+    box-shadow: inset 0 0 0 1px var(--pixel-border-light);
+}
+
+.skillItem:hover {
+    border-color: var(--pixel-accent);
+}
+
+.skillInfo {
+    flex: 1;
+    min-width: 0;
+}
+
+.skillInfo p {
+    margin: 4px 0;
+    color: var(--pixel-muted);
+    font-size: 0.95rem;
+}
+
+.description {
+    font-style: italic;
+    margin-top: 8px !important;
+    color: var(--pixel-muted) !important;
+}
+
+.skillTitle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 0 0 8px 0;
+    color: var(--pixel-text);
+    font-family: "Press Start 2P", "VT323", monospace;
+    font-size: 0.48rem;
+    line-height: 1.45;
+}
+
+.skillIconBubble {
+    width: 32px;
+    height: 32px;
+    border-radius: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    background: var(--pixel-panel-alt);
+    border: 2px solid var(--pixel-border-dark);
+    flex-shrink: 0;
+    box-shadow: 2px 2px 0 var(--pixel-border-dark);
+}
+
+.skillNameText {
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+.skillActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+.skillActions button {
+    background: var(--pixel-panel-alt);
+    color: var(--pixel-text);
+    border: 2px solid var(--pixel-border-dark);
+    padding: 8px 10px;
+    border-radius: 0;
+    cursor: pointer;
+    font-size: 0.75rem;
+    font-family: inherit;
+    box-shadow: 2px 2px 0 var(--pixel-border-dark);
+    transition: transform 0.08s ease;
+}
+
+.skillActions button:hover {
+    background: var(--pixel-panel);
+    transform: translate(1px, 1px);
+    box-shadow: 1px 1px 0 var(--pixel-border-dark);
+}
+
+.skillIconEditor {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.skillIconInput {
+    min-width: 100px;
+    padding: 6px 8px;
+    border-radius: 0;
+    border: 2px solid var(--pixel-border-dark);
+    background: var(--pixel-panel);
+    color: var(--pixel-text);
+    font-family: inherit;
+}
+
+/* Create */
+.createTab {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.createTypeSelector {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+    padding: 12px;
+    background: var(--pixel-bg);
+    border: 2px solid var(--pixel-border-dark);
+    flex-wrap: wrap;
+}
+
+.createTypeSelector label {
+    color: var(--pixel-muted);
+    font-weight: 600;
+}
+
+.createTypeSelector select {
+    background: var(--pixel-panel-alt);
+    color: var(--pixel-text);
+    border: 2px solid var(--pixel-border-dark);
+    padding: 12px 14px;
+    border-radius: 0;
+    min-width: 150px;
+    min-height: 48px;
+    line-height: 1.5;
+    box-sizing: border-box;
+    font-family: inherit;
+    font-size: 0.95rem;
+    vertical-align: middle;
+}
+
+.createForm {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.formField {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.formField label {
+    color: var(--pixel-muted);
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.formField input,
+.formField textarea,
+.formField select {
+    background: var(--pixel-bg);
+    color: var(--pixel-text);
+    border: 2px solid var(--pixel-border-dark);
+    padding: 8px 12px;
+    border-radius: 0;
+    font-size: 0.95rem;
+    font-family: inherit;
+    transition: border-color 0.15s ease;
+    box-shadow: inset 0 0 0 1px var(--pixel-border-light);
+}
+
+.formField select {
+    min-height: 48px;
+    line-height: 1.5;
+    padding: 12px 14px;
+    box-sizing: border-box;
+    vertical-align: middle;
+}
+
+.formField input:focus,
+.formField textarea:focus,
+.formField select:focus {
+    outline: none;
+    border-color: var(--pixel-accent);
+}
+
+.formField textarea {
+    resize: vertical;
+    min-height: 80px;
+}
+
+.createButton {
+    background: var(--pixel-highlight);
+    color: var(--pixel-border-dark);
+    border: 2px solid var(--pixel-border-dark);
+    padding: 14px 22px;
+    border-radius: 0;
+    cursor: pointer;
+    font-weight: 700;
+    font-family: "Press Start 2P", "VT323", monospace;
+    font-size: 0.48rem;
+    line-height: 1.5;
+    margin-top: 8px;
+    align-self: flex-start;
+    box-shadow: var(--pixel-shadow);
+    text-transform: uppercase;
+}
+
+.createButton:hover {
+    filter: brightness(1.05);
+    transform: translate(1px, 1px);
+    box-shadow: 2px 2px 0 var(--pixel-border-dark);
+}
+
+.createButton:active {
+    transform: translate(2px, 2px);
+    box-shadow: none;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (min-width: 1024px) {
+    .modalContent {
+        width: 95vw;
+        max-width: 1400px;
+        max-height: 90vh;
+    }
+
+    .tabContent {
+        max-height: calc(90vh - 120px);
+    }
+
+    .mobileTab {
+        height: calc(90vh - 200px);
+        min-height: 280px;
+        overflow: hidden;
+    }
+}
+
+@media (min-width: 1440px) {
+    .modalContent {
+        width: 90vw;
+        max-width: 1600px;
+    }
+}
+
+/* Real phone shell — full bleed; desktop modal sizes unchanged */
+.modalOverlayMobile {
+    align-items: stretch;
+    justify-content: flex-start;
+    padding: 0;
+    backdrop-filter: none;
+    background: rgba(8, 10, 20, 0.94);
+    /* Above TabView / Obsidian mobile chrome (Stats uses 100000) */
+    z-index: 100050 !important;
+    height: 100vh;
+    height: 100dvh;
+}
+
+.modalContentMobile {
+    width: 100vw !important;
+    max-width: none !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    max-height: 100vh !important;
+    max-height: 100dvh !important;
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    /* Dynamic Island / notch clearance — iOS Obsidian often reports env() as 0, so hard floor 59px
+       (same pattern as tab-system-shell.css player shell). */
+    padding-top: max(59px, calc(12px + env(safe-area-inset-top, 0px))) !important;
+    padding-left: max(0px, env(safe-area-inset-left, 0px)) !important;
+    padding-right: max(0px, env(safe-area-inset-right, 0px)) !important;
+    box-sizing: border-box !important;
+}
+
+.modalContentMobile .tabContent {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none !important;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+}
+
+.modalContentMobile .tabNavigation {
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    flex-direction: row;
+    gap: 0;
+}
+
+.modalContentMobile .tab {
+    flex: 1 1 auto;
+    min-height: 44px;
+    font-size: 0.55rem;
+    padding: 10px 8px;
+}
+
+.modalContentMobile .mobileTab {
+    min-height: auto;
+    padding-bottom: 8px;
+}
+
+@media (max-width: 768px) {
+    .modalContent {
+        width: 95vw;
+        max-height: 90vh;
+    }
+
+    .tabNavigation {
+        flex-direction: column;
+    }
+
+    .tab {
+        border-right: none;
+        border-bottom: 2px solid var(--pixel-border-dark);
+        text-align: center;
+    }
+
+    .tab:last-child {
+        border-bottom: none;
+    }
+
+    /* Phone shell already sets row tabs — don't stack again */
+    .modalContentMobile .tabNavigation {
+        flex-direction: row;
+    }
+
+    .modalContentMobile .tab {
+        border-right: 2px solid var(--pixel-border-dark);
+        border-bottom: none;
+    }
+
+    .canvasActions {
+        flex-direction: column;
+    }
+
+    .stats {
+        grid-template-columns: 1fr;
+    }
+
+    .classBreakdown {
+        grid-template-columns: 1fr;
+    }
+
+    .skillItem {
+        flex-direction: column;
+    }
+
+    .skillActions {
+        align-self: stretch;
+        justify-content: flex-start;
+    }
+}
+
+/* Associated stats — always-visible chips (mobile-safe; no absolute dropdown) */
+.statsChipGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(112px, 1fr));
+    gap: 8px;
+    width: 100%;
+}
+
+.statChip {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 6px;
+    min-height: 44px;
+    margin: 0 !important;
+    padding: 10px 12px !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    border-radius: 0 !important;
+    background: var(--pixel-bg) !important;
+    color: var(--pixel-text) !important;
+    font-size: 0.92rem !important;
+    font-weight: 600 !important;
+    text-align: left;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    box-shadow: inset 0 0 0 1px var(--pixel-border-light);
+}
+
+.statChip:hover {
+    border-color: var(--pixel-accent) !important;
+}
+
+.statChipSelected {
+    background: var(--pixel-accent) !important;
+    color: var(--pixel-border-dark) !important;
+    border-color: var(--pixel-accent) !important;
+    font-weight: 800 !important;
+}
+
+.statChipCheck {
+    width: 1em;
+    flex-shrink: 0;
+    font-weight: 800;
+}
+
+.statsSelectedHint {
+    margin-top: 8px;
+    font-size: 0.8rem;
+    color: var(--pixel-muted);
+}
+
+.statsEmptyHint {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+    border: 2px dashed var(--pixel-border-dark);
+    background: var(--pixel-panel-alt);
+    color: var(--pixel-muted);
+    font-size: 0.85rem;
+}
+
+.statsReloadBtn {
+    appearance: none !important;
+    align-self: flex-start;
+    min-height: 40px;
+    padding: 8px 12px !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    background: var(--pixel-bg) !important;
+    color: var(--pixel-accent) !important;
+    font-weight: 700 !important;
+    cursor: pointer;
+    touch-action: manipulation;
+}
+
+/* ── Solo Leveling System shell for Skill Codex ── */
+
+.modalContent[data-skill-system="true"] {
+    --pixel-bg: var(--go-bg, #071527);
+    --pixel-panel: var(--go-panel, rgba(10, 30, 58, 0.9));
+    --pixel-panel-alt: var(--go-panel-strong, rgba(18, 55, 96, 0.94));
+    --pixel-border-dark: var(--go-border, rgba(34, 200, 255, 0.35));
+    --pixel-border-light: var(--go-border-strong, rgba(34, 200, 255, 0.6));
+    --pixel-accent: var(--go-accent, #22c8ff);
+    --pixel-highlight: var(--go-gold, #ffd83d);
+    --pixel-text: var(--go-text, #e0f2fe);
+    --pixel-muted: var(--go-muted, #9ec7df);
+    --pixel-shadow: var(--go-shadow, 0 0 20px rgba(34, 200, 255, 0.28));
+    background:
+        radial-gradient(circle at 50% 0%, var(--go-accent-soft, rgba(34, 200, 255, 0.2)), transparent 45%),
+        var(--go-screen-bg, linear-gradient(180deg, rgba(13, 39, 72, 0.98), rgba(5, 20, 40, 0.96)));
+    font-family: var(--go-font-ui, "Inter", "Segoe UI", system-ui, sans-serif);
+    font-size: 14px;
+    line-height: 1.45;
+    image-rendering: auto;
+    border: 1px solid var(--go-border, rgba(34, 200, 255, 0.62));
+    box-shadow:
+        0 0 0 1px rgba(34, 200, 255, 0.14),
+        var(--go-shadow, 0 0 34px rgba(34, 200, 255, 0.28));
+}
+
+.modalContent[data-skill-system="true"]::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+        var(--go-screen-overlay, repeating-linear-gradient(
+            0deg,
+            rgba(255, 255, 255, 0.04) 0,
+            rgba(255, 255, 255, 0.04) 1px,
+            transparent 2px,
+            transparent 5px
+        )),
+        radial-gradient(circle at 30% 20%, rgba(34, 200, 255, 0.13), transparent 36%);
+    mix-blend-mode: screen;
+    opacity: var(--go-static-opacity, 0.48);
+    z-index: 0;
+}
+
+.modalContent[data-skill-system="true"] > * {
+    position: relative;
+    z-index: 1;
+}
+
+/* Codex detail must stay a real overlay — do not force position:relative */
+.modalContent[data-skill-system="true"] > [data-skill-codex-detail] {
+    position: fixed;
+    z-index: 100060;
+}
+
+.modalContent[data-skill-system="true"] .modalTitle {
+    font-family: var(--go-font-ui, inherit);
+    font-size: 11px;
+    letter-spacing: 0.22em;
+    color: var(--go-accent, #22c8ff);
+    text-shadow: 0 0 12px rgba(34, 200, 255, 0.42);
+}
+
+.modalContent[data-skill-system="true"] .tabNavigation {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 8px;
+    padding: 8px 12px 10px;
+    background: transparent;
+    border-bottom: 1px solid var(--go-border, rgba(34, 200, 255, 0.28));
+}
+
+.modalContent[data-skill-system="true"] .tab {
+    flex: 1 1 0;
+    min-width: 0;
+    margin: 0;
+    padding: 10px 8px;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    border: 1px solid var(--go-border, rgba(34, 200, 255, 0.28));
+    border-radius: 8px;
+    background: rgba(5, 16, 32, 0.72);
+    color: var(--go-muted, #9ec7df);
+    box-shadow: none;
+}
+
+.modalContent[data-skill-system="true"] .tab:last-child {
+    border-right: 1px solid var(--go-border, rgba(34, 200, 255, 0.28));
+}
+
+.modalContent[data-skill-system="true"] .tab:hover {
+    color: var(--go-text, #e0f2fe);
+    background: rgba(18, 55, 96, 0.55);
+}
+
+.modalContent[data-skill-system="true"] .tab.active {
+    color: var(--go-gold, #ffd83d);
+    background: rgba(18, 55, 96, 0.42);
+    border-color: var(--go-accent, #22c8ff);
+    box-shadow:
+        inset 0 -2px 0 var(--go-accent, #22c8ff),
+        0 0 14px rgba(34, 200, 255, 0.28);
+}
+
+.modalContent[data-skill-system="true"] .tabContent {
+    padding: 0;
+    background: transparent;
+}
+
+.modalContent[data-skill-system="true"] .mobileTab {
+    padding: 0;
+}
+
+.modalContent[data-skill-system="true"].modalContentMobile .tabNavigation {
+    flex-direction: row;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    gap: 6px;
+}
+
+.modalContent[data-skill-system="true"].modalContentMobile .tab {
+    flex: 1 1 0;
+    min-height: 40px;
+    font-size: 9px;
+    padding: 8px 6px;
+    white-space: nowrap;
+    border-right: 1px solid var(--go-border, rgba(34, 200, 255, 0.28));
+    border-bottom: 1px solid var(--go-border, rgba(34, 200, 255, 0.28));
+    text-align: center;
+}
+
+@media (max-width: 768px) {
+    .modalContent[data-skill-system="true"] .tabNavigation {
+        flex-direction: row;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+    }
+
+    .modalContent[data-skill-system="true"] .tab {
+        border-right: 1px solid var(--go-border, rgba(34, 200, 255, 0.28));
+        border-bottom: 1px solid var(--go-border, rgba(34, 200, 255, 0.28));
+        text-align: center;
+        white-space: nowrap;
+    }
+}
+

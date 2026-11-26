@@ -1,0 +1,802 @@
+import React, { memo, useState } from 'react';
+import type { SkillMetadata } from '../../../../shared/utils/skillDiscovery';
+import { PRIORITY_OPTIONS, DIFFICULTY_OPTIONS } from '../../utils/questUtils';
+import { normalizeCustomTag } from '../../utils/taskParser';
+import { clampActivityEnergy } from "../../../../shared/utils/activityEnergy";
+import styles from '../QuestModal.module.css';
+
+interface QuestModalFormProps {
+    // Form state
+    title: string;
+    setTitle: (title: string) => void;
+    description: string;
+    setDescription: (description: string) => void;
+    skills: SkillMetadata[];
+    allSkills: SkillMetadata[];
+    skillsLoading: boolean;
+    selectedSkill: string;
+    setSelectedSkill: (skill: string) => void;
+    priority: string;
+    setPriority: (priority: string) => void;
+    difficulty: string;
+    setDifficulty: (difficulty: string) => void;
+    xp: number;
+    setXp: (xp: number) => void;
+    cp: number;
+    setCp: (cp: number) => void;
+    energyCost: number;
+    setEnergyCost: (cost: number) => void;
+    energyLocked: boolean;
+    setEnergyLocked: (locked: boolean) => void;
+    onUseTypeEnergy: () => void;
+    activityProfile: string;
+    setActivityProfile: (v: string) => void;
+    activityOptions: { id: string; label: string }[];
+    due: string;
+    setDue: (due: string) => void;
+    startDate: string;
+    setStartDate: (start: string) => void;
+    time: string;
+    setTime: (time: string) => void;
+    estimatedMinutes: string;
+    setEstimatedMinutes: (minutes: string) => void;
+    recur: string;
+    setRecur: (recur: string) => void;
+    subtasks: Array<{ text: string; completed: boolean; description?: string }>;
+    newSubtask: string;
+    setNewSubtask: (subtask: string) => void;
+    newSubtaskDescription: string;
+    setNewSubtaskDescription: (description: string) => void;
+    
+    
+    // Handlers
+    handleSkillSelection: (skillName: string) => void;
+    handleSkillRemoval: (skillName: string) => void;
+    handleAddSubtask: () => void;
+    handleRemoveSubtask: (index: number) => void;
+    
+    // Mobile
+    isMobile: boolean;
+
+    /** Guild contract linking (create flow). */
+    showContractPicker?: boolean;
+    openContracts?: string[];
+    attachedContract: string;
+    setAttachedContract: (contract: string) => void;
+    customTags: string[];
+    setCustomTags: (tags: string[]) => void;
+}
+
+export const QuestModalForm: React.FC<QuestModalFormProps> = memo(({
+    title,
+    setTitle,
+    description,
+    setDescription,
+    skills,
+    allSkills,
+    skillsLoading,
+    selectedSkill,
+    setSelectedSkill,
+    priority,
+    setPriority,
+    difficulty,
+    setDifficulty,
+    xp,
+    setXp,
+    cp,
+    setCp,
+    energyCost,
+    setEnergyCost,
+    energyLocked,
+    setEnergyLocked,
+    onUseTypeEnergy,
+    activityProfile,
+    setActivityProfile,
+    activityOptions,
+    due,
+    setDue,
+    startDate,
+    setStartDate,
+    time,
+    setTime,
+    estimatedMinutes,
+    setEstimatedMinutes,
+    recur,
+    setRecur,
+    subtasks,
+    newSubtask,
+    setNewSubtask,
+    newSubtaskDescription,
+    setNewSubtaskDescription,
+    handleSkillSelection,
+    handleSkillRemoval,
+    handleAddSubtask,
+    handleRemoveSubtask,
+    isMobile,
+    showContractPicker = false,
+    openContracts = [],
+    attachedContract,
+    setAttachedContract,
+    customTags,
+    setCustomTags,
+}) => {
+    const [tagDraft, setTagDraft] = useState('');
+
+    const addCustomTag = () => {
+        const slug = normalizeCustomTag(tagDraft);
+        if (!slug) {
+            setTagDraft('');
+            return;
+        }
+        if (customTags.includes(slug)) {
+            setTagDraft('');
+            return;
+        }
+        setCustomTags([...customTags, slug]);
+        setTagDraft('');
+    };
+
+    return (
+        <>
+            {/* Quest Title */}
+            <div style={{ marginBottom: 16 }}>
+                <label style={{
+                    display: "block",
+                    marginBottom: 8,
+                    fontWeight: 600,
+                    color: "var(--text-normal)",
+                    fontSize: 16,
+                }}>
+                    Quest Title *
+                </label>
+                <input
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Enter quest title..."
+                    required
+                    style={{
+                        width: "100%",
+                        padding: 14,
+                        borderRadius: 8,
+                        border: "2px solid var(--interactive-accent)",
+                        backgroundColor: "var(--background-primary)",
+                        color: "var(--text-normal)",
+                        fontSize: 16,
+                        fontWeight: 500,
+                        transition: "all 0.2s ease",
+                    }}
+                />
+            </div>
+
+            <div style={{ marginBottom: 16 }}>
+                <label style={{
+                    display: "block",
+                    marginBottom: 8,
+                    fontWeight: 600,
+                    color: "var(--text-normal)",
+                    fontSize: 16,
+                }}>
+                    Dates
+                </label>
+                <div style={{
+                    display: isMobile ? "block" : "flex",
+                    gap: isMobile ? 0 : 12,
+                }}>
+                    <div style={{ flex: 1, marginBottom: isMobile ? 12 : 0 }}>
+                        <label style={{
+                            display: "block",
+                            marginBottom: 6,
+                            fontSize: 12,
+                            color: "var(--text-muted)",
+                            fontWeight: 500,
+                        }}>
+                            Start
+                        </label>
+                        <input
+                            type="date"
+                            value={startDate}
+                            onChange={(e) => {
+                                const next = e.target.value;
+                                setStartDate(next);
+                                if (next && due && next > due) setDue(next);
+                            }}
+                            className={`${styles.input} ${styles.dateInput}`}
+                        />
+                    </div>
+                    <div style={{ flex: 1, marginBottom: isMobile ? 12 : 0 }}>
+                        <label style={{
+                            display: "block",
+                            marginBottom: 6,
+                            fontSize: 12,
+                            color: "var(--text-muted)",
+                            fontWeight: 500,
+                        }}>
+                            Due
+                        </label>
+                        <input
+                            type="date"
+                            value={due}
+                            onChange={(e) => {
+                                const next = e.target.value;
+                                setDue(next);
+                                if (next && startDate && next < startDate) setStartDate(next);
+                            }}
+                            className={`${styles.input} ${styles.dateInput}`}
+                        />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                        <label style={{
+                            display: "block",
+                            marginBottom: 6,
+                            fontSize: 12,
+                            color: "var(--text-muted)",
+                            fontWeight: 500,
+                        }}>
+                            Time on due day
+                        </label>
+                        <input
+                            type="time"
+                            step={60}
+                            value={time}
+                            onChange={(e) => setTime((e.target.value || "").slice(0, 5))}
+                            className={`${styles.input} ${styles.dateInput} ${styles.timeInput}`}
+                        />
+                    </div>
+                </div>
+                <div className={styles.timeChipRow}>
+                    {[
+                        { label: "9 AM", value: "09:00" },
+                        { label: "12 PM", value: "12:00" },
+                        { label: "2 PM", value: "14:00" },
+                        { label: "5 PM", value: "17:00" },
+                        { label: "8 PM", value: "20:00" },
+                    ].map((slot) => (
+                        <button
+                            key={slot.value}
+                            type="button"
+                            className={`${styles.timeChip}${time === slot.value ? ` ${styles.timeChipActive}` : ""}`}
+                            onClick={() => setTime(slot.value)}
+                        >
+                            {slot.label}
+                        </button>
+                    ))}
+                    {time ? (
+                        <button
+                            type="button"
+                            className={styles.timeChip}
+                            onClick={() => setTime("")}
+                        >
+                            Clear
+                        </button>
+                    ) : null}
+                </div>
+                <div className={styles.timeHint}>
+                    {time
+                        ? `Timed at ${formatClockLabel(time)} on the due day`
+                        : "No time — shows as flexible / all-day"}
+                </div>
+            </div>
+
+            {/* Skills Selection - Core */}
+            <div style={{ marginBottom: 20 }}>
+                <label style={{
+                    display: "block",
+                    marginBottom: 8,
+                    fontWeight: 600,
+                    color: "var(--text-normal)",
+                    fontSize: 16,
+                }}>
+                    ⚔️ Skills *
+                </label>
+                
+                {/* Skills Dropdown */}
+                <select
+                    value={selectedSkill}
+                    onChange={(e) => handleSkillSelection(e.target.value)}
+                    disabled={skillsLoading || (!skillsLoading && allSkills.length === 0)}
+                    className={styles.select}
+                    style={{ marginBottom: 12 }}
+                >
+                    <option value="">
+                        {skillsLoading
+                            ? "Loading skills..."
+                            : allSkills.length === 0
+                                ? "No skills found in SkillTree"
+                                : "Select a skill to add..."}
+                    </option>
+                    {!skillsLoading && allSkills
+                        .filter(skill => !skills.some(s => s.name.toLowerCase() === skill.name.toLowerCase()))
+                        .map((skill) => (
+                            <option key={skill.name} value={skill.name}>
+                                {skill.name} ({skill.class})
+                            </option>
+                        ))
+                    }
+                </select>
+
+                {skills.length === 0 && !skillsLoading && (
+                    <div style={{
+                        marginTop: -4,
+                        marginBottom: 8,
+                        fontSize: 12,
+                        color: "var(--text-muted)",
+                    }}>
+                        Pick at least one skill to create or update this quest.
+                    </div>
+                )}
+
+                {/* Selected Skills Display - Enhanced */}
+                {skills.length > 0 && (
+                    <div style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 8,
+                        marginBottom: 8,
+                    }}>
+                        {skills.map((skill) => (
+                            <div key={skill.name} style={{
+                                display: "flex",
+                                flexDirection: "column",
+                                gap: 4,
+                                padding: "12px 16px",
+                                backgroundColor: "var(--background-secondary)",
+                                border: "1px solid var(--background-modifier-border)",
+                                borderRadius: 8,
+                                fontSize: 13,
+                            }}>
+                                {/* Skill Header */}
+                                <div style={{
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "space-between",
+                                    gap: 8,
+                                }}>
+                                    <div style={{
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 8,
+                                    }}>
+                                        <span style={{
+                                            fontWeight: 600,
+                                            color: "var(--text-normal)",
+                                            fontSize: 14,
+                                        }}>
+                                            {skill.name}
+                                        </span>
+                                        <span style={{
+                                            color: "var(--text-muted)",
+                                            fontSize: 12,
+                                        }}>
+                                            •
+                                        </span>
+                                        <span style={{
+                                            color: "var(--interactive-accent)",
+                                            fontSize: 12,
+                                            fontWeight: 500,
+                                        }}>
+                                            {skill.class}
+                                        </span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleSkillRemoval(skill.name)}
+                                        style={{
+                                            background: "#f44336",
+                                            border: "1px solid #f44336",
+                                            borderRadius: "4px",
+                                            color: "#ffffff",
+                                            cursor: "pointer",
+                                            width: 20,
+                                            height: 20,
+                                            display: "flex",
+                                            alignItems: "center",
+                                            justifyContent: "center",
+                                            fontSize: 12,
+                                            fontWeight: "bold",
+                                            position: "relative",
+                                        }}
+                                        title="Remove skill"
+                                    >
+                                        <span style={{
+                                            position: "relative",
+                                            width: "10px",
+                                            height: "10px",
+                                        }}>
+                                            <span style={{
+                                                position: "absolute",
+                                                top: "50%",
+                                                left: "0",
+                                                width: "100%",
+                                                height: "1.5px",
+                                                backgroundColor: "#ffffff",
+                                                transform: "translateY(-50%) rotate(45deg)",
+                                            }}></span>
+                                            <span style={{
+                                                position: "absolute",
+                                                top: "50%",
+                                                left: "0",
+                                                width: "100%",
+                                                height: "1.5px",
+                                                backgroundColor: "#ffffff",
+                                                transform: "translateY(-50%) rotate(-45deg)",
+                                            }}></span>
+                                        </span>
+                                    </button>
+                                </div>
+                                
+                                {/* Master Class and Stats */}
+                                <div style={{
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: 2,
+                                    marginLeft: 4,
+                                }}>
+                                    {skill.masterClass && (
+                                        <div style={{
+                                            fontSize: 11,
+                                            color: "var(--text-muted)",
+                                        }}>
+                                            <span style={{ fontWeight: 500 }}>Master Class:</span> {skill.masterClass}
+                                        </div>
+                                    )}
+                                    {skill.stats && Object.keys(skill.stats).length > 0 && (
+                                        <div style={{
+                                            fontSize: 11,
+                                            color: "var(--text-muted)",
+                                        }}>
+                                            <span style={{ fontWeight: 500 }}>Stats:</span> {Object.keys(skill.stats).map(statCode => {
+                                                const statNames: Record<string, string> = {
+                                                    'CHA': 'Charisma',
+                                                    'CRE': 'Creativity', 
+                                                    'DEX': 'Dexterity',
+                                                    'END': 'Endurance',
+                                                    'FAI': 'Faith',
+                                                    'ING': 'Ingenuity',
+                                                    'INT': 'Intelligence',
+                                                    'MIN': 'Mindfulness',
+                                                    'STR': 'Strength',
+                                                    'WIL': 'Willpower',
+                                                    'WIS': 'Wisdom'
+                                                };
+                                                return statNames[statCode] || statCode;
+                                            }).join(", ")}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            <div style={{ marginBottom: 20 }}>
+                <label style={{
+                    display: "block",
+                    marginBottom: 8,
+                    fontWeight: 600,
+                    color: "var(--text-normal)",
+                    fontSize: 16,
+                }}>
+                    Tags
+                </label>
+                {customTags.length > 0 && (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
+                        {customTags.map((tag) => (
+                            <span
+                                key={tag}
+                                style={{
+                                    display: "inline-flex",
+                                    alignItems: "center",
+                                    gap: 6,
+                                    padding: "4px 8px",
+                                    backgroundColor: "var(--background-secondary)",
+                                    border: "1px solid var(--background-modifier-border)",
+                                    borderRadius: 8,
+                                    fontSize: 13,
+                                }}
+                            >
+                                #{tag}
+                                <button
+                                    type="button"
+                                    onClick={() => setCustomTags(customTags.filter((t) => t !== tag))}
+                                    aria-label={`Remove tag ${tag}`}
+                                    style={{
+                                        background: "transparent",
+                                        border: "none",
+                                        color: "var(--text-muted)",
+                                        cursor: "pointer",
+                                        padding: 0,
+                                        fontSize: 14,
+                                        lineHeight: 1,
+                                    }}
+                                >
+                                    ×
+                                </button>
+                            </span>
+                        ))}
+                    </div>
+                )}
+                <input
+                    type="text"
+                    value={tagDraft}
+                    onChange={(e) => setTagDraft(e.target.value)}
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                            e.preventDefault();
+                            addCustomTag();
+                        }
+                    }}
+                    placeholder="Add a tag and press Enter"
+                    className={styles.select}
+                    style={{ marginBottom: 4 }}
+                />
+                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
+                    Your labels only — skills and activity stay on their own tags.
+                </div>
+            </div>
+
+            {showContractPicker && (
+                <div style={{ marginBottom: 20 }}>
+                    <label style={{
+                        display: "block",
+                        marginBottom: 8,
+                        fontWeight: 600,
+                        color: "var(--text-normal)",
+                        fontSize: 16,
+                    }}>
+                        📜 Guild contract (optional)
+                    </label>
+                    <select
+                        value={attachedContract}
+                        onChange={(e) => setAttachedContract(e.target.value)}
+                        className={styles.select}
+                    >
+                        <option value="">No contract — standalone task</option>
+                        {openContracts.map((title) => (
+                            <option key={title} value={title}>
+                                {title}
+                            </option>
+                        ))}
+                    </select>
+                    <span style={{
+                        display: "block",
+                        marginTop: 6,
+                        fontSize: 12,
+                        color: "var(--text-muted)",
+                        lineHeight: 1.35,
+                    }}>
+                        Links this task to a Projects contract via <code>[project:: Name]</code>.
+                    </span>
+                </div>
+            )}
+
+            {/* Priority | Energy | Difficulty — single-height row; help text below */}
+            <div style={{ marginBottom: 8 }}>
+                <div
+                    style={{
+                        display: "flex",
+                        gap: 16,
+                        flexWrap: "wrap",
+                        alignItems: "flex-start",
+                    }}
+                >
+                    <div style={{ flex: "1 1 140px", minWidth: 0 }}>
+                        <label style={{
+                            display: "block",
+                            marginBottom: 8,
+                            fontWeight: 600,
+                            color: "var(--text-normal)",
+                            fontSize: 16,
+                        }}>
+                            📋 Priority
+                        </label>
+                        <select
+                            value={priority}
+                            onChange={(e) => setPriority(e.target.value)}
+                            className={styles.select}
+                        >
+                            {PRIORITY_OPTIONS.map(option => (
+                                <option key={option} value={option}>{option}</option>
+                            ))}
+                        </select>
+                    </div>
+                    <div style={{ flex: "1 1 140px", minWidth: 0 }}>
+                        <label
+                            style={{
+                                display: "block",
+                                marginBottom: 8,
+                                fontWeight: 600,
+                                color: "var(--text-normal)",
+                                fontSize: 16,
+                            }}
+                            title="Positive spends energy when you finish. Negative gives energy back."
+                        >
+                            🔋 Energy
+                        </label>
+                        <input
+                            type="number"
+                            min={-50}
+                            max={50}
+                            value={energyCost}
+                            className={styles.select}
+                            aria-label="Energy change when this quest is finished"
+                            onChange={(e) => {
+                                const next = Number(e.target.value);
+                                if (!Number.isFinite(next)) return;
+                                setEnergyCost(clampActivityEnergy(next));
+                                setEnergyLocked(true);
+                            }}
+                        />
+                    </div>
+                    <div style={{ flex: "1 1 140px", minWidth: 0 }}>
+                        <label style={{
+                            display: "block",
+                            marginBottom: 8,
+                            fontWeight: 600,
+                            color: "var(--text-normal)",
+                            fontSize: 16,
+                        }}>
+                            ⚡ Difficulty
+                        </label>
+                        <select
+                            value={difficulty}
+                            onChange={(e) => setDifficulty(e.target.value)}
+                            className={styles.select}
+                        >
+                            {DIFFICULTY_OPTIONS.map(option => (
+                                <option key={option} value={option}>{option}</option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+                {!isMobile && (
+                    <p style={{
+                        margin: "8px 0 0 0",
+                        fontSize: 12,
+                        color: "var(--text-muted)",
+                        lineHeight: 1.4,
+                    }}>
+                        Positive spends energy. Negative gives it back. The number comes from the activity type until you change it.
+                    </p>
+                )}
+            </div>
+
+            <div style={{ marginBottom: isMobile ? 14 : 20 }}>
+                <label style={{
+                    display: "block",
+                    marginBottom: 8,
+                    fontWeight: 600,
+                    color: "var(--text-normal)",
+                    fontSize: 16,
+                }}>
+                    🧠 Activity type
+                </label>
+                <select
+                    value={activityProfile}
+                    onChange={(e) => setActivityProfile(e.target.value)}
+                    className={styles.select}
+                >
+                    {(activityOptions.some((option) => option.id === activityProfile)
+                        ? activityOptions
+                        : [...activityOptions, { id: activityProfile, label: activityProfile }]
+                    ).map((option) => (
+                        <option key={option.id} value={option.id}>
+                            {option.label}
+                        </option>
+                    ))}
+                </select>
+                {energyLocked && (
+                    <button
+                        type="button"
+                        onClick={onUseTypeEnergy}
+                        style={{
+                            marginTop: 8,
+                            background: "transparent",
+                            border: "none",
+                            padding: 0,
+                            color: "var(--text-muted)",
+                            fontSize: 12,
+                            cursor: "pointer",
+                            textDecoration: "underline",
+                        }}
+                    >
+                        Use the type's number
+                    </button>
+                )}
+                {!isMobile && (
+                    <span style={{
+                        display: "block",
+                        marginTop: 6,
+                        fontSize: 12,
+                        color: "var(--text-muted)",
+                        lineHeight: 1.35,
+                    }}>
+                        {energyLocked
+                            ? "This quest uses its own energy number."
+                            : "Energy follows this type. Change the number above to override just this quest."}
+                    </span>
+                )}
+            </div>
+
+            {/* XP and CP Rewards - Core */}
+            <div style={{ 
+                display: "flex", 
+                gap: isMobile ? 10 : 16, 
+                marginBottom: isMobile ? 12 : 32,
+                padding: isMobile ? 12 : 16,
+                backgroundColor: "rgba(var(--interactive-accent-rgb), 0.1)",
+                borderRadius: 12,
+                border: "1px solid var(--interactive-accent)",
+            }}>
+                <div style={{ flex: 1 }}>
+                    <label style={{
+                        display: "block",
+                        marginBottom: 8,
+                        fontWeight: 600,
+                        color: "var(--interactive-accent)",
+                        fontSize: 16,
+                    }}>
+                        ✨ XP Reward
+                    </label>
+                    <input
+                        type="number"
+                        value={xp}
+                        min={1}
+                        onChange={(e) => setXp(Number(e.target.value))}
+                        style={{
+                            width: "100%",
+                            padding: 14,
+                            borderRadius: 8,
+                            border: "2px solid var(--interactive-accent)",
+                            backgroundColor: "var(--background-primary)",
+                            color: "var(--text-normal)",
+                            fontSize: 16,
+                            fontWeight: 600,
+                            textAlign: "center",
+                        }}
+                    />
+                </div>
+                <div style={{ flex: 1 }}>
+                    <label style={{
+                        display: "block",
+                        marginBottom: 8,
+                        fontWeight: 600,
+                        color: "var(--interactive-accent)",
+                        fontSize: 16,
+                    }}>
+                        ⭐ CP Reward
+                    </label>
+                    <input
+                        type="number"
+                        value={cp}
+                        min={0}
+                        onChange={(e) => setCp(Number(e.target.value))}
+                        style={{
+                            width: "100%",
+                            padding: 14,
+                            borderRadius: 8,
+                            border: "2px solid var(--interactive-accent)",
+                            backgroundColor: "var(--background-primary)",
+                            color: "var(--text-normal)",
+                            fontSize: 16,
+                            fontWeight: 600,
+                            textAlign: "center",
+                        }}
+                    />
+                </div>
+            </div>
+
+        </>
+    );
+});
+
+function formatClockLabel(hhmm: string): string {
+    const [hRaw, mRaw] = hhmm.split(":");
+    const h = parseInt(hRaw || "0", 10);
+    const m = parseInt(mRaw || "0", 10);
+    if (!Number.isFinite(h)) return hhmm;
+    const date = new Date();
+    date.setHours(h, Number.isFinite(m) ? m : 0, 0, 0);
+    return date.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+}

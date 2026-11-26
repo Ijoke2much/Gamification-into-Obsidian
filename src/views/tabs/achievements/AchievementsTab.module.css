@@ -1,0 +1,529 @@
+/* Pixel / RPG shell for Achievements tab */
+
+.pixelAchievementsShell {
+    isolation: isolate;
+}
+
+.pixelAchievementsShell {
+    background: var(--go-bg, var(--pixel-bg)) !important;
+    color: var(--go-text, var(--pixel-text)) !important;
+    font-family: var(--go-font-ui, "Press Start 2P", "VT323", "Courier New", monospace);
+    font-size: 11px;
+    line-height: 1.6;
+    border: 2px solid var(--pixel-border-dark);
+    box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light);
+    box-sizing: border-box;
+}
+
+.pixelAchievementsShell h2 {
+    background: none !important;
+    -webkit-text-fill-color: var(--pixel-highlight) !important;
+    color: var(--pixel-highlight) !important;
+    font-family: var(--go-font-ui, "Press Start 2P", "VT323", monospace) !important;
+    font-size: 12px !important;
+    text-shadow: 2px 2px 0 var(--pixel-border-dark) !important;
+}
+
+.pixelAchievementsShell button {
+    border-radius: var(--pixel-card-radius) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    font-family: var(--go-font-ui, "Press Start 2P", monospace) !important;
+    font-size: 7px !important;
+    box-shadow: var(--pixel-shadow-pressed) !important;
+}
+
+.pixelAchievementsShell input,
+.pixelAchievementsShell select {
+    border-radius: var(--pixel-card-radius) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    background: var(--pixel-panel-alt) !important;
+    color: var(--go-text, var(--pixel-text)) !important;
+    font-family: "VT323", "Courier New", monospace !important;
+    font-size: 14px !important;
+}
+
+/* Achievement cards: square corners + slab shadow; tier colors stay from inline */
+.pixelAchievementsShell [data-achievement-card] {
+    border-radius: var(--pixel-card-radius) !important;
+    font-family: "VT323", "Courier New", monospace !important;
+    box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light) !important;
+    border-width: 2px !important;
+}
+
+.pixelAchievementsShell [data-achievement-view="grid"] {
+    min-height: 118px;
+}
+
+/* Mobile lite: flatter shell, touch-friendly show-more */
+.mobileAchievementsShell {
+    max-height: none !important;
+    border-width: 1px;
+}
+
+.mobileAchievementsShell [data-achievement-card] {
+    min-height: 44px;
+    margin-bottom: 6px;
+}
+
+.mobileShowMore {
+    display: block;
+    width: 100%;
+    margin: 12px 0 4px;
+    padding: 12px 14px !important;
+    min-height: 44px;
+    font-size: 10px !important;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    background: rgba(255, 255, 255, 0.08) !important;
+    color: #fff !important;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.mobileShowMore:active {
+    background: rgba(255, 255, 255, 0.14) !important;
+}
+
+/* ── Trophy gallery ── */
+
+.galleryHero {
+    background: linear-gradient(180deg, var(--pixel-panel-alt) 0%, var(--pixel-panel) 100%);
+    border: 2px solid var(--pixel-border-dark);
+    box-shadow: var(--pixel-shadow);
+    padding: 14px;
+    margin-bottom: 14px;
+}
+
+.galleryHeroTitle {
+    margin: 0 0 4px;
+    font-family: var(--go-font-ui, "Press Start 2P", monospace);
+    font-size: 11px;
+    color: var(--pixel-highlight);
+    text-shadow: 2px 2px 0 var(--pixel-border-dark);
+}
+
+.galleryHeroSub {
+    margin: 0 0 12px;
+    font-family: "VT323", monospace;
+    font-size: 16px;
+    color: var(--pixel-muted);
+}
+
+.tierStrip {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.tierChip {
+    text-align: center;
+    padding: 8px 4px;
+    border: 2px solid var(--pixel-border-dark);
+    background: var(--pixel-panel);
+    box-shadow: var(--pixel-shadow-pressed);
+}
+
+.tierChipLabel {
+    display: block;
+    font-family: var(--go-font-ui, "Press Start 2P", monospace);
+    font-size: 6px;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+    color: var(--pixel-muted);
+}
+
+.tierChipCount {
+    font-family: "VT323", monospace;
+    font-size: 18px;
+    color: var(--go-text, var(--pixel-text));
+}
+
+.tierChipBronze { border-color: #8B4513; }
+.tierChipSilver { border-color: #696969; }
+.tierChipGold { border-color: #B8860B; }
+.tierChipLegendary { border-color: #6B46C1; }
+
+.showcaseSection,
+.recentSection {
+    margin-bottom: 14px;
+}
+
+.sectionLabel {
+    margin: 0 0 8px;
+    font-family: var(--go-font-ui, "Press Start 2P", monospace);
+    font-size: 8px;
+    color: var(--pixel-accent);
+    letter-spacing: 0.5px;
+}
+
+.showcaseRow,
+.recentRow {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scrollbar-width: thin;
+}
+
+.showcaseBadge,
+.recentBadge {
+    flex: 0 0 auto;
+    min-width: 92px;
+    max-width: 110px;
+    padding: 10px 8px;
+    text-align: center;
+    border: 2px solid var(--pixel-border-dark);
+    background: var(--pixel-panel);
+    box-shadow: var(--pixel-shadow);
+    cursor: pointer;
+}
+
+.showcaseBadge:hover,
+.recentBadge:hover {
+    transform: translateY(-1px);
+}
+
+.showcaseIcon,
+.recentIcon {
+    display: block;
+    font-size: 28px;
+    line-height: 1;
+    margin-bottom: 6px;
+    filter: drop-shadow(2px 2px 0 var(--pixel-border-dark));
+}
+
+.showcaseTitle,
+.recentTitle {
+    font-family: "VT323", monospace;
+    font-size: 14px;
+    color: var(--go-text, var(--pixel-text));
+    line-height: 1.2;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.showcaseTier {
+    display: inline-block;
+    margin-top: 4px;
+    padding: 2px 6px;
+    font-family: var(--go-font-ui, "Press Start 2P", monospace);
+    font-size: 6px;
+    text-transform: uppercase;
+    color: #fff;
+}
+
+.tierBronze { background: #CD7F32; }
+.tierSilver { background: #696969; }
+.tierGold { background: #B8860B; }
+.tierLegendary { background: #6B46C1; }
+
+.highlightPulse {
+    animation: galleryHighlight 1.6s ease-in-out 2;
+}
+
+@keyframes galleryHighlight {
+    0%, 100% { box-shadow: var(--pixel-shadow), 0 0 0 0 transparent; }
+    50% { box-shadow: var(--pixel-shadow), 0 0 0 3px var(--pixel-highlight); }
+}
+
+.detailBackdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(8, 10, 24, 0.82);
+    z-index: 9000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+
+.detailPanel {
+    position: relative;
+    width: min(420px, 100%);
+    max-height: 85vh;
+    overflow-y: auto;
+    background: var(--pixel-panel);
+    border: 2px solid var(--pixel-border-dark);
+    box-shadow: var(--pixel-shadow);
+    padding: 16px;
+    padding-top: 40px;
+}
+
+.detailClose {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 3;
+    float: none;
+    border: 2px solid var(--pixel-border-dark);
+    background: var(--pixel-panel-alt);
+    color: var(--pixel-highlight);
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    box-shadow: var(--pixel-shadow-pressed);
+    font-family: "VT323", "Courier New", monospace !important;
+    font-size: 22px !important;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+}
+
+.detailClose:hover {
+    color: var(--go-text, var(--pixel-text));
+    background: var(--pixel-panel);
+}
+
+.detailIcon {
+    font-size: 48px;
+    text-align: center;
+    margin: 8px 0 12px;
+    filter: drop-shadow(3px 3px 0 var(--pixel-border-dark));
+}
+
+.detailPhoto {
+    width: 72px;
+    height: 72px;
+    object-fit: cover;
+    border-radius: 18px;
+    filter: none;
+}
+
+.yoursSection {
+    margin-bottom: 16px;
+}
+
+.yoursHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.yoursHeader .sectionLabel {
+    font-family: var(--go-font-ui, "Nunito", "Segoe UI", system-ui, sans-serif);
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--clay-accent-deep, #3fa39a);
+}
+
+.makerBtn,
+.yoursCard {
+    appearance: none !important;
+    height: auto !important;
+    overflow: visible !important;
+    white-space: normal !important;
+    font-family: var(--go-font-ui, "Nunito", "Segoe UI", system-ui, sans-serif) !important;
+}
+
+.makerBtn {
+    border: none;
+    border-radius: 14px;
+    padding: 8px 12px;
+    background: var(--clay-accent-gradient, linear-gradient(180deg, #6ac9c1, #4aa8a0));
+    color: #fff;
+    font-weight: 800;
+    cursor: pointer;
+    box-shadow: var(--clay-pressed);
+}
+
+.yoursEmpty {
+    margin: 0;
+    font-size: 13px;
+    color: var(--clay-text, #3a342c);
+}
+
+.yoursList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.yoursCard {
+    display: flex !important;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    text-align: left;
+    padding: 12px;
+    border: none;
+    border-radius: 18px;
+    background: var(--clay-gradient, linear-gradient(145deg, #fbf8f2, #efe6d8));
+    box-shadow: var(--clay-shadow);
+    color: var(--clay-text-strong, #2c2722);
+    cursor: pointer;
+}
+
+.yoursPhoto,
+.yoursIcon {
+    flex: 0 0 auto;
+}
+
+.yoursPhoto {
+    width: 48px;
+    height: 48px;
+    object-fit: cover;
+    border-radius: 14px;
+}
+
+.yoursIcon {
+    font-size: 28px;
+}
+
+.yoursCopy {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+    flex: 1;
+}
+
+.yoursTitle {
+    font-weight: 800;
+}
+
+.yoursRule {
+    font-size: 12px;
+    color: var(--clay-text-light, #8a8278);
+}
+
+.detailTitle {
+    margin: 0 0 8px;
+    font-family: var(--go-font-ui, "Press Start 2P", monospace);
+    font-size: 10px;
+    color: var(--pixel-highlight);
+    text-align: center;
+}
+
+.detailDesc {
+    margin: 0 0 12px;
+    font-family: "VT323", monospace;
+    font-size: 16px;
+    color: var(--pixel-muted);
+    text-align: center;
+    line-height: 1.4;
+}
+
+.detailMeta {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-bottom: 12px;
+}
+
+.detailRewards {
+    border-top: 2px dashed var(--pixel-border-light);
+    padding-top: 12px;
+    font-family: "VT323", monospace;
+    font-size: 15px;
+    color: var(--go-text, var(--pixel-text));
+}
+
+.detailCategory {
+    color: var(--clay-text, #2c2722) !important;
+    background: var(--clay-surface-2, #efe6d8);
+    border-radius: 999px;
+    font-family: var(--go-font-ui, "Nunito", "Segoe UI", system-ui, sans-serif) !important;
+    font-size: 11px !important;
+    letter-spacing: 0.04em;
+    text-transform: none;
+}
+
+.detailProgress {
+    margin-bottom: 12px;
+}
+
+.detailProgressTrack {
+    display: block;
+    height: 10px;
+    border-radius: 999px;
+    overflow: hidden;
+    background: var(--clay-surface-2, #efe6d8);
+    box-shadow: var(--clay-recessed, inset 3px 4px 8px rgba(166, 154, 138, 0.2));
+}
+
+.detailProgressFill {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: var(--clay-progress-gradient, linear-gradient(90deg, #7ad4cc, #3fa39a));
+}
+
+.detailProgressFillDone {
+    background: linear-gradient(90deg, #3fa39a, #2f8f86);
+}
+
+.detailProgressLabel,
+.progressReadout {
+    margin-top: 6px;
+    font-family: var(--go-font-ui, "Nunito", "Segoe UI", system-ui, sans-serif);
+    font-size: 13px;
+    font-weight: 800;
+    color: var(--clay-text-strong, #2c2722);
+}
+
+.progressReadout {
+    font-size: 11px;
+    margin-top: 4px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.emptyGallery {
+    text-align: center;
+    padding: 24px 16px;
+    border: 2px dashed var(--pixel-border-light);
+    color: var(--pixel-muted);
+    font-family: "VT323", monospace;
+    font-size: 16px;
+    margin-bottom: 14px;
+}
+
+
+/* System Hunter shell */
+:global([data-gamification-shell='system']) .shellRoot,
+:global([data-gamification-shell='system']) .pixelAchievementsShell {
+    border-width: 1px;
+    border-color: var(--go-border, rgba(34, 200, 255, 0.42));
+    border-radius: var(--go-radius, 2px);
+    box-shadow: var(--go-shadow, 0 0 22px rgba(34, 200, 255, 0.24));
+    font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+}
+
+:global([data-gamification-shell='system']) .galleryHeroTitle,
+:global([data-gamification-shell='system']) .sectionLabel,
+:global([data-gamification-shell='system']) .progressHeroTitle,
+:global([data-gamification-shell='system']) .pixelAchievementsShell h2 {
+    font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+    text-shadow: none !important;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--go-accent, #22c8ff) !important;
+    -webkit-text-fill-color: var(--go-accent, #22c8ff) !important;
+}
+
+:global([data-gamification-shell='system']) .galleryHero,
+:global([data-gamification-shell='system']) .showcaseBadge,
+:global([data-gamification-shell='system']) .recentBadge,
+:global([data-gamification-shell='system']) .detailPanel,
+:global([data-gamification-shell='system']) .progressHero {
+    border-width: 1px !important;
+    border-color: var(--go-border, rgba(34, 200, 255, 0.42)) !important;
+    border-radius: var(--go-radius, 2px) !important;
+    box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16)) !important;
+}
+
+:global([data-gamification-shell='system']) .showcaseBadge:hover,
+:global([data-gamification-shell='system']) .recentBadge:hover {
+    transform: none;
+}

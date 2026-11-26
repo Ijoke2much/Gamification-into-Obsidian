@@ -1,0 +1,174 @@
+/* Common Card Styles */
+.obsCard {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.04) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    transition: all 0.2s ease;
+    min-width: 0;
+    width: 100%;
+}
+
+.obsCard:hover {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Background Variants */
+.bgBase200 {
+    background: rgba(32, 36, 50, 0.85);
+}
+
+.bgBase100 {
+    background: rgba(40, 44, 58, 0.9);
+}
+
+.borderBase300 {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Layout Utilities */
+.grid {
+    display: grid;
+}
+
+.gridCols1 {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+}
+
+.gridCols2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.gridCols3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.gap4 {
+    gap: 1rem;
+}
+
+.maxW3xl {
+    max-width: 48rem;
+}
+
+.mxAuto {
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.colSpan1 {
+    grid-column: span 1 / span 1;
+}
+
+/* Responsive */
+@media (min-width: 768px) {
+    .mdRowSpan2 {
+        grid-row: span 2 / span 2;
+    }
+}
+
+/* Flexbox Utilities */
+.flex {
+    display: flex;
+}
+
+.flexCol {
+    flex-direction: column;
+}
+
+.itemsCenter {
+    align-items: center;
+}
+
+.justifyBetween {
+    justify-content: space-between;
+}
+
+.justifyCenter {
+    justify-content: center;
+}
+
+/* Text Utilities */
+.textCenter {
+    text-align: center;
+}
+
+.textGray400 {
+    color: #9ca3af;
+}
+
+.textYellow400 {
+    color: #fbbf24;
+}
+
+.textBlue400 {
+    color: #60a5fa;
+}
+
+.textLg {
+    font-size: 1.125rem;
+    line-height: 1.75rem;
+}
+
+.text2xl {
+    font-size: 1.5rem;
+    line-height: 2rem;
+}
+
+.fontBold {
+    font-weight: 700;
+}
+
+.fontSemibold {
+    font-weight: 600;
+}
+
+/* Spacing */
+.mt2 {
+    margin-top: 0.5rem;
+}
+
+.mt4 {
+    margin-top: 1rem;
+}
+
+.mb2 {
+    margin-bottom: 0.5rem;
+}
+
+.p2 {
+    padding: 0.5rem;
+}
+
+.p4 {
+    padding: 1rem;
+}
+
+/* Size Utilities */
+.w24 {
+    width: 6rem;
+}
+
+.h24 {
+    height: 6rem;
+}
+
+/* Spacing Between Elements */
+.spaceY1> :not([hidden])~ :not([hidden]) {
+    margin-top: 0.25rem;
+}
+
+.spaceY4> :not([hidden])~ :not([hidden]) {
+    margin-top: 1rem;
+}
+
+/* Shadow Utilities */
+.shadowSm {
+    box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+}
+
+.roundedLg {
+    border-radius: 0.5rem;
+}

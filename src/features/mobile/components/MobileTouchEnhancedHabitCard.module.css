@@ -1,0 +1,158 @@
+/* Mobile Touch Enhanced Habit Card */
+.habitCard {
+    position: relative;
+    background: var(--background-primary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    margin-bottom: 8px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    touch-action: pan-y;
+}
+
+.habitCard:active {
+    transform: scale(0.99);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.habitCard.expanded {
+    margin-bottom: 16px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.cardContent {
+    position: relative;
+    z-index: 2;
+    background: inherit;
+    transition: transform 0.3s ease;
+}
+
+/* Swipe Indicators */
+.swipeIndicators {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.swipeLeft,
+.swipeRight {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.8rem;
+    font-weight: 500;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.swipeLeft {
+    left: 0;
+    background: linear-gradient(90deg, #f59e0b, #d97706);
+    border-radius: 8px 0 0 8px;
+}
+
+.swipeRight {
+    right: 0;
+    background: linear-gradient(90deg, #10b981, #059669);
+    border-radius: 0 8px 8px 0;
+}
+
+/* Show swipe indicators when swiping */
+.habitCard:active .swipeLeft,
+.habitCard:active .swipeRight {
+    opacity: 1;
+}
+
+/* Context menu animation */
+:global(.habit-context-menu) {
+    animation: contextMenuSlideIn 0.2s ease-out;
+}
+
+@keyframes contextMenuSlideIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* Mobile optimizations */
+@media (max-width: 768px) {
+    .habitCard {
+        margin-bottom: 12px;
+        border-radius: 12px;
+    }
+
+    .swipeLeft,
+    .swipeRight {
+        width: 100px;
+        font-size: 0.9rem;
+    }
+
+    .swipeLeft span,
+    .swipeRight span {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 4px;
+    }
+}
+
+/* Touch device optimizations */
+@media (pointer: coarse) {
+    .habitCard {
+        min-height: 60px;
+    }
+
+    .swipeLeft,
+    .swipeRight {
+        width: 120px;
+    }
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+
+    .habitCard,
+    .cardContent,
+    .swipeLeft,
+    .swipeRight {
+        transition: none;
+    }
+
+    .habitCard:active {
+        transform: none;
+    }
+
+    :global(.habit-context-menu) {
+        animation: none;
+    }
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+    .habitCard {
+        border-width: 2px;
+    }
+
+    .swipeLeft {
+        background: #d97706;
+    }
+
+    .swipeRight {
+        background: #059669;
+    }
+}

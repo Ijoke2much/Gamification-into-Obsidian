@@ -1,0 +1,535 @@
+import { Vault, TFile } from 'obsidian';
+const matter = require('gray-matter');
+
+// Mobile-safe YAML frontmatter parser
+export function parseFrontmatterMobile(content: string): { data: Record<string, any>, content: string } {
+  const lines = content.split('\n');
+  const firstDashIndex = lines.findIndex(line => line.trim() === '---');
+
+  if (firstDashIndex === -1) {
+    return { data: {}, content };
+  }
+
+  const secondDashIndex = lines.findIndex((line, index) =>
+    index > firstDashIndex && line.trim() === '---'
+  );
+
+  if (secondDashIndex === -1) {
+    return { data: {}, content };
+  }
+
+  const yamlLines = lines.slice(firstDashIndex + 1, secondDashIndex);
+  const yamlContent = yamlLines.join('\n');
+  const bodyContent = lines.slice(secondDashIndex + 1).join('\n');
+
+  // Enhanced YAML parser for common patterns
+  const data: Record<string, any> = {};
+  let currentKey = '';
+  let currentArrayItems: string[] = [];
+  let inArray = false;
+
+  for (let i = 0; i < yamlLines.length; i++) {
+    const line = yamlLines[i];
+    const trimmed = line.trim();
+
+    // Skip empty lines and comments
+    if (!trimmed || trimmed.startsWith('#')) continue;
+
+    // Handle array items (lines starting with -)
+    if (trimmed.startsWith('- ')) {
+      if (currentKey) {
+        const item = trimmed.substring(2).trim();
+        // Remove quotes from array items
+        const cleanItem = (item.startsWith('"') && item.endsWith('"')) ||
+          (item.startsWith("'") && item.endsWith("'"))
+          ? item.slice(1, -1) : item;
+        currentArrayItems.push(cleanItem);
+        inArray = true;
+      }
+      continue;
+    }
+
+    // If we were in an array and hit a non-array line, save the array
+    if (inArray && !trimmed.startsWith('- ')) {
+      if (currentKey && currentArrayItems.length > 0) {
+        data[currentKey] = currentArrayItems;
+      }
+      currentArrayItems = [];
+      inArray = false;
+      currentKey = '';
+    }
+
+    const colonIndex = trimmed.indexOf(':');
+    if (colonIndex === -1) continue;
+
+    const key = trimmed.substring(0, colonIndex).trim();
+    let value = trimmed.substring(colonIndex + 1).trim();
+
+    // Handle empty values (might be followed by array items)
+    if (!value) {
+      currentKey = key;
+      currentArrayItems = [];
+      continue;
+    }
+
+    // Remove quotes
+    if ((value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))) {
+      value = value.slice(1, -1);
+    }
+
+    // Parse different value types
+    if (/^\d+$/.test(value)) {
+      data[key] = parseInt(value, 10);
+    } else if (/^\d+\.\d+$/.test(value)) {
+      data[key] = parseFloat(value);
+    } else if (value.toLowerCase() === 'true') {
+      data[key] = true;
+    } else if (value.toLowerCase() === 'false') {
+      data[key] = false;
+    } else if (value.toLowerCase() === 'null' || value.toLowerCase() === '~') {
+      data[key] = null;
+    } else if (value.startsWith('[') && value.endsWith(']')) {
+      // Inline array parsing
+      const arrayContent = value.slice(1, -1).trim();
+      if (arrayContent) {
+        data[key] = arrayContent.split(',').map(item => {
+          const trimmedItem = item.trim();
+          return trimmedItem.startsWith('"') && trimmedItem.endsWith('"')
+            ? trimmedItem.slice(1, -1)
+            : trimmedItem;
+        });
+      } else {
+        data[key] = [];
+      }
+    } else {
+      data[key] = value;
+    }
+
+    currentKey = '';
+  }
+
+  // Handle any remaining array at the end
+  if (inArray && currentKey && currentArrayItems.length > 0) {
+    data[currentKey] = currentArrayItems;
+  }
+
+  return { data, content: bodyContent };
+}
+
+// Mobile detection
+export const isMobile = typeof navigator !== 'undefined' &&
+  (/android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(navigator.userAgent.toLowerCase()) ||
+    window.innerWidth <= 768);
+
+function normVaultPath(path: string): string {
+  return path.replace(/\\/g, '/');
+}
+
+function pathUnderSkillTreeRoot(path: string): boolean {
+  const first = normVaultPath(path).split('/')[0];
+  return first !== undefined && first.toLowerCase() === 'skilltree';
+}
+
+/**
+ * Class notes: SkillTree/.../Class/Note.md (any depth), case-insensitive SkillTree and Class segment.
+ * Excludes anything under .../Skills/... so skill files are never treated as classes.
+ */
+export function isSkillTreeClassNoteFile(file: TFile): boolean {
+  const p = normVaultPath(file.path);
+  if (!p.toLowerCase().endsWith('.md')) return false;
+  if (!pathUnderSkillTreeRoot(p)) return false;
+  if (p.toLowerCase().includes('/skills/')) return false;
+  const parts = p.split('/');
+  const classIdx = parts.findIndex((seg) => seg.toLowerCase() === 'class');
+  if (classIdx < 0) return false;
+  return classIdx === parts.length - 2;
+}
+
+function resolveClassDisplayName(data: Record<string, any>, file: TFile): string {
+  const fromYaml =
+    data.name ??
+    data.Name ??
+    data.title ??
+    data.Title;
+  const trimmed = fromYaml !== undefined && fromYaml !== null ? String(fromYaml).trim() : '';
+  if (trimmed) return trimmed;
+  return file.basename.replace(/\.md$/i, '').trim() || 'Unnamed class';
+}
+
+export interface SkillMetadata {
+  name: string;
+  class: string;
+  classPath: string;
+  masterClass: string;
+  masterClassPath: string;
+  stats: { [statName: string]: string }; // stat name -> stat file path
+  description?: string;
+  /** Short flavor line (frontmatter: epithet) shown in codex / UI */
+  epithet?: string;
+  filePath: string;
+
+  // Additional metadata properties for Canvas enhancement
+  level?: number;
+  /** CP toward current level milestone (YAML: cp or currentCP) */
+  cp?: number;
+  /** CP required for current milestone (YAML: maxCP or requiredCP) */
+  maxCP?: number;
+  /** Lifetime CP if tracked separately (YAML: totalCP) */
+  totalCP?: number;
+
+  // Icon metadata (for habits, views, etc.)
+  icon?: string; // emoji or short text
+  iconImage?: string; // vault-relative image / svg path
+
+  /** Optional milestone (YAML: mastered / isMastered) — not tied to a numeric level cap */
+  mastered?: boolean;
+}
+
+export interface ClassMetadata {
+  name: string;
+  masterClass: string;
+  level: number;
+  currentCP: number;
+  requiredCP: number;
+  totalCP: number;
+  description: string;
+  /** Short flavor line (frontmatter: tagline) for class identity in UI */
+  tagline?: string;
+  filePath: string;
+  icon?: string;
+  iconImage?: string;
+}
+
+export interface StatMetadata {
+  name: string;
+  level: number;
+  currentCP: number;
+  requiredCP: number;
+  totalCP: number;
+  description: string;
+  filePath: string;
+}
+
+/**
+ * Gets metadata for a specific skill by name.
+ * @param vault Obsidian Vault instance
+ * @param skillName Name of the skill to find
+ * @returns Promise<SkillMetadata | null> The skill metadata or null if not found
+ */
+export async function getSkillMetadata(vault: Vault, skillName: string): Promise<SkillMetadata | null> {
+  const skills = await getAllSkills(vault);
+  const target = skillName.trim().toLowerCase();
+  return (
+    skills.find(skill => skill.name.trim().toLowerCase() === target) ||
+    null
+  );
+}
+
+/**
+ * Scans the vault for all stat files in SkillTree/Master-Class/Stats/*.md
+ * and returns a list of stats with metadata.
+ * @param vault Obsidian Vault instance
+ * @returns Promise<StatMetadata[]> Array of stat metadata
+ */
+export async function getAllStats(vault: Vault): Promise<StatMetadata[]> {
+  const stats: StatMetadata[] = [];
+  const allFiles = vault.getAllLoadedFiles();
+
+  for (const file of allFiles) {
+    if (file instanceof TFile) {
+      if (
+        file.path.startsWith('SkillTree/Master-Class/Stats/') &&
+        file.path.endsWith('.md')
+      ) {
+        try {
+          const content = await vault.read(file);
+          const { data } = isMobile ? parseFrontmatterMobile(content) : matter(content);
+
+          if (data.name) {
+            stats.push({
+              name: data.name,
+              level: data.level || 1,
+              currentCP: data.currentCP || 0,
+              requiredCP: data.requiredCP || 100,
+              totalCP: data.totalCP || 0,
+              description: data.Description || data.description || '',
+              filePath: file.path
+            });
+          }
+        } catch (error) {
+          console.error(`Failed to parse stat file ${file.path}:`, error);
+        }
+      }
+    }
+  }
+
+  return stats;
+}
+
+/**
+ * Scans the vault for class files under SkillTree/.../Class/*.md (flexible path;
+ * SkillTree + Class segment are case-insensitive). Names default from frontmatter
+ * (name / title) or the note filename.
+ * @param vault Obsidian Vault instance
+ * @returns Promise<ClassMetadata[]> Array of class metadata
+ */
+export async function getAllClasses(vault: Vault): Promise<ClassMetadata[]> {
+  const classes: ClassMetadata[] = [];
+  const seenNamesLower = new Set<string>();
+  const allFiles = vault.getAllLoadedFiles();
+
+  for (const file of allFiles) {
+    if (!(file instanceof TFile)) continue;
+    if (!isSkillTreeClassNoteFile(file)) continue;
+
+    try {
+      const content = await vault.read(file);
+      const { data } = isMobile ? parseFrontmatterMobile(content) : matter(content);
+
+      const name = resolveClassDisplayName(data, file);
+      const dedupeKey = name.toLowerCase();
+      if (seenNamesLower.has(dedupeKey)) continue;
+      seenNamesLower.add(dedupeKey);
+
+      const rawTag = data.tagline ?? data.Tagline;
+      const taglineStr =
+        rawTag !== undefined && rawTag !== null ? String(rawTag).trim() : '';
+
+      classes.push({
+        name,
+        masterClass:
+          String(data.masterClass ?? data.MasterClass ?? data.master ?? '').trim() ||
+          'Hunter',
+        level: data.level || 1,
+        currentCP: data.currentCP || 0,
+        requiredCP: data.requiredCP || 100,
+        totalCP: data.totalCP || 0,
+        description: data.Description || data.description || '',
+        tagline: taglineStr || undefined,
+        filePath: file.path,
+        icon: data.icon,
+        iconImage: data.iconImage
+      });
+    } catch (error) {
+      console.error(`Failed to parse class file ${file.path}:`, error);
+    }
+  }
+
+  classes.sort((a, b) =>
+    a.name.localeCompare(b.name, undefined, { sensitivity: 'base' })
+  );
+  return classes;
+}
+
+// Skills cache for faster modal open (avoids re-scanning vault on every open)
+let skillsCache: SkillMetadata[] | null = null;
+let skillsCacheTime = 0;
+const SKILLS_CACHE_TTL_MS = 45_000; // 45 seconds
+
+export function clearSkillsCache(): void {
+  skillsCache = null;
+  skillsCacheTime = 0;
+}
+
+/**
+ * Scans the vault for all skills in SkillTree/*Skills*.md, parses their YAML frontmatter,
+ * and returns a list of skills with metadata. Results are cached for 45s for faster modal open.
+ * @param vault Obsidian Vault instance
+ * @returns Promise<SkillMetadata[]> Array of skill metadata
+ */
+function isSkillTreeSkillNote(file: TFile): boolean {
+  if (file.extension !== 'md') return false;
+  const p = normVaultPath(file.path);
+  if (!pathUnderSkillTreeRoot(p)) return false;
+  // Match /Skills/ segment case-insensitively (vault sync / OS path quirks)
+  return /(^|\/)skills\//i.test(p);
+}
+
+/** Avoid hanging forever on iCloud/slow vault reads (common on phone). */
+async function readVaultTextWithTimeout(
+  vault: Vault,
+  file: TFile,
+  timeoutMs = isMobile ? 2500 : 8000
+): Promise<string | null> {
+  try {
+    return await Promise.race([
+      vault.read(file),
+      new Promise<null>((resolve) => window.setTimeout(() => resolve(null), timeoutMs)),
+    ]);
+  } catch {
+    return null;
+  }
+}
+
+function normalizeSkillStats(skillStats: unknown): { [statName: string]: string } {
+  const stats: { [statName: string]: string } = {};
+  if (skillStats == null || skillStats === '') return stats;
+  const statsArr = Array.isArray(skillStats) ? skillStats : [skillStats];
+  for (const statNameRaw of statsArr) {
+    const statName = String(statNameRaw || '').trim();
+    if (!statName) continue;
+    stats[statName] = `SkillTree/Master-Class/Stats/${statName}.md`;
+  }
+  return stats;
+}
+
+function masterClassPathCandidates(name: string): string[] {
+  const trimmed = name.trim();
+  if (!trimmed) return [];
+  return [
+    `SkillTree/Master-Class/${trimmed}.md`,
+    `SkillTree/Master-Class/${trimmed}/${trimmed}.md`,
+  ];
+}
+
+function resolveMasterClassPath(vault: Vault, name: string, files: TFile[]): string {
+  const trimmed = name.trim();
+  if (!trimmed) return '';
+  for (const candidate of masterClassPathCandidates(trimmed)) {
+    const hit = vault.getAbstractFileByPath(candidate);
+    if (hit instanceof TFile) return hit.path;
+  }
+  const lower = trimmed.toLowerCase();
+  const exact = files.find((f) => f.basename.trim().toLowerCase() === lower);
+  return exact?.path ?? '';
+}
+
+function masterFromSkillPath(filePath: string): string | undefined {
+  const pathParts = normVaultPath(filePath).split('/');
+  const mcIdx = pathParts.findIndex((p) => p.toLowerCase() === 'master-class');
+  if (
+    mcIdx >= 0 &&
+    pathParts[mcIdx + 1] &&
+    pathParts[mcIdx + 1].toLowerCase() !== 'skills' &&
+    pathParts[mcIdx + 1].toLowerCase() !== 'class' &&
+    pathParts[mcIdx + 1].toLowerCase() !== 'stats'
+  ) {
+    return pathParts[mcIdx + 1];
+  }
+  return undefined;
+}
+
+export async function getAllSkills(vault: Vault): Promise<SkillMetadata[]> {
+  const now = Date.now();
+  // Never reuse an empty cache — mobile often opens before the vault finishes indexing
+  if (
+    skillsCache &&
+    skillsCache.length > 0 &&
+    (now - skillsCacheTime) < SKILLS_CACHE_TTL_MS
+  ) {
+    return skillsCache;
+  }
+
+  const allFiles = vault.getMarkdownFiles();
+  const skillFiles = allFiles.filter((f) => isSkillTreeSkillNote(f));
+
+  // Precompute once (was previously re-filtered for every skill — expensive on mobile).
+  const masterClassFiles = allFiles.filter(
+    (f) =>
+      pathUnderSkillTreeRoot(f.path) &&
+      f.path.toLowerCase().includes('/master-class/') &&
+      f.path.endsWith('.md') &&
+      !/\/class\//i.test(f.path) &&
+      !/\/skills\//i.test(f.path) &&
+      !/\/stat\//i.test(f.path) &&
+      !/\/stats\//i.test(f.path)
+  );
+
+  // Skill notes live under .../Skills/, so the folder name is not the master class.
+  // Read class notes on phone and desktop so CP can reach the right master class.
+  const classMasterMap = new Map<string, string>();
+  const classFiles = allFiles.filter((f) => isSkillTreeClassNoteFile(f));
+  await Promise.all(
+    classFiles.map(async (clsFile) => {
+      const clsContent = await readVaultTextWithTimeout(vault, clsFile);
+      if (!clsContent) return;
+      const { data: clsData } = isMobile ? parseFrontmatterMobile(clsContent) : matter(clsContent);
+      const className = resolveClassDisplayName(clsData, clsFile);
+      const master = (clsData.master || clsData.masterClass || clsData.MasterClass) as string | undefined;
+      if (className && master) {
+        classMasterMap.set(className.toLowerCase(), String(master).trim());
+      }
+    })
+  );
+
+  const settled = await Promise.allSettled(
+    skillFiles.map(async (file) => {
+      const content = await readVaultTextWithTimeout(vault, file);
+      if (!content) return null;
+      const { data } = isMobile ? parseFrontmatterMobile(content) : matter(content);
+
+      const skillName = data.name ?? data.Name;
+      const skillClass = data.class ?? data.Class;
+      // Stats preferred but not required — missing stats used to hide skills entirely on mobile.
+      if (!skillName || !skillClass) return null;
+
+      const className = String(skillClass);
+      const classPath = `SkillTree/Master-Class/Class/${className}.md`;
+      const masterClass =
+        classMasterMap.get(className.toLowerCase()) || masterFromSkillPath(file.path) || '';
+      const masterClassPath = resolveMasterClassPath(vault, masterClass, masterClassFiles);
+
+      const stats = normalizeSkillStats(data.stats ?? data.Stats);
+      const epithetRaw = data.epithet ?? data.Epithet ?? data.tagline ?? data.Tagline;
+      const epithetStr =
+        epithetRaw !== undefined && epithetRaw !== null ? String(epithetRaw).trim() : '';
+      const cpRaw = data.cp ?? data.currentCP ?? data.CP;
+      const cpNum =
+        typeof cpRaw === 'number' && !Number.isNaN(cpRaw)
+          ? cpRaw
+          : parseInt(String(cpRaw ?? 0), 10) || 0;
+      const reqRaw = data.maxCP ?? data.requiredCP ?? data.RequiredCP;
+      let maxCPNum: number | undefined;
+      if (reqRaw !== undefined && reqRaw !== null && reqRaw !== '') {
+        const n =
+          typeof reqRaw === 'number' && !Number.isNaN(reqRaw)
+            ? reqRaw
+            : parseInt(String(reqRaw), 10);
+        maxCPNum = n > 0 ? n : undefined;
+      }
+      const totalRaw = data.totalCP ?? data.TotalCP;
+      const totalNum =
+        totalRaw !== undefined && totalRaw !== null && totalRaw !== ''
+          ? (typeof totalRaw === 'number' && !Number.isNaN(totalRaw)
+              ? totalRaw
+              : parseInt(String(totalRaw), 10)) || cpNum
+          : cpNum;
+
+      const masteredRaw = data.mastered ?? data.isMastered ?? data.Mastered;
+      const mastered =
+        masteredRaw === true ||
+        masteredRaw === 'true' ||
+        String(masteredRaw).toLowerCase() === 'yes';
+
+      const skill: SkillMetadata = {
+        name: String(skillName),
+        class: className,
+        classPath,
+        masterClass: masterClass || '',
+        masterClassPath,
+        stats,
+        description: data.Description || data.description,
+        epithet: epithetStr || undefined,
+        filePath: file.path,
+        level: data.level,
+        cp: cpNum,
+        maxCP: maxCPNum,
+        totalCP: totalNum,
+        icon: data.icon,
+        iconImage: data.iconImage,
+        mastered: mastered || undefined,
+      };
+      return skill;
+    })
+  );
+
+  const skills = settled
+    .map((result) => (result.status === 'fulfilled' ? result.value : null))
+    .filter((skill): skill is SkillMetadata => Boolean(skill))
+    .sort((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: 'base' }));
+
+  skillsCache = skills;
+  skillsCacheTime = Date.now();
+  return skills;
+} 

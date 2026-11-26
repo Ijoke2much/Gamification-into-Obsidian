@@ -1,0 +1,59 @@
+.arena,
+.kitDock {
+	position: fixed;
+	z-index: 80;
+	pointer-events: none;
+}
+
+.arena {
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 16px;
+}
+
+.backdrop {
+	position: absolute;
+	inset: 0;
+	border: none;
+	background: rgba(4, 4, 8, 0.72);
+	cursor: pointer;
+	pointer-events: auto;
+}
+
+.stageBox {
+	position: relative;
+	z-index: 1;
+	pointer-events: auto;
+	width: min(920px, 100%);
+}
+
+.kitDock {
+	right: 16px;
+	bottom: 16px;
+	left: auto;
+	top: auto;
+	width: auto;
+}
+
+.kitDock .stageBox {
+	width: auto;
+}
+
+.clayOverlay .backdrop {
+	background: rgba(62, 52, 42, 0.38);
+}
+
+@media (max-width: 640px) {
+	.arena {
+		align-items: stretch;
+		padding: 8px;
+	}
+
+	.kitDock {
+		right: 8px;
+		bottom: 8px;
+		left: 8px;
+	}
+}

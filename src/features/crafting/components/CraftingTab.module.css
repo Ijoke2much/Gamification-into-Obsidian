@@ -1,0 +1,989 @@
+/* Workshop — materials strip → filters → craftable-first list → detail */
+
+.workshop {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding: 12px 12px calc(20px + env(safe-area-inset-bottom, 0px));
+	max-width: 640px;
+	margin: 0 auto;
+	height: 100%;
+	min-height: 0;
+	box-sizing: border-box;
+	color: var(--go-text, #e8f4ff);
+	background: var(--go-bg, rgba(6, 14, 28, 0.92));
+	overflow: hidden;
+}
+
+.pixelCraftingShell {
+	isolation: isolate;
+	border: 1px solid var(--go-border, rgba(34, 200, 255, 0.35));
+	box-shadow: inset 0 0 0 1px rgba(34, 200, 255, 0.08);
+}
+
+/* Header */
+.header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	flex-shrink: 0;
+}
+
+.headerTitle {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.systemLabel {
+	font-size: 9px;
+	letter-spacing: 0.18em;
+	text-transform: uppercase;
+	color: var(--go-accent, #22c8ff);
+	opacity: 0.85;
+}
+
+.workshopTitle {
+	margin: 0;
+	font-size: 15px;
+	font-weight: 700;
+	letter-spacing: 0.16em;
+	text-transform: uppercase;
+	color: var(--go-accent, #22c8ff);
+}
+
+.headerChip {
+	font-size: 10px;
+	letter-spacing: 0.04em;
+	padding: 4px 8px;
+	border: 1px solid var(--go-border, rgba(34, 200, 255, 0.4));
+	border-radius: var(--go-radius, 2px);
+	color: var(--go-muted, rgba(200, 230, 255, 0.7));
+	background: rgba(18, 55, 96, 0.35);
+	white-space: nowrap;
+}
+
+/* Materials strip */
+.materialsStrip {
+	display: flex;
+	gap: 8px;
+	overflow-x: auto;
+	padding: 8px 2px 10px;
+	flex-shrink: 0;
+	scrollbar-width: thin;
+	border-bottom: 1px solid rgba(34, 200, 255, 0.15);
+}
+
+.materialChip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	flex-shrink: 0;
+	padding: 6px 10px;
+	border: 1px solid var(--go-border, rgba(34, 200, 255, 0.4));
+	border-radius: var(--go-radius, 2px);
+	background: rgba(12, 32, 58, 0.85);
+	font-size: 12px;
+}
+
+.materialChipIcon {
+	font-size: 14px;
+	line-height: 1;
+}
+
+.materialChipName {
+	color: var(--go-text, #e8f4ff);
+	max-width: 88px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.materialChipQty {
+	color: var(--go-accent, #22c8ff);
+	font-weight: 700;
+}
+
+.emptyStrip {
+	margin: 0;
+	font-size: 12px;
+	color: var(--go-muted, rgba(200, 230, 255, 0.65));
+	line-height: 1.4;
+}
+
+/* Controls */
+.controls {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	flex-shrink: 0;
+}
+
+.filters {
+	display: flex;
+	gap: 2px;
+	overflow-x: auto;
+	scrollbar-width: none;
+	border-bottom: 1px solid rgba(34, 200, 255, 0.22);
+	padding-bottom: 0;
+}
+
+.filters::-webkit-scrollbar {
+	display: none;
+}
+
+/* Text filter tabs — underline active (vision mockup) */
+.filterBtn {
+	flex-shrink: 0;
+	padding: 8px 12px 10px;
+	border: none;
+	border-bottom: 3px solid transparent;
+	border-radius: 0;
+	background: transparent;
+	color: rgba(160, 185, 210, 0.72);
+	font-size: 13px;
+	font-weight: 500;
+	letter-spacing: 0.01em;
+	cursor: pointer;
+	min-height: 36px;
+	box-shadow: none;
+	margin-bottom: -1px;
+	transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.filterActive {
+	color: var(--go-accent, #22c8ff);
+	border-bottom-color: var(--go-accent, #22c8ff);
+	background: transparent;
+	font-weight: 700;
+	box-shadow: none;
+	text-shadow: 0 0 10px rgba(34, 200, 255, 0.4);
+}
+
+/* Recipes | Experiment — text + pipe, cyan active, no underline */
+.modeToggle {
+	display: inline-flex;
+	align-items: center;
+	align-self: center;
+	justify-content: center;
+	gap: 4px;
+	border: none;
+	border-radius: 0;
+	overflow: visible;
+	background: transparent;
+	padding: 4px 4px 2px;
+	width: 100%;
+}
+
+.modeBtn {
+	padding: 4px 6px;
+	border: none;
+	border-bottom: none;
+	border-radius: 0;
+	background: transparent;
+	color: rgba(160, 185, 210, 0.65);
+	font-size: 13px;
+	font-weight: 500;
+	letter-spacing: 0.01em;
+	text-transform: none;
+	cursor: pointer;
+	min-height: 28px;
+	box-shadow: none;
+}
+
+.modeSep {
+	color: rgba(100, 130, 160, 0.55);
+	font-size: 13px;
+	padding: 0 2px;
+	user-select: none;
+	line-height: 1;
+}
+
+.modeActive {
+	background: transparent;
+	color: var(--go-accent, #22c8ff);
+	font-weight: 700;
+	border-bottom: none;
+	text-shadow: 0 0 8px rgba(34, 200, 255, 0.35);
+}
+
+/* Recipe list */
+.recipeList,
+.templateList {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	overflow-y: auto;
+	flex: 1;
+	min-height: 0;
+}
+
+.recipeRow,
+.templateRow {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	width: 100%;
+	padding: 14px 12px;
+	border: 1px solid rgba(34, 200, 255, 0.22);
+	border-radius: var(--go-radius, 2px);
+	background: rgba(10, 28, 52, 0.75);
+	color: inherit;
+	text-align: left;
+	cursor: pointer;
+	min-height: 88px;
+	height: auto !important;
+	max-height: none;
+	overflow: visible;
+	line-height: normal;
+	white-space: normal;
+	box-sizing: border-box;
+}
+
+.recipeRow:hover,
+.recipeRowSelected {
+	border-color: var(--go-accent, #22c8ff);
+	background: rgba(18, 55, 96, 0.55);
+}
+
+.recipeRowReady {
+	opacity: 1;
+}
+
+.recipeRowLocked {
+	opacity: 0.72;
+}
+
+.recipeIcon {
+	font-size: 28px;
+	line-height: 1;
+	flex-shrink: 0;
+	width: 36px;
+	text-align: center;
+	margin-top: 2px;
+}
+
+.recipeMain {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	overflow: visible;
+}
+
+.recipeNameRow {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	min-width: 0;
+}
+
+.recipeName {
+	font-size: 15px;
+	font-weight: 700;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.rarityBadge {
+	flex-shrink: 0;
+	padding: 2px 7px;
+	border: 1px solid rgba(34, 200, 255, 0.35);
+	border-radius: 999px;
+	font-size: 10px;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	color: var(--go-muted, rgba(200, 230, 255, 0.75));
+	background: rgba(8, 24, 46, 0.7);
+}
+
+.rarityBadge[data-rarity='uncommon'] {
+	color: #86efac;
+	border-color: rgba(134, 239, 172, 0.45);
+}
+
+.rarityBadge[data-rarity='rare'] {
+	color: #93c5fd;
+	border-color: rgba(147, 197, 253, 0.45);
+}
+
+.rarityBadge[data-rarity='epic'] {
+	color: #d8b4fe;
+	border-color: rgba(216, 180, 254, 0.45);
+}
+
+.rarityBadge[data-rarity='legendary'] {
+	color: #fdba74;
+	border-color: rgba(253, 186, 116, 0.5);
+}
+
+.customBadge {
+	font-size: 9px;
+	letter-spacing: 0.06em;
+	padding: 2px 5px;
+	border: 1px solid rgba(34, 200, 255, 0.5);
+	color: var(--go-accent, #22c8ff);
+	border-radius: 2px;
+	flex-shrink: 0;
+}
+
+.recipeMats {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	overflow: visible;
+}
+
+.matChip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 10px;
+	font-size: 13px;
+	border-radius: 6px;
+	border: 1px solid rgba(34, 200, 255, 0.28);
+	background: rgba(8, 18, 32, 0.85);
+	line-height: 1.25;
+	min-height: 30px;
+	box-sizing: border-box;
+	flex-shrink: 0;
+}
+
+.matChipIcon {
+	font-size: 16px;
+	line-height: 1;
+}
+
+.matChipName {
+	color: rgba(210, 230, 255, 0.85);
+	text-transform: lowercase;
+	max-width: 86px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	font-size: 13px;
+}
+
+.matChipFrac {
+	font-weight: 700;
+	font-size: 13px;
+	font-variant-numeric: tabular-nums;
+}
+
+.matOk {
+	color: #7dffb3;
+	border-color: rgba(125, 255, 179, 0.4);
+	background: rgba(20, 70, 50, 0.28);
+}
+
+.matOk .matChipFrac {
+	color: #7dffb3;
+}
+
+.matMissing {
+	color: #ff9aa8;
+	border-color: rgba(255, 120, 140, 0.4);
+	background: rgba(70, 24, 36, 0.35);
+}
+
+.matMissing .matChipFrac {
+	color: #ff9aa8;
+}
+
+.matMissing .matChipName {
+	color: rgba(255, 180, 190, 0.85);
+}
+
+.rowAction {
+	flex-shrink: 0;
+	align-self: center;
+	font-size: 12px;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	padding: 8px 14px;
+	border-radius: 4px;
+	min-width: 78px;
+	text-align: center;
+	box-sizing: border-box;
+}
+
+/* Hollow cyan outline — matches vision mockup list Craft */
+.rowActionReady {
+	color: var(--go-accent, #22c8ff);
+	background: rgba(34, 200, 255, 0.06);
+	border: 1px solid var(--go-accent, #22c8ff);
+	box-shadow:
+		0 0 8px rgba(34, 200, 255, 0.35),
+		inset 0 0 0 1px rgba(34, 200, 255, 0.12);
+	text-shadow: 0 0 6px rgba(34, 200, 255, 0.45);
+}
+
+.rowActionNeed {
+	color: rgba(160, 180, 200, 0.75);
+	background: rgba(12, 20, 32, 0.85);
+	border: 1px solid rgba(120, 140, 160, 0.35);
+	box-shadow: none;
+	text-shadow: none;
+	font-weight: 600;
+}
+
+.emptyList {
+	margin: 8px 0;
+	padding: 12px;
+	font-size: 12px;
+	color: var(--go-muted, rgba(200, 230, 255, 0.65));
+	line-height: 1.45;
+}
+
+.showMore {
+	align-self: center;
+	margin: 4px 0;
+	padding: 8px 16px;
+	border: 1px solid var(--go-border, rgba(34, 200, 255, 0.4));
+	background: transparent;
+	color: var(--go-accent, #22c8ff);
+	font-size: 12px;
+	cursor: pointer;
+	min-height: 40px;
+}
+
+/* Experiment */
+.experimentPane {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	flex: 1;
+	min-height: 0;
+	overflow: hidden;
+}
+
+.experimentBlurb {
+	margin: 0;
+	font-size: 12px;
+	color: var(--go-muted, rgba(200, 230, 255, 0.7));
+	line-height: 1.4;
+}
+
+.templateMeta {
+	font-size: 11px;
+	color: var(--go-muted, rgba(200, 230, 255, 0.6));
+}
+
+/* Detail panel (desktop) */
+.detailPanel,
+.detailSheet {
+	position: relative;
+}
+
+.detailPanel {
+	flex-shrink: 0;
+	padding: 14px 14px 16px;
+	border: 1px solid var(--go-border, rgba(34, 200, 255, 0.4));
+	border-radius: var(--go-radius, 2px);
+	background: rgba(8, 24, 46, 0.95);
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	max-height: 52%;
+	overflow-y: auto;
+	margin-bottom: 2px;
+}
+
+/* Big icon left · details right */
+.detailBody {
+	display: flex;
+	align-items: flex-start;
+	gap: 16px;
+	padding-right: 36px;
+}
+
+.detailIcon {
+	flex-shrink: 0;
+	align-self: center;
+	width: 112px;
+	height: 112px;
+	margin-top: 18px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 64px;
+	line-height: 1;
+	border: 1px solid rgba(34, 200, 255, 0.4);
+	border-radius: 10px;
+	background: rgba(12, 32, 58, 0.9);
+	box-shadow:
+		0 0 16px rgba(34, 200, 255, 0.22),
+		inset 0 0 0 1px rgba(34, 200, 255, 0.1);
+}
+
+.detailInfo {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.detailTitle {
+	margin: 0;
+	font-size: 20px;
+	font-weight: 800;
+	letter-spacing: 0.01em;
+	color: var(--go-text, #e8f4ff);
+	line-height: 1.2;
+}
+
+.detailMeta {
+	margin: 0;
+	font-size: 13px;
+	color: var(--go-muted, rgba(200, 230, 255, 0.65));
+	text-transform: capitalize;
+}
+
+/* Red close square */
+.detailClose {
+	position: absolute;
+	top: 10px;
+	right: 10px;
+	z-index: 2;
+	width: 32px;
+	height: 32px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin: 0;
+	padding: 0;
+	border: 1px solid rgba(255, 80, 90, 0.85);
+	border-radius: 4px;
+	background: rgba(80, 16, 24, 0.75);
+	color: #ff6b75;
+	font-size: 15px;
+	font-weight: 700;
+	line-height: 1;
+	cursor: pointer;
+	box-shadow: 0 0 10px rgba(255, 70, 80, 0.35);
+	min-height: 32px;
+}
+
+.detailClose:hover {
+	background: rgba(120, 24, 32, 0.9);
+	color: #ff8a92;
+	border-color: #ff6b75;
+}
+
+.detailLabel {
+	display: block;
+	font-size: 12px;
+	letter-spacing: 0.14em;
+	text-transform: uppercase;
+	color: var(--go-accent, #22c8ff);
+	margin-bottom: 8px;
+	font-weight: 700;
+}
+
+.detailNeeds,
+.detailEffects {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.needRow {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 8px 10px;
+	font-size: 14px;
+	border-radius: 6px;
+	border: 1px solid transparent;
+	min-height: 36px;
+	gap: 8px;
+}
+
+.needLeft {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	min-width: 0;
+	flex: 1;
+}
+
+.needLeft .matChipIcon {
+	font-size: 18px;
+}
+
+.needName {
+	text-transform: lowercase;
+	color: rgba(220, 235, 255, 0.92);
+}
+
+.needCheck {
+	font-weight: 800;
+	width: 18px;
+	font-size: 16px;
+	text-align: center;
+	flex-shrink: 0;
+	color: #7dffb3;
+}
+
+.matMissing .needCheck {
+	color: #ff9aa8;
+}
+
+.needHave {
+	font-weight: 700;
+	font-size: 14px;
+	font-variant-numeric: tabular-nums;
+}
+
+.effectLine {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 8px 0;
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--go-text, #e8f4ff);
+	border-radius: 0;
+	background: transparent;
+	border: none;
+	min-height: 0;
+}
+
+/* Double-up effect badge from vision mockup */
+.effectBadge {
+	flex-shrink: 0;
+	width: 28px;
+	height: 28px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border: 1px solid rgba(34, 200, 255, 0.55);
+	border-radius: 4px;
+	background: rgba(12, 40, 72, 0.95);
+	color: var(--go-accent, #22c8ff);
+	font-size: 14px;
+	font-weight: 800;
+	line-height: 1;
+	box-shadow: 0 0 8px rgba(34, 200, 255, 0.3);
+}
+
+.effectText {
+	letter-spacing: 0.02em;
+	font-size: 15px;
+	color: rgba(210, 235, 255, 0.95);
+}
+
+.effectHint {
+	font-size: 12px;
+	color: var(--go-muted, rgba(200, 230, 255, 0.55));
+	font-style: italic;
+	padding-left: 4px;
+}
+
+/* Detail Craft — dark navy fill, cyan chrome + glow (vision mockup) */
+.primaryCraft {
+	width: 100%;
+	padding: 14px 16px;
+	border: 1px solid var(--go-accent, #22c8ff);
+	border-radius: 4px;
+	background: linear-gradient(
+		180deg,
+		rgba(28, 72, 120, 0.95) 0%,
+		rgba(10, 28, 52, 0.98) 55%,
+		rgba(6, 18, 36, 1) 100%
+	);
+	color: var(--go-accent, #22c8ff);
+	font-size: 15px;
+	font-weight: 800;
+	letter-spacing: 0.08em;
+	text-transform: none;
+	cursor: pointer;
+	min-height: 52px;
+	box-shadow:
+		0 0 14px rgba(34, 200, 255, 0.45),
+		0 0 28px rgba(34, 200, 255, 0.18),
+		inset 0 1px 0 rgba(120, 220, 255, 0.25);
+	text-shadow: 0 0 10px rgba(34, 200, 255, 0.55);
+}
+
+.primaryCraft:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+	background: linear-gradient(180deg, rgba(20, 32, 48, 0.9), rgba(10, 16, 28, 0.95));
+	color: rgba(160, 180, 200, 0.65);
+	border-color: rgba(120, 140, 160, 0.4);
+	box-shadow: none;
+	text-shadow: none;
+}
+
+/* Mobile sheet */
+.sheetBackdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 40;
+	border: none;
+	background: rgba(0, 0, 0, 0.55);
+	cursor: pointer;
+}
+
+.detailSheet {
+	position: fixed;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	z-index: 50;
+	max-height: 78vh;
+	overflow-y: auto;
+	padding: 8px 14px calc(22px + env(safe-area-inset-bottom, 0px));
+	border-radius: 12px 12px 0 0;
+	border: 1px solid var(--go-border, rgba(34, 200, 255, 0.4));
+	border-bottom: none;
+	background: rgba(8, 18, 36, 0.98);
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.45);
+}
+
+.sheetHandle {
+	align-self: center;
+	width: 40px;
+	height: 4px;
+	border-radius: 2px;
+	background: rgba(34, 200, 255, 0.35);
+	margin-bottom: 2px;
+}
+
+.stickyCraft {
+	position: sticky;
+	bottom: 0;
+	margin-top: 4px;
+}
+
+/* Footer */
+.footer {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+	flex-shrink: 0;
+	padding: 8px 4px 4px;
+	border-top: none;
+}
+
+/* Plain terminal-style text links (vision mockup) */
+.footerLink {
+	border: none;
+	background: transparent;
+	color: rgba(140, 200, 230, 0.85);
+	font-size: 12px;
+	font-family: ui-monospace, "SF Mono", "Cascadia Code", "Courier New", monospace;
+	letter-spacing: 0.02em;
+	cursor: pointer;
+	padding: 4px 2px;
+	min-height: 0;
+	box-shadow: none;
+	border-radius: 0;
+}
+
+.footerLink:hover {
+	color: var(--go-accent, #22c8ff);
+	text-decoration: underline;
+	text-underline-offset: 3px;
+}
+
+.footerSep {
+	color: rgba(120, 160, 190, 0.55);
+	font-size: 12px;
+	font-family: ui-monospace, "SF Mono", "Cascadia Code", "Courier New", monospace;
+	line-height: 1;
+}
+
+/* Pixel shell overrides */
+.workshop.pixelCraftingShell {
+	font-family: var(--go-font-ui, "Press Start 2P", "VT323", "Courier New", monospace);
+	font-size: 11px;
+	background: var(--go-bg, var(--pixel-bg, rgba(6, 14, 28, 0.92))) !important;
+	border: 2px solid var(--pixel-border-dark, rgba(34, 200, 255, 0.35));
+	box-shadow: var(--pixel-shadow, none), inset 0 0 0 1px var(--pixel-border-light, rgba(34, 200, 255, 0.08));
+}
+
+.workshop.pixelCraftingShell .workshopTitle {
+	font-family: var(--go-font-ui, "Press Start 2P", "VT323", monospace) !important;
+	font-size: 11px !important;
+	color: var(--pixel-accent, var(--go-accent, #22c8ff)) !important;
+	text-shadow: 2px 2px 0 var(--pixel-border-dark, transparent);
+}
+
+.workshop.pixelCraftingShell .primaryCraft,
+.workshop.pixelCraftingShell .rowActionReady {
+	border-radius: 4px !important;
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+}
+
+.workshop.pixelCraftingShell .rowActionReady {
+	font-size: 11px !important;
+	color: var(--go-accent, #22c8ff) !important;
+	background: rgba(34, 200, 255, 0.06) !important;
+	border: 1px solid var(--go-accent, #22c8ff) !important;
+	box-shadow:
+		0 0 8px rgba(34, 200, 255, 0.35),
+		inset 0 0 0 1px rgba(34, 200, 255, 0.12) !important;
+}
+
+.workshop.pixelCraftingShell .primaryCraft {
+	font-size: 15px !important;
+	color: var(--go-accent, #22c8ff) !important;
+	background: linear-gradient(
+		180deg,
+		rgba(28, 72, 120, 0.95) 0%,
+		rgba(10, 28, 52, 0.98) 55%,
+		rgba(6, 18, 36, 1) 100%
+	) !important;
+	border: 1px solid var(--go-accent, #22c8ff) !important;
+	box-shadow:
+		0 0 14px rgba(34, 200, 255, 0.45),
+		0 0 28px rgba(34, 200, 255, 0.18),
+		inset 0 1px 0 rgba(120, 220, 255, 0.25) !important;
+}
+
+.workshop.pixelCraftingShell .recipeRow,
+.workshop.pixelCraftingShell .materialChip,
+.workshop.pixelCraftingShell .detailPanel {
+	border-radius: var(--pixel-card-radius, 2px) !important;
+	border-width: 2px !important;
+	border-color: var(--pixel-border-dark, rgba(34, 200, 255, 0.35)) !important;
+	background: var(--pixel-panel, rgba(10, 28, 52, 0.75)) !important;
+}
+
+.workshop.pixelCraftingShell .modeToggle {
+	border: none !important;
+	background: transparent !important;
+	box-shadow: none !important;
+}
+
+.workshop.pixelCraftingShell .filterBtn {
+	border: none !important;
+	border-bottom: 3px solid transparent !important;
+	border-radius: 0 !important;
+	background: transparent !important;
+	box-shadow: none !important;
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+	font-size: 13px !important;
+}
+
+.workshop.pixelCraftingShell .filterActive {
+	border-bottom-color: var(--go-accent, #22c8ff) !important;
+	color: var(--go-accent, #22c8ff) !important;
+	background: transparent !important;
+	box-shadow: none !important;
+}
+
+.workshop.pixelCraftingShell .modeBtn {
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+	font-size: 13px !important;
+	text-transform: none !important;
+	border: none !important;
+	background: transparent !important;
+	box-shadow: none !important;
+}
+
+.workshop.pixelCraftingShell .modeActive {
+	border-bottom: none !important;
+	color: var(--go-accent, #22c8ff) !important;
+	background: transparent !important;
+}
+
+.workshop.pixelCraftingShell .matChip {
+	border-radius: 6px !important;
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+	font-size: 13px !important;
+	padding: 6px 10px !important;
+}
+
+.workshop.pixelCraftingShell .detailTitle {
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+	font-size: 20px !important;
+}
+
+.workshop.pixelCraftingShell .effectText {
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+	font-size: 15px !important;
+}
+
+.workshop.pixelCraftingShell .needRow {
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+	font-size: 14px !important;
+}
+
+.workshop.pixelCraftingShell .footerLink {
+	font-family: ui-monospace, "SF Mono", "Cascadia Code", "Courier New", monospace !important;
+	font-size: 12px !important;
+	background: transparent !important;
+	border: none !important;
+	box-shadow: none !important;
+	min-height: 0 !important;
+}
+
+/* System Hunter shell */
+:global([data-gamification-shell='system']) .workshop.pixelCraftingShell {
+	border-width: 1px !important;
+	border-color: var(--go-border, rgba(34, 200, 255, 0.42)) !important;
+	border-radius: var(--go-radius, 2px) !important;
+	box-shadow: var(--go-shadow-soft, 0 0 12px rgba(34, 200, 255, 0.16)) !important;
+}
+
+:global([data-gamification-shell='system']) .workshop.pixelCraftingShell .workshopTitle {
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+	font-size: 0.85rem !important;
+	letter-spacing: 0.14em;
+	text-shadow: none !important;
+}
+
+:global([data-gamification-shell='system']) .workshop.pixelCraftingShell .primaryCraft {
+	font-family: var(--go-font-ui, "Segoe UI", "Inter", system-ui, sans-serif) !important;
+	font-size: 15px !important;
+	color: var(--go-accent, #22c8ff) !important;
+}
+
+/* Mobile tweaks */
+.workshop[data-gamification-mobile='true'] .materialsStrip {
+	position: sticky;
+	top: 0;
+	z-index: 2;
+	background: var(--go-bg, rgba(6, 14, 28, 0.96));
+}
+
+.workshop[data-gamification-mobile='true'] .recipeRow {
+	min-height: 96px;
+	padding: 14px 12px;
+}
+
+.workshop[data-gamification-mobile='true'] .detailIcon {
+	width: 104px;
+	height: 104px;
+	font-size: 58px;
+	margin-top: 22px;
+	align-self: center;
+}
+
+.workshop[data-gamification-mobile='true'] .detailBody {
+	gap: 12px;
+	padding-right: 40px;
+}
+
+.workshop[data-gamification-mobile='true'] .needRow {
+	min-height: 40px;
+	font-size: 15px;
+}
+
+.workshop[data-gamification-mobile='true'] .filterBtn {
+	min-height: 40px;
+}

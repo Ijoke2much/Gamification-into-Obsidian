@@ -1,0 +1,185 @@
+/* Inline Editor Styles */
+.inlineSelect,
+.inlineInput {
+    background: var(--background-primary);
+    border: 2px solid var(--interactive-accent);
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text-normal);
+    outline: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    z-index: 1000;
+    position: relative;
+    min-width: 80px;
+}
+
+.inlineSelect {
+    cursor: pointer;
+}
+
+.inlineInput {
+    cursor: text;
+}
+
+.inlineSelect:focus,
+.inlineInput:focus {
+    border-color: var(--interactive-accent-hover);
+    box-shadow: 0 0 0 3px rgba(var(--interactive-accent-rgb), 0.1);
+}
+
+/* Subtask Editor Specific Styles */
+.subtaskEditor {
+    background: rgba(255, 255, 255, 0.95);
+    border: 2px solid #3b82f6;
+    border-radius: 4px;
+    padding: 6px 8px;
+    font-size: 11px;
+    color: #1e293b;
+    outline: none;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+    z-index: 1000;
+    position: relative;
+    min-width: 120px;
+}
+
+.subtaskEditor:focus {
+    border-color: #1d4ed8;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Quick Add Button */
+.quickAddButton {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    background: rgba(34, 197, 94, 0.1);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    border-radius: 50%;
+    color: #059669;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin-left: 4px;
+}
+
+.quickAddButton:hover {
+    background: rgba(34, 197, 94, 0.2);
+    border-color: rgba(34, 197, 94, 0.5);
+    transform: scale(1.1);
+}
+
+/* Editable Badge Styles */
+.editableBadge {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.editableBadge:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.editableBadge.editing {
+    opacity: 0.7;
+}
+
+/* Subtask Row with Edit Capability */
+.editableSubtaskRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 4px 0;
+    font-size: 11px;
+    position: relative;
+}
+
+.editableSubtaskText {
+    flex: 1;
+    color: #334155;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 3px;
+    transition: background-color 0.2s ease;
+}
+
+.editableSubtaskText:hover {
+    background-color: rgba(59, 130, 246, 0.1);
+}
+
+.editableSubtaskText.editing {
+    background-color: rgba(59, 130, 246, 0.1);
+}
+
+/* Action Buttons for Subtasks */
+.subtaskActions {
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.editableSubtaskRow:hover .subtaskActions {
+    opacity: 1;
+}
+
+.subtaskActionButton {
+    width: 16px;
+    height: 16px;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.editButton {
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+}
+
+.editButton:hover {
+    background: rgba(59, 130, 246, 0.2);
+}
+
+.deleteButton {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.deleteButton:hover {
+    background: rgba(239, 68, 68, 0.2);
+}
+
+/* Dark mode adjustments */
+@media (prefers-color-scheme: dark) {
+
+    .inlineSelect,
+    .inlineInput {
+        background: var(--background-secondary);
+        color: var(--text-normal);
+        border-color: var(--interactive-accent);
+    }
+
+    .subtaskEditor {
+        background: var(--background-secondary);
+        color: var(--text-normal);
+        border-color: #3b82f6;
+    }
+
+    .editableSubtaskText {
+        color: var(--text-normal);
+    }
+
+    .editableSubtaskText:hover {
+        background-color: rgba(59, 130, 246, 0.2);
+    }
+}

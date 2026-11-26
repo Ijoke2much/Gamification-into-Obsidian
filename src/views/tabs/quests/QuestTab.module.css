@@ -1,0 +1,663 @@
+/* Quest Tab Styles */
+.questTabContainer {
+    padding: 8px;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    max-width: 100%;
+}
+
+.searchContainer {
+    margin-bottom: 12px;
+}
+
+.controlsContainer {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overflow-y: visible;
+    /* Allow horizontal scrolling while keeping dropdowns visible */
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.controlsContainer::-webkit-scrollbar {
+    display: none;
+}
+
+/* Button Styles - Optimized for horizontal scrolling */
+.actionButton {
+    padding: 8px 12px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #fff;
+    cursor: pointer;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+    min-height: 36px;
+    min-width: 100px;
+    max-width: 120px;
+    font-weight: 500;
+    text-align: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.4) !important;
+    backdrop-filter: blur(10px);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex-shrink: 0;
+    position: relative;
+}
+
+.actionButton:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.actionButton:active {
+    transform: translateY(0);
+}
+
+/* Filter Button */
+.filterButton {
+    composes: actionButton;
+    background: rgba(0, 0, 0, 0.4) !important;
+}
+
+.filterButton.active {
+    background: rgba(100, 149, 237, 0.3) !important;
+}
+
+.filterButton:hover {
+    background: rgba(0, 0, 0, 0.6) !important;
+}
+
+/* Template Button */
+.templateButton {
+    composes: actionButton;
+    background: rgba(74, 158, 255, 0.3) !important;
+}
+
+.templateButton:hover {
+    background: rgba(74, 158, 255, 0.5) !important;
+}
+
+/* Analytics Button */
+.analyticsButton {
+    composes: actionButton;
+    background: rgba(156, 39, 176, 0.3) !important;
+}
+
+.analyticsButton.active {
+    background: rgba(76, 175, 80, 0.3) !important;
+}
+
+/* Container-based responsive design for narrow sidebars */
+@container (max-width: 280px) {
+    .controlsContainer {
+        gap: 2px;
+        margin-bottom: 20px;
+        overflow-x: auto;
+        padding: 2px 0;
+    }
+
+    .actionButton {
+        min-width: 60px !important;
+        max-width: 80px !important;
+        padding: 4px 6px !important;
+        font-size: 9px !important;
+        min-height: 28px !important;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+}
+
+@container (max-width: 350px) {
+    .controlsContainer {
+        gap: 3px;
+        margin-bottom: 22px;
+    }
+
+    .actionButton {
+        min-width: 80px !important;
+        max-width: 100px !important;
+        padding: 6px 8px !important;
+        font-size: 10px !important;
+        min-height: 32px !important;
+    }
+}
+
+.analyticsButton:hover {
+    background: rgba(156, 39, 176, 0.5) !important;
+}
+
+/* Advanced Button */
+.advancedButton {
+    composes: actionButton;
+    background: rgba(255, 193, 7, 0.3) !important;
+}
+
+.advancedButton:hover {
+    background: rgba(255, 193, 7, 0.5) !important;
+}
+
+/* Boss Button */
+.bossButton {
+    composes: actionButton;
+    background: rgba(220, 53, 69, 0.3) !important;
+}
+
+.bossButton:hover {
+    background: rgba(220, 53, 69, 0.5) !important;
+}
+
+/* Export Button */
+.exportButton {
+    composes: actionButton;
+    background: rgba(40, 167, 69, 0.3) !important;
+}
+
+.exportButton:hover {
+    background: rgba(40, 167, 69, 0.5) !important;
+}
+
+/* Quick Filter Cards - Optimized for 250px sidebar */
+.quickFilterContainer {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    margin-bottom: 40px;
+    flex-shrink: 0;
+}
+
+.quickFilterContainer.compact {
+    grid-template-columns: repeat(3, 1fr);
+    /* Changed from 6 to 3 for better visibility */
+    gap: 4px;
+    /* Increased from 2px */
+}
+
+.quickFilterCard {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    padding: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+    min-height: 45px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.quickFilterCard.compact {
+    min-height: 30px;
+    padding: 4px;
+    border-radius: 4px;
+}
+
+.quickFilterCard:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.quickFilterCard.active {
+    background: rgba(100, 149, 237, 0.3);
+    border-color: rgba(100, 149, 237, 0.5);
+}
+
+.quickFilterLabel {
+    font-size: 9px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.8);
+    margin-bottom: 2px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    line-height: 1;
+}
+
+.quickFilterLabel.compact {
+    font-size: 8px;
+    margin-bottom: 1px;
+}
+
+.quickFilterCount {
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    line-height: 1;
+}
+
+.quickFilterCount.compact {
+    font-size: 12px;
+}
+
+/* Quick Filter Results Summary */
+.quickFilterResultsHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 6px 10px;
+    margin-bottom: 8px;
+    background: rgba(0, 0, 0, 0.35);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.quickFilterResultsTitle {
+    font-size: 12px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.quickFilterResultsMeta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.7);
+    flex-wrap: wrap;
+}
+
+.quickFilterResultsCount {
+    opacity: 0.9;
+}
+
+.quickFilterClearButton {
+    border: none;
+    background: rgba(239, 68, 68, 0.2);
+    color: #fecaca;
+    padding: 3px 9px;
+    border-radius: 999px;
+    cursor: pointer;
+    font-size: 10px;
+    font-weight: 600;
+    transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.quickFilterClearButton:hover {
+    background: rgba(239, 68, 68, 0.35);
+    transform: translateY(-1px);
+}
+
+/* Pagination */
+.paginationControls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.paginationButton {
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    background: rgba(59, 130, 246, 0.2);
+    color: rgba(255, 255, 255, 0.9);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.paginationButton:hover:not(:disabled) {
+    background: rgba(59, 130, 246, 0.35);
+    transform: translateY(-1px);
+}
+
+.paginationButton:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.paginationInfo {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+/* Quest List */
+.questListContainer {
+    flex: 1;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+    .controlsContainer {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+    }
+
+    .actionButton {
+        min-height: 44px;
+        font-size: 14px;
+        padding: 12px 16px;
+    }
+
+    .quickFilterContainer {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        margin-bottom: 40px;
+    }
+
+    .quickFilterCard {
+        min-height: 175px;
+        padding: 16px;
+    }
+
+    .quickFilterLabel {
+        font-size: 12px;
+    }
+
+    .quickFilterCount {
+        font-size: 20px;
+    }
+}
+
+/* Touch Device Optimizations */
+@media (pointer: coarse) {
+    .actionButton {
+        min-height: 48px;
+        min-width: 48px;
+        padding: 12px 16px;
+    }
+
+    .quickFilterCard {
+        min-height: 80px;
+    }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+    .actionButton {
+        border: 2px solid currentColor;
+    }
+
+    .quickFilterCard {
+        border: 2px solid currentColor;
+    }
+}
+
+/* Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+
+    .actionButton,
+    .quickFilterCard {
+        transition: none;
+    }
+
+    .actionButton:hover,
+    .quickFilterCard:hover {
+        transform: none;
+    }
+}
+
+/* Composed with questTabContainer for TSX; tokens live on .questTabContainer.pixelQuestShell */
+.pixelQuestShell {
+    isolation: isolate;
+}
+
+.clayQuestShell {
+    isolation: isolate;
+    background: transparent;
+    color: var(--clay-text, #3a342c);
+    font-family: var(--go-font-ui, "Nunito", "Segoe UI", system-ui, sans-serif);
+}
+
+.shortcutsHint {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: rgba(0, 0, 0, 0.8);
+    color: rgba(255, 255, 255, 0.7);
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 9px;
+    z-index: 1000;
+    cursor: help;
+}
+
+.advancedSearchBanner {
+    margin-top: 8px;
+    padding: 12px;
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 8px;
+    margin-bottom: 20px;
+    min-width: 100%;
+    box-sizing: border-box;
+}
+
+.bulkToolbar {
+    background: rgba(59, 130, 246, 0.1);
+    border: 1px solid rgba(59, 130, 246, 0.3);
+    border-radius: 8px;
+    padding: 12px;
+    margin-top: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* ========================================
+   PIXEL / RPG SHELL (Quest tab)
+   ======================================== */
+
+.questTabContainer.pixelQuestShell {
+    --pixel-bg: #1b1d2f;
+    --pixel-panel: #252742;
+    --pixel-panel-alt: #2e3152;
+    --pixel-border-dark: #0f1120;
+    --pixel-border-light: #5b61a2;
+    --pixel-accent: #8ecae6;
+    --pixel-highlight: #ffd166;
+    --pixel-text: #ecefff;
+    --pixel-muted: #bac2e3;
+    --pixel-shadow: 3px 3px 0 var(--pixel-border-dark);
+    --pixel-shadow-pressed: 1px 1px 0 var(--pixel-border-dark);
+    --pixel-card-radius: 0;
+
+    position: relative;
+    padding: 10px;
+    font-family: "Press Start 2P", "VT323", "Courier New", monospace;
+    font-size: 11px;
+    line-height: 1.65;
+    color: var(--pixel-text);
+    background: var(--pixel-bg);
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: var(--pixel-card-radius);
+    box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light);
+    box-sizing: border-box;
+}
+
+.questTabContainer.pixelQuestShell .shortcutsHint {
+    background: var(--pixel-panel);
+    color: var(--pixel-muted);
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: var(--pixel-card-radius);
+    box-shadow: var(--pixel-shadow-pressed);
+    font-family: "Press Start 2P", "VT323", monospace;
+    font-size: 7px;
+}
+
+.questTabContainer.pixelQuestShell .advancedSearchBanner {
+    background: var(--pixel-panel-alt);
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: var(--pixel-card-radius);
+    box-shadow: var(--pixel-shadow-pressed);
+}
+
+.questTabContainer.pixelQuestShell .bulkToolbar {
+    background: var(--pixel-panel-alt);
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: var(--pixel-card-radius);
+    box-shadow: var(--pixel-shadow-pressed);
+}
+
+.questTabContainer.pixelQuestShell .searchContainer {
+    margin-bottom: 10px;
+}
+
+.questTabContainer.pixelQuestShell :global([data-quest-search="true"]) input {
+    border-radius: var(--pixel-card-radius) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    background: var(--pixel-panel) !important;
+    color: var(--pixel-text) !important;
+    font-family: "VT323", "Courier New", monospace !important;
+    font-size: 16px !important;
+    box-shadow: var(--pixel-shadow-pressed) !important;
+}
+
+.questTabContainer.pixelQuestShell :global([data-quest-search="true"]) input:focus {
+    border-color: var(--pixel-accent) !important;
+    box-shadow: var(--pixel-shadow), 0 0 0 1px var(--pixel-accent) !important;
+}
+
+.questTabContainer.pixelQuestShell :global([data-quest-search="true"]) button {
+    border-radius: var(--pixel-card-radius) !important;
+}
+
+.questTabContainer.pixelQuestShell :global([data-quest-sort-trigger="true"]) button {
+    border-radius: var(--pixel-card-radius) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    background: var(--pixel-panel) !important;
+    color: var(--pixel-text) !important;
+    font-family: "VT323", "Courier New", monospace !important;
+    font-size: 15px !important;
+    box-shadow: var(--pixel-shadow-pressed) !important;
+}
+
+.questTabContainer.pixelQuestShell :global([data-quest-filters="true"]) {
+    border-radius: var(--pixel-card-radius) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    background: var(--pixel-panel) !important;
+    backdrop-filter: none !important;
+    box-shadow: var(--pixel-shadow-pressed) !important;
+}
+
+.questTabContainer.pixelQuestShell :global([data-quest-filters="true"]) select {
+    border-radius: var(--pixel-card-radius) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    background: var(--pixel-panel-alt) !important;
+    font-family: "VT323", "Courier New", monospace !important;
+    font-size: 14px !important;
+}
+
+.questTabContainer.pixelQuestShell :global([data-quest-quick-filters="true"]) {
+    margin-bottom: 32px !important;
+}
+
+.questTabContainer.pixelQuestShell .controlsContainer {
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.questTabContainer.pixelQuestShell .actionButton {
+    border-radius: var(--pixel-card-radius) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    background: var(--pixel-panel-alt) !important;
+    color: var(--pixel-text) !important;
+    font-family: "Press Start 2P", "VT323", monospace !important;
+    font-size: 8px !important;
+    backdrop-filter: none !important;
+    box-shadow: var(--pixel-shadow) !important;
+    min-height: 34px;
+}
+
+.questTabContainer.pixelQuestShell .actionButton:hover {
+    transform: translate(1px, 1px);
+    box-shadow: var(--pixel-shadow-pressed) !important;
+}
+
+.questTabContainer.pixelQuestShell .filterButton.active {
+    background: var(--pixel-panel) !important;
+    border-color: var(--pixel-accent) !important;
+    box-shadow: var(--pixel-shadow-pressed), inset 0 0 0 1px var(--pixel-accent) !important;
+}
+
+.questTabContainer.pixelQuestShell .templateButton {
+    background: var(--pixel-panel-alt) !important;
+    color: var(--pixel-accent) !important;
+}
+
+.questTabContainer.pixelQuestShell .advancedButton {
+    background: var(--pixel-panel-alt) !important;
+    color: var(--pixel-highlight) !important;
+}
+
+.questTabContainer.pixelQuestShell .bossButton {
+    background: var(--pixel-panel-alt) !important;
+    color: #f87171 !important;
+}
+
+.questTabContainer.pixelQuestShell .exportButton {
+    background: var(--pixel-panel-alt) !important;
+    color: #86efac !important;
+}
+
+.questTabContainer.pixelQuestShell .quickFilterResultsHeader {
+    background: var(--pixel-panel);
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: var(--pixel-card-radius);
+    box-shadow: var(--pixel-shadow-pressed);
+}
+
+.questTabContainer.pixelQuestShell .quickFilterResultsTitle {
+    font-family: "Press Start 2P", "VT323", monospace;
+    font-size: 9px;
+    color: var(--pixel-accent);
+    text-shadow: 2px 2px 0 var(--pixel-border-dark);
+}
+
+.questTabContainer.pixelQuestShell .quickFilterResultsMeta,
+.questTabContainer.pixelQuestShell .quickFilterResultsCount,
+.questTabContainer.pixelQuestShell .paginationInfo {
+    font-family: "VT323", "Courier New", monospace;
+    font-size: 14px;
+    color: var(--pixel-muted);
+}
+
+.questTabContainer.pixelQuestShell .quickFilterClearButton {
+    border-radius: var(--pixel-card-radius);
+    border: 2px solid var(--pixel-border-dark);
+    background: var(--pixel-panel-alt);
+    color: #fecaca;
+    font-family: "Press Start 2P", monospace;
+    font-size: 7px;
+    box-shadow: var(--pixel-shadow-pressed);
+}
+
+.questTabContainer.pixelQuestShell .paginationButton {
+    border-radius: var(--pixel-card-radius);
+    border: 2px solid var(--pixel-border-dark);
+    background: var(--pixel-panel-alt);
+    color: var(--pixel-accent);
+    font-family: "Press Start 2P", monospace;
+    font-size: 8px;
+    box-shadow: var(--pixel-shadow-pressed);
+}
+
+.questTabContainer.pixelQuestShell .questListContainer {
+    padding-right: 6px;
+}
+
+@container (max-width: 280px) {
+    .questTabContainer.pixelQuestShell .actionButton {
+        font-size: 7px !important;
+    }
+}

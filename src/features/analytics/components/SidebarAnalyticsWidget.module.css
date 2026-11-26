@@ -1,0 +1,405 @@
+/* Sidebar Analytics Widget Styles */
+
+.sidebarWidget {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 215, 0, 0.2);
+    color: #ffffff;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.sidebarWidget::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, #10b981, #ffd700, #8b5cf6);
+    animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+
+    0%,
+    100% {
+        opacity: 0.6;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}
+
+/* Minimized View */
+.sidebarWidget.minimized {
+    padding: 8px;
+    width: 100px;
+    height: 40px;
+}
+
+.minimizedHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    height: 100%;
+}
+
+.productivityBadge {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.productivityEmoji {
+    font-size: 16px;
+}
+
+.productivityScore {
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.expandButton {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 4px;
+    color: #ffffff;
+    padding: 2px 4px;
+    cursor: pointer;
+    font-size: 10px;
+    transition: all 0.2s ease;
+}
+
+.expandButton:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+/* Expanded View */
+.sidebarWidget.expanded {
+    padding: 16px;
+    width: 280px;
+    min-height: 400px;
+}
+
+.widgetHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.headerTitle {
+    color: #ffd700;
+    font-size: 14px;
+    font-weight: bold;
+}
+
+.minimizeButton {
+    background: rgba(255, 255, 255, 0.1);
+    border: none;
+    border-radius: 4px;
+    color: #ffffff;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.2s ease;
+}
+
+.minimizeButton:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.widgetContent {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* Main Productivity Metric */
+.mainMetric {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    padding: 12px;
+    text-align: center;
+}
+
+.scoreContainer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+.scoreEmoji {
+    font-size: 32px;
+}
+
+.scoreDetails {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.scoreValue {
+    font-size: 24px;
+    font-weight: bold;
+    line-height: 1;
+}
+
+.scoreLabel {
+    color: #cbd5e1;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Stats Grid */
+.statsGrid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+}
+
+.statItem {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    padding: 8px;
+    text-align: center;
+    transition: all 0.2s ease;
+}
+
+.statItem:hover {
+    background: rgba(255, 255, 255, 0.08);
+    transform: translateY(-1px);
+}
+
+.statIcon {
+    font-size: 16px;
+    margin-bottom: 4px;
+}
+
+.statValue {
+    font-size: 14px;
+    font-weight: bold;
+    color: #10b981;
+    margin-bottom: 2px;
+}
+
+.statLabel {
+    font-size: 9px;
+    color: #64748b;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Insights Section */
+.insightsSection {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.strengthItem,
+.tipItem {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 6px;
+    padding: 8px;
+}
+
+.insightIcon {
+    font-size: 16px;
+    margin-top: 2px;
+}
+
+.insightContent {
+    flex: 1;
+}
+
+.insightLabel {
+    font-size: 10px;
+    color: #ffd700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 2px;
+}
+
+.insightText {
+    font-size: 11px;
+    color: #cbd5e1;
+    line-height: 1.3;
+}
+
+/* Progress Section */
+.progressSection {
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.progressLabel {
+    font-size: 12px;
+    color: #ffd700;
+    margin-bottom: 8px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.progressBar {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    height: 8px;
+    overflow: hidden;
+    margin-bottom: 8px;
+    position: relative;
+}
+
+.progressFill {
+    height: 100%;
+    border-radius: 10px;
+    transition: width 0.5s ease;
+    position: relative;
+}
+
+.progressFill::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(45deg, transparent 40%, rgba(255, 255, 255, 0.3) 50%, transparent 60%);
+    animation: progressShine 2s infinite;
+}
+
+@keyframes progressShine {
+    0% {
+        transform: translateX(-100%);
+    }
+
+    100% {
+        transform: translateX(100%);
+    }
+}
+
+.progressText {
+    font-size: 10px;
+    color: #cbd5e1;
+    text-align: center;
+    font-style: italic;
+}
+
+/* Update Info */
+.updateInfo {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-top: 8px;
+    border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.updateText {
+    font-size: 9px;
+    color: #64748b;
+}
+
+.liveIndicator {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 9px;
+    color: #10b981;
+    font-weight: bold;
+}
+
+.liveDot {
+    width: 6px;
+    height: 6px;
+    background: #10b981;
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.5;
+        transform: scale(0.8);
+    }
+}
+
+/* Responsive Design */
+@media (max-width: 350px) {
+    .sidebarWidget.expanded {
+        width: 100%;
+        min-width: 260px;
+    }
+
+    .statsGrid {
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+    }
+
+    .scoreContainer {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .scoreEmoji {
+        font-size: 24px;
+    }
+
+    .scoreValue {
+        font-size: 20px;
+    }
+}
+
+/* Dark Mode Compatibility */
+@media (prefers-color-scheme: dark) {
+    .sidebarWidget {
+        background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+    }
+}
+
+/* Animation for widget appearance */
+.sidebarWidget {
+    animation: widgetAppear 0.3s ease-out;
+}
+
+@keyframes widgetAppear {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Hover effects */
+.sidebarWidget.expanded:hover {
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+    transform: translateY(-2px);
+}
+
+.sidebarWidget.minimized:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}

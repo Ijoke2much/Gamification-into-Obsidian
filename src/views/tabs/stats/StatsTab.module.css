@@ -1,0 +1,79 @@
+/* Full-page Stats tab — pixel shell (matches Player column tokens) */
+.statsTabRoot {
+    --pixel-bg: #1b1d2f;
+    --pixel-panel: #252742;
+    --pixel-border-dark: #0f1120;
+    --pixel-border-light: #5b61a2;
+    --pixel-accent: #8ecae6;
+    --pixel-highlight: #ffd166;
+    --pixel-text: #ecefff;
+    --pixel-shadow: 3px 3px 0 var(--pixel-border-dark);
+
+    background: var(--pixel-bg);
+    border: 2px solid var(--pixel-border-dark);
+    border-radius: 0;
+    padding: 24px 16px 20px 16px;
+    min-height: 400px;
+    color: var(--pixel-text);
+    box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light);
+    max-width: 480px;
+    margin: 24px auto 0 auto;
+    transition: box-shadow 0.08s ease, transform 0.08s ease;
+    image-rendering: pixelated;
+}
+
+.statsTabRoot:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 4px 4px 0 var(--pixel-border-dark), inset 0 0 0 1px var(--pixel-border-light);
+}
+
+.header {
+    font-family: "Press Start 2P", "VT323", monospace;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    font-weight: 800;
+    margin: 0 0 20px 0;
+    text-align: center;
+    letter-spacing: 0.06em;
+    color: var(--pixel-accent);
+    text-shadow: 2px 2px 0 var(--pixel-border-dark);
+}
+
+.statsContent {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    width: 100%;
+    min-height: 280px;
+}
+
+/* Modal / embedded: no outer chrome (modal frame handles border) */
+.statsTabRootCompact {
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
+    padding: 0;
+    margin: 0;
+    max-width: none;
+    min-height: 0;
+    color: inherit;
+}
+
+.statsTabRootCompact:hover {
+    transform: none;
+    box-shadow: none;
+}
+
+.statsTabRootCompact .header {
+    display: none;
+}
+
+.statsTabRootCompact .statsContent {
+    min-height: 0;
+}
+
+.statsTabRootCompact .statsContent,
+.statsTabRoot .statsContent {
+    justify-content: stretch;
+}

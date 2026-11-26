@@ -1,0 +1,49 @@
+/**
+ * Pixel enclaves keep Classic tokens inside Solo Leveling (system-hunter) global theme.
+ * Used for Dungeon sidebar and Gate Battle workspace — boss fights stay pixel.
+ */
+
+[data-gamification-visual-theme='system-hunter'] [data-gamification-pixel-enclave] {
+	--pixel-bg: #1b1d2f;
+	--pixel-panel: #252742;
+	--pixel-panel-alt: #2e3152;
+	--pixel-border-dark: #0f1120;
+	--pixel-border-light: #5b61a2;
+	--pixel-accent: #8ecae6;
+	--pixel-highlight: #ffd166;
+	--pixel-text: #ecefff;
+	--pixel-muted: #bac2e3;
+	--pixel-shadow: 3px 3px 0 #0f1120;
+	--pixel-shadow-pressed: 1px 1px 0 #0f1120;
+	--pixel-card-radius: 0;
+
+	--gamify-journey-gold: #ffd700;
+	--gamify-journey-border: #333333;
+	--gamify-journey-hub-bg: #1a1f35;
+	--gamify-scene-border: #c6c6c6;
+
+	--gamify-guild-border: #8a6d3b;
+	--gamify-guild-frame: #c9a45c;
+	--gamify-guild-bg: #0e1226;
+	--gamify-guild-panel: #141a33;
+
+	--gamify-boss-bg: #0d1020;
+	--gamify-boss-nav-bg: #1a1f35;
+	--gamify-boss-text: #e8e8f0;
+	--gamify-boss-muted: #8892b0;
+
+	--gamify-gate-border: #5b61a2;
+	--gamify-gate-border-strong: #8ecae6;
+	--gamify-gate-bg: linear-gradient(180deg, #252742, #1b1d2f);
+	--gamify-gate-card-bg: #2e3152;
+	--gamify-gate-card-border: #5b61a2;
+	--gamify-gate-text: #ecefff;
+	--gamify-gate-muted: #bac2e3;
+	--gamify-gate-accent: #8ecae6;
+	--gamify-gate-highlight: #ffd166;
+	--gamify-gate-glow: 3px 3px 0 #0f1120;
+	--gamify-gate-banner-bg: linear-gradient(180deg, #2e3152, #252742);
+
+	font-family: "Press Start 2P", "VT323", "Courier New", monospace;
+	-webkit-font-smoothing: none;
+}

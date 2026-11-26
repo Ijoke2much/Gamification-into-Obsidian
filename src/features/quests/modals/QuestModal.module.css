@@ -1,0 +1,1090 @@
+.modalOverlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal {
+    background: #23272e;
+    border-radius: 12px;
+    padding: 24px;
+    max-width: 600px;
+    max-height: 80vh;
+    width: 100%;
+    overflow-y: auto;
+    box-shadow: 0 4px 32px #000a;
+    z-index: 10000;
+}
+
+.error {
+    color: #ff4757;
+    margin-top: 12px;
+    text-align: center;
+    font-weight: bold;
+}
+
+.questGiverSection {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.questGiverDialogue {
+    margin-top: 12px;
+    padding: 12px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.questGiverDialogueText {
+    margin: 0;
+    color: #e2e8f0;
+    font-size: 14px;
+    line-height: 1.5;
+    font-style: italic;
+}
+
+.saveLocationSection {
+    margin-bottom: 16px;
+    padding: 12px;
+    border-radius: 10px;
+    border: 1px solid var(--background-modifier-border);
+    background: rgba(255, 255, 255, 0.02);
+}
+
+.saveLocationHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    gap: 8px;
+}
+
+.saveLocationTitle {
+    font-weight: 600;
+    color: var(--text-normal);
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.saveLocationHint {
+    margin-top: 4;
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.customPathInput {
+    width: 100%;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid var(--background-modifier-border);
+    background-color: var(--background-primary);
+    color: var(--text-normal);
+    font-size: 13px;
+    box-sizing: border-box;
+}
+
+@keyframes blink {
+
+    0%,
+    50% {
+        opacity: 1;
+    }
+
+    51%,
+    100% {
+        opacity: 0;
+    }
+}
+
+.blinkingCursor {
+    animation: blink 1s infinite;
+    margin-left: 2px;
+}
+
+/* Common spacing */
+.marginBottom16 {
+    margin-bottom: 16px;
+}
+
+.marginBottom8 {
+    margin-bottom: 8px;
+}
+
+.marginBottom4 {
+    margin-bottom: 4px;
+}
+
+.marginTop12 {
+    margin-top: 12px;
+}
+
+.marginLeft8 {
+    margin-left: 8px;
+}
+
+/* Labels */
+.label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--text-normal);
+}
+
+/* Form Inputs & Selects */
+
+.input,
+.select {
+    width: 100%;
+    padding: 14px 16px;
+    border-radius: 8px;
+    border: 2px solid var(--interactive-accent);
+    background-color: var(--background-primary);
+    color: var(--text-normal);
+    font-size: 15px;
+    font-weight: 500;
+    box-sizing: border-box;
+    line-height: 1.6;
+}
+
+.select {
+    min-height: 48px;
+    margin-bottom: 8px;
+    padding: 8px;
+}
+
+.input:focus,
+.select:focus {
+    outline: none;
+    border-color: var(--interactive-hover);
+    box-shadow: 0 0 0 3px rgba(var(--interactive-accent-rgb), 0.1);
+}
+
+/* Date input specific tweak: give text more left spacing from icon */
+.dateInput {
+    padding-left: 20px;
+}
+
+.select option {
+    padding: 10px;
+    background-color: var(--background-primary);
+    color: var(--text-normal);
+}
+
+/* Flex utilities */
+.flex {
+    display: flex;
+}
+
+.flex1 {
+    flex: 1;
+}
+
+.flexGap8 {
+    gap: 8px;
+}
+
+.flexGap12 {
+    gap: 12px;
+}
+
+.flexGap16 {
+    gap: 16px;
+}
+
+.justifyEnd {
+    justify-content: flex-end;
+}
+
+.alignCenter {
+    align-items: center;
+}
+
+.spaceBetween {
+    justify-content: space-between;
+}
+
+/* Containers */
+.selectedSkillsContainer {
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    padding: 12px;
+    background-color: var(--background-primary);
+    margin-bottom: 8px;
+}
+
+.selectedSkillsTitle {
+    margin-bottom: 8px;
+    font-weight: 600;
+    color: var(--text-normal);
+}
+
+/* Skill Item */
+.skillItem {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px;
+    margin-bottom: 4px;
+    background-color: var(--background-secondary);
+    border-radius: 4px;
+    border: 1px solid var(--background-modifier-border);
+}
+
+.skillName {
+    color: var(--text-normal);
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+.skillDetails {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+/* Buttons */
+.buttonRemove {
+    background: var(--interactive-accent);
+    border: none;
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+.buttonAdd {
+    padding: 8px 12px;
+    background-color: var(--interactive-accent);
+    border: none;
+    border-radius: 4px;
+    color: white;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+/* Subtasks container */
+.subtasksContainer {
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    padding: 12px;
+    background-color: var(--background-secondary);
+    min-height: 60px;
+    margin-bottom: 16px;
+}
+
+.subtaskItem {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+    padding: 8px;
+    background-color: var(--background-primary);
+    border-radius: 4px;
+}
+
+.subtaskText {
+    flex: 1;
+    color: var(--text-normal);
+    font-size: 14px;
+}
+
+/* Rewards container */
+.rewardsContainer {
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    padding: 12px;
+    background-color: var(--background-secondary);
+    margin-bottom: 16px;
+}
+
+.rewardItem {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+    padding: 8px;
+    background-color: var(--background-primary);
+    border-radius: 4px;
+}
+
+.rewardText {
+    flex: 1;
+    color: var(--text-normal);
+    font-size: 14px;
+}
+
+.rewardRarity {
+    margin-left: 8px;
+    font-size: 12px;
+}
+
+/* Task preview */
+.taskPreview {
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 4px;
+    padding: 12px;
+    background-color: var(--background-primary);
+    font-family: monospace;
+    font-size: 12px;
+    color: var(--text-muted);
+    white-space: pre-wrap;
+    max-height: 200px;
+    overflow: auto;
+    margin-bottom: 8px;
+}
+
+/* Buttons container for form submit/cancel */
+.buttonsContainer {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.buttonCancel {
+    padding: 12px 24px;
+    background-color: var(--background-secondary);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 6px;
+    color: var(--text-normal);
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.buttonSubmit {
+    padding: 12px 24px;
+    background-color: var(--interactive-accent);
+    border: none;
+    border-radius: 6px;
+    color: white;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+}
+
+/* Streamlined Quest Modal Animations */
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.advancedOptionsContent {
+    animation: slideDown 0.3s ease-out;
+}
+
+.tabContent {
+    animation: fadeIn 0.2s ease-in;
+}
+
+/* Core form styling improvements */
+.coreFormSection {
+    margin-bottom: 20px;
+}
+
+.coreFormSection input,
+.coreFormSection select {
+    transition: all 0.2s ease;
+    border: 2px solid var(--interactive-accent);
+    border-radius: 8px;
+    padding: 14px;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+.coreFormSection input:focus,
+.coreFormSection select:focus {
+    outline: none;
+    border-color: var(--interactive-hover);
+    box-shadow: 0 0 0 3px rgba(var(--interactive-accent-rgb), 0.1);
+}
+
+.rewardHighlight {
+    background: rgba(var(--interactive-accent-rgb), 0.1);
+    border: 1px solid var(--interactive-accent);
+    border-radius: 12px;
+    padding: 16px;
+}
+
+.skillPill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background-color: var(--interactive-accent);
+    color: white;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    margin: 4px;
+}
+
+.skillPillRemove {
+    background: rgba(255, 255, 255, 0.2);
+    border: none;
+    border-radius: 50%;
+    color: white;
+    cursor: pointer;
+    width: 18px;
+    height: 18px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.advancedToggle {
+    width: 100%;
+    padding: 16px 20px;
+    border: 2px solid var(--interactive-accent);
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    transition: all 0.3s ease;
+}
+
+.advancedToggle:hover {
+    background-color: var(--interactive-hover);
+    transform: translateY(-1px);
+}
+
+.advancedToggleIcon {
+    transition: transform 0.3s ease;
+    font-size: 18px;
+}
+
+.advancedToggleIconExpanded {
+    transform: rotate(180deg);
+}
+
+.tabNav {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 20px;
+    border-bottom: 2px solid var(--background-modifier-border);
+}
+
+.tabButton {
+    padding: 12px 16px;
+    border: none;
+    border-radius: 8px 8px 0 0;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.tabButtonActive {
+    background-color: var(--interactive-accent);
+    color: white;
+}
+
+.tabButtonInactive {
+    background-color: transparent;
+    color: var(--text-normal);
+}
+
+.tabButtonInactive:hover {
+    background-color: var(--background-modifier-hover);
+}
+
+/* ========== Pixel / RPG quest form modal ========== */
+.pixelQuestModalOverlay {
+    background: rgba(15, 17, 32, 0.92);
+    backdrop-filter: none;
+}
+
+.pixelQuestModalPanel {
+    --pixel-bg: #1b1d2f;
+    --pixel-panel: #252742;
+    --pixel-panel-alt: #2e3152;
+    --pixel-border-dark: #0f1120;
+    --pixel-border-light: #5b61a2;
+    --pixel-accent: #8ecae6;
+    --pixel-highlight: #ffd166;
+    --pixel-text: #ecefff;
+    --pixel-muted: #bac2e3;
+    --pixel-shadow: 4px 4px 0 var(--pixel-border-dark);
+    --pixel-radius: 0;
+    font-family: "Press Start 2P", "VT323", "Courier New", monospace;
+    font-size: 11px;
+    line-height: 1.65;
+    color: var(--pixel-text);
+    background: var(--pixel-bg) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    border-radius: var(--pixel-radius) !important;
+    box-shadow: var(--pixel-shadow), inset 0 0 0 1px var(--pixel-border-light) !important;
+}
+
+.pixelQuestModalPanel :global(h1),
+.pixelQuestModalPanel :global(h2),
+.pixelQuestModalPanel :global(h3),
+.pixelQuestModalPanel h2 {
+    font-family: "Press Start 2P", monospace !important;
+    color: var(--pixel-highlight) !important;
+    text-shadow: 2px 2px 0 var(--pixel-border-dark) !important;
+}
+
+.pixelQuestModalPanel h2 {
+    font-size: 10px !important;
+    line-height: 1.6 !important;
+}
+
+.pixelQuestModalPanel .questGiverSection,
+.pixelQuestModalPanel .questGiverDialogue,
+.pixelQuestModalPanel .saveLocationSection {
+    border-radius: var(--pixel-radius) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    background: var(--pixel-panel-alt) !important;
+    box-shadow: 2px 2px 0 var(--pixel-border-dark) !important;
+}
+
+.pixelQuestModalPanel .questGiverDialogueText {
+    font-family: "VT323", "Courier New", monospace !important;
+    font-size: 16px !important;
+    color: var(--pixel-text) !important;
+}
+
+.pixelQuestModalPanel textarea,
+.pixelQuestModalPanel .input,
+.pixelQuestModalPanel .select,
+.pixelQuestModalPanel .customPathInput {
+    border-radius: var(--pixel-radius) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    background: var(--pixel-panel-alt) !important;
+    color: var(--pixel-text) !important;
+    font-family: "VT323", monospace !important;
+    font-size: 16px !important;
+    box-shadow: 2px 2px 0 var(--pixel-border-dark) !important;
+}
+
+.pixelQuestModalPanel textarea:focus,
+.pixelQuestModalPanel .input:focus,
+.pixelQuestModalPanel .select:focus {
+    border-color: var(--pixel-accent) !important;
+    box-shadow: 2px 2px 0 var(--pixel-border-dark), 0 0 0 2px var(--pixel-accent) !important;
+}
+
+.pixelQuestModalPanel .label {
+    font-family: "Press Start 2P", monospace !important;
+    font-size: 8px !important;
+    color: var(--pixel-accent) !important;
+}
+
+.pixelQuestModalPanel .saveLocationTitle {
+    font-family: "Press Start 2P", monospace !important;
+    font-size: 8px !important;
+    color: var(--pixel-accent) !important;
+}
+
+.pixelQuestModalPanel .saveLocationHint {
+    font-family: "VT323", monospace !important;
+    font-size: 14px !important;
+    color: var(--pixel-muted) !important;
+}
+
+.pixelQuestModalPanel .buttonCancel,
+.pixelQuestModalPanel .buttonSubmit,
+.pixelQuestModalPanel .buttonAdd,
+.pixelQuestModalPanel .buttonRemove {
+    border-radius: var(--pixel-radius) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    font-family: "Press Start 2P", monospace !important;
+    font-size: 8px !important;
+    box-shadow: 2px 2px 0 var(--pixel-border-dark) !important;
+}
+
+.pixelQuestModalPanel .buttonSubmit {
+    background: var(--pixel-accent) !important;
+    color: var(--pixel-border-dark) !important;
+}
+
+.pixelQuestModalPanel .tabNav {
+    border-bottom: 2px solid var(--pixel-border-dark) !important;
+}
+
+.pixelQuestModalPanel .tabButton {
+    border-radius: var(--pixel-radius) !important;
+    font-family: "Press Start 2P", monospace !important;
+    font-size: 7px !important;
+    border: 2px solid transparent !important;
+}
+
+.pixelQuestModalPanel .tabButtonActive {
+    border-color: var(--pixel-border-dark) !important;
+    box-shadow: 2px 2px 0 var(--pixel-border-dark) !important;
+}
+
+.pixelQuestModalPanel .skillPill {
+    border-radius: var(--pixel-radius) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    font-family: "VT323", monospace !important;
+    box-shadow: 2px 2px 0 var(--pixel-border-dark) !important;
+}
+
+.pixelQuestModalPanel .skillPillRemove {
+    border-radius: var(--pixel-radius) !important;
+}
+
+.pixelQuestModalPanel .subtasksContainer,
+.pixelQuestModalPanel .subtaskItem,
+.pixelQuestModalPanel .rewardsContainer,
+.pixelQuestModalPanel .rewardItem,
+.pixelQuestModalPanel .selectedSkillsContainer,
+.pixelQuestModalPanel .skillItem {
+    border-radius: var(--pixel-radius) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    background: var(--pixel-panel) !important;
+}
+
+.pixelQuestModalPanel .advancedToggle {
+    border-radius: var(--pixel-radius) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+    font-family: "Press Start 2P", monospace !important;
+    font-size: 8px !important;
+    box-shadow: 2px 2px 0 var(--pixel-border-dark) !important;
+}
+
+.pixelQuestModalPanel .rewardHighlight {
+    border-radius: var(--pixel-radius) !important;
+    border: 2px solid var(--pixel-border-dark) !important;
+}
+
+.pixelQuestModalPanel .coreFormSection input,
+.pixelQuestModalPanel .coreFormSection select {
+    border-radius: var(--pixel-radius) !important;
+}
+
+/* ========== Mobile full-screen shell (safe area + sticky footer) ========== */
+.mobileShell {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100% !important;
+    max-width: none !important;
+    height: 100% !important;
+    height: 100dvh !important;
+    max-height: 100dvh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
+    z-index: 10000;
+}
+
+.mobileOverlay {
+    align-items: stretch !important;
+    justify-content: stretch !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    height: 100dvh !important;
+}
+
+.mobileHeader {
+    flex-shrink: 0;
+    padding: max(10px, env(safe-area-inset-top, 0px)) 12px 10px;
+    border-bottom: 1px solid rgba(34, 200, 255, 0.28);
+    background: rgba(6, 18, 34, 0.96);
+}
+
+.mobileHeaderBar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+}
+
+.mobileCloseBtn {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    flex-shrink: 0;
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 1px solid rgba(34, 200, 255, 0.55) !important;
+    border-radius: 8px !important;
+    background: rgba(8, 28, 54, 0.95) !important;
+    color: #22c8ff !important;
+    font-size: 22px !important;
+    font-weight: 700 !important;
+    line-height: 1 !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: none !important;
+}
+
+.mobileForm {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.mobileBody {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    padding: 12px 12px 20px;
+    padding-left: max(12px, env(safe-area-inset-left, 0px));
+    padding-right: max(12px, env(safe-area-inset-right, 0px));
+}
+
+.mobileFooter {
+    flex-shrink: 0;
+    padding: 10px 12px max(12px, env(safe-area-inset-bottom, 0px));
+    border-top: 1px solid rgba(34, 200, 255, 0.28);
+    background: rgba(4, 14, 28, 0.98);
+    box-shadow: 0 -8px 20px rgba(0, 0, 0, 0.35);
+}
+
+.mobileFooterActions {
+    display: grid !important;
+    grid-template-columns: 1fr 1.35fr;
+    gap: 10px !important;
+    margin-top: 0 !important;
+    justify-content: stretch !important;
+}
+
+.mobileFooterActions button {
+    width: 100%;
+    min-height: 48px !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+}
+
+.mobileHintCompact {
+    display: none !important;
+}
+
+@media (max-width: 768px), (pointer: coarse) {
+    .mobileHintCompact {
+        display: none !important;
+    }
+
+    .mobileShell input,
+    .mobileShell select,
+    .mobileShell textarea {
+        min-height: 44px;
+        font-size: 16px !important; /* prevent iOS zoom */
+    }
+}
+
+.durationWheelPicker {
+    width: 100%;
+}
+
+.durationWheelFrame {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    border-radius: 12px;
+    border: 1px solid var(--background-modifier-border);
+    background: var(--background-primary);
+    overflow: hidden;
+}
+
+.durationWheelTrack {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    width: 228px;
+    max-width: 100%;
+    height: 100%;
+}
+
+.durationWheelHighlight {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 36px;
+    transform: translateY(-50%);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.08);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.durationWheelFadeTop,
+.durationWheelFadeBottom {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 36%;
+    pointer-events: none;
+    z-index: 4;
+}
+
+.durationWheelFadeTop {
+    top: 0;
+    background: linear-gradient(to bottom, var(--background-primary) 0%, transparent 100%);
+}
+
+.durationWheelFadeBottom {
+    bottom: 0;
+    background: linear-gradient(to top, var(--background-primary) 0%, transparent 100%);
+}
+
+.durationWheelColumn {
+    position: relative;
+    z-index: 2;
+    width: 114px;
+    flex-shrink: 0;
+}
+
+.durationWheelScroller {
+    overflow-y: auto;
+    scroll-snap-type: y mandatory;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+}
+
+.durationWheelScroller::-webkit-scrollbar {
+    display: none;
+}
+
+.durationWheelItem {
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: 0 44px 0 8px;
+    scroll-snap-align: center;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    opacity: 0.38;
+    font-size: 20px;
+    font-weight: 500;
+    width: 100%;
+    cursor: pointer;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    user-select: none;
+}
+
+.durationWheelItemSelected {
+    opacity: 1;
+    color: var(--text-normal);
+}
+
+.durationWheelUnit {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    transform: translateY(-50%);
+    z-index: 3;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+    pointer-events: none;
+    line-height: 1;
+}
+
+.durationWheelFooter {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin: 8px auto 0;
+    width: 228px;
+    max-width: 100%;
+    min-height: 20px;
+    gap: 8px;
+}
+
+.durationWheelPreview {
+    font-size: 12px;
+    color: var(--text-muted);
+}
+
+.durationWheelClear {
+    appearance: none !important;
+    -webkit-appearance: none !important;
+    min-height: 0 !important;
+    min-width: 0 !important;
+    height: auto !important;
+    width: auto !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: var(--interactive-accent) !important;
+    font-size: 12px !important;
+    font-weight: 600 !important;
+    cursor: pointer;
+    padding: 0 !important;
+    margin: 0 !important;
+    display: inline !important;
+}
+
+.timeChipRow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 10px;
+}
+
+.timeChip {
+    appearance: none;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--background-modifier-border);
+    background: var(--background-secondary);
+    color: var(--text-normal);
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 600;
+}
+
+.timeHint {
+    margin-top: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-muted);
+}
+
+.timeInput {
+    min-height: 42px;
+    color-scheme: light;
+}
+
+.clayQuestModalPanel .timeHint {
+    color: var(--clay-text-light, #8a8278) !important;
+}
+
+.clayQuestModalPanel input[type="time"] {
+    color-scheme: light;
+    min-height: 42px;
+}
+
+.timeChipActive {
+    border-color: var(--interactive-accent);
+    background: var(--interactive-accent);
+    color: #fff;
+}
+
+.clayQuestModalOverlay {
+    background: rgba(58, 52, 44, 0.38);
+    backdrop-filter: blur(6px);
+}
+
+.clayQuestModalPanel {
+    font-family: var(--go-font-ui, "Nunito", "Segoe UI", system-ui, sans-serif) !important;
+    font-size: 14px;
+    line-height: 1.45;
+    color: var(--clay-text, #3a342c) !important;
+    background: var(--clay-gradient, linear-gradient(145deg, #fbf8f2, #efe6d8)) !important;
+    border: none !important;
+    border-radius: var(--clay-radius, 24px) !important;
+    box-shadow: var(--clay-shadow) !important;
+    color-scheme: light;
+}
+
+.clayQuestModalPanel h2,
+.clayQuestModalPanel :global(h2) {
+    font-family: inherit !important;
+    color: var(--clay-text-strong, #2c2722) !important;
+    text-shadow: none !important;
+}
+
+.clayQuestModalPanel label,
+.clayQuestModalPanel .saveLocationTitle,
+.clayQuestModalPanel .saveLocationHint,
+.clayQuestModalPanel .questGiverDialogueText {
+    color: var(--clay-text, #3a342c) !important;
+}
+
+.clayQuestModalPanel textarea,
+.clayQuestModalPanel .input,
+.clayQuestModalPanel .select,
+.clayQuestModalPanel .customPathInput,
+.clayQuestModalPanel input,
+.clayQuestModalPanel select {
+    background: var(--clay-surface, #f7f3ec) !important;
+    color: var(--clay-text, #3a342c) !important;
+    border: none !important;
+    border-radius: 16px !important;
+    box-shadow: var(--clay-recessed) !important;
+    font-family: inherit !important;
+}
+
+.clayQuestModalPanel .buttonCancel,
+.clayQuestModalPanel .buttonSubmit,
+.clayQuestModalPanel .buttonAdd,
+.clayQuestModalPanel .advancedToggle,
+.clayQuestModalPanel .timeChip {
+    font-family: inherit !important;
+    border-radius: 16px !important;
+    border: none !important;
+    box-shadow: var(--clay-shadow) !important;
+    background: var(--clay-button-gradient, linear-gradient(180deg, #f7f3ec, #ebe3d4)) !important;
+    color: var(--clay-text, #3a342c) !important;
+}
+
+.clayQuestModalPanel .buttonSubmit,
+.clayQuestModalPanel .timeChipActive {
+    background: var(--clay-accent-gradient, linear-gradient(180deg, #6ac9c1, #4aa8a0)) !important;
+    color: #fff !important;
+}
+
+.clayQuestModalPanel .questGiverSection,
+.clayQuestModalPanel .saveLocationSection,
+.clayQuestModalPanel .tabNav {
+    background: var(--clay-surface-2, #efe6d8) !important;
+    border: none !important;
+    border-radius: 18px !important;
+    box-shadow: var(--clay-recessed) !important;
+}
+
+.clayQuestModalPanel .tabButtonActive {
+    background: var(--clay-accent-gradient, linear-gradient(180deg, #6ac9c1, #4aa8a0)) !important;
+    color: #fff !important;
+    box-shadow: var(--clay-pressed) !important;
+}

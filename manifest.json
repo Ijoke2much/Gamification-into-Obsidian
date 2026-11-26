@@ -1,0 +1,11 @@
+{
+	"id": "Gamification-into-Obsidian",
+	"name": "Gamified Obsidian",
+	"version": "1.0.0-beta.6",
+	"main": "main.js",
+	"minAppVersion": "0.15.0",
+	"description": "Quests, focus encounters, and RPG progression on top of your vault notes.",
+	"author": "IJoke2much",
+	"authorUrl": "https://github.com/nilesloverso",
+	"isDesktopOnly": false
+}

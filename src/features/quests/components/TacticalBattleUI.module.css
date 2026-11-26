@@ -1,0 +1,4139 @@
+/* Tactical Battle UI - Clean Layout First */
+/* Focus on structure, not visuals yet */
+
+.tacticalBattle {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    background: linear-gradient(180deg, #87ceeb 0%, #4a90e2 50%, #2e8b57 100%);
+    overflow: visible;
+    box-sizing: border-box;
+    /* Keep header / status bar clear of notches and Obsidian chrome */
+    padding-top: max(8px, env(safe-area-inset-top, 0px));
+    padding-left: max(0px, env(safe-area-inset-left, 0px));
+    padding-right: max(0px, env(safe-area-inset-right, 0px));
+    padding-bottom: max(0px, env(safe-area-inset-bottom, 0px));
+}
+
+/* Final Blow overlay */
+.finalBlowOverlay {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.35);
+    z-index: 9998;
+}
+
+.finalBlowContent {
+    background: rgba(0, 0, 0, 0.9);
+    border: 4px solid #FFD700;
+    border-radius: 16px;
+    padding: 26px 30px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(255, 215, 0, 0.3);
+}
+
+.finalBlowTitle {
+    color: #FFD700;
+    font-weight: 900;
+    font-size: 22px;
+    margin-bottom: 10px;
+    letter-spacing: 1px;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
+}
+
+.finalBlowButton {
+    background: linear-gradient(135deg, #FFD700 0%, #f59e0b 100%);
+    border: 3px solid #fff7;
+    border-radius: 12px;
+    padding: 14px 36px;
+    font-size: 20px;
+    font-weight: 900;
+    color: #111827;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.6);
+    transition: transform 0.2s ease;
+}
+
+.finalBlowButton:hover {
+    transform: translateY(-2px) scale(1.03);
+}
+
+.finalBlowHint {
+    color: #e5e7eb;
+    font-size: 12px;
+    opacity: 0.9;
+    margin-top: 8px;
+}
+
+/* TOP SECTION: TACTICAL ARENA */
+.arenaSection {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    padding: 20px;
+    align-items: center;
+    position: relative;
+    min-height: 0;
+    overflow: auto;
+}
+
+/* Add grid overlay for tactical battlefield feel */
+.arenaSection::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+    background-size: 50px 50px;
+    pointer-events: none;
+    opacity: 0.3;
+}
+
+/* COMBATANT STYLING */
+.combatantBoss,
+.combatantPlayer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    position: relative;
+    z-index: 2;
+}
+
+/* BOSS TIMER BADGE */
+.bossTimerBadge {
+    position: absolute;
+    top: -15px;
+    right: -15px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border: 3px solid #FFD700;
+    border-radius: 50%;
+    width: 70px;
+    height: 70px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+    font-size: 13px;
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
+    z-index: 10;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.6);
+    animation: timerPulse 2s ease-in-out infinite;
+    line-height: 1.2;
+    text-align: center;
+    padding: 4px;
+}
+
+.bossTimerBadge.low {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border-color: #10b981;
+}
+
+.bossTimerBadge.normal {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    border-color: #3b82f6;
+}
+
+.bossTimerBadge.high {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    border-color: #f59e0b;
+    animation: timerPulseWarning 1s ease-in-out infinite;
+}
+
+.bossTimerBadge.critical {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    border-color: #ef4444;
+    animation: timerPulseCritical 0.5s ease-in-out infinite;
+}
+
+@keyframes timerPulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+@keyframes timerPulseWarning {
+
+    0%,
+    100% {
+        transform: scale(1);
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.6);
+    }
+
+    50% {
+        transform: scale(1.1);
+        box-shadow: 0 6px 16px rgba(245, 158, 11, 0.9);
+    }
+}
+
+@keyframes timerPulseCritical {
+
+    0%,
+    100% {
+        transform: scale(1);
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.8);
+    }
+
+    50% {
+        transform: scale(1.15);
+        box-shadow: 0 8px 20px rgba(239, 68, 68, 1);
+    }
+}
+
+/* CHARACTER SPRITE AREA */
+.characterSprite {
+    width: 180px;
+    height: 180px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.spriteContainer {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 16px;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+}
+
+.bossEmoji,
+.playerEmoji {
+    font-size: 120px;
+    filter: drop-shadow(8px 8px 16px rgba(0, 0, 0, 0.8));
+}
+
+.playerAvatar {
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 5px solid #10b981;
+    box-shadow: 0 0 30px rgba(16, 185, 129, 0.8),
+        0 8px 20px rgba(0, 0, 0, 0.8);
+    animation: playerAvatarIdle 3s ease-in-out infinite;
+}
+
+@keyframes playerAvatarIdle {
+
+    0%,
+    100% {
+        transform: translateY(0) scale(1);
+    }
+
+    50% {
+        transform: translateY(-8px) scale(1.02);
+    }
+}
+
+/* TACTICAL STATS BOX */
+.tacticalStatsBox {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    border: 4px solid #FFD700;
+    border-radius: 8px;
+    padding: 16px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+}
+
+/* COMBAT STATS GRID */
+.combatStats {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+    margin-bottom: 12px;
+}
+
+.statItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 8px;
+    border-radius: 4px;
+}
+
+.statLabel {
+    font-size: 10px;
+    color: #FFD700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: bold;
+}
+
+.statValue {
+    font-size: 28px;
+    color: white;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+/* WEAPON INFO */
+.weaponInfo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+.weaponIcon {
+    font-size: 20px;
+}
+
+.weaponName {
+    font-size: 14px;
+    color: white;
+    font-weight: bold;
+}
+
+/* HP BAR CONTAINER */
+.hpBarContainer {
+    margin-bottom: 12px;
+}
+
+.hpBarSegmented {
+    position: relative;
+    display: flex;
+    gap: 2px;
+    background: rgba(0, 0, 0, 0.5);
+    padding: 4px;
+    border-radius: 4px;
+    margin-bottom: 4px;
+}
+
+.hpSegment {
+    flex: 1;
+    height: 12px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 2px;
+    transition: background 0.3s ease;
+}
+
+.hpSegment.filled {
+    background: #10b981;
+    box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+}
+
+/* BOSS PHASE MARKERS */
+.phaseMarker {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+    pointer-events: none;
+}
+
+.phaseMarkerLine {
+    width: 2px;
+    height: 100%;
+    background: linear-gradient(180deg, #FFD700 0%, #FFA500 100%);
+    box-shadow: 0 0 8px rgba(255, 215, 0, 0.8);
+}
+
+.phaseMarkerLabel {
+    position: absolute;
+    top: -20px;
+    font-size: 9px;
+    font-weight: 900;
+    color: #FFD700;
+    background: rgba(0, 0, 0, 0.8);
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid #FFD700;
+    text-shadow: 0 0 4px rgba(255, 215, 0, 0.8);
+    white-space: nowrap;
+}
+
+.hpText {
+    font-size: 12px;
+    color: white;
+    text-align: center;
+    font-weight: bold;
+}
+
+/* CHARACTER INFO */
+.characterName {
+    font-size: 16px;
+    color: white;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 4px;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.characterPhase,
+.characterLevel {
+    font-size: 12px;
+    color: #fef08a;
+    text-align: center;
+    font-weight: 600;
+}
+
+/* BOTTOM SECTION: BATTLE CONTROLS */
+.controlsSection {
+    flex: 0 0 auto;
+    max-height: none;
+    background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+    display: grid;
+    grid-template-columns: 2fr 1fr 0.8fr 1fr;
+    gap: 20px;
+    padding: 15px;
+    overflow-y: auto;
+    overflow-x: visible;
+    /* prevent horizontal clipping */
+    min-height: 0;
+    /* Allow grid items to shrink */
+    box-sizing: border-box;
+}
+
+/* STATS PANEL */
+.statsPanel {
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid #FFD700;
+    border-radius: 10px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 0;
+    overflow-y: auto;
+}
+
+.allStatsGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
+}
+
+.statMiniItem {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.05);
+    padding: 6px 8px;
+    border-radius: 4px;
+    border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+.statMiniLabel {
+    font-size: 11px;
+    font-weight: bold;
+    color: #FFD700;
+    letter-spacing: 0.5px;
+}
+
+.statMiniValue {
+    font-size: 14px;
+    font-weight: bold;
+    color: white;
+    text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+}
+
+/* PANEL HEADER */
+.panelHeader {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid rgba(255, 215, 0, 0.3);
+}
+
+/* ==========================
+   RESIZE SPLITTER
+   ========================== */
+.splitter {
+    flex: 0 0 10px;
+    cursor: row-resize;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.35), rgba(255, 255, 255, 0.08));
+    border-top: 2px solid rgba(255, 215, 0, 0.3);
+    border-bottom: 2px solid rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 5;
+}
+
+.splitter::before {
+    content: '';
+    width: 80px;
+    height: 4px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, 0.35);
+}
+
+.splitter.dragging {
+    background: rgba(255, 215, 0, 0.15);
+}
+
+.panelIcon {
+    font-size: 18px;
+}
+
+.panelTitle {
+    font-size: 16px;
+    font-weight: bold;
+    color: #FFD700;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+}
+
+/* BATTLE MOVES PANEL */
+.movesPanel {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    /* Allow panel to shrink */
+    overflow-y: auto;
+    max-height: 100%;
+    padding-bottom: 8px;
+    /* Extra space at bottom */
+}
+
+.movesGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    padding: 8px 8px 16px 8px;
+    /* Extra bottom padding to prevent cutoff */
+}
+
+.moveButton {
+    background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+    border: 3px solid #6b7280;
+    border-radius: 12px;
+    padding: 79px 24px;
+    /* large padding as requested */
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    position: relative;
+    overflow: visible;
+    /* ensure inner content isn’t clipped */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.moveButton::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.5s ease;
+}
+
+.moveButton:hover:not(:disabled) {
+    transform: translateY(-4px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+    border-color: #FFD700;
+    background: linear-gradient(135deg, #5b6470 0%, #475161 100%);
+}
+
+.moveButton:hover:not(:disabled)::before {
+    left: 100%;
+}
+
+.moveButton:active:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+}
+
+.moveButton:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.moveButton.locked {
+    background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
+    border-color: #4b5563;
+    cursor: not-allowed;
+}
+
+.moveButton.onCooldown {
+    background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+    border-color: #9ca3af;
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+/* Cooldown progress ring */
+.cooldownRing {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 255, 255, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+}
+
+.cooldownInner {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.75);
+    color: #FFD700;
+    font-weight: 900;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-shadow: 0 0 6px rgba(255, 215, 0, 0.8);
+    border: 2px solid rgba(255, 215, 0, 0.5);
+}
+
+.moveIcon {
+    font-size: 28px;
+    filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.7));
+}
+
+.moveName {
+    font-size: 16px;
+    font-weight: bold;
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+    letter-spacing: 0.5px;
+}
+
+.moveDamage {
+    font-size: 14px;
+    color: #ef4444;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+}
+
+.moveStat {
+    font-size: 12px;
+    color: #9ca3af;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.moveCost {
+    font-size: 11px;
+    color: #fbbf24;
+    font-weight: bold;
+    margin-top: 4px;
+}
+
+.moveCooldown {
+    font-size: 13px;
+    color: #9ca3af;
+    font-weight: 700;
+    text-shadow: 0 0 8px rgba(156, 163, 175, 0.8);
+    margin-top: 4px;
+    animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* BATTLE LOG PANEL */
+.logPanel {
+    display: flex;
+    flex-direction: column;
+}
+
+.logContent {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: 200px;
+}
+
+.logEntry {
+    background: rgba(255, 255, 255, 0.05);
+    border: 2px solid rgba(255, 215, 0, 0.3);
+    border-radius: 6px;
+    padding: 8px;
+    transition: all 0.3s ease;
+}
+
+.logEntry:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 215, 0, 0.5);
+}
+
+.logEntry.player {
+    border-color: rgba(34, 197, 94, 0.5);
+    background: rgba(34, 197, 94, 0.1);
+}
+
+.logEntry.boss {
+    border-color: rgba(239, 68, 68, 0.5);
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.logEntry.system {
+    border-color: rgba(59, 130, 246, 0.5);
+    background: rgba(59, 130, 246, 0.1);
+}
+
+.logTurn {
+    font-size: 10px;
+    font-weight: bold;
+    color: #FFD700;
+    margin-bottom: 4px;
+}
+
+.logEvent {
+    font-size: 12px;
+    color: #e5e7eb;
+    line-height: 1.4;
+}
+
+/* QUEST TASKS PANEL */
+.tasksPanel {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.bossRaidVaultPanel {
+    padding: 10px 12px 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.bossRaidVaultHint {
+    margin: 0;
+    font-size: 11px;
+    line-height: 1.45;
+    color: #cbd5e1;
+    flex-shrink: 0;
+}
+
+.bossRaidAffinity {
+    margin: 0;
+    font-size: 10px;
+    font-weight: 700;
+    color: #67e8f9;
+    letter-spacing: 0.02em;
+    flex-shrink: 0;
+}
+
+.bossRaidProgress {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 10px;
+    border: 2px solid rgba(34, 211, 238, 0.35);
+    background: rgba(5, 8, 16, 0.55);
+    border-radius: 6px;
+    flex-shrink: 0;
+}
+
+.bossRaidProgressLabel {
+    font-size: 10px;
+    font-weight: 700;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.bossRaidProgressValue {
+    font-size: 14px;
+    font-weight: 800;
+    color: #e0f2fe;
+}
+
+.bossRaidSlotList {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 28vh;
+    overflow-y: auto;
+}
+
+.bossRaidSlot {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border: 1px solid rgba(100, 116, 139, 0.45);
+    background: rgba(13, 16, 32, 0.65);
+    border-radius: 6px;
+    font-size: 11px;
+    color: #94a3b8;
+}
+
+.bossRaidSlotDone {
+    border-color: rgba(34, 211, 238, 0.45);
+    color: #e0f2fe;
+    background: rgba(8, 145, 178, 0.15);
+}
+
+.bossRaidSlotMark {
+    font-size: 12px;
+    flex-shrink: 0;
+}
+
+.bossRaidSlotText {
+    line-height: 1.3;
+}
+
+.tasksList {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 8px;
+    max-height: 40vh;
+    /* more room for larger UI */
+    overflow-y: auto;
+    overflow-x: visible;
+    padding-bottom: 12px;
+}
+
+.bossRaidVaultPanel .tasksList {
+    flex: 1;
+    min-height: 0;
+    max-height: none;
+}
+
+.tasksList::-webkit-scrollbar {
+    width: 6px;
+}
+
+.tasksList::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+}
+
+.tasksList::-webkit-scrollbar-thumb {
+    background: #FFD700;
+    border-radius: 3px;
+}
+
+.tasksList::-webkit-scrollbar-thumb:hover {
+    background: #fbbf24;
+}
+
+.taskButton {
+    background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+    border: 3px solid #FFD700;
+    border-radius: 12px;
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    position: relative;
+    overflow: visible;
+    /* prevent inner clipping */
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+}
+
+.taskButton::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+    transition: left 0.5s ease;
+}
+
+.taskButton:hover:not(:disabled) {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(220, 38, 38, 0.4);
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+}
+
+.taskButton:hover:not(:disabled)::before {
+    left: 100%;
+}
+
+.taskButton:active:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.5);
+}
+
+.taskButton:disabled {
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+.taskButton.completed {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    border-color: #10b981;
+    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+    opacity: 0.7;
+    /* Fade completed tasks */
+}
+
+.taskButton.completed .taskDescription {
+    text-decoration: line-through;
+    /* Strike through completed text */
+    opacity: 0.8;
+}
+
+.taskButton.completed:hover:not(:disabled) {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    box-shadow: 0 8px 20px rgba(5, 150, 105, 0.4);
+    opacity: 0.85;
+    /* Slightly less faded on hover */
+}
+
+.taskHeader {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 4px;
+}
+
+.taskNumber {
+    font-size: 14px;
+    font-weight: bold;
+    color: white;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.3);
+    padding: 2px 8px;
+    border-radius: 6px;
+}
+
+.taskComplete {
+    font-size: 24px;
+    /* Bigger checkmark */
+    color: #10b981;
+    animation: checkPop 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.7));
+}
+
+@keyframes checkPop {
+    0% {
+        transform: scale(0) rotate(-180deg);
+        opacity: 0;
+    }
+
+    100% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+    }
+}
+
+.taskDescription {
+    font-size: 14px;
+    color: white;
+    line-height: 1.4;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+    font-weight: 500;
+}
+
+.taskDamage {
+    font-size: 12px;
+    color: #fef08a;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.7);
+    background: rgba(0, 0, 0, 0.2);
+    padding: 2px 6px;
+    border-radius: 4px;
+    align-self: flex-start;
+}
+
+/* VICTORY REWARDS PANEL */
+.rewardsPanel {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid #FFD700;
+    border-radius: 10px;
+    padding: 12px;
+}
+
+.rewardsGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    gap: 10px;
+}
+
+.rewardItem {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255, 215, 0, 0.1);
+    border: 2px solid rgba(255, 215, 0, 0.4);
+    border-radius: 8px;
+    padding: 12px 8px;
+    transition: all 0.3s ease;
+}
+
+.rewardItem:hover {
+    background: rgba(255, 215, 0, 0.2);
+    border-color: rgba(255, 215, 0, 0.6);
+    transform: translateY(-2px);
+}
+
+.rewardIcon {
+    font-size: 24px;
+    filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.6));
+}
+
+.rewardAmount {
+    font-size: 20px;
+    font-weight: 900;
+    color: #FFD700;
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.8), 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+.rewardLabel {
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.9);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* CLOSE BUTTON */
+.closeButton {
+    position: fixed;
+    top: max(80px, calc(8px + env(safe-area-inset-top, 0px)));
+    right: max(20px, env(safe-area-inset-right, 0px));
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    border: 4px solid #FFD700;
+    border-radius: 12px;
+    padding: 16px 32px;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    z-index: 10060;
+    box-shadow: 0 6px 20px rgba(239, 68, 68, 0.6);
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+    margin: 0;
+    min-width: 120px;
+    text-align: center;
+}
+
+.closeButton:hover {
+    transform: translateY(-3px) scale(1.05);
+    box-shadow: 0 10px 25px rgba(239, 68, 68, 0.8);
+    background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
+    border-color: #fbbf24;
+}
+
+/* DEFEAT SCREEN */
+.defeatScreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, #7f1d1d 0%, #450a0a 50%, #1f2937 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeIn 0.5s ease-in;
+}
+
+.defeatContent {
+    background: rgba(0, 0, 0, 0.9);
+    border: 4px solid #ef4444;
+    border-radius: 20px;
+    padding: 40px;
+    max-width: 600px;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(239, 68, 68, 0.5);
+}
+
+.defeatHeader {
+    margin-bottom: 30px;
+}
+
+.defeatTitle {
+    font-size: 48px;
+    color: #ef4444;
+    text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
+    margin: 0 0 10px 0;
+    animation: shake 0.5s ease-in-out;
+}
+
+@keyframes shake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    25% {
+        transform: translateX(-10px);
+    }
+
+    75% {
+        transform: translateX(10px);
+    }
+}
+
+.defeatSubtitle {
+    font-size: 24px;
+    color: #e5e7eb;
+    margin: 0;
+}
+
+.defeatStats {
+    display: flex;
+    justify-content: space-around;
+    margin: 30px 0;
+    padding: 20px;
+    background: rgba(239, 68, 68, 0.1);
+    border-radius: 12px;
+}
+
+.defeatStat {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.defeatLabel {
+    font-size: 14px;
+    color: #9ca3af;
+    text-transform: uppercase;
+}
+
+.defeatValue {
+    font-size: 24px;
+    font-weight: bold;
+    color: #f87171;
+}
+
+.defeatMessage {
+    margin: 30px 0;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+    color: #d1d5db;
+    font-size: 18px;
+    line-height: 1.6;
+}
+
+.defeatButtons {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    margin-top: 30px;
+}
+
+.defeatButton {
+    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+    border: 3px solid #ef4444;
+    border-radius: 12px;
+    padding: 16px 48px;
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+}
+
+.defeatButton:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(220, 38, 38, 0.6);
+}
+
+.defeatButtonSecondary {
+    background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+    border: 3px solid #6b7280;
+    border-radius: 12px;
+    padding: 16px 48px;
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(75, 85, 99, 0.4);
+}
+
+.defeatButtonSecondary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(75, 85, 99, 0.6);
+}
+
+/* VICTORY SCREEN */
+.victoryScreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 10000;
+    background: linear-gradient(135deg, #1e40af 0%, #7c3aed 50%, #db2777 100%);
+    /* Block layout + scroll so tall recap/rewards never clip the Continue button */
+    display: block;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: max(24px, env(safe-area-inset-top, 0px)) 16px max(48px, env(safe-area-inset-bottom, 0px));
+    box-sizing: border-box;
+    animation: fadeIn 0.5s ease-in;
+}
+
+/* Override general .tacticalBattlePixel height cap when showing victory */
+.victoryScreen.tacticalBattlePixel {
+    max-height: none;
+    min-height: 100dvh;
+    min-height: 100vh;
+    height: auto;
+    align-items: unset;
+    justify-content: unset;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.victoryContent {
+    background: rgba(0, 0, 0, 0.8);
+    border: 4px solid #FFD700;
+    border-radius: 20px;
+    padding: 40px;
+    max-width: min(600px, 100%);
+    width: 100%;
+    margin: 0 auto 24px;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(255, 215, 0, 0.5);
+    animation: victorySlideUp 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    position: relative;
+    overflow: visible;
+    box-sizing: border-box;
+}
+
+.victoryPreviewTag {
+    display: inline-block;
+    margin-bottom: 12px;
+    padding: 4px 10px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #c4b5fd;
+    border: 2px solid rgba(196, 181, 253, 0.45);
+    border-radius: 6px;
+    background: rgba(124, 58, 237, 0.2);
+}
+
+/* XP section on victory */
+.xpSection {
+    margin-top: 6px;
+    margin-bottom: 12px;
+}
+
+.xpHeader {
+    font-size: 12px;
+    color: #9ca3af;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+}
+
+.xpBar {
+    position: relative;
+    height: 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.xpFill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 0%;
+    background: linear-gradient(90deg, #34d399, #10b981);
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.8);
+    transition: width 0.5s ease;
+}
+
+.xpLabel {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 11px;
+    font-weight: 900;
+    color: #fff;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.9);
+}
+
+.xpGain {
+    margin-top: 6px;
+    font-size: 14px;
+    font-weight: 800;
+    color: #FFD700;
+}
+
+.levelUpCard {
+    position: absolute;
+    bottom: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(16, 185, 129, 0.15);
+    border: 2px solid #10b981;
+    border-radius: 12px;
+    padding: 10px 16px;
+    color: #d1fae5;
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.3);
+    pointer-events: none;
+}
+
+.levelUpTitle {
+    font-size: 16px;
+    font-weight: 900;
+    color: #34d399;
+    text-align: center;
+}
+
+.levelUpBody {
+    font-size: 12px;
+    text-align: center;
+}
+
+@keyframes victorySlideUp {
+    0% {
+        opacity: 0;
+        transform: translateY(100px) scale(0.8);
+    }
+
+    100% {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.victoryHeader {
+    margin-bottom: 30px;
+}
+
+.victoryTitle {
+    font-size: 48px;
+    color: #FFD700;
+    text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
+    margin: 0 0 10px 0;
+    animation: bounce 1s ease-in-out infinite;
+}
+
+@keyframes bounce {
+
+    0%,
+    100% {
+        transform: translateY(0);
+    }
+
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+.victorySubtitle {
+    font-size: 24px;
+    color: #e5e7eb;
+    margin: 0;
+}
+
+.victoryStats {
+    display: flex;
+    justify-content: space-around;
+    margin: 30px 0;
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+}
+
+.victoryStat {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.victoryLabel {
+    font-size: 14px;
+    color: #9ca3af;
+    text-transform: uppercase;
+}
+
+.victoryValue {
+    font-size: 24px;
+    font-weight: bold;
+    color: #FFD700;
+}
+
+.victoryRewards {
+    margin: 30px 0;
+}
+
+.rewardsTitle {
+    font-size: 28px;
+    color: #FFD700;
+    margin: 0 0 20px 0;
+}
+
+.rewardsList {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.rewardItem {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    font-size: 20px;
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 15px;
+    border-radius: 10px;
+    animation: rewardPopIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) backwards;
+    transition: all 0.3s ease;
+}
+
+.rewardItem:hover {
+    transform: scale(1.05);
+    background: rgba(255, 215, 0, 0.2);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+}
+
+/* Stagger reward animations */
+.rewardItem:nth-child(1) {
+    animation-delay: 0.2s;
+}
+
+.rewardItem:nth-child(2) {
+    animation-delay: 0.4s;
+}
+
+.rewardItem:nth-child(3) {
+    animation-delay: 0.6s;
+}
+
+@keyframes rewardPopIn {
+    0% {
+        opacity: 0;
+        transform: scale(0) rotate(-180deg);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1) rotate(0deg);
+    }
+}
+
+.rewardIcon {
+    font-size: 32px;
+    animation: iconPulse 2s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.2);
+    }
+}
+
+.rewardText {
+    font-weight: bold;
+}
+
+.victoryButtons {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    margin-top: 30px;
+}
+
+.victoryFooter {
+    position: sticky;
+    bottom: 0;
+    z-index: 2;
+    margin-top: 24px;
+    padding-top: 12px;
+    background: linear-gradient(to top, rgba(0, 0, 0, 0.92) 65%, transparent);
+}
+
+.victoryButton {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border: 3px solid #FFD700;
+    border-radius: 12px;
+    padding: 16px 48px;
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 0;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+    width: 100%;
+    position: relative;
+    z-index: 3;
+}
+
+.victoryButton:disabled {
+    opacity: 0.72;
+    cursor: wait;
+    transform: none;
+}
+
+.victoryButton:hover:not(:disabled) {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.6);
+    background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+}
+
+.victoryButtonSecondary {
+    background: linear-gradient(135deg, #6b7280 0%, #4b5563 100%);
+    border: 3px solid #9ca3af;
+    border-radius: 12px;
+    padding: 16px 48px;
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-top: 30px;
+    box-shadow: 0 4px 12px rgba(107, 114, 128, 0.4);
+}
+
+.victoryButtonSecondary:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(107, 114, 128, 0.6);
+    background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
+}
+
+/* RESPONSIVE DESIGN */
+@media (max-width: 1200px) {
+    .arenaSection {
+        grid-template-columns: 1fr;
+        gap: 20px;
+    }
+
+    .controlsSection {
+        grid-template-columns: 1fr;
+    }
+
+    .movesGrid {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 768px) {
+    .tacticalBattle {
+        grid-template-rows: 50vh 50vh;
+    }
+
+    .characterSprite {
+        width: 120px;
+        height: 120px;
+    }
+
+    .bossEmoji,
+    .playerEmoji {
+        font-size: 80px;
+    }
+
+    .playerAvatar {
+        width: 120px;
+        height: 120px;
+        border: 3px solid #10b981;
+    }
+
+    .statValue {
+        font-size: 14px;
+    }
+
+    .closeButton {
+        top: 10px;
+        right: 10px;
+        padding: 8px 16px;
+        font-size: 12px;
+    }
+}
+
+/* ADD SUBQUEST BUTTON */
+.addSubquestButton {
+    margin-left: auto;
+    padding: 6px 12px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border: 2px solid #34d399;
+    border-radius: 6px;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+.addSubquestButton:hover {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    border-color: #6ee7b7;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
+/* ADD SUBQUEST CONTAINER */
+.addSubquestContainer {
+    background: rgba(16, 185, 129, 0.1);
+    border: 2px solid #34d399;
+    border-radius: 8px;
+    padding: 12px;
+    margin: 8px 0;
+    animation: slideDown 0.3s ease;
+}
+
+@keyframes slideDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.addSubquestInput {
+    width: 100%;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 2px solid #34d399;
+    border-radius: 6px;
+    color: white;
+    font-size: 14px;
+    margin-bottom: 8px;
+    box-sizing: border-box;
+}
+
+.addSubquestInput:focus {
+    outline: none;
+    border-color: #6ee7b7;
+    box-shadow: 0 0 12px rgba(52, 211, 153, 0.5);
+}
+
+.addSubquestInput::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.addSubquestActions {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.addSubquestConfirm {
+    flex: 1;
+    padding: 8px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border: 2px solid #34d399;
+    border-radius: 6px;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.addSubquestConfirm:hover:not(:disabled) {
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+    transform: scale(1.05);
+}
+
+.addSubquestConfirm:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.addSubquestCancel {
+    padding: 8px 16px;
+    background: rgba(239, 68, 68, 0.2);
+    border: 2px solid #ef4444;
+    border-radius: 6px;
+    color: white;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.addSubquestCancel:hover {
+    background: rgba(239, 68, 68, 0.4);
+    transform: scale(1.05);
+}
+
+.addSubquestWarning {
+    font-size: 11px;
+    color: #fbbf24;
+    text-align: center;
+    font-weight: 600;
+    text-shadow: 0 0 8px rgba(251, 191, 36, 0.8);
+}
+
+/* ==========================
+   BATTLE STATUS BAR (Turn Counter + Timer)
+   ========================== */
+
+.battleStatusBar {
+    position: relative;
+    z-index: 10050;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px 20px;
+    padding: 12px 16px;
+    background: transparent;
+    overflow: visible;
+}
+
+.battleStatusTitle {
+    flex: 1 1 160px;
+    min-width: 0;
+    text-align: center;
+    padding: 0 8px;
+}
+
+.battleStatusTitleMain {
+    display: block;
+    font-size: 15px;
+    font-weight: 800;
+    color: #f1f5f9;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.battleStatusTitleSub {
+    display: block;
+    margin-top: 2px;
+    font-size: 11px;
+    font-weight: 600;
+    color: #94a3b8;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Next Boss Action telegraph */
+.nextActionBox {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(0, 0, 0, 0.8);
+    border: 2px solid #f59e0b;
+    border-radius: 10px;
+    padding: 8px 12px;
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
+}
+
+.nextActionIcon {
+    font-size: 18px;
+}
+
+.nextActionInfo {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.1;
+}
+
+.nextActionLabel {
+    font-size: 10px;
+    color: #f59e0b;
+    text-transform: uppercase;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+.nextActionName {
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+}
+
+.nextActionEta {
+    margin-left: 6px;
+    font-size: 11px;
+    font-weight: 800;
+    color: #f59e0b;
+}
+
+.autosaveBadge {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 4px 8px;
+    border-radius: 8px;
+    font-size: 11px;
+    color: #e5e7eb;
+}
+
+.turnCounter {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.9);
+    border: 3px solid #FFD700;
+    border-radius: 12px;
+    padding: 16px 24px;
+    min-width: 100px;
+    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.4);
+}
+
+.turnLabel {
+    font-size: 12px;
+    font-weight: 800;
+    color: #FFD700;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 4px;
+}
+
+.turnNumber {
+    font-size: 36px;
+    font-weight: 900;
+    color: #ffffff;
+    font-family: 'Courier New', monospace;
+    text-shadow: 0 0 20px rgba(255, 215, 0, 0.8), 0 2px 4px rgba(0, 0, 0, 0.8);
+    line-height: 1;
+}
+
+/* ==========================
+   COUNTDOWN TIMER
+   ========================== */
+
+.countdownTimer {
+    position: relative;
+    flex: 0 0 auto;
+    height: auto;
+    min-height: 140px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    transition: all 0.3s ease;
+    padding: 20px;
+    overflow: visible !important;
+}
+
+.countdownTimer.low {
+    background: transparent;
+}
+
+.countdownTimer.normal {
+    background: transparent;
+}
+
+.countdownTimer.high {
+    background: transparent;
+    animation: pulseWarning 2s ease-in-out infinite;
+}
+
+.countdownTimer.critical {
+    background: transparent;
+    animation: pulseCritical 1s ease-in-out infinite;
+}
+
+.countdownBoxes {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: nowrap;
+    overflow: visible !important;
+}
+
+.countdownBox {
+    position: relative;
+    background: rgba(0, 0, 0, 0.9);
+    border-radius: 8px;
+    padding: 24px 20px 20px 20px;
+    min-width: 75px;
+    min-height: 95px;
+    height: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+    overflow: visible !important;
+}
+
+.countdownNumber {
+    font-size: 28px;
+    font-weight: 900;
+    color: #ffffff;
+    font-family: 'Courier New', monospace;
+    text-shadow: 0 0 15px rgba(255, 255, 255, 0.8), 0 2px 4px rgba(0, 0, 0, 0.8);
+    line-height: 1.3;
+    display: block;
+    margin: 0;
+    padding: 4px 0;
+    overflow: visible !important;
+}
+
+.countdownLabel {
+    font-size: 10px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.9);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+    margin: 0;
+    padding: 0;
+}
+
+@keyframes pulseWarning {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+}
+
+@keyframes pulseCritical {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scaleY(1);
+    }
+
+    50% {
+        opacity: 0.8;
+        transform: scaleY(1.05);
+    }
+}
+
+.timePressureContent {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    color: white;
+    text-shadow: 0 3px 6px rgba(0, 0, 0, 0.9);
+}
+
+.timePressureIcon {
+    font-size: 32px;
+    animation: timerBounce 2s ease-in-out infinite;
+}
+
+@keyframes timerBounce {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+.timePressureLabel {
+    font-size: 18px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.timePressureTime {
+    font-size: 28px;
+    font-weight: 900;
+    min-width: 120px;
+    text-align: center;
+    background: rgba(0, 0, 0, 0.4);
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.pressureBadge {
+    padding: 6px 16px;
+    border-radius: 16px;
+    font-size: 14px;
+    font-weight: 900;
+    letter-spacing: 1.5px;
+    border: 2px solid;
+    animation: badgePulse 2s ease-in-out infinite;
+}
+
+@keyframes badgePulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+.pressureBadge.low {
+    background: rgba(16, 185, 129, 0.3);
+    border-color: #10b981;
+    color: #10b981;
+}
+
+.pressureBadge.normal {
+    background: rgba(59, 130, 246, 0.3);
+    border-color: #3b82f6;
+    color: #3b82f6;
+}
+
+.pressureBadge.high {
+    background: rgba(245, 158, 11, 0.3);
+    border-color: #f59e0b;
+    color: #f59e0b;
+}
+
+.pressureBadge.critical {
+    background: rgba(239, 68, 68, 0.3);
+    border-color: #ef4444;
+    color: #ef4444;
+    animation: flashCritical 0.5s ease-in-out infinite;
+}
+
+@keyframes flashCritical {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+/* ==========================
+   STATUS EFFECTS
+   ========================== */
+
+.statusEffectsContainer {
+    margin-top: 12px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 8px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+}
+
+.statusEffectsTitle {
+    font-size: 11px;
+    font-weight: bold;
+    color: #a0aec0;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.statusEffectsList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.statusEffect {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 2px solid;
+    transition: all 0.2s ease;
+    cursor: help;
+}
+
+.statusEffect.buff {
+    background: rgba(16, 185, 129, 0.2);
+    border-color: #10b981;
+    color: #10b981;
+}
+
+.statusEffect.debuff {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: #ef4444;
+    color: #ef4444;
+}
+
+.statusEffect:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 12px currentColor;
+}
+
+.effectIcon {
+    font-size: 14px;
+}
+
+.effectName {
+    font-size: 11px;
+}
+
+.effectDuration {
+    font-size: 10px;
+    opacity: 0.8;
+    margin-left: 2px;
+}
+
+/* Tiny badge for effect duration */
+.effectBadge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 4px;
+    border-radius: 9px;
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid currentColor;
+    color: currentColor;
+    font-size: 10px;
+    font-weight: 900;
+    margin-left: 4px;
+}
+
+/* ==========================
+   TURN BLOCK WARNING
+   ========================== */
+
+.blockWarning {
+    margin-top: 12px;
+    padding: 12px;
+    background: rgba(239, 68, 68, 0.3);
+    border: 3px solid #ef4444;
+    border-radius: 8px;
+    color: white;
+    font-weight: bold;
+    text-align: center;
+    font-size: 13px;
+    animation: pulseBlock 1.5s ease-in-out infinite;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+@keyframes pulseBlock {
+
+    0%,
+    100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 0.8;
+        transform: scale(0.98);
+    }
+}
+
+.blockWarning small {
+    display: block;
+    margin-top: 4px;
+    font-size: 11px;
+    opacity: 0.9;
+}
+
+/* ==========================
+   FULL-SCREEN DAMAGE DISPLAY
+   ========================== */
+
+.fullScreenDamage {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10000;
+    pointer-events: none;
+    animation: damagePopup 2s ease-out forwards;
+}
+
+@keyframes damagePopup {
+    0% {
+        opacity: 0;
+        transform: translate(-50%, -50%) scale(0.3);
+    }
+
+    15% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1.8);
+    }
+
+    75% {
+        opacity: 1;
+        transform: translate(-50%, -55%) scale(1.4);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translate(-50%, -60%) scale(1.2);
+    }
+}
+
+.damageNumber {
+    font-size: 140px;
+    font-weight: 900;
+    text-shadow:
+        4px 4px 8px rgba(0, 0, 0, 0.9),
+        -2px -2px 4px rgba(0, 0, 0, 0.8),
+        0 0 20px currentColor;
+    font-family: 'Impact', 'Arial Black', sans-serif;
+    letter-spacing: -5px;
+    line-height: 1;
+    text-align: center;
+}
+
+.damageNumber.damage {
+    color: #ef4444;
+    /* Red for taking damage */
+    text-shadow:
+        4px 4px 8px rgba(0, 0, 0, 0.9),
+        -2px -2px 4px rgba(0, 0, 0, 0.8),
+        0 0 30px #ef4444,
+        0 0 50px #dc2626;
+}
+
+.damageNumber.boss-damage {
+    color: #fbbf24;
+    /* Gold for dealing damage */
+    text-shadow:
+        4px 4px 8px rgba(0, 0, 0, 0.9),
+        -2px -2px 4px rgba(0, 0, 0, 0.8),
+        0 0 30px #fbbf24,
+        0 0 50px #f59e0b;
+}
+
+.damageNumber.heal {
+    color: #10b981;
+    /* Green for healing */
+    text-shadow:
+        4px 4px 8px rgba(0, 0, 0, 0.9),
+        -2px -2px 4px rgba(0, 0, 0, 0.8),
+        0 0 30px #10b981,
+        0 0 50px #059669;
+}
+
+.critBang {
+    color: #FFD700;
+    font-size: 0.6em;
+    margin-left: 10px;
+    animation: bangPulse 0.5s ease-in-out infinite;
+}
+
+@keyframes bangPulse {
+
+    0%,
+    100% {
+        transform: scale(1) rotate(0deg);
+    }
+
+    50% {
+        transform: scale(1.3) rotate(10deg);
+    }
+}
+
+.damageMoveName {
+    font-size: 42px;
+    font-weight: bold;
+    color: white;
+    text-align: center;
+    text-shadow:
+        3px 3px 6px rgba(0, 0, 0, 0.9),
+        0 0 15px rgba(255, 255, 255, 0.8);
+    margin-top: 20px;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+}
+
+/* ==========================
+   VICTORY CONFETTI EFFECT
+   ========================== */
+
+.confetti {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: #FFD700;
+    pointer-events: none;
+    animation: confettiFall 3s linear infinite;
+}
+
+.confetti:nth-child(2n) {
+    background: #FF6B6B;
+}
+
+.confetti:nth-child(3n) {
+    background: #4ECDC4;
+}
+
+.confetti:nth-child(5n) {
+    background: #45B7D1;
+}
+
+@keyframes confettiFall {
+    0% {
+        top: -10%;
+        transform: translateX(0) rotateZ(0deg);
+        opacity: 1;
+    }
+
+    100% {
+        top: 110%;
+        transform: translateX(100px) rotateZ(720deg);
+        opacity: 0;
+    }
+}
+
+/* Level up celebration flash */
+.levelUpFlash {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(circle, rgba(255, 215, 0, 0.4) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: 9998;
+    animation: levelUpPulse 1s ease-out;
+}
+
+@keyframes levelUpPulse {
+
+    0%,
+    100% {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scale(1.2);
+    }
+}
+
+/* ==========================
+   BATTLE MOVE ANIMATIONS
+   ========================== */
+
+/* Shake animation for boss when hit */
+@keyframes bossShake {
+
+    0%,
+    100% {
+        transform: translateX(0);
+    }
+
+    10%,
+    30%,
+    50%,
+    70%,
+    90% {
+        transform: translateX(-10px);
+    }
+
+    20%,
+    40%,
+    60%,
+    80% {
+        transform: translateX(10px);
+    }
+}
+
+.bossShake {
+    animation: bossShake 0.5s cubic-bezier(.36, .07, .19, .97) both;
+}
+
+/* Flash animation for attacks */
+@keyframes attackFlash {
+
+    0%,
+    100% {
+        filter: brightness(1);
+        box-shadow: 0 0 0 rgba(255, 215, 0, 0);
+    }
+
+    50% {
+        filter: brightness(1.8);
+        box-shadow: 0 0 40px rgba(255, 215, 0, 0.8);
+    }
+}
+
+.attackFlash {
+    animation: attackFlash 0.4s ease-in-out;
+}
+
+/* Particle burst effect */
+@keyframes particleBurst {
+    0% {
+        opacity: 1;
+        transform: translate(0, 0) scale(1);
+    }
+
+    100% {
+        opacity: 0;
+        transform: translate(var(--x), var(--y)) scale(0);
+    }
+}
+
+.particle {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    pointer-events: none;
+    animation: particleBurst 0.8s ease-out forwards;
+}
+
+/* Glow pulse for active move */
+@keyframes glowPulse {
+
+    0%,
+    100% {
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+    }
+
+    50% {
+        box-shadow: 0 0 30px rgba(255, 215, 0, 0.8), 0 0 50px rgba(255, 215, 0, 0.4);
+    }
+}
+
+.moveButton:hover:not(:disabled) {
+    animation: glowPulse 1.5s ease-in-out infinite;
+    transform: translateY(-2px);
+    transition: transform 0.2s ease;
+}
+
+/* Screen flash for critical hits */
+@keyframes screenFlash {
+
+    0%,
+    100% {
+        opacity: 0;
+    }
+
+    50% {
+        opacity: 0.3;
+    }
+}
+
+.criticalFlash {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(45deg, #FFD700, #FFA500);
+    pointer-events: none;
+    z-index: 9999;
+    animation: screenFlash 0.3s ease-out;
+}
+
+/* Exit confirmation modal */
+.exitOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+
+.exitModal {
+    background: #111827;
+    border: 3px solid #FFD700;
+    border-radius: 12px;
+    padding: 18px 20px;
+    width: 360px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+
+.exitTitle {
+    font-size: 18px;
+    font-weight: 900;
+    color: #FFD700;
+    margin-bottom: 6px;
+}
+
+.exitSubtitle {
+    font-size: 12px;
+    color: #e5e7eb;
+    margin-bottom: 8px;
+}
+
+.exitSaved {
+    font-size: 11px;
+    color: #9ca3af;
+    margin-bottom: 12px;
+}
+
+.exitActions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+}
+
+.quickCompleteButton {
+    flex: 1 1 100%;
+    background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+    border: 2px solid #a5b4fc;
+    border-radius: 8px;
+    padding: 10px 18px;
+    color: white;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.exitConfirm {
+    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    border: 2px solid #fca5a5;
+    border-radius: 8px;
+    padding: 8px 18px;
+    color: white;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.exitCancel {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border: 2px solid #6ee7b7;
+    border-radius: 8px;
+    padding: 8px 18px;
+    color: white;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.hpDeadlineNote {
+    font-size: 10px;
+    font-weight: 600;
+    color: #fbbf24;
+    opacity: 0.95;
+}
+
+/* Add subquest modal (matches exit modal weight) */
+.subquestOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+
+.subquestModal {
+    background: #111827;
+    border: 3px solid #38bdf8;
+    border-radius: 12px;
+    padding: 18px 20px;
+    width: min(400px, 92vw);
+    text-align: left;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+}
+
+.subquestModalTitle {
+    font-size: 18px;
+    font-weight: 900;
+    color: #38bdf8;
+    margin-bottom: 8px;
+    text-align: center;
+}
+
+.subquestModalHint {
+    font-size: 12px;
+    color: #e5e7eb;
+    margin-bottom: 10px;
+    line-height: 1.4;
+}
+
+.subquestModalInput {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 2px solid #4b5563;
+    background: #0f172a;
+    color: #f9fafb;
+    font-size: 14px;
+    margin-bottom: 8px;
+}
+
+.subquestModalWarning {
+    font-size: 11px;
+    color: #fbbf24;
+    margin-bottom: 14px;
+}
+
+.subquestModalActions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+}
+
+.subquestModalCancel {
+    background: #374151;
+    border: 2px solid #6b7280;
+    border-radius: 8px;
+    padding: 8px 16px;
+    color: #e5e7eb;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.subquestModalConfirm {
+    background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%);
+    border: 2px solid #7dd3fc;
+    border-radius: 8px;
+    padding: 8px 16px;
+    color: white;
+    font-weight: 800;
+    cursor: pointer;
+}
+
+.subquestModalConfirm:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Battle loadout (weapon) picker — portaled to body; centered with safe padding + scroll */
+.weaponPickerOverlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.82);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-items: safe center;
+    justify-content: safe center;
+    z-index: 10020;
+    padding: max(12px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px))
+        max(12px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px));
+    overflow: auto;
+    pointer-events: none;
+    box-sizing: border-box;
+}
+
+.weaponPickerModal {
+    pointer-events: auto;
+    display: flex;
+    flex-direction: column;
+    /* Sans stack so long names + summaries stay readable (avoids inherited pixel font from .tacticalBattlePixel) */
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-size: 14px;
+    line-height: 1.4;
+    background: linear-gradient(180deg, #0f172a 0%, #111827 100%);
+    border: 4px solid #FFD700;
+    border-radius: 16px;
+    padding: 16px 16px 14px;
+    max-width: 640px;
+    width: 100%;
+    max-height: min(78vh, calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 32px));
+    max-height: min(78vh, calc(100vh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 32px));
+    overflow: hidden;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.65);
+}
+
+.weaponPickerModalBody {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    padding: 4px 4px 0 0;
+}
+
+.weaponPickerTitle {
+    font-size: 22px;
+    font-weight: 900;
+    color: #FFD700;
+    text-align: center;
+    margin-bottom: 8px;
+    letter-spacing: 0.04em;
+}
+
+.weaponPickerSubtitle {
+    font-size: 12px;
+    color: #cbd5e1;
+    text-align: center;
+    line-height: 1.45;
+    margin: 0 0 18px;
+}
+
+.weaponGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.weaponCard {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    text-align: center;
+    gap: 8px;
+    min-height: 88px;
+    padding: 12px 10px 14px;
+    border-radius: 12px;
+    border: 3px solid #374151;
+    background: #1e293b;
+    color: #e2e8f0;
+    cursor: pointer;
+    transition: border-color 0.15s ease, transform 0.15s ease, box-shadow 0.15s ease;
+    font-family: inherit;
+}
+
+.weaponCard:hover {
+    border-color: #94a3b8;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+}
+
+.weaponCardSelected {
+    border-color: #FFD700;
+    box-shadow: 0 0 0 2px rgba(255, 215, 0, 0.35);
+    background: #1a2332;
+}
+
+.weaponCardIcon {
+    font-size: 24px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.weaponCardName {
+    font-size: 12px;
+    font-weight: 800;
+    color: #f8fafc;
+    line-height: 1.25;
+    word-break: break-word;
+    hyphens: auto;
+}
+
+/* Selected weapon detail — single panel (no faux second “button” bar) */
+.weaponPickerPreview {
+    margin-top: 12px;
+    padding: 12px 14px;
+    background: #1e293b;
+    border: 2px solid #475569;
+    border-left: 4px solid #f59e0b;
+    border-radius: 10px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+.weaponPickerPreviewTitle {
+    font-size: 13px;
+    font-weight: 800;
+    color: #f8fafc;
+    margin-bottom: 8px;
+    line-height: 1.35;
+}
+
+.weaponPickerPreviewText {
+    font-size: 12px;
+    line-height: 1.5;
+    color: #e2e8f0;
+    white-space: pre-line;
+}
+
+.weaponFmHint {
+    font-size: 10px;
+    background: rgba(0, 0, 0, 0.45);
+    padding: 2px 6px;
+    border-radius: 4px;
+    color: #fde68a;
+}
+
+.weaponPickerConfirm {
+    flex-shrink: 0;
+    display: block;
+    width: 100%;
+    margin-top: 14px;
+    padding: 14px 20px;
+    font-size: 16px;
+    font-weight: 900;
+    color: #111827;
+    border: 3px solid #fff8;
+    border-radius: 12px;
+    cursor: pointer;
+    background: linear-gradient(135deg, #FFD700 0%, #f59e0b 100%);
+    box-shadow: 0 6px 20px rgba(255, 215, 0, 0.35);
+}
+
+.weaponPickerConfirm:hover {
+    filter: brightness(1.05);
+}
+
+/* Post-battle recap (victory) */
+.victoryRecap {
+    margin: 12px 0 18px;
+    padding: 14px 16px;
+    background: rgba(0, 0, 0, 0.4);
+    border: 3px solid #f59e0b;
+    border-radius: 12px;
+    text-align: left;
+}
+
+.victoryRecapTitle {
+    font-size: 14px;
+    font-weight: 900;
+    color: #fbbf24;
+    margin-bottom: 10px;
+    letter-spacing: 0.04em;
+}
+
+.victoryRecapGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 12px;
+    font-size: 12px;
+}
+
+.victoryRecapLabel {
+    display: block;
+    color: #9ca3af;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 4px;
+}
+
+.victoryRecapValue {
+    display: block;
+    color: #f3f4f6;
+    font-weight: 700;
+    line-height: 1.35;
+}
+
+/*
+ * Pixel boss raid theme — ported from preview/pixel-boss-battle-preview.html
+ */
+.tacticalBattle.tacticalBattlePixel {
+    font-family: "Press Start 2P", ui-monospace, "Cascadia Code", "Courier New", monospace;
+    font-size: 10px;
+    line-height: 1.6;
+    color: #e8e8f0;
+    background: #0d1020;
+    background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 4px, rgba(255, 255, 255, 0.03) 4px, rgba(255, 255, 255, 0.03) 5px),
+        linear-gradient(180deg, #1e3a5f 0%, #0d1f2d 50%, #1a2f1a 100%);
+    -webkit-font-smoothing: none;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+    /* Obsidian leaf chrome often overlaps y=0; safe-area is 0 on desktop — leave room for title row + timers */
+    padding-top: max(36px, env(safe-area-inset-top, 0px));
+    /* Avoid clipping the top status bar; horizontal overflow only */
+    overflow-x: hidden;
+    overflow-y: auto;
+    min-height: 0;
+    max-height: 100dvh;
+    max-height: 100vh;
+}
+
+.tacticalBattlePixel .battleStatusBar {
+    flex-shrink: 0;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: #1a1f35;
+    border-bottom: 3px solid #333;
+    justify-content: flex-start;
+}
+
+.tacticalBattlePixel .battleStatusTitleMain {
+    font-size: 8px;
+    color: #e8e8f0;
+    letter-spacing: 0.1em;
+}
+
+.tacticalBattlePixel .battleStatusTitleSub {
+    font-size: 6px;
+    color: #8892b0;
+    max-width: min(42vw, 220px);
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.tacticalBattlePixel .turnCounter {
+    flex-direction: column;
+    padding: 8px 12px;
+    min-width: 0;
+    border-radius: 0;
+    border: 3px solid #c6c6c6;
+    background: #000;
+    box-shadow: none;
+}
+
+.tacticalBattlePixel .turnLabel {
+    font-size: 7px;
+    color: #8892b0;
+    letter-spacing: 0;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+}
+
+.tacticalBattlePixel .turnNumber {
+    font-size: 18px;
+    font-family: inherit;
+    color: #ffd700;
+    text-shadow: none;
+    line-height: 1;
+}
+
+.tacticalBattlePixel .nextActionBox {
+    flex: 1;
+    min-width: 200px;
+    border-radius: 0;
+    border: 3px solid #7c3aed;
+    background: #1a1030;
+    box-shadow: none;
+    padding: 8px 12px;
+    gap: 10px;
+}
+
+.tacticalBattlePixel .nextActionLabel {
+    font-size: 7px;
+    color: #8892b0;
+    letter-spacing: 0;
+}
+
+.tacticalBattlePixel .nextActionName {
+    font-size: inherit;
+    font-weight: normal;
+    color: #e8e8f0;
+}
+
+.tacticalBattlePixel .nextActionEta {
+    font-size: 7px;
+    color: #f59e0b;
+    margin-left: 4px;
+}
+
+.tacticalBattlePixel .nextActionIcon {
+    font-size: 24px;
+}
+
+.tacticalBattlePixel .autosaveBadge {
+    font-size: 7px;
+    color: #8892b0;
+    background: #000;
+    border: 2px solid #444;
+    border-radius: 0;
+    padding: 6px 8px;
+}
+
+.tacticalBattlePixel .countdownTimer {
+    min-height: 0;
+    margin-left: auto;
+    padding: 0;
+    flex: 0 0 auto;
+}
+
+.tacticalBattlePixel .countdownBoxes {
+    gap: 8px;
+}
+
+.tacticalBattlePixel .countdownBox {
+    min-width: 44px;
+    min-height: 0;
+    padding: 6px 8px;
+    border-radius: 0;
+    border: 2px solid #c6c6c6;
+    background: #000;
+    box-shadow: none;
+    gap: 2px;
+}
+
+.tacticalBattlePixel .countdownNumber {
+    font-size: 14px;
+    font-family: inherit;
+    color: #f59e0b;
+    text-shadow: none;
+    padding: 0;
+}
+
+.tacticalBattlePixel .countdownLabel {
+    font-size: 6px;
+    color: #8892b0;
+    letter-spacing: 0;
+    text-transform: uppercase;
+}
+
+.tacticalBattlePixel .arenaSection {
+    flex: 1 1 0;
+    min-height: 0;
+    align-items: stretch;
+    align-content: stretch;
+    overflow: hidden;
+    background: transparent;
+    gap: 24px;
+    padding: 16px;
+    grid-template-rows: minmax(0, 1fr);
+    background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 4px, rgba(255, 255, 255, 0.03) 4px, rgba(255, 255, 255, 0.03) 5px),
+        linear-gradient(180deg, #1e3a5f 0%, #0d1f2d 50%, #1a2f1a 100%);
+}
+
+.tacticalBattlePixel .arenaSection::before {
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+    background-size: 24px 24px;
+    opacity: 0.5;
+}
+
+.tacticalBattlePixel .combatantBoss,
+.tacticalBattlePixel .combatantPlayer {
+    gap: 12px;
+    min-height: 0;
+    align-self: stretch;
+}
+
+/* Boss column: scroll when stats/effects exceed arena height */
+.tacticalBattlePixel .combatantBoss {
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    padding-right: 4px;
+    max-height: 100%;
+}
+
+.tacticalBattlePixel .characterSprite {
+    width: 140px;
+    height: 140px;
+}
+
+.tacticalBattlePixel .spriteContainer {
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+    background: #000;
+    border: 4px solid #c6c6c6;
+    box-shadow: 4px 4px 0 #000;
+}
+
+.tacticalBattlePixel .combatantBoss .spriteContainer {
+    border-color: #c0392b;
+    box-shadow: 4px 4px 0 #5c1a1a;
+}
+
+.tacticalBattlePixel .bossEmoji,
+.tacticalBattlePixel .playerEmoji {
+    font-size: 72px;
+    filter: none;
+    line-height: 1;
+}
+
+.tacticalBattlePixel .playerAvatar {
+    width: 140px;
+    height: 140px;
+    border-radius: 0;
+    object-fit: cover;
+    border: 4px solid #c6c6c6;
+    box-shadow: 4px 4px 0 #000;
+    animation: none;
+}
+
+.tacticalBattlePixel .tacticalStatsBox {
+    width: 100%;
+    max-width: 320px;
+    background: #1a1f35;
+    border-radius: 0;
+    padding: 12px;
+    border: 4px solid #ffd700;
+    box-shadow: 4px 4px 0 #000;
+}
+
+.tacticalBattlePixel .combatantBoss .tacticalStatsBox {
+    border-color: #e74c3c;
+}
+
+.tacticalBattlePixel .combatStats {
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.tacticalBattlePixel .statItem {
+    background: #000;
+    border: 2px solid #444;
+    border-radius: 0;
+    padding: 6px;
+    gap: 4px;
+}
+
+.tacticalBattlePixel .statLabel {
+    font-size: 6px;
+    color: #ffd700;
+    letter-spacing: 0;
+}
+
+.tacticalBattlePixel .statValue {
+    font-size: 14px;
+    color: #e8e8f0;
+    text-shadow: none;
+    font-weight: normal;
+}
+
+.tacticalBattlePixel .weaponInfo {
+    margin-bottom: 10px;
+    padding: 6px;
+    border: 2px dashed #555;
+    border-radius: 0;
+    background: transparent;
+    gap: 6px;
+    font-size: 8px;
+}
+
+.tacticalBattlePixel .weaponIcon {
+    font-size: inherit;
+}
+
+.tacticalBattlePixel .weaponName {
+    font-size: inherit;
+    font-weight: normal;
+    color: #e8e8f0;
+}
+
+.tacticalBattlePixel .hpBarContainer {
+    margin-bottom: 8px;
+}
+
+.tacticalBattlePixel .hpBarSegmented {
+    background: #000;
+    border: 2px solid #333;
+    border-radius: 0;
+    padding: 4px;
+    gap: 2px;
+}
+
+.tacticalBattlePixel .hpSegment {
+    height: 14px;
+    border-radius: 0;
+    background: #222;
+    transition: none;
+}
+
+.tacticalBattlePixel .combatantPlayer .hpSegment.filled {
+    background: #3ecf8e;
+    box-shadow: none;
+}
+
+.tacticalBattlePixel .combatantBoss .hpSegment.filled {
+    background: #e74c3c;
+    box-shadow: none;
+}
+
+.tacticalBattlePixel .phaseMarkerLine {
+    width: 2px;
+    background: #fff;
+    opacity: 0.6;
+    box-shadow: none;
+}
+
+.tacticalBattlePixel .phaseMarkerLabel {
+    font-size: 5px;
+    padding: 1px 3px;
+    border-radius: 0;
+    border: 1px solid #666;
+    background: #000;
+    color: #c6c6c6;
+    top: -14px;
+    text-shadow: none;
+}
+
+.tacticalBattlePixel .hpText {
+    font-size: 9px;
+    text-align: center;
+    color: #e8e8f0;
+    font-weight: normal;
+}
+
+.tacticalBattlePixel .hpDeadlineNote {
+    color: #f59e0b;
+}
+
+.tacticalBattlePixel .characterName {
+    font-size: 9px;
+    text-align: center;
+    margin-bottom: 2px;
+    text-shadow: none;
+    font-weight: normal;
+    color: #e8e8f0;
+}
+
+.tacticalBattlePixel .characterPhase,
+.tacticalBattlePixel .characterLevel {
+    font-size: 7px;
+    color: #f59e0b;
+    text-align: center;
+    font-weight: normal;
+}
+
+.tacticalBattlePixel .statusEffectsContainer {
+    margin-top: 6px;
+    font-size: 6px;
+}
+
+.tacticalBattlePixel .blockWarning {
+    font-size: 6px;
+}
+
+.tacticalBattlePixel .controlsSection {
+    background: #0a0c14;
+    border-top: 4px solid #c6c6c6;
+    gap: 10px;
+    padding: 12px;
+    grid-template-columns: 1.1fr 1fr 0.9fr 1fr;
+    align-items: stretch;
+    min-height: 0;
+}
+
+@media (max-width: 899px) {
+    .tacticalBattlePixel .controlsSection {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto auto;
+    }
+}
+
+.tacticalBattlePixel .movesPanel,
+.tacticalBattlePixel .logPanel,
+.tacticalBattlePixel .statsPanel,
+.tacticalBattlePixel .tasksPanel {
+    border: 3px solid #c6c6c6;
+    background: #1a1f35;
+    border-radius: 0;
+    min-height: 0;
+    height: 100%;
+    max-height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-self: stretch;
+    overflow: hidden;
+}
+
+.tacticalBattlePixel .statsPanel {
+    border-radius: 0;
+}
+
+.tacticalBattlePixel .panelHeader {
+    flex-shrink: 0;
+    margin: 0;
+    margin-bottom: 0;
+    padding: 8px 10px;
+    background: #000;
+    border-bottom: 2px solid #c6c6c6;
+    border-radius: 0;
+    color: #ffd700;
+    font-size: 8px;
+    gap: 6px;
+}
+
+.tacticalBattlePixel .panelIcon {
+    font-size: inherit;
+}
+
+.tacticalBattlePixel .panelTitle {
+    font-size: 8px;
+    font-weight: normal;
+    color: #ffd700;
+    text-shadow: none;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.tacticalBattlePixel .movesPanel {
+    flex: 1 1 auto;
+}
+
+.tacticalBattlePixel .movesGrid {
+    flex: 1 1 auto;
+    min-height: 0;
+    gap: 8px;
+    padding: 8px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    align-items: stretch;
+    justify-items: stretch;
+}
+
+.tacticalBattlePixel .moveButton {
+    background: #111;
+    border: 3px solid #555;
+    border-radius: 0;
+    padding: 8px 8px 10px;
+    box-shadow: 3px 3px 0 #000;
+    text-align: left;
+    align-items: flex-start;
+    justify-content: flex-start;
+    gap: 4px;
+    min-height: 0;
+    height: 100%;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    transition: border-color 0.1s ease, color 0.1s ease;
+}
+
+.tacticalBattlePixel .moveButton:hover:not(:disabled) {
+    transform: none;
+    border-color: #ffd700;
+    color: #ffd700;
+    background: #111;
+    box-shadow: 3px 3px 0 #000;
+}
+
+.tacticalBattlePixel .moveButton::before {
+    display: none;
+}
+
+.tacticalBattlePixel .moveButton.onCooldown,
+.tacticalBattlePixel .moveButton:disabled {
+    opacity: 0.55;
+}
+
+.tacticalBattlePixel .moveIcon {
+    font-size: 16px;
+    filter: none;
+    line-height: 1;
+    margin: 0;
+}
+
+.tacticalBattlePixel .moveName {
+    font-size: 7px;
+    font-weight: normal;
+    color: #e8e8f0;
+    text-shadow: none;
+    margin: 0;
+    line-height: 1.35;
+}
+
+.tacticalBattlePixel .moveDamage {
+    font-size: 6px;
+    color: #3ecf8e;
+    margin-top: 2px;
+    text-shadow: none;
+    line-height: 1.35;
+}
+
+.tacticalBattlePixel .moveStat {
+    font-size: 6px;
+    color: #8892b0;
+    text-shadow: none;
+    line-height: 1.35;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.tacticalBattlePixel .moveCost {
+    font-size: 6px;
+    color: #8892b0;
+    margin-top: auto;
+    padding-top: 6px;
+    width: 100%;
+    line-height: 1.35;
+    border-top: 1px solid #333;
+}
+
+.tacticalBattlePixel .cooldownRing {
+    position: static;
+    width: auto;
+    height: auto;
+    border: none;
+    border-radius: 0;
+    background: none !important;
+    box-shadow: none;
+    margin-top: auto;
+    align-self: stretch;
+    padding-top: 4px;
+}
+
+.tacticalBattlePixel .cooldownInner {
+    width: auto;
+    height: auto;
+    border-radius: 0;
+    border: 2px dashed #555;
+    background: #000;
+    font-size: 6px;
+    padding: 6px;
+    color: #f59e0b;
+}
+
+.tacticalBattlePixel .logContent {
+    padding: 8px;
+    gap: 6px;
+    max-height: none;
+    min-height: 0;
+    flex: 1;
+    overflow-y: auto;
+    font-size: 6px;
+    line-height: 1.8;
+    color: #8892b0;
+}
+
+.tacticalBattlePixel .logEntry {
+    border-radius: 0;
+    border: 2px solid #444;
+    background: #0d0d12;
+    padding: 8px;
+}
+
+.tacticalBattlePixel .logEntry.player {
+    border-color: #2a5a3a;
+    background: #0d1510;
+}
+
+.tacticalBattlePixel .logEntry.boss {
+    border-color: #5c2a2a;
+    background: #150d0d;
+}
+
+.tacticalBattlePixel .logEntry.system {
+    border-color: #3a4a5c;
+    background: #0d1015;
+}
+
+.tacticalBattlePixel .logTurn {
+    font-size: 6px;
+    color: #ffd700;
+    margin-bottom: 2px;
+}
+
+.tacticalBattlePixel .logEvent {
+    font-size: 6px;
+    color: #e8e8f0;
+    line-height: 1.7;
+}
+
+.tacticalBattlePixel .logEntry.player .logEvent {
+    color: #6cf;
+}
+
+.tacticalBattlePixel .logEntry.boss .logEvent {
+    color: #f88;
+}
+
+.tacticalBattlePixel .allStatsGrid {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    gap: 6px;
+    padding: 8px;
+}
+
+.tacticalBattlePixel .statMiniItem {
+    background: #000;
+    border: 2px solid #444;
+    border-radius: 0;
+    padding: 6px;
+}
+
+.tacticalBattlePixel .statMiniLabel {
+    font-size: 6px;
+    color: #ffd700;
+    letter-spacing: 0;
+}
+
+.tacticalBattlePixel .statMiniValue {
+    font-size: 12px;
+    color: #e8e8f0;
+    text-shadow: none;
+}
+
+.tacticalBattlePixel .tasksList {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 8px;
+    gap: 6px;
+}
+
+.tacticalBattlePixel .bossRaidVaultPanel {
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    padding: 6px 8px 8px;
+    gap: 6px;
+}
+
+.tacticalBattlePixel .bossRaidVaultPanel .tasksList {
+    flex: 1;
+    min-height: 0;
+    max-height: none;
+}
+
+.tacticalBattlePixel .taskButton {
+    background: #0d0d12;
+    border: 2px solid #444;
+    border-radius: 0;
+    padding: 8px;
+    box-shadow: none;
+    gap: 4px;
+}
+
+.tacticalBattlePixel .taskButton::before {
+    display: none;
+}
+
+.tacticalBattlePixel .taskButton:hover:not(:disabled) {
+    transform: none;
+    border-color: #ffd700;
+    box-shadow: none;
+}
+
+.tacticalBattlePixel .taskButton.completed {
+    opacity: 0.45;
+    border-color: #374151;
+    background: #0d0d12;
+}
+
+.tacticalBattlePixel .taskDescription {
+    font-size: 7px;
+    text-shadow: none;
+    color: #e8e8f0;
+}
+
+.tacticalBattlePixel .taskNumber {
+    font-size: 7px;
+    padding: 2px 6px;
+    border-radius: 0;
+    background: #000;
+    border: 1px solid #555;
+}
+
+.tacticalBattlePixel .taskDamage {
+    font-size: 6px;
+    color: #3ecf8e;
+    background: transparent;
+    padding: 0;
+}
+
+.tacticalBattlePixel .tasksHeader {
+    padding: 0 8px 6px;
+}
+
+.tacticalBattlePixel .addSubquestButton {
+    font-size: 7px;
+    padding: 6px 10px;
+    border-radius: 0;
+    border: 3px solid #ffd700;
+    background: #1e293b;
+    color: #ffd700;
+    box-shadow: 3px 3px 0 #000;
+}
+
+.tacticalBattlePixel .addSubquestButton:hover {
+    transform: none;
+    filter: brightness(1.08);
+}
+
+.tacticalBattlePixel .closeButton {
+    top: auto;
+    bottom: max(12px, env(safe-area-inset-bottom, 0px));
+    right: max(12px, env(safe-area-inset-right, 0px));
+    z-index: 10060;
+    padding: 10px 14px;
+    font-size: 7px;
+    font-family: inherit;
+    font-weight: normal;
+    border-radius: 0;
+    border: 3px solid #fff;
+    background: #8b0000;
+    color: #fff;
+    box-shadow: 4px 4px 0 #000;
+    min-width: 0;
+    text-shadow: none;
+}
+
+.tacticalBattlePixel .closeButton:hover {
+    transform: none;
+    background: #a40000;
+    border-color: #fff;
+    box-shadow: 4px 4px 0 #000;
+}
+
+.tacticalBattlePixel .splitter {
+    background: #333;
+    border-top-color: #555;
+    border-bottom-color: #000;
+}
+
+.tacticalBattlePixel .splitter::before {
+    background: #c6c6c6;
+}
+
+.defeatScreen.tacticalBattlePixel,
+.victoryScreen.tacticalBattlePixel {
+    font-family: "Press Start 2P", ui-monospace, "Cascadia Code", "Courier New", monospace;
+    font-size: 10px;
+    background: #0d1020;
+}
+
+/* Gate raid — raid-only focus meter (not vault energy) */
+.raidFocusBar .raidFocusSegment.filled {
+    background: linear-gradient(180deg, #22d3ee, #0891b2);
+    border-color: #67e8f9;
+}
+
+.raidFocusBar .raidFocusSegment.raidFocusLow.filled {
+    background: linear-gradient(180deg, #f97316, #ea580c);
+    border-color: #fdba74;
+}
+
+.raidFocusPenalty {
+    color: #fbbf24;
+    font-size: 8px;
+}
+
+.raidFocusHint {
+    margin-top: 4px;
+    font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 9px;
+    line-height: 1.35;
+    color: #64748b;
+    text-align: center;
+}
+
+.bossStrikeTimer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 6px;
+    padding: 4px 6px;
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    color: #94a3b8;
+    border: 1px solid #334155;
+    background: rgba(0, 0, 0, 0.35);
+}
+
+.bossStrikeTimerReady {
+    color: #f87171;
+    border-color: #ef4444;
+    animation: bossStrikePulse 1s ease-in-out infinite;
+}
+
+@keyframes bossStrikePulse {
+    0%, 100% { box-shadow: 0 0 0 rgba(239, 68, 68, 0); }
+    50% { box-shadow: 0 0 10px rgba(239, 68, 68, 0.45); }
+}
+
+.tacticalBattlePixel .raidFocusHint {
+    font-size: 6px;
+}
+
+.tacticalBattlePixel .bossStrikeTimer {
+    font-size: 6px;
+    border-width: 2px;
+    border-radius: 0;
+}
+
+/* Clay and Solo Leveling share the battle. Classic keeps .tacticalBattlePixel. */
+.tacticalBattleThemed {
+    font-family: var(--gamify-font-ui, "Segoe UI", system-ui, sans-serif);
+    font-size: 13px;
+    line-height: 1.4;
+    color: var(--go-text);
+    background: var(--go-bg);
+    background-image: none;
+    -webkit-font-smoothing: antialiased;
+}
+
+.tacticalBattleThemed .arenaSection,
+.tacticalBattleThemed .arenaSection::before {
+    background: transparent;
+    background-image: none;
+    opacity: 1;
+}
+
+.tacticalBattleThemed .battleStatusBar,
+.tacticalBattleThemed .movesPanel,
+.tacticalBattleThemed .logPanel,
+.tacticalBattleThemed .statsPanel,
+.tacticalBattleThemed .tasksPanel,
+.tacticalBattleThemed .logEntry,
+.tacticalBattleThemed .spriteContainer,
+.tacticalBattleThemed .playerAvatar,
+.tacticalBattleThemed .tacticalStatsBox,
+.tacticalBattleThemed .nextActionBox,
+.tacticalBattleThemed .turnCounter,
+.tacticalBattleThemed .countdownBox,
+.tacticalBattleThemed .moveButton {
+    border: 1px solid var(--go-border-strong);
+    background: var(--go-panel);
+    box-shadow: none;
+    color: var(--go-text);
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .battleStatusBar,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .movesPanel,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .logPanel,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .statsPanel,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .tasksPanel,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .tacticalStatsBox,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .moveButton,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .spriteContainer,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .playerAvatar {
+    border-radius: var(--clay-radius, 24px);
+    box-shadow: var(--clay-shadow);
+    background: var(--clay-gradient, var(--go-panel));
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="system-hunter"] .battleStatusBar,
+.tacticalBattleThemed[data-gamification-visual-theme="system-hunter"] .movesPanel,
+.tacticalBattleThemed[data-gamification-visual-theme="system-hunter"] .logPanel,
+.tacticalBattleThemed[data-gamification-visual-theme="system-hunter"] .statsPanel,
+.tacticalBattleThemed[data-gamification-visual-theme="system-hunter"] .tasksPanel,
+.tacticalBattleThemed[data-gamification-visual-theme="system-hunter"] .tacticalStatsBox,
+.tacticalBattleThemed[data-gamification-visual-theme="system-hunter"] .moveButton,
+.tacticalBattleThemed[data-gamification-visual-theme="system-hunter"] .spriteContainer,
+.tacticalBattleThemed[data-gamification-visual-theme="system-hunter"] .playerAvatar,
+.tacticalBattleThemed[data-gamification-visual-theme="system-hunter"] .nextActionBox,
+.tacticalBattleThemed[data-gamification-visual-theme="system-hunter"] .countdownBox,
+.tacticalBattleThemed[data-gamification-visual-theme="system-hunter"] .turnCounter {
+    border-radius: 0;
+}
+
+.tacticalBattleThemed .panelHeader,
+.tacticalBattleThemed .panelTitle {
+    background: transparent;
+    color: var(--go-accent);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    border-bottom-color: var(--go-border);
+}
+
+.tacticalBattleThemed .moveName,
+.tacticalBattleThemed .logContent,
+.tacticalBattleThemed .moveStat,
+.tacticalBattleThemed .moveCost,
+.tacticalBattleThemed .moveDamage,
+.tacticalBattleThemed .statLabel,
+.tacticalBattleThemed .countdownLabel,
+.tacticalBattleThemed .turnLabel {
+    font-size: 12px;
+    color: var(--go-muted);
+}
+
+.tacticalBattleThemed .statValue,
+.tacticalBattleThemed .turnNumber,
+.tacticalBattleThemed .countdownNumber {
+    color: var(--go-text-bright);
+    text-shadow: none;
+}
+
+.tacticalBattleThemed .combatantPlayer .hpSegment.filled,
+.tacticalBattleThemed .combatantBoss .hpSegment.filled,
+.tacticalBattleThemed .xpFill {
+    background: var(--go-progress-fill);
+    box-shadow: none;
+}
+
+.tacticalBattleThemed .moveButton:hover:not(:disabled) {
+    border-color: var(--go-accent);
+    color: var(--go-accent);
+    transform: none;
+    box-shadow: none;
+}
+
+.victoryScreen.tacticalBattleThemed {
+    background: var(--go-bg);
+    font-family: var(--gamify-font-ui, "Segoe UI", system-ui, sans-serif);
+}
+
+.victoryScreen.tacticalBattleThemed .victoryContent,
+.victoryScreen.tacticalBattleThemed .victoryRecap,
+.victoryScreen.tacticalBattleThemed .victoryStats,
+.victoryScreen.tacticalBattleThemed .rewardItem {
+    background: var(--go-panel);
+    border: 1px solid var(--go-border-strong);
+    color: var(--go-text);
+    box-shadow: none;
+    animation: none;
+}
+
+.victoryScreen.tacticalBattleThemed[data-gamification-visual-theme="clay"] .victoryContent,
+.victoryScreen.tacticalBattleThemed[data-gamification-visual-theme="clay"] .victoryRecap,
+.victoryScreen.tacticalBattleThemed[data-gamification-visual-theme="clay"] .victoryStats,
+.victoryScreen.tacticalBattleThemed[data-gamification-visual-theme="clay"] .rewardItem {
+    border-radius: var(--clay-radius, 24px);
+    box-shadow: var(--clay-shadow);
+}
+
+.victoryScreen.tacticalBattleThemed[data-gamification-visual-theme="system-hunter"] .victoryContent,
+.victoryScreen.tacticalBattleThemed[data-gamification-visual-theme="system-hunter"] .victoryRecap,
+.victoryScreen.tacticalBattleThemed[data-gamification-visual-theme="system-hunter"] .victoryStats,
+.victoryScreen.tacticalBattleThemed[data-gamification-visual-theme="system-hunter"] .rewardItem {
+    border-radius: 0;
+}
+
+.victoryScreen.tacticalBattleThemed .systemKicker,
+.weaponPickerModal[data-gamification-visual-theme="system-hunter"] .systemKicker {
+    margin: 0 0 8px;
+    color: var(--go-accent);
+    font-size: 12px;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    text-align: center;
+}
+
+.victoryScreen.tacticalBattleThemed .victoryTitle,
+.victoryScreen.tacticalBattleThemed .rewardsTitle,
+.victoryScreen.tacticalBattleThemed .victoryValue,
+.victoryScreen.tacticalBattleThemed .xpGain,
+.victoryScreen.tacticalBattleThemed .victoryRecapTitle {
+    color: var(--go-text-bright);
+    text-shadow: none;
+    animation: none;
+}
+
+.victoryScreen.tacticalBattleThemed .victoryButton,
+.weaponPickerModal[data-gamification-visual-theme="system-hunter"] .weaponPickerConfirm {
+    background: var(--go-accent);
+    border: none;
+    color: #071018;
+    box-shadow: none;
+}
+
+.weaponPickerModal[data-gamification-visual-theme="clay"] .weaponPickerConfirm {
+    background: var(--go-accent);
+    border: none;
+    color: #2c2722;
+    box-shadow: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    min-height: 52px;
+    padding: 14px 20px;
+    line-height: 1.2;
+    font-size: 16px;
+    font-weight: 800;
+}
+
+.weaponPickerModal[data-gamification-visual-theme="clay"] .weaponPickerConfirm,
+.weaponPickerModal[data-gamification-visual-theme="clay"] {
+    border-radius: var(--clay-radius, 24px);
+}
+
+.weaponPickerModal[data-gamification-visual-theme="clay"] {
+    background: var(--go-panel);
+    border: none;
+    box-shadow: var(--clay-shadow);
+    color: var(--go-text);
+}
+
+.weaponPickerModal[data-gamification-visual-theme="system-hunter"] {
+    background: var(--go-panel-strong);
+    border: 1px solid var(--go-border-strong);
+    border-radius: 0;
+    box-shadow: none;
+    color: var(--go-text);
+}
+
+.weaponPickerModal[data-gamification-visual-theme="clay"] .weaponPickerTitle,
+.weaponPickerModal[data-gamification-visual-theme="system-hunter"] .weaponPickerTitle,
+.weaponPickerModal[data-gamification-visual-theme="clay"] .weaponPickerPreviewTitle,
+.weaponPickerModal[data-gamification-visual-theme="system-hunter"] .weaponPickerPreviewTitle,
+.weaponPickerModal[data-gamification-visual-theme="clay"] .weaponCardName,
+.weaponPickerModal[data-gamification-visual-theme="system-hunter"] .weaponCardName,
+.weaponPickerModal[data-gamification-visual-theme="clay"] .weaponPickerSubtitle,
+.weaponPickerModal[data-gamification-visual-theme="system-hunter"] .weaponPickerSubtitle,
+.weaponPickerModal[data-gamification-visual-theme="clay"] .weaponPickerPreviewText,
+.weaponPickerModal[data-gamification-visual-theme="system-hunter"] .weaponPickerPreviewText {
+    color: var(--go-text);
+}
+
+.weaponPickerModal[data-gamification-visual-theme="clay"] .weaponCard,
+.weaponPickerModal[data-gamification-visual-theme="system-hunter"] .weaponCard,
+.weaponPickerModal[data-gamification-visual-theme="clay"] .weaponPickerPreview,
+.weaponPickerModal[data-gamification-visual-theme="system-hunter"] .weaponPickerPreview {
+    background: var(--go-card);
+    border: 1px solid var(--go-border);
+    box-shadow: none;
+    color: var(--go-text);
+}
+
+.weaponPickerModal[data-gamification-visual-theme="clay"] .weaponCard,
+.weaponPickerModal[data-gamification-visual-theme="clay"] .weaponPickerPreview,
+.weaponPickerModal[data-gamification-visual-theme="clay"] .weaponPickerConfirm {
+    border-radius: var(--clay-radius-small, 14px);
+}
+
+.weaponPickerModal[data-gamification-visual-theme="system-hunter"] .weaponCard,
+.weaponPickerModal[data-gamification-visual-theme="system-hunter"] .weaponPickerPreview,
+.weaponPickerModal[data-gamification-visual-theme="system-hunter"] .weaponPickerConfirm {
+    border-radius: 0;
+}
+
+.weaponPickerModal[data-gamification-visual-theme="clay"] .weaponCardSelected,
+.weaponPickerModal[data-gamification-visual-theme="system-hunter"] .weaponCardSelected {
+    border-color: var(--go-accent);
+    box-shadow: none;
+}
+
+.victoryScreen.tacticalBattleThemed .victoryFooter {
+    background: var(--go-panel);
+}
+
+/* Clay gate: dark ink, one cream field, no leftover pixel buttons. */
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] {
+    background: var(--go-bg);
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .controlsSection {
+    background: var(--go-bg);
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .battleStatusBar {
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .battleStatusTitle {
+    flex: 1 1 180px;
+    text-align: left;
+    padding-left: 8px;
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .battleStatusTitleMain,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .turnNumber,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .countdownNumber,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .moveName,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .logContent,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .logEntry,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .taskDescription,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .nextActionName,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .statMiniValue,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .bossRaidVaultHint {
+    color: var(--go-text);
+    text-shadow: none;
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .battleStatusTitleSub,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .turnLabel,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .countdownLabel,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .nextActionLabel,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .nextActionEta,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .moveStat,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .moveCost,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .statMiniLabel {
+    color: var(--go-muted);
+    text-shadow: none;
+    font-size: 11px;
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .moveDamage,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .panelTitle,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .bossRaidAffinity {
+    color: var(--go-accent);
+    text-shadow: none;
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .moveName {
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .nextActionBox {
+    order: 5;
+    flex: 1 1 100%;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    padding: 0 8px;
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .countdownBox,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .statMiniItem {
+    background: var(--go-card-soft, #efe6d8);
+    border: none;
+    box-shadow: var(--clay-recessed, inset 0 2px 4px rgba(140, 128, 110, 0.25));
+    border-radius: 14px;
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .closeButton {
+    top: max(18px, env(safe-area-inset-top, 0px));
+    background: var(--go-panel);
+    color: var(--go-text);
+    border: none;
+    border-radius: 999px;
+    box-shadow: var(--clay-shadow);
+    text-shadow: none;
+    font-size: 13px;
+    font-weight: 800;
+    padding: 10px 16px;
+    min-width: 0;
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .closeButton:hover {
+    transform: none;
+    background: var(--go-card-soft, #efe6d8);
+    border: none;
+    box-shadow: var(--clay-shadow);
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .taskButton {
+    background: var(--go-panel);
+    color: var(--go-text);
+    border: none;
+    border-radius: 16px;
+    box-shadow: var(--clay-shadow);
+    overflow: visible;
+    min-height: 0;
+    height: auto;
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .taskButton::before {
+    display: none;
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .taskButton:hover:not(:disabled) {
+    transform: none;
+    background: var(--go-card-soft, #efe6d8);
+    box-shadow: var(--clay-shadow);
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .taskDescription {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+    line-height: 1.35;
+    font-size: 13px;
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .taskNumber {
+    color: var(--go-accent);
+    background: transparent;
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .logEvent,
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .logTurn {
+    color: var(--go-text);
+    text-shadow: none;
+    font-size: 13px;
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .logContent {
+    gap: 12px;
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .logEntry {
+    padding: 12px 14px;
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .controlsSection {
+    grid-template-columns: 1.5fr 1.1fr 0.7fr 1.6fr;
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .bossRaidVaultPanel .tasksList {
+    gap: 14px;
+    padding: 4px 2px 8px;
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .bossRaidVaultPanel .taskButton {
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 14px 16px;
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .bossRaidVaultPanel .taskHeader {
+    flex: 0 0 auto;
+    margin: 0;
+}
+
+.tacticalBattleThemed[data-gamification-visual-theme="clay"] .bossRaidVaultPanel .taskDescription {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+/* ==========================
+   RESPONSIVE ADJUSTMENTS
+   ========================== */
