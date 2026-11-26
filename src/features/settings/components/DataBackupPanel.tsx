@@ -16,6 +16,13 @@ import {
 	restoreDataBackup,
 	type DataBackupEntry,
 } from '../../../shared/utils/vaultDataBackup';
+import {
+	buildVaultExport,
+	downloadVaultExport,
+	importVaultExport,
+	isVaultExport,
+	parseVaultExport,
+} from '../../../shared/utils/vaultExport';
 import styles from './SettingsUI.module.css';
 
 interface Props {
@@ -29,6 +36,7 @@ export const DataBackupPanel: React.FC<Props> = ({ plugin, onSettingsApplied }) 
 	const [busy, setBusy] = useState(false);
 	const [confirmRestore, setConfirmRestore] = useState<string | null>(null);
 	const fileInputRef = useRef<HTMLInputElement>(null);
+	const vaultInputRef = useRef<HTMLInputElement>(null);
 
 	const refresh = useCallback(async () => {
 		try {
@@ -113,6 +121,10 @@ export const DataBackupPanel: React.FC<Props> = ({ plugin, onSettingsApplied }) 
 		setBusy(true);
 		try {
 			const raw = await file.text();
+			if (isVaultExport(raw)) {
+				pixelNotice('That file is a full vault export. Use Import all data.', 4000);
+				return;
+			}
 			await backupPluginSettings(plugin, plugin.settings, { force: true });
 			await importSettingsFromJson(plugin, raw);
 			await afterSettingsRestore();
@@ -123,6 +135,44 @@ export const DataBackupPanel: React.FC<Props> = ({ plugin, onSettingsApplied }) 
 		} finally {
 			setBusy(false);
 			if (fileInputRef.current) fileInputRef.current.value = '';
+		}
+	};
+
+	const handleExportAll = async () => {
+		setBusy(true);
+		try {
+			const bundle = await buildVaultExport(plugin);
+			downloadVaultExport(bundle);
+			pixelNotice(`Exported ${bundle.files.length} notes plus settings. Save the download, then import it in the other vault.`, 6000);
+		} catch (error) {
+			console.error(error);
+			pixelNotice('Full export failed — see console.', 4000);
+		} finally {
+			setBusy(false);
+		}
+	};
+
+	const handleImportAll = async (file: File | undefined) => {
+		if (!file) return;
+		setBusy(true);
+		try {
+			const raw = await file.text();
+			const bundle = parseVaultExport(raw);
+			const ok = window.confirm(
+				`Import ${bundle.files.length} notes into this vault? Files with the same path are replaced. Settings in the file replace this vault's plugin settings.`
+			);
+			if (!ok) return;
+			await backupPluginSettings(plugin, plugin.settings, { force: true });
+			const result = await importVaultExport(plugin, bundle);
+			await afterSettingsRestore();
+			await refresh();
+			pixelNotice(`Imported ${result.files} notes${result.settings ? ' and settings' : ''}.`, 5000);
+		} catch (error) {
+			console.error(error);
+			pixelNotice('Full import failed — choose a gamification vault export.', 4000);
+		} finally {
+			setBusy(false);
+			if (vaultInputRef.current) vaultInputRef.current.value = '';
 		}
 	};
 
@@ -149,6 +199,34 @@ export const DataBackupPanel: React.FC<Props> = ({ plugin, onSettingsApplied }) 
 
 	return (
 		<div className={styles.settingsSection}>
+			<Card className={styles.settingsCard}>
+				<h3>📦 Move to another vault</h3>
+				<p className={styles.settingDescription}>
+					One file with your character, skills, inventory, gear, bosses, quests, shop, workshop, and
+					plugin settings. Export here, then in the other vault use Import all data.
+				</p>
+				<div className={styles.resetButtonGroup} style={{ marginTop: 12, flexDirection: 'row', flexWrap: 'wrap' }}>
+					<button type="button" className={styles.resetButton} disabled={busy} onClick={() => void handleExportAll()}>
+						Export all data
+					</button>
+					<button
+						type="button"
+						className={styles.resetButton}
+						disabled={busy}
+						onClick={() => vaultInputRef.current?.click()}
+					>
+						Import all data…
+					</button>
+					<input
+						ref={vaultInputRef}
+						type="file"
+						accept="application/json,.json"
+						hidden
+						onChange={(e) => void handleImportAll(e.target.files?.[0])}
+					/>
+				</div>
+			</Card>
+
 			<Card className={styles.settingsCard}>
 				<h3>💾 Plugin settings</h3>
 				<p className={styles.settingDescription}>
