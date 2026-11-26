@@ -1,10 +1,11 @@
 import type GamifiedObsidianPlugin from '../../../core/main';
 import type { CraftingMaterial } from '../types/CraftingTypes';
 import { DEFAULT_CRAFTING_MATERIALS } from '../data/defaultMaterials';
-import { getVaultMaterials, notifyCraftingDataUpdated } from './materialsParser';
+import { getRemovedMaterialIds, getVaultMaterials, notifyCraftingDataUpdated } from './materialsParser';
 
 let mergedCache: CraftingMaterial[] | null = null;
 let vaultCache: CraftingMaterial[] | null = null;
+let removedIds = new Set<string>();
 
 function mergeMaterials(defaults: CraftingMaterial[], custom: CraftingMaterial[]): CraftingMaterial[] {
 	const map = new Map<string, CraftingMaterial>();
@@ -15,7 +16,8 @@ function mergeMaterials(defaults: CraftingMaterial[], custom: CraftingMaterial[]
 
 /** Synchronous access — returns cache if loaded, otherwise built-in defaults only. */
 export function getCraftingMaterials(): CraftingMaterial[] {
-	return mergedCache ?? DEFAULT_CRAFTING_MATERIALS;
+	const list = mergedCache ?? DEFAULT_CRAFTING_MATERIALS;
+	return list.filter((material) => !removedIds.has(material.id));
 }
 
 export function getVaultMaterialOverrides(): CraftingMaterial[] {
@@ -29,6 +31,7 @@ export function isVaultMaterial(materialId: string): boolean {
 export function invalidateCraftingMaterialCache(): void {
 	mergedCache = null;
 	vaultCache = null;
+	removedIds = new Set();
 }
 
 export async function refreshCraftingMaterials(
@@ -36,7 +39,10 @@ export async function refreshCraftingMaterials(
 ): Promise<CraftingMaterial[]> {
 	const custom = await getVaultMaterials(plugin);
 	vaultCache = custom;
-	mergedCache = mergeMaterials(DEFAULT_CRAFTING_MATERIALS, custom);
+	removedIds = new Set(await getRemovedMaterialIds(plugin));
+	mergedCache = mergeMaterials(DEFAULT_CRAFTING_MATERIALS, custom).filter(
+		(material) => !removedIds.has(material.id)
+	);
 	return mergedCache;
 }
 

@@ -31,6 +31,7 @@ import { TFile, TFolder } from 'obsidian';
 import type GamifiedObsidianPlugin from '../../../core/main';
 import styles from './SettingsUI.module.css';
 import { GameDataHubPanel } from './GameDataHubPanel';
+import { VaultPathPicker, type VaultPickKind } from './VaultPathPicker';
 import { DataBackupPanel } from './DataBackupPanel';
 import { GameplayOnboardingModal } from './GameplayOnboardingModal';
 import { AchievementMakerPanel } from '../../achievements/components/AchievementMakerPanel';
@@ -461,7 +462,7 @@ export const SettingsUI: React.FC<SettingsUIProps> = ({
             <TutorialSettingsSection settings={settings} onSettingChange={updateSetting} />
           )}
           {currentCategory.id === 'files' && (
-            <FileSettingsSection settings={settings} onSettingChange={updateSetting} />
+            <FileSettingsSection settings={settings} onSettingChange={updateSetting} app={app} />
           )}
           {currentCategory.id === 'reset' && (
             <ResetSettingsSection settings={settings} onSettingChange={updateSetting} app={app} />
@@ -1965,95 +1966,121 @@ const TutorialSettingsSection: React.FC<{
   </div>
 );
 
+const PathField: React.FC<{
+  label: string;
+  value: string;
+  placeholder: string;
+  kind: VaultPickKind;
+  app?: App;
+  onChange: (value: string) => void;
+}> = ({ label, value, placeholder, kind, app, onChange }) => (
+  <label>
+    {label}
+    <span className={styles.pathRow}>
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+      />
+      <button
+        type="button"
+        className={styles.pathPick}
+        aria-label={`Choose ${label}`}
+        title={kind === 'folder' ? 'Choose a folder' : kind === 'image' ? 'Choose an image' : 'Choose a note'}
+        disabled={!app}
+        onClick={() => {
+          if (!app) return;
+          new VaultPathPicker(app, kind, onChange).open();
+        }}
+      >
+        📁
+      </button>
+    </span>
+  </label>
+);
+
 const FileSettingsSection: React.FC<{
   settings: GamificationPluginSettings;
   onSettingChange: (path: string, value: unknown) => void;
-}> = ({ settings, onSettingChange }) => (
+  app?: App;
+}> = ({ settings, onSettingChange, app }) => (
   <div className={styles.settingsSection}>
     <Card className={styles.settingsCard}>
       <h3>📁 File Paths</h3>
       <div className={styles.settingGroup}>
-        <label>
-          Shopkeeper Image Path:
-          <input
-            type="text"
-            value={settings.shopkeeperImagePath}
-            onChange={(e) => onSettingChange('shopkeeperImagePath', e.target.value)}
-            placeholder="assets/shopkeeper.jpg"
-          />
-        </label>
-        <label>
-          Quest Giver Image Path:
-          <input
-            type="text"
-            value={settings.questGiverImagePath}
-            onChange={(e) => onSettingChange('questGiverImagePath', e.target.value)}
-            placeholder="assets/quest-giver.jpg"
-          />
-        </label>
-        <label>
-          Avatar Folder:
-          <input
-            type="text"
-            value={settings.avatarFolder}
-            onChange={(e) => onSettingChange('avatarFolder', e.target.value)}
-            placeholder="assets/"
-          />
-        </label>
-        <label>
-          Inventory File Path:
-          <input
-            type="text"
-            value={settings.inventoryFilePath}
-            onChange={(e) => onSettingChange('inventoryFilePath', e.target.value)}
-            placeholder="Inventory.md"
-          />
-        </label>
-        <label>
-          Master Class Folder:
-          <input
-            type="text"
-            value={settings.masterClassFolder}
-            onChange={(e) => onSettingChange('masterClassFolder', e.target.value)}
-            placeholder="SkillTree/Master-Class"
-          />
-        </label>
-        <label>
-          Class Folder:
-          <input
-            type="text"
-            value={settings.classFolder}
-            onChange={(e) => onSettingChange('classFolder', e.target.value)}
-            placeholder="SkillTree/Master-Class/Class"
-          />
-        </label>
-        <label>
-          Skill Folder:
-          <input
-            type="text"
-            value={settings.skillFolder}
-            onChange={(e) => onSettingChange('skillFolder', e.target.value)}
-            placeholder="SkillTree/Master-Class/Class/Skills"
-          />
-        </label>
-        <label>
-          Stat Folder:
-          <input
-            type="text"
-            value={settings.statFolder}
-            onChange={(e) => onSettingChange('statFolder', e.target.value)}
-            placeholder="SkillTree/Master-Class/Stats"
-          />
-        </label>
-        <label>
-          Default Quest File:
-          <input
-            type="text"
-            value={settings.defaultQuestFilePath || 'GamifiedTasks.md'}
-            onChange={(e) => onSettingChange('defaultQuestFilePath', e.target.value || 'GamifiedTasks.md')}
-            placeholder="GamifiedTasks.md"
-          />
-        </label>
+        <PathField
+          label="Shopkeeper Image Path:"
+          value={settings.shopkeeperImagePath}
+          placeholder="assets/shopkeeper.jpg"
+          kind="image"
+          app={app}
+          onChange={(value) => onSettingChange('shopkeeperImagePath', value)}
+        />
+        <PathField
+          label="Quest Giver Image Path:"
+          value={settings.questGiverImagePath}
+          placeholder="assets/quest-giver.jpg"
+          kind="image"
+          app={app}
+          onChange={(value) => onSettingChange('questGiverImagePath', value)}
+        />
+        <PathField
+          label="Avatar Folder:"
+          value={settings.avatarFolder}
+          placeholder="assets/"
+          kind="folder"
+          app={app}
+          onChange={(value) => onSettingChange('avatarFolder', value)}
+        />
+        <PathField
+          label="Inventory File Path:"
+          value={settings.inventoryFilePath}
+          placeholder="Inventory.md"
+          kind="markdown"
+          app={app}
+          onChange={(value) => onSettingChange('inventoryFilePath', value)}
+        />
+        <PathField
+          label="Master Class Folder:"
+          value={settings.masterClassFolder}
+          placeholder="SkillTree/Master-Class"
+          kind="folder"
+          app={app}
+          onChange={(value) => onSettingChange('masterClassFolder', value)}
+        />
+        <PathField
+          label="Class Folder:"
+          value={settings.classFolder}
+          placeholder="SkillTree/Master-Class/Class"
+          kind="folder"
+          app={app}
+          onChange={(value) => onSettingChange('classFolder', value)}
+        />
+        <PathField
+          label="Skill Folder:"
+          value={settings.skillFolder}
+          placeholder="SkillTree/Master-Class/Class/Skills"
+          kind="folder"
+          app={app}
+          onChange={(value) => onSettingChange('skillFolder', value)}
+        />
+        <PathField
+          label="Stat Folder:"
+          value={settings.statFolder}
+          placeholder="SkillTree/Master-Class/Stats"
+          kind="folder"
+          app={app}
+          onChange={(value) => onSettingChange('statFolder', value)}
+        />
+        <PathField
+          label="Default Quest File:"
+          value={settings.defaultQuestFilePath || 'GamifiedTasks.md'}
+          placeholder="GamifiedTasks.md"
+          kind="markdown"
+          app={app}
+          onChange={(value) => onSettingChange('defaultQuestFilePath', value || 'GamifiedTasks.md')}
+        />
         <label>
           Quest storage mode:
           <select
@@ -2067,36 +2094,31 @@ const FileSettingsSection: React.FC<{
           </select>
         </label>
         {(settings.questStorageMode || 'list') === 'per-note' && (
-          <label>
-            Task notes folder:
-            <input
-              type="text"
-              value={settings.taskNoteFolder || 'Gamified/Tasks'}
-              onChange={(e) => onSettingChange('taskNoteFolder', e.target.value || 'Gamified/Tasks')}
-              placeholder="Gamified/Tasks"
-            />
-          </label>
+          <PathField
+            label="Task notes folder:"
+            value={settings.taskNoteFolder || 'Gamified/Tasks'}
+            placeholder="Gamified/Tasks"
+            kind="folder"
+            app={app}
+            onChange={(value) => onSettingChange('taskNoteFolder', value || 'Gamified/Tasks')}
+          />
         )}
-        <label>
-          Projects / contracts file:
-          <input
-            type="text"
-            value={settings.projectsFilePath || 'GamifiedProjects.md'}
-            onChange={(e) =>
-              onSettingChange('projectsFilePath', e.target.value || 'GamifiedProjects.md')
-            }
-            placeholder="GamifiedProjects.md"
-          />
-        </label>
-        <label>
-          Brain dump file:
-          <input
-            type="text"
-            value={settings.captureFilePath || 'Capture.md'}
-            onChange={(e) => onSettingChange('captureFilePath', e.target.value || 'Capture.md')}
-            placeholder="Capture.md"
-          />
-        </label>
+        <PathField
+          label="Projects / contracts file:"
+          value={settings.projectsFilePath || 'GamifiedProjects.md'}
+          placeholder="GamifiedProjects.md"
+          kind="markdown"
+          app={app}
+          onChange={(value) => onSettingChange('projectsFilePath', value || 'GamifiedProjects.md')}
+        />
+        <PathField
+          label="Brain dump file:"
+          value={settings.captureFilePath || 'Capture.md'}
+          placeholder="Capture.md"
+          kind="markdown"
+          app={app}
+          onChange={(value) => onSettingChange('captureFilePath', value || 'Capture.md')}
+        />
         <label>
           Capture tag presets (comma-separated):
           <input

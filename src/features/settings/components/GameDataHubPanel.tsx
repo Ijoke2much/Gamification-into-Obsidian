@@ -14,11 +14,13 @@ import {
 import type { CraftingMaterial, CraftingRecipe } from '../../crafting/types/CraftingTypes';
 import { AddRecipeModal } from '../../crafting/modals/AddRecipeModal';
 import {
+	deleteCraftingRecipe,
 	ensureRecipesFile,
 	findRecipesFile,
 	formatRecipeOutput,
 } from '../../crafting/utils/recipesParser';
 import {
+	deleteCraftingMaterial,
 	ensureMaterialsFile,
 	findMaterialsFile,
 } from '../../crafting/utils/materialsParser';
@@ -38,6 +40,7 @@ import {
 } from '../../shop/utils/ShopParser';
 import { currencyDisplay } from '../../../shared/services/currencyDisplayService';
 import { resolveVaultMarkdownFile } from '../../../shared/utils/resolveVaultMarkdownFile';
+import { getAppliedVisualTheme } from '../../../shared/utils/visualThemeManager';
 import styles from './GameDataHubPanel.module.css';
 
 interface GameDataHubPanelProps {
@@ -271,6 +274,24 @@ export const GameDataHubPanel: React.FC<GameDataHubPanelProps> = ({ plugin }) =>
 		new AddMaterialModal(plugin.app, plugin, () => void loadCraftingData()).open();
 	};
 
+	const removeMaterial = async (material: CraftingMaterial) => {
+		const custom = isVaultMaterial(material.id);
+		const ok = window.confirm(
+			custom
+				? `Delete ${material.name}? It is removed from the workshop and from Materials.md.`
+				: `Remove ${material.name} from the workshop? It stays gone until you add a material with the same id.`
+		);
+		if (!ok) return;
+		try {
+			await deleteCraftingMaterial(plugin, material.id);
+			await loadCraftingData();
+			pixelNotice(`${material.name} removed from the workshop.`, 2500);
+		} catch (error) {
+			console.error('[GameDataHub] Failed to delete material', error);
+			pixelNotice('Could not delete that material.', 3000);
+		}
+	};
+
 	const openEditMaterial = async (material: CraftingMaterial) => {
 		const ok = await ensureMaterialsFile(plugin);
 		if (!ok) {
@@ -307,6 +328,24 @@ export const GameDataHubPanel: React.FC<GameDataHubPanelProps> = ({ plugin }) =>
 		new AddRecipeModal(plugin.app, plugin, () => void loadCraftingData()).open();
 	};
 
+	const removeRecipe = async (recipe: CraftingRecipe) => {
+		const custom = isVaultRecipe(recipe.id);
+		const ok = window.confirm(
+			custom
+				? `Delete ${recipe.name}? It is removed from the workshop and from Recipes.md.`
+				: `Remove ${recipe.name} from the workshop? It stays gone until you add a recipe with the same id.`
+		);
+		if (!ok) return;
+		try {
+			await deleteCraftingRecipe(plugin, recipe.id);
+			await loadCraftingData();
+			pixelNotice(`${recipe.name} removed from the workshop.`, 2500);
+		} catch (error) {
+			console.error('[GameDataHub] Failed to delete recipe', error);
+			pixelNotice('Could not delete that recipe.', 3000);
+		}
+	};
+
 	const openEditRecipe = async (recipe: CraftingRecipe) => {
 		const ok = await ensureRecipesFile(plugin);
 		if (!ok) {
@@ -317,8 +356,15 @@ export const GameDataHubPanel: React.FC<GameDataHubPanelProps> = ({ plugin }) =>
 		new AddRecipeModal(plugin.app, plugin, () => void loadCraftingData(), recipe).open();
 	};
 
+	const visualPreset = getAppliedVisualTheme().preset;
+
 	return (
-		<div className={styles.shell} data-gamification-shell="system">
+		<div
+			className={styles.shell}
+			data-gamification-visual-theme={visualPreset}
+			{...(visualPreset === 'system-hunter' ? { 'data-gamification-shell': 'system' } : {})}
+			{...(visualPreset === 'clay' ? { 'data-clay-shell': 'true' } : {})}
+		>
 			<header className={styles.header}>
 				<span className={styles.headerIcon} aria-hidden="true">
 					🗂
@@ -486,13 +532,22 @@ export const GameDataHubPanel: React.FC<GameDataHubPanelProps> = ({ plugin }) =>
 											{material.category} · {material.rarity}
 										</div>
 									</div>
-									<button
-										type="button"
-										className={styles.editBtn}
-										onClick={() => void openEditMaterial(material)}
-									>
-										{isVaultMaterial(material.id) ? 'Edit' : 'Override'}
-									</button>
+									<div className={styles.recipeActions}>
+										<button
+											type="button"
+											className={styles.deleteBtn}
+											onClick={() => void removeMaterial(material)}
+										>
+											Delete
+										</button>
+										<button
+											type="button"
+											className={styles.editBtn}
+											onClick={() => void openEditMaterial(material)}
+										>
+											{isVaultMaterial(material.id) ? 'Edit' : 'Override'}
+										</button>
+									</div>
 								</li>
 							))}
 						</ul>
@@ -575,13 +630,22 @@ export const GameDataHubPanel: React.FC<GameDataHubPanelProps> = ({ plugin }) =>
 											{recipe.category ? ` · ${recipe.category}` : ''}
 										</div>
 									</div>
-									<button
-										type="button"
-										className={styles.editBtn}
-										onClick={() => void openEditRecipe(recipe)}
-									>
-										{isVaultRecipe(recipe.id) ? 'Edit' : 'Override'}
-									</button>
+									<div className={styles.recipeActions}>
+										<button
+											type="button"
+											className={styles.deleteBtn}
+											onClick={() => void removeRecipe(recipe)}
+										>
+											Delete
+										</button>
+										<button
+											type="button"
+											className={styles.editBtn}
+											onClick={() => void openEditRecipe(recipe)}
+										>
+											{isVaultRecipe(recipe.id) ? 'Edit' : 'Override'}
+										</button>
+									</div>
 								</li>
 							))}
 						</ul>

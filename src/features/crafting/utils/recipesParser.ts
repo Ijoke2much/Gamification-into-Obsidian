@@ -252,6 +252,27 @@ export function findRecipesFile(plugin: GamifiedObsidianPlugin) {
 	]);
 }
 
+/** Ids listed here stay out of the workshop, including built-in recipes. */
+export function parseRemovedRecipeIds(content: string): string[] {
+	const ids: string[] = [];
+	for (const line of content.split('\n')) {
+		const match = line.match(/^\/\/\s*removed:\s*(.+)$/i);
+		if (!match) continue;
+		for (const part of match[1].split(',')) {
+			const id = part.trim();
+			if (id) ids.push(id);
+		}
+	}
+	return ids;
+}
+
+export async function getRemovedRecipeIds(plugin: GamifiedObsidianPlugin): Promise<string[]> {
+	const file = findRecipesFile(plugin);
+	if (!file) return [];
+	const content = await plugin.app.vault.read(file);
+	return parseRemovedRecipeIds(content);
+}
+
 export async function getVaultRecipes(plugin: GamifiedObsidianPlugin): Promise<CraftingRecipe[]> {
 	const file = findRecipesFile(plugin);
 	if (!file) return [];
@@ -309,21 +330,42 @@ export function serializeRecipe(recipe: CraftingRecipe): string[] {
 
 export async function writeVaultRecipes(
 	plugin: GamifiedObsidianPlugin,
-	recipes: CraftingRecipe[]
+	recipes: CraftingRecipe[],
+	removedIds?: string[]
 ): Promise<void> {
 	await ensureRecipesFile(plugin);
 	const file = findRecipesFile(plugin);
 	if (!file) return;
 
+	const prior = removedIds ?? (await getRemovedRecipeIds(plugin));
+	const writing = new Set(recipes.map((recipe) => recipe.id));
+	const keptRemoved = [...new Set(prior.filter((id) => id && !writing.has(id)))];
+	const removedLines = keptRemoved.map((id) => `// removed: ${id}`);
+
 	const body = [
 		'# Crafting Recipes',
 		'',
 		'// Managed by Gamification — custom entries merge with built-in defaults by id.',
+		...(removedLines.length ? ['', ...removedLines] : []),
 		'',
 		...recipes.flatMap((r, idx) => (idx === 0 ? serializeRecipe(r) : ['', ...serializeRecipe(r)])),
 	].join('\n');
 
 	await modifyWithBackup(plugin.app.vault, file, body);
+}
+
+/** Drop a custom recipe, and keep a built-in from coming back, until it is saved again. */
+export async function deleteCraftingRecipe(
+	plugin: GamifiedObsidianPlugin,
+	recipeId: string
+): Promise<void> {
+	await ensureRecipesFile(plugin);
+	const file = findRecipesFile(plugin);
+	const content = file ? await plugin.app.vault.read(file) : '';
+	const removed = new Set(parseRemovedRecipeIds(content));
+	removed.add(recipeId);
+	const recipes = parseRecipesFromLines(content.split('\n')).filter((recipe) => recipe.id !== recipeId);
+	await writeVaultRecipes(plugin, recipes, [...removed]);
 }
 
 export async function upsertVaultRecipe(

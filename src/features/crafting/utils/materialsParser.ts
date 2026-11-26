@@ -166,6 +166,26 @@ export function findMaterialsFile(plugin: GamifiedObsidianPlugin) {
 	]);
 }
 
+export function parseRemovedMaterialIds(content: string): string[] {
+	const ids: string[] = [];
+	for (const line of content.split('\n')) {
+		const match = line.match(/^\/\/\s*removed:\s*(.+)$/i);
+		if (!match) continue;
+		for (const part of match[1].split(',')) {
+			const id = part.trim();
+			if (id) ids.push(id);
+		}
+	}
+	return ids;
+}
+
+export async function getRemovedMaterialIds(plugin: GamifiedObsidianPlugin): Promise<string[]> {
+	const file = findMaterialsFile(plugin);
+	if (!file) return [];
+	const content = await plugin.app.vault.read(file);
+	return parseRemovedMaterialIds(content);
+}
+
 export async function getVaultMaterials(plugin: GamifiedObsidianPlugin): Promise<CraftingMaterial[]> {
 	const file = findMaterialsFile(plugin);
 	if (!file) return [];
@@ -210,21 +230,43 @@ export function serializeMaterial(material: CraftingMaterial): string[] {
 
 export async function writeVaultMaterials(
 	plugin: GamifiedObsidianPlugin,
-	materials: CraftingMaterial[]
+	materials: CraftingMaterial[],
+	removedIds?: string[]
 ): Promise<void> {
 	await ensureMaterialsFile(plugin);
 	const file = findMaterialsFile(plugin);
 	if (!file) return;
 
+	const prior = removedIds ?? (await getRemovedMaterialIds(plugin));
+	const writing = new Set(materials.map((material) => material.id));
+	const keptRemoved = [...new Set(prior.filter((id) => id && !writing.has(id)))];
+	const removedLines = keptRemoved.map((id) => `// removed: ${id}`);
+
 	const body = [
 		'# Crafting Materials',
 		'',
 		'// Managed by Gamification — custom entries merge with built-in defaults by id.',
+		...(removedLines.length ? ['', ...removedLines] : []),
 		'',
 		...materials.flatMap((m, idx) => (idx === 0 ? serializeMaterial(m) : ['', ...serializeMaterial(m)])),
 	].join('\n');
 
 	await modifyWithBackup(plugin.app.vault, file, body);
+}
+
+export async function deleteCraftingMaterial(
+	plugin: GamifiedObsidianPlugin,
+	materialId: string
+): Promise<void> {
+	await ensureMaterialsFile(plugin);
+	const file = findMaterialsFile(plugin);
+	const content = file ? await plugin.app.vault.read(file) : '';
+	const removed = new Set(parseRemovedMaterialIds(content));
+	removed.add(materialId);
+	const materials = parseMaterialsFromLines(content.split('\n')).filter(
+		(material) => material.id !== materialId
+	);
+	await writeVaultMaterials(plugin, materials, [...removed]);
 }
 
 export async function upsertVaultMaterial(

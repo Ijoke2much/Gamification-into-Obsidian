@@ -1,21 +1,75 @@
-/* SYSTEM : DATA HUB — Solo Leveling creator shell */
+/* Game data hub. Colors follow the active visual theme. */
 
 .shell {
-	--hub-bg: linear-gradient(180deg, rgba(8, 28, 54, 0.98), rgba(2, 8, 18, 0.99));
-	--hub-panel: rgba(10, 32, 58, 0.92);
-	--hub-border: rgba(34, 200, 255, 0.42);
-	--hub-accent: #22c8ff;
-	--hub-text: #e0f2fe;
-	--hub-muted: rgba(158, 199, 223, 0.78);
-	--hub-font: "Segoe UI", "Inter", system-ui, -apple-system, sans-serif;
+	--hub-bg: var(--go-panel, var(--background-primary));
+	--hub-panel: var(--go-card, var(--background-secondary));
+	--hub-border: var(--go-border-strong, var(--background-modifier-border));
+	--hub-accent: var(--go-accent, var(--interactive-accent));
+	--hub-text: var(--go-text, var(--text-normal));
+	--hub-muted: var(--go-muted, var(--text-muted));
+	--hub-font: var(--gamify-font-ui, var(--go-font-ui, "Segoe UI", system-ui, sans-serif));
+	--hub-line: color-mix(in srgb, var(--hub-accent) 38%, transparent);
+	--hub-fill: color-mix(in srgb, var(--hub-accent) 14%, transparent);
+	--hub-btn-bg: var(--go-card-soft, var(--background-secondary));
+	--hub-well: var(--go-card-soft, var(--background-secondary));
+	--hub-on-accent: var(--go-text-bright, var(--text-normal));
+	--hub-glow: transparent;
+	--hub-radius: 16px;
 
 	padding: 1.1rem 1.15rem 1.25rem;
 	border: 1px solid var(--hub-border);
-	border-radius: 4px;
+	border-radius: var(--hub-radius);
 	background: var(--hub-bg);
 	color: var(--hub-text);
 	font-family: var(--hub-font);
-	box-shadow: 0 0 28px rgba(34, 200, 255, 0.12);
+	box-shadow: var(--hub-glow);
+}
+
+.shell[data-gamification-visual-theme="system-hunter"] {
+	--hub-bg: linear-gradient(180deg, rgba(8, 28, 54, 0.98), rgba(2, 8, 18, 0.99));
+	--hub-panel: rgba(10, 32, 58, 0.92);
+	--hub-border: var(--hub-line);
+	--hub-accent: #22c8ff;
+	--hub-text: #e0f2fe;
+	--hub-muted: rgba(158, 199, 223, 0.78);
+	--hub-btn-bg: var(--hub-btn-bg);
+	--hub-well: var(--hub-well);
+	--hub-on-accent: #041018;
+	--hub-glow: 0 0 28px var(--hub-fill);
+	--hub-radius: 4px;
+}
+
+.shell[data-gamification-visual-theme="clay"] {
+	--hub-bg: var(--clay-gradient, linear-gradient(145deg, #f7f3ec, #efe6d8));
+	--hub-panel: #f7f3ec;
+	--hub-border: rgba(255, 255, 255, 0.65);
+	--hub-accent: #5bb8b0;
+	--hub-text: #3a342c;
+	--hub-muted: #8a8278;
+	--hub-font: "Nunito", "Segoe UI", system-ui, sans-serif;
+	--hub-btn-bg: #f4efe6;
+	--hub-well: #e7dfd2;
+	--hub-on-accent: #2c2722;
+	--hub-glow: var(--clay-shadow, 8px 8px 16px rgba(140, 128, 110, 0.28), -6px -6px 14px rgba(255, 255, 255, 0.85));
+	--hub-radius: var(--clay-radius, 24px);
+}
+
+.systemLabel {
+	display: none;
+}
+
+.shell[data-gamification-visual-theme="system-hunter"] .systemLabel {
+	display: block;
+}
+
+.shell[data-gamification-visual-theme="clay"] .title {
+	text-transform: none;
+	letter-spacing: 0;
+	font-weight: 800;
+}
+
+.shell[data-gamification-visual-theme="clay"] .tabActive {
+	text-shadow: none;
 }
 
 .header {
@@ -36,7 +90,7 @@
 	letter-spacing: 0.18em;
 	text-transform: uppercase;
 	color: var(--hub-accent);
-	text-shadow: 0 0 10px rgba(34, 200, 255, 0.35);
+	text-shadow: 0 0 10px var(--hub-accent);
 }
 
 .title {
@@ -66,30 +120,75 @@
 	gap: 0.15rem 1.1rem;
 	margin-bottom: 1rem;
 	padding-bottom: 0.55rem;
-	border-bottom: 1px solid rgba(34, 200, 255, 0.22);
+	border-bottom: 1px solid var(--hub-line);
 }
 
+.shell button.tab,
 .tab {
-	padding: 0.35rem 0.15rem 0.45rem;
-	border: none;
-	border-bottom: 2px solid transparent;
-	background: transparent;
-	color: var(--hub-muted);
-	font-weight: 600;
-	font-size: 0.9rem;
+	padding: 0.35rem 0.15rem 0.45rem !important;
+	border: none !important;
+	border-bottom: 2px solid transparent !important;
+	border-radius: 0 !important;
+	background: transparent !important;
+	box-shadow: none !important;
+	color: var(--hub-muted) !important;
+	font-weight: 600 !important;
+	font-size: 0.9rem !important;
 	letter-spacing: 0.02em;
 	cursor: pointer;
-	font-family: inherit;
+	font-family: inherit !important;
 }
 
 .tab:hover {
 	color: var(--hub-text);
 }
 
+.shell button.tabActive,
 .tabActive {
-	color: var(--hub-accent);
-	border-bottom-color: var(--hub-accent);
-	text-shadow: 0 0 8px rgba(34, 200, 255, 0.35);
+	color: var(--hub-accent) !important;
+	border-bottom-color: var(--hub-accent) !important;
+	text-shadow: 0 0 8px var(--hub-accent);
+}
+
+.shell[data-gamification-visual-theme="clay"] button.tab,
+.shell[data-gamification-visual-theme="clay"] .tab {
+	border-radius: 999px !important;
+	padding: 8px 14px !important;
+	border-bottom: none !important;
+	color: var(--hub-text) !important;
+}
+
+.shell[data-gamification-visual-theme="clay"] button.tabActive,
+.shell[data-gamification-visual-theme="clay"] .tabActive {
+	background: var(--hub-accent) !important;
+	color: #2c2722 !important;
+	text-shadow: none;
+	box-shadow: var(--clay-recessed, inset 2px 2px 6px rgba(140, 128, 110, 0.28)) !important;
+}
+
+.shell[data-gamification-visual-theme="clay"] button.actionBtn,
+.shell[data-gamification-visual-theme="clay"] button.editBtn,
+.shell[data-gamification-visual-theme="clay"] button.deleteBtn {
+	border-radius: 16px !important;
+	box-shadow: none !important;
+}
+
+.shell[data-gamification-visual-theme="clay"] button.actionBtnPrimary {
+	background: var(--hub-accent) !important;
+	color: #2c2722 !important;
+}
+
+.shell[data-gamification-visual-theme="clay"] button.deleteBtn {
+	background: #f4efe6 !important;
+	color: #6b3a32 !important;
+	border-color: rgba(140, 90, 80, 0.35) !important;
+}
+
+.shell[data-gamification-visual-theme="clay"] .row,
+.shell[data-gamification-visual-theme="clay"] .empty,
+.shell[data-gamification-visual-theme="clay"] .dungeonStatusCard {
+	border-radius: 18px;
+	box-shadow: var(--clay-recessed, inset 3px 3px 8px rgba(140, 128, 110, 0.22));
 }
 
 .actions {
@@ -105,8 +204,8 @@
 .shell .actionBtn {
 	padding: 0.45rem 0.9rem !important;
 	border-radius: 4px !important;
-	border: 1px solid rgba(34, 200, 255, 0.55) !important;
-	background: rgba(12, 40, 72, 0.85) !important;
+	border: 1px solid var(--hub-line) !important;
+	background: var(--hub-btn-bg) !important;
 	color: var(--hub-text) !important;
 	font-weight: 600 !important;
 	cursor: pointer;
@@ -119,8 +218,8 @@
 .shell button.actionBtn:hover:not(:disabled),
 .shell .actionBtn:hover:not(:disabled) {
 	border-color: var(--hub-accent) !important;
-	background: rgba(34, 200, 255, 0.14) !important;
-	color: #e0f7ff !important;
+	background: var(--hub-fill) !important;
+	color: var(--hub-text) !important;
 }
 
 .shell button.actionBtn:disabled,
@@ -131,17 +230,17 @@
 
 .shell button.actionBtnPrimary,
 .shell .actionBtnPrimary {
-	background: rgba(34, 200, 255, 0.28) !important;
+	background: var(--hub-line) !important;
 	border-color: var(--hub-accent) !important;
-	color: #041018 !important;
+	color: var(--hub-on-accent) !important;
 	font-weight: 700 !important;
-	box-shadow: 0 0 14px rgba(34, 200, 255, 0.35) !important;
+	box-shadow: 0 0 14px var(--hub-accent) !important;
 }
 
 .shell button.actionBtnPrimary:hover:not(:disabled),
 .shell .actionBtnPrimary:hover:not(:disabled) {
-	background: rgba(34, 200, 255, 0.42) !important;
-	color: #02080e !important;
+	background: var(--hub-line) !important;
+	color: var(--hub-on-accent) !important;
 }
 
 .shell .actionBtnMuted {
@@ -158,17 +257,17 @@
 	border-radius: 2px;
 	margin-left: 0.4rem;
 	vertical-align: middle;
-	border: 1px solid rgba(34, 200, 255, 0.45);
+	border: 1px solid var(--hub-line);
 }
 
 .badgeCustom {
-	background: rgba(34, 200, 255, 0.12);
+	background: var(--hub-fill);
 	color: var(--hub-accent);
 }
 
 .badgeBuiltin {
 	border-color: rgba(158, 199, 223, 0.35);
-	background: rgba(8, 24, 46, 0.7);
+	background: var(--hub-well);
 	color: var(--hub-muted);
 }
 
@@ -188,7 +287,7 @@
 	align-items: flex-start;
 	gap: 12px;
 	padding: 12px 12px;
-	border: 1px solid rgba(34, 200, 255, 0.22);
+	border: 1px solid var(--hub-line);
 	border-radius: 4px;
 	background: var(--hub-panel);
 }
@@ -248,8 +347,8 @@
 	padding: 4px 8px;
 	font-size: 0.78rem;
 	border-radius: 6px;
-	border: 1px solid rgba(34, 200, 255, 0.28);
-	background: rgba(8, 24, 46, 0.75);
+	border: 1px solid var(--hub-line);
+	background: var(--hub-well);
 	color: var(--hub-text);
 }
 
@@ -270,8 +369,8 @@
 	padding: 0.35rem 0.75rem !important;
 	font-size: 0.82rem !important;
 	border-radius: 4px !important;
-	border: 1px solid rgba(34, 200, 255, 0.55) !important;
-	background: rgba(12, 40, 72, 0.85) !important;
+	border: 1px solid var(--hub-line) !important;
+	background: var(--hub-btn-bg) !important;
 	color: var(--hub-accent) !important;
 	cursor: pointer;
 	font-weight: 600 !important;
@@ -282,9 +381,9 @@
 
 .shell button.editBtn:hover:not(:disabled),
 .shell .editBtn:hover:not(:disabled) {
-	background: rgba(34, 200, 255, 0.16) !important;
+	background: var(--hub-fill) !important;
 	border-color: var(--hub-accent) !important;
-	color: #e0f7ff !important;
+	color: var(--hub-text) !important;
 }
 
 .shell button.editBtn:disabled,
@@ -295,6 +394,37 @@
 
 .editBtn + .editBtn {
 	margin-left: 0.35rem;
+}
+
+.recipeActions {
+	display: flex;
+	flex-direction: row;
+	gap: 6px;
+	flex-shrink: 0;
+	align-self: center;
+}
+
+.shell button.deleteBtn,
+.shell .deleteBtn {
+	flex-shrink: 0;
+	align-self: center;
+	padding: 0.35rem 0.75rem !important;
+	font-size: 0.82rem !important;
+	border-radius: 4px !important;
+	border: 1px solid rgba(248, 113, 113, 0.65) !important;
+	background: rgba(80, 20, 28, 0.72) !important;
+	color: #fecaca !important;
+	cursor: pointer;
+	font-weight: 600 !important;
+	font-family: inherit !important;
+	min-height: 34px !important;
+	box-shadow: none !important;
+}
+
+.shell button.deleteBtn:hover:not(:disabled),
+.shell .deleteBtn:hover:not(:disabled) {
+	background: rgba(248, 113, 113, 0.22) !important;
+	color: #fff1f2 !important;
 }
 
 .rowActions {
@@ -310,9 +440,9 @@
 	text-align: center;
 	color: var(--hub-muted);
 	font-size: 0.9rem;
-	border: 1px dashed rgba(34, 200, 255, 0.25);
+	border: 1px dashed var(--hub-line);
 	border-radius: 4px;
-	background: rgba(8, 24, 46, 0.45);
+	background: var(--hub-well);
 }
 
 .warn {
@@ -329,7 +459,7 @@
 .footer {
 	margin: 1rem 0 0;
 	padding-top: 0.75rem;
-	border-top: 1px solid rgba(34, 200, 255, 0.18);
+	border-top: 1px solid var(--hub-line);
 	text-align: center;
 	font-size: 0.78rem;
 	color: var(--hub-muted);
@@ -349,7 +479,7 @@
 	padding: 0.85rem 1rem;
 	margin-bottom: 1rem;
 	border-radius: 4px;
-	border: 1px solid rgba(34, 200, 255, 0.28);
+	border: 1px solid var(--hub-line);
 	background: var(--hub-panel);
 }
 
@@ -369,7 +499,7 @@
 /* Fallback table (bosses) — same shell language */
 .tableWrap {
 	overflow-x: auto;
-	border: 1px solid rgba(34, 200, 255, 0.22);
+	border: 1px solid var(--hub-line);
 	border-radius: 4px;
 	max-height: min(420px, 55vh);
 	overflow-y: auto;
@@ -387,13 +517,13 @@
 .table td {
 	padding: 0.55rem 0.65rem;
 	text-align: left;
-	border-bottom: 1px solid rgba(34, 200, 255, 0.14);
+	border-bottom: 1px solid var(--hub-fill);
 }
 
 .table th {
 	position: sticky;
 	top: 0;
-	background: rgba(8, 24, 46, 0.96);
+	background: var(--hub-panel);
 	z-index: 1;
 	font-weight: 700;
 	color: var(--hub-muted);
@@ -407,7 +537,7 @@
 }
 
 .table tbody tr:hover {
-	background: rgba(34, 200, 255, 0.06);
+	background: var(--hub-fill);
 }
 
 .table code {
